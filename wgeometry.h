@@ -49,7 +49,8 @@ public:
 	 */ 
 	void add_primitive();
 	/**
-	 * updates the geometry object
+	 * updates the numbers of all shapes, compiles the list of all isotopes, creates
+	 * an isotope table.
 	 */ 
 	void update();
 	/**
@@ -59,6 +60,10 @@ public:
 	 * fissile flag, isotopes) of each material.
 	 */
 	void print_summary();
+	/**
+	 * prints all of the transforms of all the primitives, then prints a geometry
+	 * summary.
+	 */ 
 	void print_all();
 	void set_outer_cell(unsigned);
 	unsigned get_outer_cell();
