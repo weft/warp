@@ -10,14 +10,14 @@ class wgeometry {
 	unsigned 	n_cyl; /** number of cylinders */
 	unsigned 	n_hex; /** number of hexagons */
 	unsigned 	n_sph; /** number of spheres */
-	unsigned 	n_primitives;
-	unsigned 	n_transforms;
-	unsigned 	outer_cell;
-	unsigned 	n_materials;
-	unsigned 	n_isotopes;
-	unsigned 	fissile_flag;
-	unsigned * 	material_num_list;
-	unsigned * 	cell_num_list;
+	unsigned 	n_primitives; /** number of primitives */
+	unsigned 	n_transforms; /** number of transforms */
+	unsigned 	outer_cell; /** outermost cell (usually used for tallying) */
+	unsigned 	n_materials; /** number of materials */
+	unsigned 	n_isotopes; /** number of isotopes */
+	unsigned 	fissile_flag; /** indicates whether or not a material is fissile */
+	unsigned * 	material_num_list; /** list of material numbers */
+	unsigned * 	cell_num_list; /** list of cell numbers */
 public:
 	/**
 	 *  wgeometry constructor
@@ -28,12 +28,33 @@ public:
 	 *  wgeometry destructor
 	 */ 
 	~wgeometry();
+	/**
+	 * returns the smallest cell number, typically the innermost cell
+	 */
 	unsigned get_minimum_cell();
+	/**
+	 * returns the largest cell number, typically the outermost cell
+	 */ 
 	unsigned get_maximum_cell();
+	/**
+	 * returns the number of primitves in the geometry object
+	 */ 
 	unsigned get_primitive_count();
+	/**
+	 * returns the number of transforms in the geometry object
+	 */ 
 	unsigned get_transform_count();
+	/**
+	 * adds a primitive to the geometry object
+	 */ 
 	void add_primitive();
+	/**
+	 * updates the geometry object
+	 */ 
 	void update();
+	/**
+	 * prints a summary of the geometry object
+	 */
 	void print_summary();
 	void print_all();
 	void set_outer_cell(unsigned);
