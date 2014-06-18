@@ -6,18 +6,18 @@
  */
 
 class wgeometry {
-	unsigned 	n_box; /** number of boxes */
-	unsigned 	n_cyl; /** number of cylinders */
-	unsigned 	n_hex; /** number of hexagons */
-	unsigned 	n_sph; /** number of spheres */
-	unsigned 	n_primitives; /** number of primitives */
-	unsigned 	n_transforms; /** number of transforms */
-	unsigned 	outer_cell; /** outermost cell (usually used for tallying) */
-	unsigned 	n_materials; /** number of materials */
-	unsigned 	n_isotopes; /** number of isotopes */
-	unsigned 	fissile_flag; /** indicates whether or not a material is fissile */
-	unsigned * 	material_num_list; /** list of material numbers */
-	unsigned * 	cell_num_list; /** list of cell numbers */
+	unsigned 	n_box; /**<  number of boxes */
+	unsigned 	n_cyl; /**<  number of cylinders */
+	unsigned 	n_hex; /**<  number of hexagons */
+	unsigned 	n_sph; /**<  number of spheres */
+	unsigned 	n_primitives; /**<  number of primitives */
+	unsigned 	n_transforms; /**<  number of transforms */
+	unsigned 	outer_cell; /**<  outermost cell (usually used for tallying) */
+	unsigned 	n_materials; /**<  number of materials */
+	unsigned 	n_isotopes; /**<  number of isotopes */
+	unsigned 	fissile_flag; /**<  indicates whether or not a material is fissile */
+	unsigned * 	material_num_list; /**<  list of material numbers */
+	unsigned * 	cell_num_list; /**<  list of cell numbers */
 public:
 	/**
 	 *  wgeometry constructor
