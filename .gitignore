@@ -4,3 +4,5 @@
 *.tallybins
 *.ptx
 *.png
+*.results
+*.stats
