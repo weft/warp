@@ -1,0 +1,6 @@
+*.o
+*.so
+*.tally
+*.tallybins
+*.ptx
+*.png
