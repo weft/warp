@@ -1,11 +1,15 @@
 #ifndef WGEOMETRY_H
 #define WGEOMETRY_H
 
+/**
+ *  wgeometry class
+ */
+
 class wgeometry {
-	unsigned 	n_box;
-	unsigned 	n_cyl;
-	unsigned 	n_hex;
-	unsigned 	n_sph;
+	unsigned 	n_box; /** number of boxes */
+	unsigned 	n_cyl; /** number of cylinders */
+	unsigned 	n_hex; /** number of hexagons */
+	unsigned 	n_sph; /** number of spheres */
 	unsigned 	n_primitives;
 	unsigned 	n_transforms;
 	unsigned 	outer_cell;
@@ -15,7 +19,13 @@ class wgeometry {
 	unsigned * 	material_num_list;
 	unsigned * 	cell_num_list;
 public:
+	/**
+	 *  wgeometry constructor
+	 */ 
 	 wgeometry();
+	/**
+	 *  wgeometry destructor
+	 */ 
 	~wgeometry();
 	unsigned get_minimum_cell();
 	unsigned get_maximum_cell();
