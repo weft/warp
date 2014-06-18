@@ -1,3 +1,6 @@
+#ifndef WHISTORY_H
+#define WHISTORY_H
+
 //history struct
 class whistory { 
 	// geometry object
@@ -179,3 +182,4 @@ public:
     void set_filename(std::string);
 };
 
+#endif

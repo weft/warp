@@ -1,3 +1,6 @@
+#ifndef WGEOMETRY_H
+#define WGEOMETRY_H
+
 class wgeometry {
 	unsigned 	n_box;
 	unsigned 	n_cyl;
@@ -41,3 +44,5 @@ public:
 	float * 	concentrations_matrix;
 	float * 	awr_list;
 };
+
+#endif

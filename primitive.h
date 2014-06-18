@@ -1,3 +1,6 @@
+#ifndef PRIMITIVE_H
+#define PRIMITIVE_H
+
 class primitive
 {	
 	public:
@@ -21,3 +24,5 @@ class primitive
 	int         material;
 	std::vector<wtransform>   transforms;
 };
+
+#endif

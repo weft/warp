@@ -1,3 +1,6 @@
+#ifndef WFLOAT3_H
+#define WFLOAT3_H
+
 //class definitions for device vector operations
 class wfloat3{
 public:
@@ -88,3 +91,5 @@ __device__ wfloat3 wfloat3::rotate(float mu, float rn){
     }
     return out;
 };
+
+#endif

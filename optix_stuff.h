@@ -1,3 +1,6 @@
+#ifndef OPTIX_STUFF_H
+#define OPTIX_STUFF_H
+
 #include <optix_world.h>
 
 class optix_stuff{
@@ -40,3 +43,5 @@ public:
 	void set_image_type(std::string);
 	unsigned get_outer_cell();
 };
+
+#endif
