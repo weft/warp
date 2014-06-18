@@ -53,7 +53,10 @@ public:
 	 */ 
 	void update();
 	/**
-	 * prints a summary of the geometry object
+	 * prints a summary of the geometry object: numbers of the different kinds of
+	 * shapes in the geometry, total numbers of primitives and transforms, outer
+	 * cell, numbers of materials and isotopes, isotope list, properties (density,
+	 * fissile flag, isotopes) of each material.
 	 */
 	void print_summary();
 	void print_all();
