@@ -21,6 +21,7 @@ class wgeometry {
 public:
 	/**
 	 *  wgeometry constructor
+	 *  \todo make a google test for construction
 	 */ 
 	 wgeometry();
 	/**
