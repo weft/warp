@@ -69,23 +69,25 @@ public:
 	 * goes through all the cells of all of the primitives and checks that the
 	 * outer cell is set
 	 *
-	 * @param unsigned ocell - the outermost cell
+	 * @param[in] ocell - the outermost cell
 	 */ 
 	void set_outer_cell(unsigned);
 	/**
 	 * returns the outermost cell
+	 *
+	 * \returns outer_cell
 	 */ 
 	unsigned get_outer_cell();
 	/**
 	 * adds a material and its properties to the geometry, allocates space
 	 * for all of the material information.
 	 *
-	 * @param unsigned matnum - material number
-	 * @param unsigned is_fissile - fissile flag
-	 * @param unsigned num_topes - number of isotopes in material
-	 * @param float density - density of material
-	 * @param unsigned * isotopes - list of isotopes
-	 * @param float * fractions - fractions of the constituent isotopes
+	 * @param[in] matnum - material number
+	 * @param[in] is_fissile - fissile flag
+	 * @param[in] num_topes - number of isotopes in material
+	 * @param[in] density - density of material
+	 * @param[in] isotopes - list of isotopes
+	 * @param[in] fractions - fractions of the constituent isotopes
 	 */ 
 	void add_material(unsigned , unsigned, unsigned , float, unsigned * , float * );
 	/**
@@ -97,7 +99,7 @@ public:
 	/**
 	 * returns the dimensions of the outermost cell.
 	 * 
-	 * @param float * input_array
+	 * @param[in] input_array
 	 */ 
 	unsigned get_outer_cell_dims(float*);
 	unsigned get_material_count();
