@@ -55,7 +55,7 @@ class primitive
 	 */
 	void add_transform(unsigned,unsigned,float,float,float,float,float); //set own material
 	/**
-	 * prints primitiv ID, coordinate extrema, location, type and material. for each 
+	 * prints primitive ID, coordinate extrema, location, type and material. for each 
 	 * transform, prints the number, cell number, cell material, transform coordinates, 
 	 * and transform angles.
 	 */

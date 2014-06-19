@@ -3,8 +3,8 @@
 
 /**
  * \struct wtransform datadef.h
- *
- * contains parameters of a wtransform.
+ * \brief contains parameters of a wtransform
+ * \details cell number and material, transform coordinates and angles
  */
 struct wtransform {
     unsigned    cellnum; /**< cell number */
@@ -18,8 +18,8 @@ struct wtransform {
 
 /**
  * \struct geom_data datadef.h
- *
- * contains parameters of a wgeometry.
+ * \brief contains parameters of a wgeometry
+ * \details extrema arrays, location array, cell and material numbers, fissile flag
  */
 struct geom_data{
     float       min[3]; /**< array of coordinate (x,y,z) minima */
@@ -32,8 +32,9 @@ struct geom_data{
 
 /**
  * \struct source_point datadef.h
- *
- * contains the parameters of the neutron source point
+ * \brief contains the parameters of the neutron source point
+ * \details 3D Cartesian coordinates, shifted coordinates, distance to nearest surface, total macroscopic
+ *  cross section, boundary condition enforcement flag
  */
 struct source_point{ 
     float x;    /**< x-coordinate */
@@ -49,8 +50,7 @@ struct source_point{
 
 /**
  * \struct qnode datadef.h
- *
- * quaternary search node
+ * \brief quaternary search node
  */
 struct qnode{
     float  values[4]; /**< array of values */
@@ -59,8 +59,7 @@ struct qnode{
 
 /**
  * \struct qnode_host datadef.h
- *
- * quaternary search node host container
+ * \brief quaternary search node host container
  */
 struct qnode_host{
     qnode* cuda_pointer; /**< CUDA pointer */
@@ -69,8 +68,9 @@ struct qnode_host{
 
 /**
  * \struct hit_buffer datadef.h
- *
- * contains information for the hit buffer.
+ * \brief contains information for the hit buffer
+ * \details structure that contains cell number, material number, and fissile flag for the hit 
+ * buffer.
  */
 struct hit_buffer {
     int     cell; /**< cell number */
@@ -79,9 +79,10 @@ struct hit_buffer {
 };
 
 /**
- * \struct instersection_point datadef.h
- *
- * contains information pertinent to an intersection point
+ * \struct intersection_point datadef.h
+ * \brief contains information pertinent to an intersection point
+ * \details 3D cartesian coordinates of intersection point, distance to nearest surface, first cell 
+ * potentially hit, continuity flag, hit buffer, and hit buffer index
  */
 struct intersection_point {
     float       x; /**< x-coordinate */
@@ -96,8 +97,9 @@ struct intersection_point {
 
 /**
  * \struct material_def datadef.h
- *
- * contains information that defines a material
+ * \brief contains information that defines a material
+ * \details material ID, number, fissile flag, number of isotopes, density, isotope list, isotope 
+ * fraction list
  */
 struct material_def {
     unsigned    id;	      /**< material ID */
