@@ -100,21 +100,55 @@ public:
 	 * returns the dimensions of the outermost cell.
 	 * 
 	 * @param[in] input_array
+	 * \returns primitives[k].type
 	 */ 
 	unsigned get_outer_cell_dims(float*);
+	/**
+	 * returns the number of materials.
+	 *
+	 * \returns n_materials
+	 */
 	unsigned get_material_count();
+	/**
+	 * makes a table of all of the materials.
+	 *
+	 * allocates and copies the isotope and material number lists to their respsective
+	 * arrays, allocates and copies the isotope fractions to the concentration
+	 * matrix, converts the fractions into number densities, normalizes the
+	 * fractions, gets the average number density, prints each isotope's material,
+	 * isotope, and density.
+	 */
 	void make_material_table();
+	/**
+	 * creates material and isotope arrays, creates concentration matrix. copies
+	 * memory for all of those arrays.
+	 *
+	 * @param[in] n_mat_in - number of input materials
+	 * @param[in] n_tope_in - number of input isotopes 
+	 * @param[in] material_list_in - list of input materials
+	 * @param[in] isotope_list_in - list of input isotopes
+	 * @param[in] conc_mat_in - input concentration matrix
+	 */
 	void get_material_table(unsigned*,unsigned*,unsigned**,unsigned**,float**);
+	/**
+	 * prints out all materials, including each material's constituent isotopes 
+	 * and their number densities.
+	 */ 
 	void print_materials_table();
+	/**
+	 * checks whether or not the geometry contains a fissile material.
+	 *
+	 * \returns fissile_flag
+	 */
 	unsigned check_fissile();
-	std::vector<primitive>   	primitives;
-	std::vector<material_def>	materials;
-	std::vector<unsigned>		isotopes;
-	std::string 				isotope_list;
-	unsigned *	isotope_list_array;
-	unsigned *	material_list_array;
-	float * 	concentrations_matrix;
-	float * 	awr_list;
+	std::vector<primitive>   	primitives; /**< primitives vector */
+	std::vector<material_def>	materials;  /**< materials vector */
+	std::vector<unsigned>		isotopes;   /**< isotopes vector */
+	std::string 			isotope_list; /**< isotope list */
+	unsigned *	isotope_list_array; /**< isotope list array */
+	unsigned *	material_list_array; /**< material list array */
+	float * 	concentrations_matrix; /**< concentrations matrix */
+	float * 	awr_list; /**< atomic weight ratio (AWR) list */
 };
 
 #endif
