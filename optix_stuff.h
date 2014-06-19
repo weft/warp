@@ -63,16 +63,16 @@ class optix_stuff{
 	 */ 
 	void init_internal(wgeometry, unsigned, std::string);
 public:
-	CUdeviceptr 	positions_ptr; 
-	CUdeviceptr 	      rxn_ptr; 
-	CUdeviceptr 	     done_ptr;
-	CUdeviceptr 	  cellnum_ptr;
-	CUdeviceptr 	   matnum_ptr;
-	CUdeviceptr 	    remap_ptr;
-	unsigned 			stack_size_multiplier;
-	unsigned 			N;
-	float 				outer_cell_dims[6];
-	unsigned 			outer_cell_type;
+	CUdeviceptr 	positions_ptr; /**< CUDA positions pointer */ 
+	CUdeviceptr 	      rxn_ptr; /**< CUDA reactions pointer */
+	CUdeviceptr 	     done_ptr; /**< CUDA done flags pointer */
+	CUdeviceptr 	  cellnum_ptr; /**< CUDA cell numbers pointer */
+	CUdeviceptr 	   matnum_ptr; /**< CUDA material numbers pointer */
+	CUdeviceptr 	    remap_ptr; /**< CUDA remaps pointer */
+	unsigned 		stack_size_multiplier; /**< stack size multiplier */
+	unsigned 		N;		       /**< number of histories */
+	float 			outer_cell_dims[6];    /**< outermost cell dimensions */
+	unsigned 		outer_cell_type;       /**< outermost cell type */
 	optix_stuff(unsigned,unsigned);
 	optix_stuff();
 	~optix_stuff();
