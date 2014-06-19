@@ -9,9 +9,9 @@
 struct wtransform {
     unsigned    cellnum; /**< cell number */
     unsigned    cellmat; /**< cell material */
-    float       dx;	 /** dx */
-    float       dy;	 /** dy */
-    float       dz;	 /** dz */
+    float       dx;	 /**< dx */
+    float       dy;	 /**< dy */
+    float       dz;	 /**< dz */
     float       theta; /**< polar angle */
     float       phi;   /**< azimuthal angle */
 };
@@ -44,7 +44,7 @@ struct source_point{
     float zhat; /**< shifted z-coordinate */
     float surf_dist; /**< distance to nearest surface */
     float macro_t;   /**< total macroscopic cross section */
-    unsigned enforce_BC; /** boundary condition enforcement flag */
+    unsigned enforce_BC; /**< boundary condition enforcement flag */
 };
 
 /**
