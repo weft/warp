@@ -2,7 +2,7 @@
 #define WGEOMETRY_H
 
 /**
- *  wgeometry class
+ * \brief wgeometry class
  */
 
 class wgeometry {

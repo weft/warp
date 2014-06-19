@@ -2,7 +2,7 @@
 #define PRIMITIVE_H
 
 /**
- * primitive class
+ * \brief primitive class
  */
 
 class primitive
