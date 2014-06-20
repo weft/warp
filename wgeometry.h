@@ -2,6 +2,7 @@
 #define WGEOMETRY_H
 
 /**
+ * \class wgeometry wgeometry.h
  * \brief wgeometry class
  */
 
