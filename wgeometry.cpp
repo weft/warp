@@ -10,12 +10,6 @@
 #include "primitive.h"
 #include "wgeometry.h"
 
-/////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////
-//							Geometry stuff
-/////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////
-
 wgeometry::wgeometry(){
 	n_box        = 0;
 	n_cyl        = 0;
@@ -45,7 +39,7 @@ void wgeometry::update(){
 	n_box        = 0;
 	n_cyl        = 0;
 	n_hex        = 0;
-	n_sph 		 = 0;
+	n_sph 	     = 0;
 	n_transforms = 0;
 	for(int k=0;k<n_primitives;k++){
 		if (primitives[k].n_transforms==0){
@@ -194,7 +188,7 @@ void wgeometry::add_material(unsigned matnum , unsigned is_fissile, unsigned num
 	
 	this_material_def.num_isotopes  = num_topes;
 	this_material_def.matnum        = matnum;
-	this_material_def.id 			= dex;
+	this_material_def.id 		= dex;
 	this_material_def.density       = density;
 	this_material_def.is_fissile    = is_fissile;
 	memcpy(this_material_def.fractions,  fractions,   num_topes*sizeof(float));
