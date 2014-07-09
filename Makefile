@@ -1,8 +1,8 @@
 #
-CC =  gcc
-CXX = g++
-OPTIX = /usr/local/OptiX-3.0.1
-NVCC = nvcc 
+CC =  /usr/local/Cellar/gcc46/4.6.4/bin/gcc-4.6
+CXX = /usr/local/Cellar/gcc46/4.6.4/bin/g++-4.6
+OPTIX = /Developer/OptiX/
+NVCC = nvcc --compiler-bindir /usr/local/Cellar/gcc46/4.6.4/bin/ --compiler-options -fPIC
 ARCH = -arch sm_30
 C_FLAGS = -O3 -m64 -fPIC
 NVCC_FLAGS = -m64  -use_fast_math --compiler-options '-fPIC'
@@ -13,7 +13,7 @@ CUDA_FLAGS = -I/usr/local/cuda/include -L/usr/local/cuda/lib
 CUDPP_PATH = /usr/local/cudpp-2.1/
 CUDPP_FLAGS = -I/$(CUDPP_PATH)/include -L/$(CUDPP_PATH)/lib
 CUDPP_LIBS = -lcudpp_hash -lcudpp
-PYTHON_FLAGS = -I/usr/local/anaconda/include/python2.7 -L/usr/local/anaconda/lib/
+PYTHON_FLAGS = -I/System/Library/Frameworks/Python.framework/Headers -L/System/Library/Frameworks/Python.framework
 PYTHON_LIBS = -lpython2.7
 PNG_FLAGS = -L/
 PNG_LIBS = -lpng15
@@ -68,7 +68,7 @@ all:  	$(ptx_objects) \
 		libwarp.so 
 
 clean:
-	rm -f *.ptx *.o *.so gpu debug optixtest
+	rm -f *.ptx *.o *.so gpu debug optixtest *.cxx
 
 camera.ptx:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(OPTIX_LIBS) -ptx camera.cu
@@ -199,5 +199,12 @@ gpu: libwarp.so
 optixtest: libwarp.so
 	$(NVCC) -m64 $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/gpu-cpp -lwarp -loptix optixtest.cpp -o $@
 
-warp.py: libwarp.so
-	swig warp.i
+python: libwarp.so
+	swig -python -c++ warp.i;   \
+	$(CXX) -fPIC -c $(PYTHON_FLAGS) $(CUDPP_FLAGS) $(CUDA_FLAGS) warp_wrap.cxx;  \
+	$(CXX) -shared libwarp.so warp_wrap.o -o _warp.so $(PYTHON_FLAGS) -lpython2.7
+
+
+
+
+

@@ -19,12 +19,13 @@ public:
 	unsigned get_primitive_count();
 	unsigned get_transform_count();
 	void add_primitive();
+	void add_primitive(int , unsigned  ,unsigned  ,std::vector<float>,std::vector<float>,std::vector<float> );
 	void update();
 	void print_summary();
 	void print_all();
 	void set_outer_cell(unsigned);
 	unsigned get_outer_cell();
-	void add_material(unsigned , unsigned, unsigned , float, unsigned * , float * );
+	void add_material(unsigned , unsigned, unsigned , float, std::vector<unsigned> , std::vector<float> );
 	int check();
 	unsigned get_outer_cell_dims(float*);
 	unsigned get_material_count();
@@ -32,6 +33,10 @@ public:
 	void get_material_table(unsigned*,unsigned*,unsigned**,unsigned**,float**);
 	void print_materials_table();
 	unsigned check_fissile();
+	void add_transform(unsigned);
+	void add_transform(unsigned, unsigned, float, float, float, float, float);
+	void add_transform(unsigned, unsigned, unsigned, float, float, float, float, float);
+	void make_hex_array(unsigned, int, float, float, float, unsigned);
 	std::vector<primitive>   	primitives;
 	std::vector<material_def>	materials;
 	std::vector<unsigned>		isotopes;

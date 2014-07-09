@@ -33,7 +33,7 @@ primitive::primitive(){
 }
 /**
 */
-primitive::primitive(int ptype, unsigned cellnum ,unsigned cellmat ,float xmin,float ymin,float zmin,float xmax,float ymax,float zmax,float x,float y,float z){
+primitive::primitive(int ptype, unsigned cellnum ,unsigned cellmat , float xmin,float ymin,float zmin,float xmax,float ymax,float zmax,float x,float y,float z){
 	//box valued constructor
 	min[0]=xmin;min[1]=ymin;min[2]=zmin;
 	max[0]=xmax;max[1]=ymax;max[2]=zmax;

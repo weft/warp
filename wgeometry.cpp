@@ -37,9 +37,18 @@ wgeometry::~wgeometry(){
 	//delete material_num_list;
 }
 void wgeometry::add_primitive(){
+
 	primitive this_primitive;
 	primitives.push_back(this_primitive);
 	n_primitives++;
+
+}
+void wgeometry::add_primitive(int ptype, unsigned cellnum ,unsigned cellmat , std::vector<float> mins, std::vector<float> maxs, std::vector<float> origin){
+
+	primitive this_primitive(ptype, cellnum, cellmat, mins[0], mins[1], mins[2], maxs[0], maxs[1], maxs[2], origin[0], origin[1], origin[2]);
+	primitives.push_back(this_primitive);
+	n_primitives++;
+
 }
 void wgeometry::update(){
 	n_box        = 0;
@@ -182,7 +191,7 @@ unsigned wgeometry::get_maximum_cell(){
 	}
 	return maxcell;
 }
-void wgeometry::add_material(unsigned matnum , unsigned is_fissile, unsigned num_topes, float density, unsigned * isotopes, float * fractions){
+void wgeometry::add_material(unsigned matnum, unsigned is_fissile, unsigned num_topes, float density, std::vector<unsigned> isotopes, std::vector<float> fractions){
 	
 	// get current material index
 	unsigned dex = materials.size(); 
@@ -191,15 +200,20 @@ void wgeometry::add_material(unsigned matnum , unsigned is_fissile, unsigned num
 
 	this_material_def.fractions = new float    [num_topes];
 	this_material_def.isotopes  = new unsigned [num_topes];
-	
+
 	this_material_def.num_isotopes  = num_topes;
 	this_material_def.matnum        = matnum;
 	this_material_def.id 			= dex;
 	this_material_def.density       = density;
 	this_material_def.is_fissile    = is_fissile;
-	memcpy(this_material_def.fractions,  fractions,   num_topes*sizeof(float));
-	memcpy(this_material_def.isotopes,   isotopes,    num_topes*sizeof(unsigned));
-	
+	for (int i=0; i<num_topes;i++){
+		this_material_def.isotopes[i] = isotopes[i];
+		this_material_def.fractions[i] = fractions[i];
+	}
+
+	// memcpy(this_material_def.fractions,  &fractions[0],   num_topes*sizeof(float));
+	// memcpy(this_material_def.isotopes,   &isotopes[0],    num_topes*sizeof(unsigned));
+
 	materials.push_back(this_material_def);
 
 	n_materials++;
@@ -438,4 +452,26 @@ void wgeometry::print_materials_table(){
 	}
 
 }
+void wgeometry::add_transform(unsigned index ){
 
+	primitives[index].add_transform();
+
+}
+
+void wgeometry::add_transform(unsigned index, unsigned cellnum , float dx , float dy , float dz , float theta , float phi ){
+
+	primitives[index].add_transform(cellnum, dx, dy, dz, theta, phi);
+
+}
+
+void wgeometry::add_transform(unsigned index, unsigned cellnum ,unsigned cellmat, float dx , float dy , float dz , float theta , float phi ){
+
+	primitives[index].add_transform(cellnum, cellmat, dx, dy, dz, theta, phi);
+
+}
+
+void wgeometry::make_hex_array(unsigned index, int n, float x, float y, float phi, unsigned starting_index){
+
+	primitives[index].make_hex_array(n, x, y, phi, starting_index);
+
+}
