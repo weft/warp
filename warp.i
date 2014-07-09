@@ -1,5 +1,5 @@
-//wgeometry.i
-%module wgeometry
+//warp.i
+%module warp
 %{ 
 #include <vector>
 #include <iostream>
@@ -8,11 +8,15 @@
 #include <assert.h>
 #include <time.h>
 #include <string.h>
+#include <cudpp_hash.h>
+#include <curand.h>
 #include "datadef.h"
 #include "primitive.h"
 #include "wgeometry.h"
+#include "whistory.h"
 %}
 %include "wgeometry.h"
+%include "whistory.h"
 %include "std_vector.i"
 namespace std {
 %template(Unsigned)   vector < unsigned >;
