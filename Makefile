@@ -68,7 +68,7 @@ all:  	$(ptx_objects) \
 		libwarp.so 
 
 clean:
-	rm -f *.ptx *.o *.so gpu debug optixtest
+	rm -f *.ptx *.o *.so gpu debug optixtest *.py *.cxx
 
 camera.ptx:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(OPTIX_LIBS) -ptx camera.cu
@@ -199,5 +199,5 @@ gpu: libwarp.so
 optixtest: libwarp.so
 	$(NVCC) -m64 $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/gpu-cpp -lwarp -loptix optixtest.cpp -o $@
 
-warp.py: libwarp.so
-	swig warp.i
+python: libwarp.so
+	swig -python -c++ wgeometry.i
