@@ -2,7 +2,7 @@
 CC =  /usr/local/Cellar/gcc46/4.6.4/bin/gcc-4.6
 CXX = /usr/local/Cellar/gcc46/4.6.4/bin/g++-4.6
 OPTIX = /Developer/OptiX/
-NVCC = nvcc --compiler-bindir /usr/local/Cellar/gcc46/4.6.4/bin/ --compiler-options -fPIC
+NVCC = nvcc --compiler-bindir /usr/local/Cellar/gcc46/4.6.4/bin/
 ARCH = -arch sm_30
 C_FLAGS = -O3 -m64 -fPIC
 NVCC_FLAGS = -m64  -use_fast_math --compiler-options '-fPIC'
@@ -65,7 +65,8 @@ ptx_objects = 	camera.ptx \
 
 all:  	$(ptx_objects) \
 		$(COBJS) \
-		libwarp.so 
+		libwarp.so \
+		python
 
 clean:
 	rm -f *.ptx *.o *.so gpu debug optixtest *.cxx
