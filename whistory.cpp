@@ -128,25 +128,26 @@ void whistory::init(){
 	load_cross_sections();
 	//create_quad_tree();
 	copy_to_device();
+	printf("Done with init\n");
 }
 whistory::~whistory(){
-	cudaFree( d_xs_length_numbers 	);
-	cudaFree( d_xs_MT_numbers_total );
-	cudaFree( d_xs_MT_numbers 		);
-	cudaFree( d_xs_data_MT 			);
-	cudaFree( d_xs_data_main_E_grid );
-	cudaFree( d_xs_data_scatter     );
-	cudaFree( d_xs_data_energy      );
-	cudaFree( d_tally_score 		);
-    cudaFree( d_tally_count 		);
-    cudaFree( d_xs_data_Q    		);
-	cudaFree( d_index   );
-	cudaFree( d_E         );
-	cudaFree( d_Q         );
-	cudaFree( d_rn_bank   );
-	cudaFree( d_isonum    );
-	cudaFree( d_yield     );
-	cudaFree( d_awr_list);
+	//cudaFree( d_xs_length_numbers 	);
+	//cudaFree( d_xs_MT_numbers_total );
+	//cudaFree( d_xs_MT_numbers 		);
+	//cudaFree( d_xs_data_MT 			);
+	//cudaFree( d_xs_data_main_E_grid );
+	//cudaFree( d_xs_data_scatter     );
+	//cudaFree( d_xs_data_energy      );
+	//cudaFree( d_tally_score 		);
+    //cudaFree( d_tally_count 		);
+    //cudaFree( d_xs_data_Q    		);
+	//cudaFree( d_index   );
+	//cudaFree( d_E         );
+	//cudaFree( d_Q         );
+	//cudaFree( d_rn_bank   );
+	//cudaFree( d_isonum    );
+	//cudaFree( d_yield     );
+	//cudaFree( d_awr_list);
 	delete xs_length_numbers; 
 	delete xs_MT_numbers_total;
     delete xs_MT_numbers;
@@ -183,7 +184,7 @@ whistory::~whistory(){
 				//std::cout << "j,k " << j << ", " << k << " - " ;
 				//std::cout << "freeing " << this_pointer << " " << cuda_pointer << "\n";
 				delete this_pointer;
-				cudaFree(cuda_pointer);
+				//cudaFree(cuda_pointer);
 			}
 		}
 	}
