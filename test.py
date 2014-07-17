@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 import warp
 
 # init setup container
@@ -36,7 +36,7 @@ geom.add_material(2,0,n_topes,dens_water,topes,fracs_water)
 tallycell = 316   #center pin
 filename = assemblyname
 tallyname = assemblyname
-tallyname=assemblyname+".tally"
+tallyname = assemblyname+".tally"
 
 # assembly geom
 typ=1
@@ -74,6 +74,7 @@ geom.print_summary()
 # init hist and run
 hist = warp.whistory(1000,geom)
 hist.init()
+print "blahhhhhhh"
 hist.print_xs_data()
 hist.print_materials_table()
 hist.set_run_type("criticality")

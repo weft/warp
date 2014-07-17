@@ -148,7 +148,7 @@ whistory::~whistory(){
 	//cudaFree( d_isonum    );
 	//cudaFree( d_yield     );
 	//cudaFree( d_awr_list);
-	delete xs_length_numbers; 
+/*	delete xs_length_numbers; 
 	delete xs_MT_numbers_total;
     delete xs_MT_numbers;
     delete xs_data_MT;
@@ -193,7 +193,7 @@ whistory::~whistory(){
 	delete xs_data_energy;
 	delete xs_data_scatter_host;
 	delete xs_data_energy_host;
-}
+*/}
 void whistory::init_host(){
 
 	for(int k=0;k<N;k++){
@@ -451,9 +451,16 @@ void whistory::load_cross_sections(){
     PyObject *xsdat_instance;
     PyObject *pClass;
     Py_buffer pBuff;
-    int i;
+    int i, do_final;
 
-    Py_Initialize();
+    if (Py_IsInitialized()){
+    	printf("Python interpreter already initialized\n");
+    	do_final=0;
+    }
+    else{
+    	Py_Initialize();
+    	do_final=1;
+  	}
 
     pName = PyString_FromString("unionize");
     pModule = PyImport_Import(pName);
@@ -1113,9 +1120,9 @@ void whistory::load_cross_sections(){
 	}
 
 
-
-    Py_Finalize();
-
+	if(do_final){
+    	Py_Finalize();
+    }
 
 	std::cout << "\e[1;32m" << "Making material table..." << "\e[m \n";
 
