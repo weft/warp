@@ -69,7 +69,7 @@ all:  	$(ptx_objects) \
 		python
 
 clean:
-	rm -f *.ptx *.o *.so gpu debug optixtest *.cxx
+	rm -f *.ptx *.o *.so gpu debug optixtest warp_wrap.cxx warp.py
 
 camera.ptx:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(OPTIX_LIBS) -ptx camera.cu
