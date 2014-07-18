@@ -2,7 +2,7 @@ class primitive
 {	
 	public:
 	 primitive();
-	 primitive(int,unsigned,unsigned,float,float,float,float,float,float,float,float,float);
+	 primitive(int,unsigned,std::vector<float>, std::vector<float>, std::vector<float>);
 	~primitive();
 	void add_transform();
 	void add_transform(unsigned,float,float,float,float,float);  //defaults to primitive material

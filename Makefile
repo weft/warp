@@ -2,7 +2,7 @@
 CC =  /usr/local/Cellar/gcc46/4.6.4/bin/gcc-4.6
 CXX = /usr/local/Cellar/gcc46/4.6.4/bin/g++-4.6
 OPTIX = /Developer/OptiX/
-NVCC = nvcc --compiler-bindir /usr/local/Cellar/gcc46/4.6.4/bin/ --compiler-options -fPIC
+NVCC = nvcc --compiler-bindir /usr/local/Cellar/gcc46/4.6.4/bin/
 ARCH = -arch sm_30
 C_FLAGS = -O3 -m64 -fPIC
 NVCC_FLAGS = -m64  -use_fast_math --compiler-options '-fPIC'
@@ -65,7 +65,8 @@ ptx_objects = 	camera.ptx \
 
 all:  	$(ptx_objects) \
 		$(COBJS) \
-		libwarp.so 
+		libwarp.so \
+		python
 
 clean:
 	rm -f *.ptx *.o *.so gpu debug optixtest *.cxx
@@ -194,10 +195,13 @@ libwarp.so: $(ptx_objects) $(COBJS)
 	$(NVCC) --shared $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS) $(PNG_FLAGS) $(CURAND_LIBS) $(OPTIX_LIBS) $(CUDPP_LIBS) $(PYTHON_LIBS) $(PNG_LIBS) $(COBJS)  -o libwarp.so
 
 gpu: libwarp.so
-	$(NVCC) -m64 $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/mnt/scratch/gpu-cpp -lwarp main.cpp -o $@
+	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/warp/ -lwarp main.cpp -o $@
+
+debug: libwarp.so
+	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/warp/ -lwarp main.cpp -o $@
 
 optixtest: libwarp.so
-	$(NVCC) -m64 $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/gpu-cpp -lwarp -loptix optixtest.cpp -o $@
+	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/gpu-cpp -lwarp -loptix optixtest.cpp -o $@
 
 python: libwarp.so
 	swig -python -c++ warp.i;   \

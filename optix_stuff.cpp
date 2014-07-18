@@ -27,13 +27,13 @@ optix_stuff::optix_stuff(unsigned Nin,unsigned mult){
 	N=Nin;
 }
 optix_stuff::~optix_stuff(){
-	try {
-		context->destroy();	
-	} 
-	catch( optix::Exception &e ){
-		std::cout << "OptiX Error on destroy: " << e.getErrorString().c_str() << "\n";
-		exit(1);
-	}
+	//try {
+	//	context->destroy();	
+	//} 
+	//catch( optix::Exception &e ){
+	//	std::cout << "OptiX Error on destroy: " << e.getErrorString().c_str() << "\n";
+	//	exit(1);
+	//}
 }
 void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_in, std::string accel_type_in){
 

@@ -36,18 +36,22 @@ wgeometry::~wgeometry(){
 	//delete cell_num_list;
 	//delete material_num_list;
 }
-void wgeometry::add_primitive(){
+unsigned wgeometry::add_primitive(){
 
 	primitive this_primitive;
 	primitives.push_back(this_primitive);
 	n_primitives++;
 
-}
-void wgeometry::add_primitive(int ptype, unsigned cellnum ,unsigned cellmat , std::vector<float> mins, std::vector<float> maxs, std::vector<float> origin){
 
-	primitive this_primitive(ptype, cellnum, cellmat, mins[0], mins[1], mins[2], maxs[0], maxs[1], maxs[2], origin[0], origin[1], origin[2]);
+
+}
+unsigned wgeometry::add_primitive(int ptype, unsigned cellmat , std::vector<float> mins, std::vector<float> maxs, std::vector<float> origin){
+
+	primitive this_primitive(ptype, cellmat, mins, maxs, origin);
 	primitives.push_back(this_primitive);
 	n_primitives++;
+
+	return (n_primitives-1);
 
 }
 void wgeometry::update(){

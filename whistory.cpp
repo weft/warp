@@ -128,26 +128,27 @@ void whistory::init(){
 	load_cross_sections();
 	//create_quad_tree();
 	copy_to_device();
+	printf("Done with init\n");
 }
 whistory::~whistory(){
-	cudaFree( d_xs_length_numbers 	);
-	cudaFree( d_xs_MT_numbers_total );
-	cudaFree( d_xs_MT_numbers 		);
-	cudaFree( d_xs_data_MT 			);
-	cudaFree( d_xs_data_main_E_grid );
-	cudaFree( d_xs_data_scatter     );
-	cudaFree( d_xs_data_energy      );
-	cudaFree( d_tally_score 		);
-    cudaFree( d_tally_count 		);
-    cudaFree( d_xs_data_Q    		);
-	cudaFree( d_index   );
-	cudaFree( d_E         );
-	cudaFree( d_Q         );
-	cudaFree( d_rn_bank   );
-	cudaFree( d_isonum    );
-	cudaFree( d_yield     );
-	cudaFree( d_awr_list);
-	delete xs_length_numbers; 
+	//cudaFree( d_xs_length_numbers 	);
+	//cudaFree( d_xs_MT_numbers_total );
+	//cudaFree( d_xs_MT_numbers 		);
+	//cudaFree( d_xs_data_MT 			);
+	//cudaFree( d_xs_data_main_E_grid );
+	//cudaFree( d_xs_data_scatter     );
+	//cudaFree( d_xs_data_energy      );
+	//cudaFree( d_tally_score 		);
+    //cudaFree( d_tally_count 		);
+    //cudaFree( d_xs_data_Q    		);
+	//cudaFree( d_index   );
+	//cudaFree( d_E         );
+	//cudaFree( d_Q         );
+	//cudaFree( d_rn_bank   );
+	//cudaFree( d_isonum    );
+	//cudaFree( d_yield     );
+	//cudaFree( d_awr_list);
+/*	delete xs_length_numbers; 
 	delete xs_MT_numbers_total;
     delete xs_MT_numbers;
     delete xs_data_MT;
@@ -183,7 +184,7 @@ whistory::~whistory(){
 				//std::cout << "j,k " << j << ", " << k << " - " ;
 				//std::cout << "freeing " << this_pointer << " " << cuda_pointer << "\n";
 				delete this_pointer;
-				cudaFree(cuda_pointer);
+				//cudaFree(cuda_pointer);
 			}
 		}
 	}
@@ -192,7 +193,7 @@ whistory::~whistory(){
 	delete xs_data_energy;
 	delete xs_data_scatter_host;
 	delete xs_data_energy_host;
-}
+*/}
 void whistory::init_host(){
 
 	for(int k=0;k<N;k++){
@@ -450,9 +451,16 @@ void whistory::load_cross_sections(){
     PyObject *xsdat_instance;
     PyObject *pClass;
     Py_buffer pBuff;
-    int i;
+    int i, do_final;
 
-    Py_Initialize();
+    if (Py_IsInitialized()){
+    	printf("Python interpreter already initialized\n");
+    	do_final=0;
+    }
+    else{
+    	Py_Initialize();
+    	do_final=1;
+  	}
 
     pName = PyString_FromString("unionize");
     pModule = PyImport_Import(pName);
@@ -1112,9 +1120,9 @@ void whistory::load_cross_sections(){
 	}
 
 
-
-    Py_Finalize();
-
+	if(do_final){
+    	Py_Finalize();
+    }
 
 	std::cout << "\e[1;32m" << "Making material table..." << "\e[m \n";
 
@@ -1788,11 +1796,11 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	edges[10] = 0;
 
 }
-void whistory::set_run_type(unsigned type_in){
-
-	RUN_FLAG = type_in;
-
-}
+//void whistory::set_run_type(unsigned type_in){
+//
+//	RUN_FLAG = type_in;
+//
+//}
 void whistory::set_run_type(std::string type_in){
 
 	if(type_in.compare("fixed")==0){

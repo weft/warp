@@ -18,8 +18,8 @@ public:
 	unsigned get_maximum_cell();
 	unsigned get_primitive_count();
 	unsigned get_transform_count();
-	void add_primitive();
-	void add_primitive(int , unsigned  ,unsigned  ,std::vector<float>,std::vector<float>,std::vector<float> );
+	unsigned add_primitive();
+	unsigned add_primitive(int , unsigned  ,std::vector<float>,std::vector<float>,std::vector<float> );
 	void update();
 	void print_summary();
 	void print_all();
