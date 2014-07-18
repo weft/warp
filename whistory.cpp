@@ -1796,11 +1796,11 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	edges[10] = 0;
 
 }
-void whistory::set_run_type(unsigned type_in){
-
-	RUN_FLAG = type_in;
-
-}
+//void whistory::set_run_type(unsigned type_in){
+//
+//	RUN_FLAG = type_in;
+//
+//}
 void whistory::set_run_type(std::string type_in){
 
 	if(type_in.compare("fixed")==0){

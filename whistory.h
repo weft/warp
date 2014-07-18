@@ -169,7 +169,7 @@ public:
     void write_xs_data(std::string);
     void write_tally(unsigned);
     void set_tally_cell(unsigned);
-    void set_run_type(unsigned);
+    //void set_run_type(unsigned);
     void set_run_type(std::string);
     void set_run_param(unsigned,unsigned);
     void init();

@@ -74,7 +74,6 @@ geom.print_summary()
 # init hist and run
 hist = warp.whistory(1000,geom)
 hist.init()
-print "blahhhhhhh"
 hist.print_xs_data()
 hist.print_materials_table()
 hist.set_run_type("criticality")

@@ -1,5 +1,7 @@
 //warp.i
 %module warp
+%include "std_vector.i"
+%include "std_string.i"
 %{ 
 #include <vector>
 #include <iostream>
@@ -17,8 +19,6 @@
 %}
 %include "wgeometry.h"
 %include "whistory.h"
-%include "std_vector.i"
-%include "std_string.i"
 namespace std {
 %template(Unsigned)   vector < unsigned >;
 %template(Float)      vector < float >;  
