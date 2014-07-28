@@ -78,6 +78,7 @@ class whistory {
     unsigned * 		remap;
     unsigned * 		zeros;
     unsigned * 		ones;
+    long unsigned   reduced_yields_total;
     qnode * 		qnodes;
 	// device data
 	source_point *  d_space;
@@ -148,7 +149,9 @@ class whistory {
     void reset_fixed();
     void converge(unsigned);
     void sample_fissile_points();
-    float reduce_yield();
+    float accumulate_keff(unsigned, double*, float*);
+    void accumulate_tally(unsigned);
+    unsigned reduce_yield();
     void create_quad_tree();
     float get_time();
     void prep_secondaries();

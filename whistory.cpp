@@ -38,6 +38,7 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	Ndataset = Nin * 5;
 	n_qnodes = 0;
 	compute_device = 0;	
+	reduced_yields_total = 0;
 	accel_type = "Sbvh";
 	for (int i = 0; i < 4; ++i){
 		cudaStreamCreate(&stream[i]);
@@ -304,37 +305,34 @@ void whistory::init_CUDPP(){
     radix_config.options = CUDPP_OPTION_KEY_VALUE_PAIRS;
 	res = cudppPlan(theCudpp, &radixplan, radix_config, Ndataset, 1, 0);
 	if (CUDPP_SUCCESS != res){printf("Error creating CUDPPPlan for radix sort\n");exit(-1);}
-	
-	//std::cout << "configuring hashes..." << "\n";
-	// hash config stuff
-	//hash_config.type = CUDPP_BASIC_HASH_TABLE;
-	//hash_config.kInputSize = all_geom.all_total;
-	//hash_config.space_usage = 1.2f;
-
-	//material hash stuff
-	//res = cudppHashTable(theCudpp, &mate_hash_table_handle, &hash_config);
-	//if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in cudppHashTable call (make sure your device is at least compute version 2.0\n");exit(-1);}
-	//printf("\e[0;32m%-6s\e[m \n","  Inserting values into cellnum/matnum hash table...");
-	//res = cudppHashInsert(mate_hash_table_handle, d_hash_key, d_hash_val_mate, hash_config.kInputSize);
-	//if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in inserting values into hash table\n");exit(-1);}
-
-	//// fissile hash stuff
-	//res = cudppHashTable(theCudpp, &fiss_hash_table_handle, &hash_config);
-	//if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in cudppHashTable call (make sure your device is at least compute version 2.0\n");exit(-1);}
-	//printf("\e[0;32m%-6s\e[m \n","  Inserting values into cellnum/fissile hash table...");
-	//res = cudppHashInsert(fiss_hash_table_handle, d_hash_key, d_hash_val_fiss, hash_config.kInputSize);
-	//if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in inserting values into hash table\n");exit(-1);}
 
 }
-float whistory::reduce_yield(){
+unsigned whistory::reduce_yield(){
+
+	unsigned reduced_yields;
 
 	res = cudppReduce(reduplan_int, d_reduced_yields, d_yield, N);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing yield values\n");exit(-1);}
 	cudaMemcpy(&reduced_yields, d_reduced_yields, 1*sizeof(unsigned), cudaMemcpyDeviceToHost);
 
-	float keff = (float)reduced_yields / (float)N ;
+	return reduced_yields;
 
-	return keff;
+}
+float whistory::accumulate_keff(unsigned iteration, double* keff, float* keff_cycle){
+
+	long unsigned reduced_yields = reduce_yield();
+
+	reduced_yields_total += reduced_yields;
+
+	*keff = reduced_yields_total / ( (double) (iteration + 1) * N ) ;
+	*keff_cycle = reduced_yields / ( (float) N );
+
+	printf("reduced_total %lu  reduced %u keff %10.8E keff_cycle %10.8E iteration %u\n",reduced_yields_total,reduced_yields,*keff,*keff_cycle,iteration+1);
+
+}
+void whistory::accumulate_tally(unsigned Nrun){
+
+	tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn);
 
 }
 unsigned whistory::reduce_done(){
@@ -1446,7 +1444,7 @@ void whistory::run(){
 	if     (RUN_FLAG==0){runtype="fixed";}
 	else if(RUN_FLAG==1){runtype="criticality";}
 
-	float keff = 0.0;
+	double keff = 0.0;
 	float keff_cycle = 0.0;
 	float it = 0.0;
 	unsigned current_fission_index = 0;
@@ -1544,11 +1542,11 @@ void whistory::run(){
 
 			// run tally kernel to compute spectra
 			if(converged){
-				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn);
+				accumulate_tally(Nrun);
 				//printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			}
 
-			// run microscopic kernel to find reaction type
+			// run microscopic kernel to fi`nd reaction type
 			microscopic( NUM_THREADS, Nrun, n_isotopes, MT_columns, d_remap, d_isonum, d_index, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_xs_MT_numbers_total, d_xs_MT_numbers, d_xs_data_Q, d_rxn, d_Q, d_done);
 			//printf("CUDA ERROR5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
@@ -1598,29 +1596,20 @@ void whistory::run(){
 			Nrun=Ndataset;
 		}
 		else if (RUN_FLAG==1){	
-			keff_cycle = reduce_yield();
+			accumulate_keff(iteration, &keff, &keff_cycle);
 			reset_cycle(keff_cycle);
 			Nrun=N;
 		}
 
-		// recalculate running average
-		if (converged & iteration == 0){
-			keff  = keff_cycle;
+		// update active iteration
+		if (converged){
 			iteration++;
-		}
-		else if (converged){
-			it = (float) iteration;
-			keff  = ( 1.0 / (it+1.0) )*( keff_cycle + it*keff );
-			iteration++;
-		}
-		else{
-			// do not accumulate while converging
 		}
 
 		// print whatever's clever
 		if(converged){
 			     if(RUN_FLAG==0){std::cout << "Cumulative keff/sc-mult = "<< keff << " / " << 1.0/(1.0-keff) << ", ACTIVE cycle " << iteration << ", cycle keff/sc-mult = " << keff_cycle << " / " << 1.0/(1.0-keff_cycle) << "\n";}
-			else if(RUN_FLAG==1){std::cout << "Cumulative keff = "<< keff << ", ACTIVE cycle " << iteration << ", cycle keff = " << keff_cycle << "\n";}
+			else if(RUN_FLAG==1){std::cout << "Cumulative keff = " << keff << ", ACTIVE cycle " << iteration << ", cycle keff = " << keff_cycle << "\n";}
 		}
 		else{
 			std::cout << "Converging fission source... skipped cycle " << iteration_total+1 <<"\n";
@@ -1634,6 +1623,7 @@ void whistory::run(){
 		// set convergence flag
 		if( iteration_total == n_skip-1){ 
 				converged=1;
+				reduced_yields_total = 0;
 		}
 
 		// advance iteration number, reset cycle keff
