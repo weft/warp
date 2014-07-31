@@ -62,7 +62,8 @@ maxs[0]=48
 maxs[1]=48
 maxs[2]=48
 prim_id=geom.add_primitive(typ,material,mins,maxs,origin)
-geom.add_transform(prim_id,999,0,0,0,0,0)
+idx=geom.add_transform(prim_id,999,0,0,0,0,0)
+geom.delete_transform(prim_id,idx)
 
 # finalize geom and check
 geom.set_outer_cell(999)

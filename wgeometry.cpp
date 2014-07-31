@@ -20,6 +20,7 @@ wgeometry::wgeometry(){
 	n_box        = 0;
 	n_cyl        = 0;
 	n_hex        = 0;
+	n_sph		 = 0;
 	n_primitives = 0;
 	n_transforms = 0;
 	outer_cell   = 0;
@@ -39,19 +40,19 @@ wgeometry::~wgeometry(){
 unsigned wgeometry::add_primitive(){
 
 	primitive this_primitive;
+	n_primitives=this_primitive.num_primitives;
 	primitives.push_back(this_primitive);
-	n_primitives++;
 
-
+	return (this_primitive.primitive_id);
 
 }
 unsigned wgeometry::add_primitive(int ptype, unsigned cellmat , std::vector<float> mins, std::vector<float> maxs, std::vector<float> origin){
 
 	primitive this_primitive(ptype, cellmat, mins, maxs, origin);
+	n_primitives=this_primitive.num_primitives;
 	primitives.push_back(this_primitive);
-	n_primitives++;
 
-	return (n_primitives-1);
+	return (this_primitive.primitive_id);
 
 }
 void wgeometry::update(){
@@ -456,26 +457,62 @@ void wgeometry::print_materials_table(){
 	}
 
 }
-void wgeometry::add_transform(unsigned index ){
 
-	primitives[index].add_transform();
+unsigned wgeometry::add_transform(unsigned index ){
 
-}
-
-void wgeometry::add_transform(unsigned index, unsigned cellnum , float dx , float dy , float dz , float theta , float phi ){
-
-	primitives[index].add_transform(cellnum, dx, dy, dz, theta, phi);
+	unsigned dex = primitives[index].add_transform();
+	n_transforms++;	
+	return dex;
 
 }
 
-void wgeometry::add_transform(unsigned index, unsigned cellnum ,unsigned cellmat, float dx , float dy , float dz , float theta , float phi ){
+unsigned wgeometry::add_transform(unsigned index, unsigned cellnum , float dx , float dy , float dz , float theta , float phi ){
 
-	primitives[index].add_transform(cellnum, cellmat, dx, dy, dz, theta, phi);
+	unsigned dex = primitives[index].add_transform(cellnum, dx, dy, dz, theta, phi);
+	n_transforms++;
+	return dex;
+
+}
+
+unsigned wgeometry::add_transform(unsigned index, unsigned cellnum ,unsigned cellmat, float dx , float dy , float dz , float theta , float phi ){
+
+	unsigned dex = primitives[index].add_transform(cellnum, cellmat, dx, dy, dz, theta, phi);
+	n_transforms++;
+	return dex;
 
 }
 
 void wgeometry::make_hex_array(unsigned index, int n, float x, float y, float phi, unsigned starting_index){
 
+	n_transforms-=primitives[index].transforms.size();
 	primitives[index].make_hex_array(n, x, y, phi, starting_index);
+	n_transforms+=primitives[index].transforms.size();
+
+}
+
+void wgeometry::delete_transform(unsigned index, unsigned element){
+
+	if(index>=primitives.size()){
+		printf("Maximum primitive index = %d.  Nothing done.\n",primitives.size()-1);
+		return;
+	}
+	else if(element>=primitives[index].transforms.size()){
+		printf("Primitve %d, maximum transform index = %d.  Nothing done.\n",index,primitives[index].transforms.size()-1);
+		return;
+	}
+	primitives[index].transforms.erase(primitives[index].transforms.begin()+element,primitives[index].transforms.begin()+element+1);
+	primitives[index].n_transforms--;
+	n_transforms--;
+
+}
+
+void wgeometry::delete_primitive(unsigned index){
+
+	if(index>=primitives.size()){
+		printf("Maximum primitive index = %d\n.  Nothing done.\n",primitives.size()-1);
+		return;
+	}
+	primitives[index].~primitive();
+	n_primitives--;
 
 }

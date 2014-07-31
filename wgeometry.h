@@ -33,10 +33,12 @@ public:
 	void get_material_table(unsigned*,unsigned*,unsigned**,unsigned**,float**);
 	void print_materials_table();
 	unsigned check_fissile();
-	void add_transform(unsigned);
-	void add_transform(unsigned, unsigned, float, float, float, float, float);
-	void add_transform(unsigned, unsigned, unsigned, float, float, float, float, float);
+	unsigned add_transform(unsigned);
+	unsigned add_transform(unsigned, unsigned, float, float, float, float, float);
+	unsigned add_transform(unsigned, unsigned, unsigned, float, float, float, float, float);
 	void make_hex_array(unsigned, int, float, float, float, unsigned);
+	void delete_primitive(unsigned);
+	void delete_transform(unsigned,unsigned);
 	std::vector<primitive>   	primitives;
 	std::vector<material_def>	materials;
 	std::vector<unsigned>		isotopes;

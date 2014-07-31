@@ -20,15 +20,6 @@ primitive::primitive(){
 	primitive_id=num_primitives;
 	num_primitives++;
 	n_transforms=0;
-	//wtransform this_transform;
-	//this_transform.cellnum = primitive_id;
-	//this_transform.cellmat = 0;
-	//this_transform.dx      = 0;
-	//this_transform.dy      = 0;
-	//this_transform.dz      = 0;
-	//this_transform.theta   = 0;
-	//this_transform.phi     = 0;
-	//transforms.push_back(this_transform);
 
 }
 /**
@@ -49,31 +40,23 @@ primitive::primitive(int ptype, unsigned cellmat , std::vector<float> mins, std:
 	primitive_id=num_primitives;
 	num_primitives++;
 	n_transforms=0;
-	//wtransform this_transform;
-	//this_transform.cellnum = cellnum;
-	//this_transform.cellmat = cellmat;
-	//this_transform.dx      = 0;
-	//this_transform.dy      = 0;
-	//this_transform.dz      = 0;
-	//this_transform.theta   = 0;
-	//this_transform.phi     = 0;
-	//transforms.push_back(this_transform);
-	//n_transforms=1;
 }
 /**
 */
 primitive::~primitive(){
-	//box destructor
 	//delete min;
 	//delete max;
 	//delete location;
-	//delete &box_id;
+	num_primitives--;
+	//delete &type;
+	//delete &primitive_id;
 	//delete &n_transforms;
-	//delete   &transforms;
+	//delete &material;
+	//transforms.~vector();
 }
 /**
 */
-void primitive::add_transform(){
+unsigned primitive::add_transform(){
 	wtransform this_transform;
 	if(transforms.empty()){
 		this_transform.cellnum = 0;
@@ -88,11 +71,12 @@ void primitive::add_transform(){
 	this_transform.theta   = 0;
 	this_transform.phi     = 0;
 	transforms.push_back(this_transform);
-	n_transforms++;
+	n_transforms=transforms.size();
+	return (n_transforms-1);
 }
 /**
 */
-void primitive::add_transform(unsigned cellnum , float dx , float dy , float dz , float theta , float phi ){
+unsigned primitive::add_transform(unsigned cellnum , float dx , float dy , float dz , float theta , float phi ){
 	wtransform this_transform;
 	this_transform.cellnum = cellnum;
 	this_transform.cellmat = material;
@@ -102,11 +86,12 @@ void primitive::add_transform(unsigned cellnum , float dx , float dy , float dz 
 	this_transform.theta   = theta;
 	this_transform.phi     = phi;
 	transforms.push_back(this_transform);
-	n_transforms++;
+	n_transforms=transforms.size();
+	return (n_transforms-1);
 }
 /**
 */
-void primitive::add_transform(unsigned cellnum ,unsigned cellmat, float dx , float dy , float dz , float theta , float phi ){
+unsigned primitive::add_transform(unsigned cellnum ,unsigned cellmat, float dx , float dy , float dz , float theta , float phi ){
 	wtransform this_transform;
 	this_transform.cellnum = cellnum;
 	this_transform.cellmat = cellmat;
@@ -116,7 +101,8 @@ void primitive::add_transform(unsigned cellnum ,unsigned cellmat, float dx , flo
 	this_transform.theta   = theta;
 	this_transform.phi     = phi;
 	transforms.push_back(this_transform);
-	n_transforms++;
+	n_transforms=transforms.size();
+	return (n_transforms-1);
 }
 /**
 */
