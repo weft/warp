@@ -1,3 +1,6 @@
+#ifndef WARP_H
+#define WARP_H
+
 #include <vector> 
 #include <iostream>
 #include <sstream>
@@ -15,3 +18,5 @@
 #include "wgeometry.h"
 #include "warp_cuda.h"
 #include "whistory.h"
+
+#endif

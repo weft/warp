@@ -8,8 +8,6 @@
 #include "primitive.h"
 
 int primitive::num_primitives=0;
-/**
-*/
 primitive::primitive(){
 	//box default constructor
 	min[0]=0;min[1]=0;min[2]=0;
@@ -31,8 +29,6 @@ primitive::primitive(){
 	//transforms.push_back(this_transform);
 
 }
-/**
-*/
 primitive::primitive(int ptype, unsigned cellmat , std::vector<float> mins, std::vector<float> maxs, std::vector<float> locs){
 	//box valued constructor
 	min[0]=mins[0];
@@ -60,8 +56,6 @@ primitive::primitive(int ptype, unsigned cellmat , std::vector<float> mins, std:
 	//transforms.push_back(this_transform);
 	//n_transforms=1;
 }
-/**
-*/
 primitive::~primitive(){
 	//box destructor
 	//delete min;
@@ -71,8 +65,6 @@ primitive::~primitive(){
 	//delete &n_transforms;
 	//delete   &transforms;
 }
-/**
-*/
 void primitive::add_transform(){
 	wtransform this_transform;
 	if(transforms.empty()){
@@ -90,8 +82,6 @@ void primitive::add_transform(){
 	transforms.push_back(this_transform);
 	n_transforms++;
 }
-/**
-*/
 void primitive::add_transform(unsigned cellnum , float dx , float dy , float dz , float theta , float phi ){
 	wtransform this_transform;
 	this_transform.cellnum = cellnum;
@@ -104,8 +94,6 @@ void primitive::add_transform(unsigned cellnum , float dx , float dy , float dz 
 	transforms.push_back(this_transform);
 	n_transforms++;
 }
-/**
-*/
 void primitive::add_transform(unsigned cellnum ,unsigned cellmat, float dx , float dy , float dz , float theta , float phi ){
 	wtransform this_transform;
 	this_transform.cellnum = cellnum;
@@ -118,8 +106,6 @@ void primitive::add_transform(unsigned cellnum ,unsigned cellmat, float dx , flo
 	transforms.push_back(this_transform);
 	n_transforms++;
 }
-/**
-*/
 void primitive::print_transform(){
 	std::cout << "--- primitive id  = " << primitive_id << " ---" << "\n";
 	std::cout << "   min,max  = (" << min[0] << " , " << min[1] << " , " << min[2] << "),(" << max[0] << " , " << max[1] << " , " << max[2] << ")" << "\n";
@@ -138,8 +124,6 @@ void primitive::print_transform(){
 		std::cout << "   phi      = " << transforms[tnum].phi << "\n";
 	}
 }
-/**
-*/
 void primitive::print_transform(int tnum){
 	std::cout << "--- primitive id  = " << primitive_id << " ---" << "\n";
 	std::cout << "   min,max  = (" << min[0] << " , " << min[1] << " , " << min[2] << "),(" << max[0] << " , " << max[1] << " , " << max[2] << ")" << "\n";
