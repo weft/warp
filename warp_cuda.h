@@ -1,3 +1,6 @@
+#ifndef WARP_CUDA_H
+#define WARP_CUDA_H
+
 #include "device_copies.h"
 
 // host calls
@@ -26,3 +29,5 @@ void rebase_yield( unsigned , unsigned , float , unsigned* , unsigned* );
 void flip_done(unsigned , unsigned , unsigned* );
 void reaction_edges( unsigned ,  unsigned , unsigned* , unsigned* );
 void check_remap( unsigned , unsigned , unsigned* , unsigned* , unsigned* );
+
+#endif
