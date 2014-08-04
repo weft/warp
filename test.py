@@ -63,12 +63,13 @@ maxs[1]=48
 maxs[2]=48
 prim_id=geom.add_primitive(typ,material,mins,maxs,origin)
 idx=geom.add_transform(prim_id,999,0,0,0,0,0)
-geom.delete_transform(prim_id,idx)
+#geom.delete_transform(prim_id,idx)
 
 # finalize geom and check
 geom.set_outer_cell(999)
 geom.update()
 geom.check()
+#geom.print_all()
 geom.print_summary()
 
 

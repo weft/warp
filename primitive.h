@@ -82,9 +82,9 @@ class primitive
 	 * creates a hexagonal array of elements.
 	 *
 	 * @param[in] n - edge length
-	 * @param[in] offsetx,offsety - coordinate offsets
+	 * @param[in] offsetx - coordinate offsets in x
+	 * @param[in] offsety - coordinate offsets in y
 	 * @param[in] PD_ratio - pitch-to-diameter ratio
-	 * @param[in] phi - transform rotation angle
 	 * @param[in] starting_index - starting index
 	 */ 
 	void make_hex_array(int,float,float,float,float,unsigned);
