@@ -69,10 +69,13 @@ class whistory {
 	float *         Q; /**< Q-value */
 	unsigned *	rn_bank; /**< reaction bank */ 
 	float * 	awr_list; /**< atomic weight ratio (AWR) list */
-	float *         tally_score; /**< tally score */
-	float *         tally_square; /**< tally square */
-	unsigned * 	tally_count; /**< tally count */
-	unsigned 	tally_cell; /**<tally cell */
+	float *          tally_score;        /**< tally score */
+	float *          tally_square;       /**< tally square */
+	unsigned *       tally_count;        /**< tally count */
+    double *         tally_score_total;  /**< tally score accumulated total */
+    double *         tally_square_total; /**< tally square accumulaed total */
+    long unsigned *  tally_count_total;  /**< tally count accumulated total */
+	unsigned 	 tally_cell; /**<tally cell */
 	unsigned * 	index; /**< index */
 	unsigned *      cellnum; /**< cell number */
 	unsigned *      matnum; /**< material number */
@@ -130,6 +133,7 @@ class whistory {
  	unsigned * 	d_num_active; /**< device number of active histories */
  	source_point *  d_bank_space; /**< device bank space */
  	float * 	d_bank_E; /**< device bank energy */
+    unsigned *  d_zeros; /**< zeros */
 	// mapped arrays
 	unsigned        n_edges; /**< mapped array of number of edges */
 	unsigned*         edges; /**< mapped array of edges */
@@ -240,7 +244,7 @@ class whistory {
      * \brief raccumulates the flux tally
      * @param[in] 
      */
-    void accumulate_tally(unsigned);
+    void accumulate_tally();
 	/**
 	 * \brief builds a quad tree for energy search
 	 */

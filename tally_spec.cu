@@ -9,7 +9,7 @@ __global__ void tally_spec_kernel(unsigned N, unsigned Ntally, unsigned tally_ce
 
 	// remap to active
 	int tid = remap[tid_in];
-	unsigned this_rxn = rxn[tid_in];
+	unsigned this_rxn = rxn[tid_in];   // rxn is sorted along with remap vector, must use tid_in.
 
 	// return if not cell or for some reason marked as done
 	if (cellnum[tid]!=tally_cell){return;}

@@ -85,15 +85,19 @@ void whistory::init(){
 	cudaMalloc( &d_active 			, Ndataset*sizeof(unsigned));
 	cudaMalloc( &d_rxn_remap		, Ndataset*sizeof(unsigned));
 	cudaMalloc( &d_num_active 		, 1*sizeof(unsigned));
+	cudaMalloc( &d_zeros			, Ndataset*sizeof(unsigned));
 	// host data stuff
 	//xs_length_numbers 	= new unsigned [6];
 	space 			= new source_point 	[Ndataset];
-	E 			= new float 		[Ndataset];
-	Q 			= new float 		[Ndataset];
+	E 				= new float 		[Ndataset];
+	Q 				= new float 		[Ndataset];
 	rn_bank  		= new unsigned 		[Ndataset*RNUM_PER_THREAD];
 	tally_score 		= new float 		[n_tally];
 	tally_square 		= new float 		[n_tally];
 	tally_count 		= new unsigned 		[n_tally];
+	tally_score_total	= new double 		[n_tally];
+	tally_square_total	= new double 		[n_tally];
+	tally_count_total	= new long unsigned	[n_tally];
 	index     		= new unsigned 		[Ndataset];
 	cellnum 		= new unsigned 		[Ndataset];
 	matnum 			= new unsigned 		[Ndataset];
@@ -324,10 +328,26 @@ void whistory::accumulate_keff(unsigned iteration, double* keff, float* keff_cyc
 	printf("reduced_total %lu  reduced %u keff %10.8E keff_cycle %10.8E iteration %u\n",reduced_yields_total,reduced_yields,*keff,*keff_cycle,iteration+1);
 
 }
-void whistory::accumulate_tally(unsigned Nrun){
+void whistory::accumulate_tally(){
 
-	tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn);
+	//copy data to host
+	cudaMemcpy(tally_score,  d_tally_score,  n_tally*sizeof(float),    cudaMemcpyDeviceToHost);
+	cudaMemcpy(tally_square, d_tally_square, n_tally*sizeof(float),    cudaMemcpyDeviceToHost);
+	cudaMemcpy(tally_count,  d_tally_count,  n_tally*sizeof(unsigned), cudaMemcpyDeviceToHost);
 
+	//zero out vectors
+	cudaMemcpy(d_tally_score,  d_zeros, n_tally*sizeof(float),    cudaMemcpyDeviceToDevice);
+	cudaMemcpy(d_tally_square, d_zeros, n_tally*sizeof(float),    cudaMemcpyDeviceToDevice);
+	cudaMemcpy(d_tally_count,  d_zeros, n_tally*sizeof(unsigned), cudaMemcpyDeviceToDevice);
+
+	//perform sums on 64bit host side values
+	for(unsigned k=0 ; k<n_tally ; k++){
+		tally_score_total[k] 	+=  tally_score[k];
+		tally_square_total[k]	+=  tally_square[k];
+		tally_count_total[k] 	+=  tally_count[k];
+	}
+
+	
 }
 unsigned whistory::reduce_done(){
 
@@ -361,15 +381,16 @@ void whistory::copy_to_device(){
 	cudaMemcpy( d_isonum,		isonum,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_yield,		yield,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_rxn,		rxn,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    	cudaMemcpy( d_remap, 		remap,    	Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    	cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    	std::cout << "Done.\n";
-    	std::cout << "  Unionized cross sections... ";
-    	// copy xs_data,  0=isotopes, 1=main E points, 2=total numer of reaction channels
-    	cudaMemcpy( d_xs_length_numbers,     xs_length_numbers,     3*sizeof(unsigned),						  cudaMemcpyHostToDevice );
-    	cudaMemcpy( d_xs_MT_numbers_total,   xs_MT_numbers_total,   xs_length_numbers[0]*sizeof(unsigned),			  cudaMemcpyHostToDevice );
-    	cudaMemcpy( d_xs_MT_numbers,	     xs_MT_numbers,	    (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(unsigned), cudaMemcpyHostToDevice );
-    	cudaMemcpy( d_xs_data_MT,	     xs_data_MT,	    MT_rows*MT_columns *sizeof(float), 				  cudaMemcpyHostToDevice );
+    cudaMemcpy( d_remap, 		remap,    	Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
+    cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
+    cudaMemcpy( d_zeros,		zeros,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
+    std::cout << "Done.\n";
+    std::cout << "  Unionized cross sections... ";
+    // copy xs_data,  0=isotopes, 1=main E points, 2=total numer of reaction channels
+    cudaMemcpy( d_xs_length_numbers,     xs_length_numbers,     3*sizeof(unsigned),						  cudaMemcpyHostToDevice );
+    cudaMemcpy( d_xs_MT_numbers_total,   xs_MT_numbers_total,   xs_length_numbers[0]*sizeof(unsigned),			  cudaMemcpyHostToDevice );
+    cudaMemcpy( d_xs_MT_numbers,	     xs_MT_numbers,	    (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(unsigned), cudaMemcpyHostToDevice );
+    cudaMemcpy( d_xs_data_MT,	     xs_data_MT,	    MT_rows*MT_columns *sizeof(float), 				  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_xs_data_main_E_grid,   xs_data_main_E_grid,   xs_length_numbers[1]*sizeof(float),				  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_awr_list, 	     awr_list,   	    xs_length_numbers[0]*sizeof(float),				  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_material_list,         material_list,         n_materials*sizeof(unsigned), 				  cudaMemcpyHostToDevice );
@@ -1510,7 +1531,7 @@ void whistory::run(){
 
 			// run tally kernel to compute spectra
 			if(converged){
-				accumulate_tally(Nrun);
+				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn);
 				//printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			}
 
@@ -1565,6 +1586,7 @@ void whistory::run(){
 		}
 		else if (RUN_FLAG==1){	
 			accumulate_keff(iteration, &keff, &keff_cycle);
+			accumulate_tally();
 			reset_cycle(keff_cycle);
 			Nrun=N;
 		}
