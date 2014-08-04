@@ -1,3 +1,6 @@
+#ifndef BINARY_SEARCH_H
+#define BINARY_SEARCH_H
+
 __forceinline__ __device__ unsigned binary_search( float * array , float value, unsigned len ){
 
 	// load data
@@ -33,3 +36,5 @@ __forceinline__ __device__ unsigned binary_search( float * array , float value, 
 	return dex;
 
 }
+
+#endif

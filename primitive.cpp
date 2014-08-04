@@ -8,8 +8,6 @@
 #include "primitive.h"
 
 int primitive::num_primitives=0;
-/**
-*/
 primitive::primitive(){
 	//box default constructor
 	min[0]=0;min[1]=0;min[2]=0;
@@ -22,8 +20,6 @@ primitive::primitive(){
 	n_transforms=0;
 
 }
-/**
-*/
 primitive::primitive(int ptype, unsigned cellmat , std::vector<float> mins, std::vector<float> maxs, std::vector<float> locs){
 	//box valued constructor
 	min[0]=mins[0];
@@ -41,8 +37,6 @@ primitive::primitive(int ptype, unsigned cellmat , std::vector<float> mins, std:
 	num_primitives++;
 	n_transforms=0;
 }
-/**
-*/
 primitive::~primitive(){
 	//delete min;
 	//delete max;
@@ -54,7 +48,7 @@ primitive::~primitive(){
 	//delete &material;
 	//transforms.~vector();
 }
-/**
+	/**
 */
 unsigned primitive::add_transform(){
 	wtransform this_transform;
@@ -104,8 +98,6 @@ unsigned primitive::add_transform(unsigned cellnum ,unsigned cellmat, float dx ,
 	n_transforms=transforms.size();
 	return (n_transforms-1);
 }
-/**
-*/
 void primitive::print_transform(){
 	std::cout << "--- primitive id  = " << primitive_id << " ---" << "\n";
 	std::cout << "   min,max  = (" << min[0] << " , " << min[1] << " , " << min[2] << "),(" << max[0] << " , " << max[1] << " , " << max[2] << ")" << "\n";
@@ -124,8 +116,6 @@ void primitive::print_transform(){
 		std::cout << "   phi      = " << transforms[tnum].phi << "\n";
 	}
 }
-/**
-*/
 void primitive::print_transform(int tnum){
 	std::cout << "--- primitive id  = " << primitive_id << " ---" << "\n";
 	std::cout << "   min,max  = (" << min[0] << " , " << min[1] << " , " << min[2] << "),(" << max[0] << " , " << max[1] << " , " << max[2] << ")" << "\n";

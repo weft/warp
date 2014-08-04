@@ -40,27 +40,27 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	using namespace optix;
 
 	// local variables
-	char                path_to_ptx[512];
-	Program           	ray_gen_program;
-	Program           	exception_program;  
-	Program           	miss_program;
-	Buffer 				positions_buffer;
-	Buffer 				      rxn_buffer;
-	Buffer 				     done_buffer;
-	Buffer 				  cellnum_buffer;
-	Buffer 				   matnum_buffer;
-	Buffer 					remap_buffer;
-	Variable          	positions_var;
-	Variable 			      rxn_var;
-	Variable 			     done_var;
-	Variable 			  cellnum_var;
-	Variable 			   matnum_var;
-	Variable 			    remap_var;
-	Variable          	outer_cell_var;
-	Variable 			boundary_condition_var;
-	Variable 			trace_type_var;
-	RTsize              stack_size;
-	RTsize				printf_size;
+	char	 path_to_ptx[512];
+	Program  ray_gen_program;
+	Program  exception_program;  
+	Program  miss_program;
+	Buffer 	 positions_buffer;
+	Buffer 	 rxn_buffer;
+	Buffer 	 done_buffer;
+	Buffer 	 cellnum_buffer;
+	Buffer 	 matnum_buffer;
+	Buffer 	 remap_buffer;
+	Variable positions_var;
+	Variable rxn_var;
+	Variable done_var;
+	Variable cellnum_var;
+	Variable matnum_var;
+	Variable remap_var;
+	Variable outer_cell_var;
+	Variable boundary_condition_var;
+	Variable trace_type_var;
+	RTsize   stack_size;
+	RTsize	 printf_size;
 
 	//set vars
 	compute_device = compute_device_in;
@@ -196,7 +196,7 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 
 	//validate and compile
 	context->validate();
-    context->compile();
+	context->compile();
 
 }
 void optix_stuff::init(wgeometry problem_geom, unsigned compute_device_in, std::string accel_type_in){
@@ -233,32 +233,30 @@ void optix_stuff::make_geom_xform(wgeometry problem_geom){
 
 	using namespace optix;
 
-	Group 				top_level_group;
-	Variable 			top_object;
+	Group 			top_level_group;
+	Variable 		top_object;
 	Acceleration 		top_level_acceleration;
 	Acceleration 		this_accel;
-
 	GeometryGroup 		this_geom_group;
-	Variable 			this_geom_min;
-	Variable 			this_geom_max;
-	Geometry 			this_geom;
+	Variable 		this_geom_min;
+	Variable 		this_geom_max;
+	Geometry 		this_geom;
 	GeometryInstance 	ginst;
-	Material 			material;
-	Program  			intersection_program;
-	Program  			bounding_box_program;
-	Program  			closest_hit_program;
-	Transform 			this_transform;
+	Material 		material;
+	Program  		intersection_program;
+	Program  		bounding_box_program;
+	Program  		closest_hit_program;
+	Transform 		this_transform;
 	Acceleration  		acceleration;
-	Variable  			cellnum_var;
-	Variable  			cellmat_var;
-	Variable 			cellfissile_var;
-
-	char 				path_to_ptx[512];
-	unsigned 			cellnum,cellmat;
-	float 				dx,dy,dz,theta,phi;
-	float 				m[16];
-	unsigned 			uniqueindex = 0;
-	unsigned 			is_fissile = 0;
+	Variable  		cellnum_var;
+	Variable  		cellmat_var;
+	Variable 		cellfissile_var;
+	char 			path_to_ptx[512];
+	unsigned 		cellnum,cellmat;
+	float 			dx,dy,dz,theta,phi;
+	float 			m[16];
+	unsigned 		uniqueindex = 0;
+	unsigned 		is_fissile = 0;
 
 	// Make top level group/accel as children of the top level object
 	this_accel 	= context -> createAcceleration(accel_type.c_str(),traverse_type.c_str());
@@ -290,10 +288,10 @@ void optix_stuff::make_geom_xform(wgeometry problem_geom){
 		material -> setClosestHitProgram( 0, closest_hit_program );
 
 		//set program variables for this instance
-    	this_geom_min = this_geom["mins"];
-    	this_geom_max = this_geom["maxs"];
-    	this_geom_min -> set3fv( problem_geom.primitives[j].min );
-    	this_geom_max -> set3fv( problem_geom.primitives[j].max );
+    		this_geom_min = this_geom["mins"];
+    		this_geom_max = this_geom["maxs"];
+    		this_geom_min -> set3fv( problem_geom.primitives[j].min );
+    		this_geom_max -> set3fv( problem_geom.primitives[j].max );
 
 		for (int k=0;k<problem_geom.primitives[j].n_transforms;k++){
 
@@ -306,7 +304,7 @@ void optix_stuff::make_geom_xform(wgeometry problem_geom){
 			cellmat =     problem_geom.primitives[j].transforms[k].cellmat;
 			for(int z=0;z<problem_geom.get_material_count();z++){
 				if (cellmat == problem_geom.materials[z].matnum){
-					is_fissile =  problem_geom.materials[z].is_fissile;   // set fissile flag
+					is_fissile = problem_geom.materials[z].is_fissile;   // set fissile flag
 					cellmat    = problem_geom.materials[z].id;            // hash the material number to the ID, which is the matrix index, not that user-set number
 					break;
 				}
@@ -361,32 +359,30 @@ void optix_stuff::make_geom_xform_common(wgeometry problem_geom){
 
 	using namespace optix;
 
-	Group 				top_level_group;
-	Variable 			top_object;
+	Group 			top_level_group;
+	Variable 		top_object;
 	Acceleration 		top_level_acceleration;
 	Acceleration 		this_accel;
-
 	GeometryGroup 		this_geom_group;
-	Variable 			this_geom_min;
-	Variable 			this_geom_max;
-	Geometry 			this_geom;
+	Variable 		this_geom_min;
+	Variable 		this_geom_max;
+	Geometry 		this_geom;
 	GeometryInstance 	ginst;
-	Material 			material;
-	Program  			intersection_program;
-	Program  			bounding_box_program;
-	Program  			closest_hit_program;
-	Transform 			this_transform;
+	Material 		material;
+	Program  		intersection_program;
+	Program  		bounding_box_program;
+	Program  		closest_hit_program;
+	Transform 		this_transform;
 	Acceleration  		acceleration;
-	Variable  			cellnum_var;
-	Variable  			cellmat_var;
-	Variable 			cellfissile_var;
-
-	char 				path_to_ptx[512];
-	unsigned 			cellnum,cellmat;
-	float 				dx,dy,dz,theta,phi;
-	float 				m[16];
-	unsigned 			uniqueindex = 0;
-	unsigned 			is_fissile = 0;
+	Variable  		cellnum_var;
+	Variable  		cellmat_var;
+	Variable 		cellfissile_var;
+	char 			path_to_ptx[512];
+	unsigned 		cellnum,cellmat;
+	float 			dx,dy,dz,theta,phi;
+	float 			m[16];
+	unsigned 		uniqueindex = 0;
+	unsigned 		is_fissile = 0;
 
 	// Make top level group/accel as children of the top level object
 	this_accel 	= context -> createAcceleration(accel_type.c_str(),traverse_type.c_str());
@@ -418,12 +414,12 @@ void optix_stuff::make_geom_xform_common(wgeometry problem_geom){
 		material -> setClosestHitProgram( 0, closest_hit_program );
 
 		//set program variables for this instance
-    	this_geom_min = this_geom["mins"];
-    	this_geom_max = this_geom["maxs"];
-    	this_geom_min -> set3fv( problem_geom.primitives[j].min );
-    	this_geom_max -> set3fv( problem_geom.primitives[j].max );
+    		this_geom_min = this_geom["mins"];
+    		this_geom_max = this_geom["maxs"];
+    		this_geom_min -> set3fv( problem_geom.primitives[j].min );
+    		this_geom_max -> set3fv( problem_geom.primitives[j].max );
 
-    	//create instances
+    		//create instances
 		ginst = context -> createGeometryInstance();
 		ginst -> setGeometry( this_geom );
 		ginst -> setMaterialCount( 1u );
@@ -489,30 +485,27 @@ void optix_stuff::make_geom_prim(wgeometry problem_geom){
 
 	using namespace optix;
 
-	Group 				top_level_group;
-	Variable 			top_object;
+	Group 			top_level_group;
+	Variable 		top_object;
 	Acceleration 		this_accel;
-
-	Buffer 				geom_buffer;
-	geom_data* 			geom_buffer_host;
-	geom_data*			geom_buffer_ptr;
-
+	Buffer 			geom_buffer;
+	geom_data* 		geom_buffer_host;
+	geom_data*		geom_buffer_ptr;
 	GeometryGroup 		this_geom_group;
-	Geometry 			this_geom;
+	Geometry 		this_geom;
 	GeometryInstance 	ginst;
-	Material 			material;
-	Program  			intersection_program;
-	Program  			bounding_box_program;
-	Program  			closest_hit_program;
-	Transform 			this_transform;
+	Material 		material;
+	Program  		intersection_program;
+	Program  		bounding_box_program;
+	Program  		closest_hit_program;
+	Transform 		this_transform;
 	Acceleration  		acceleration;
-
-	char 				path_to_ptx[512];
-	unsigned 			cellnum,cellmat;
-	float 				dx,dy,dz,theta,phi;
-	float 				m[16];
-	unsigned 			uniqueindex = 0;
-	unsigned 			is_fissile = 0;
+	char 			path_to_ptx[512];
+	unsigned 		cellnum,cellmat;
+	float 			dx,dy,dz,theta,phi;
+	float 			m[16];
+	unsigned 		uniqueindex = 0;
+	unsigned 		is_fissile = 0;
 
 	// Make top level group/accel as children of the top level object
 	this_accel = context->createAcceleration(accel_type.c_str(),traverse_type.c_str());
@@ -739,8 +732,8 @@ float optix_stuff::trace_test(){
 
 	// make distribution random now
 	for(index=0;index<N;index++){
-			mu 								 = 2.0*get_rand()-1.0;
-			theta							 = 2.0*pi*get_rand();
+			mu 				 = 2.0*get_rand()-1.0;
+			theta				 = 2.0*pi*get_rand();
 			positions_local[index].surf_dist =  500000;   
 			positions_local[index].x         =     0.9 * ( ( x_max - x_min ) * get_rand() + x_min );  
 			positions_local[index].y         =     0.9 * ( ( y_max - y_min ) * get_rand() + y_min );  

@@ -205,10 +205,5 @@ optixtest: libwarp.so
 
 python: libwarp.so
 	swig -python -c++ warp.i;   \
-	$(CXX) -fPIC -c $(PYTHON_FLAGS) $(CUDPP_FLAGS) $(CUDA_FLAGS) warp_wrap.cxx;  \
-	$(CXX) -shared libwarp.so warp_wrap.o -o _warp.so $(PYTHON_FLAGS) -lpython2.7
-
-
-
-
-
+	$(CXX) -fPIC -c $(PYTHON_FLAGS) $(CUDPP_FLAGS) $(C_FLAGS) $(CUDA_FLAGS) warp_wrap.cxx;  \
+	$(CXX) -shared $(C_FLAGS) libwarp.so warp_wrap.o -o _warp.so $(PYTHON_FLAGS) -lpython2.7
