@@ -51,6 +51,7 @@ origin[0]=0.0
 origin[1]=0.0
 origin[2]=0.0
 prim_id=geom.add_primitive(typ,material,mins,maxs,origin)
+print prim_id
 geom.make_hex_array(prim_id,15,0.0,0.0,1.164,1)
 
 typ=0
@@ -62,8 +63,8 @@ maxs[0]=48
 maxs[1]=48
 maxs[2]=48
 prim_id=geom.add_primitive(typ,material,mins,maxs,origin)
+print prim_id
 idx=geom.add_transform(prim_id,999,0,0,0,0,0)
-#geom.delete_transform(prim_id,idx)
 
 # finalize geom and check
 geom.set_outer_cell(999)

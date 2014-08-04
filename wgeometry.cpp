@@ -34,19 +34,19 @@ wgeometry::~wgeometry(){
 unsigned wgeometry::add_primitive(){
 
 	primitive this_primitive;
-	n_primitives=this_primitive.num_primitives;
 	primitives.push_back(this_primitive);
+	n_primitives=primitives.size();
 
-	return (this_primitive.primitive_id);
+	return (primitives.size()-1);
 
 }
 unsigned wgeometry::add_primitive(int ptype, unsigned cellmat , std::vector<float> mins, std::vector<float> maxs, std::vector<float> origin){
 
 	primitive this_primitive(ptype, cellmat, mins, maxs, origin);
-	n_primitives=this_primitive.num_primitives;
 	primitives.push_back(this_primitive);
-
-	return (this_primitive.primitive_id);
+	n_primitives=primitives.size();
+	
+	return (primitives.size()-1);
 
 }
 void wgeometry::update(){

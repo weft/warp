@@ -49,7 +49,7 @@ public:
 	 * adds a primitive to the geometry object
 	 */ 
 	unsigned add_primitive();
-	unsigned add_primitive(int , unsigned  ,std::vector<float>,std::vector<float>,std::vector<float> );
+	unsigned add_primitive(int , unsigned  ,std::vector<float>, std::vector<float>, std::vector<float> );
 	/**
 	 * updates the numbers of all shapes, compiles the list of all isotopes, creates
 	 * an isotope table.
