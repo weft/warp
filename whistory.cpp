@@ -1724,8 +1724,8 @@ unsigned whistory::map_active(){
 }
 void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned* escatter_start, unsigned* iscatter_N, unsigned* iscatter_start, unsigned* cscatter_N, unsigned* cscatter_start, unsigned* fission_N, unsigned* fission_start){
 
-	unsigned remap_N = 0;
-	unsigned remap_start = 0;
+	unsigned resamap_N = 0;
+	unsigned resamap_start = 0;
 
 	// sort key/value of rxn/tid
 	res = cudppRadixSort(radixplan, d_rxn, d_remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
@@ -1741,8 +1741,8 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	*iscatter_start	= edges[3];
 	*cscatter_N 	= edges[6]  - edges[5];
 	*cscatter_start	= edges[5];
-	remap_N 	= edges[8]  - edges[7];
-	remap_start	= edges[7];
+	resamap_N 	= edges[8]  - edges[7];
+	resamap_start	= edges[7];
 	*fission_N 	= edges[10] - edges[9];
 	*fission_start	= edges[9];
 
@@ -1755,7 +1755,7 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 
 	//calculate total active
 	if(edges[0]==1){*num_active=0;}
-	else           {*num_active=*escatter_N + *iscatter_N + *cscatter_N + remap_N;}
+	else           {*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamap_N;}
 
 	// debug
 	//printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);

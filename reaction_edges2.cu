@@ -33,11 +33,6 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 	}
 	else{  //check last or only element, do not return
 
-		if     (rxn1==2) 				{edges[2]  = tid+1;}
-		else if(rxn1>=50 & rxn1<=90)	{edges[4]  = tid+1;}
-		else if(rxn1==91)				{edges[6]  = tid+1;}
-		else if(rxn1==800)				{edges[8]  = tid+1;}
-		else if(rxn1>=811 & rxn1<=845)	{edges[10] = tid+1;}
 
 	}
 
@@ -54,19 +49,36 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 	}
 
 	// return if the same element, or if last/only element (diff will not be set and remain at 0)
-	if(diff<0){return;}   
-
-	// check edge
-	if(rxn1<2 		& rxn2>=2)		{edges[1]  = tid+1;} //printf("setting starting edge of 2\n");}
-	if(rxn1<=2 		& rxn2>2)		{edges[2]  = tid+1;} //printf("setting ending edge of 2\n");}
-	if(rxn1<50 		& rxn2>=50)     {edges[3]  = tid+1;} //printf("setting starting edge of 50\n");}
-	if(rxn1<=90 	& rxn2>90)		{edges[4]  = tid+1;} //printf("setting ending edge of 50\n");}
-	if(rxn1<91 		& rxn2>=91)		{edges[5]  = tid+1;} //printf("setting starting edge of 91\n");}
-	if(rxn1<=91 	& rxn2>91)		{edges[6]  = tid+1;} //printf("setting ending edge of 91\n");}
-	if(rxn1<800 	& rxn2>=800)	{edges[7]  = tid+1;} //printf("setting starting edge of 800\n");}
-	if(rxn1<=800 	& rxn2>800)		{edges[8]  = tid+1;} //printf("setting ending edge of 800\n");}
-	if(rxn1<811 	& rxn2>=811)	{edges[9]  = tid+1;} //printf("setting starting edge of 811\n");}
-	if(rxn1<=845  	& rxn2>845)		{edges[10] = tid+1;} //printf("setting ending edge of 811\n");}
+	if((r_diff==0) || (rxn1>=50 && rxn2 <=90) || (rxn1>=811 && rxn2 <=845)){   
+    // not an edge => same reaction or block-internal
+    	return;}
+    else{
+    // valid edge => determine the reaction and write into edge element
+       
+        if(rxn1==2){     // first element => end of this reactions block
+            edges[2]=k;}
+        else if(rxn1>=51 && rxn1<=90){
+            edges[4]=k;}
+        else if(rxn1==91){
+            edges[6]=k;}
+        else if(rxn1==800){
+            edges[8]=k;}
+        else if(rxn1>=811 && rxn1<=845){
+            edges[10]=k;}
+        }
+        
+        if(rxn2==2){     // second element => start of this reactions block
+            edges[1]=k+1;}
+        else if(rxn2>=51 && rxn2<=90){
+            edges[3]=k+1;}
+        else if(rxn2==91){
+            edges[5]=k+1;}
+        else if(rxn2==800){
+            edges[7]=k+1;}
+        else if(rxn2>=811 && rxn2<=845){
+            edges[9]=k+1;}
+        }
+	}
 
 
 }
