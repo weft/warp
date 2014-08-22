@@ -37,48 +37,40 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 	}
 
 	// first (or only) element doesn't have a preceeding, write it in as the start of something, do not return
-	if(tid==0){
-
-		if     (rxn1==2) 				{edges[1] = 0;}
-		else if(rxn1>=50 & rxn1<=90)	{edges[3] = 0;}
-		else if(rxn1==91)				{edges[5] = 0;}
-		else if(rxn1==800)				{edges[7] = 0;}
-		else if(rxn1>=811 & rxn1<=845)	{edges[9] = 0;  edges[0]=1;}
-		else if(rxn1>845)				{edges[0] = 1;}
-		
-	}
+	if(tid==0 & rxn1>=811){
+		edges[0] = 1;
+	}		
 
 	// return if the same element, or if last/only element (diff will not be set and remain at 0)
-	if((r_diff==0) || (rxn1>=50 && rxn2 <=90) || (rxn1>=811 && rxn2 <=845)){   
-    // not an edge => same reaction or block-internal
+	if((diff==0) || (rxn1>=50 && rxn2 <=90) || (rxn1>=811 && rxn2 <=845)){   
+    	// not an edge => same reaction or block-internal
     	return;}
     else{
-    // valid edge => determine the reaction and write into edge element
+    	// valid edge => determine the reaction and write into edge element
        
         if(rxn1==2){     // first element => end of this reactions block
-            edges[2]=k;}
+            edges[2]=tid;}
         else if(rxn1>=51 && rxn1<=90){
-            edges[4]=k;}
+            edges[4]=tid;}
         else if(rxn1==91){
-            edges[6]=k;}
+            edges[6]=tid;}
         else if(rxn1==800){
-            edges[8]=k;}
+            edges[8]=tid;}
         else if(rxn1>=811 && rxn1<=845){
-            edges[10]=k;}
-        }
+            edges[10]=tid;}
+
         
         if(rxn2==2){     // second element => start of this reactions block
-            edges[1]=k+1;}
+            edges[1]=tid+1;}
         else if(rxn2>=51 && rxn2<=90){
-            edges[3]=k+1;}
+            edges[3]=tid+1;}
         else if(rxn2==91){
-            edges[5]=k+1;}
+            edges[5]=tid+1;}
         else if(rxn2==800){
-            edges[7]=k+1;}
+            edges[7]=tid+1;}
         else if(rxn2>=811 && rxn2<=845){
-            edges[9]=k+1;}
+            edges[9]=tid+1;}
         }
-	}
 
 
 }

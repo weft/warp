@@ -47,7 +47,7 @@ COBJS =	mt19937ar.o \
 		optix_stuff.o \
 		primitive.o \
 		write_to_file.o \
-		reaction_edges.o \
+		reaction_edges2.o \
 		device_copies.o \
 
 ptx_objects = 	camera.ptx \
@@ -173,8 +173,8 @@ flip_done.o:
 device_copies.o:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c device_copies.cu
 
-reaction_edges.o:
-	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c reaction_edges.cu
+reaction_edges2.o:
+	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c reaction_edges2.cu
 
 write_to_file.o:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c write_to_file.cu

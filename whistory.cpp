@@ -1492,16 +1492,16 @@ void whistory::run(){
 
 		Nrun=N;
 		edges[0]  = 0; 
-		edges[1]  = Nrun; // assumes 0 indexing
-		edges[2]  = Nrun;
-		edges[3]  = Nrun;
-		edges[4]  = Nrun;
-		edges[5]  = Nrun;
-		edges[6]  = Nrun; // assumes 0 indexing
-		edges[7]  = Nrun;
-		edges[8]  = Nrun;
-		edges[9]  = Nrun;
-		edges[10] = Nrun;
+		edges[1]  = 0; // assumes 0 indexing
+		edges[2]  = 0;
+		edges[3]  = 0;
+		edges[4]  = 0;
+		edges[5]  = 0;
+		edges[6]  = 0; // assumes 0 indexing
+		edges[7]  = 0;
+		edges[8]  = 0;
+		edges[9]  = 0;
+		edges[10] = 0;
 
 		while(Nrun>0){
 			//printf("CUDA ERROR, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
@@ -1724,8 +1724,8 @@ unsigned whistory::map_active(){
 }
 void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned* escatter_start, unsigned* iscatter_N, unsigned* iscatter_start, unsigned* cscatter_N, unsigned* cscatter_start, unsigned* fission_N, unsigned* fission_start){
 
-	unsigned resamap_N = 0;
-	unsigned resamap_start = 0;
+	unsigned resamp_N = 0;
+	unsigned resamp_start = 0;
 
 	// sort key/value of rxn/tid
 	res = cudppRadixSort(radixplan, d_rxn, d_remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
@@ -1735,31 +1735,58 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	reaction_edges(NUM_THREADS, *num_active, d_edges, d_rxn);
 
 	// calculate values for the various blocks
-	*escatter_N 	= edges[2]  - edges[1];
+	if( (edges[2] + edges[1]) == 0){
+		*escatter_N 	=	0;}
+	else{
+		*escatter_N 	= 	edges[2]  - edges[1] + 1;
+	}
+	if( (edges[4] + edges[3]) == 0){
+		*iscatter_N 	=	0;
+	}
+	else{
+		*iscatter_N		= 	edges[4]  - edges[3] + 1;
+	}
+	if( (edges[6] + edges[5]) == 0){
+		*cscatter_N 	= 	0;
+	}
+	else{
+		*cscatter_N 	= 	edges[6]  - edges[5] + 1;
+	}
+	if( (edges[8] + edges[7]) == 0){
+		resamp_N 		=	0;
+	}
+	else{
+		resamp_N 		= edges[8]  - edges[7] + 1;
+	}
+	if( (edges[10] + edges[9]) == 0){
+		*fission_N 		= 	0;
+	}
+	else if( edges[10] == 0 & edges[9] != 0 ){
+		*fission_N 		= *num_active - edges[9];
+	}
+	else{
+		*fission_N 		= edges[10] - edges[9] + 1;
+	}
 	*escatter_start	= edges[1];
-	*iscatter_N	= edges[4]  - edges[3];
 	*iscatter_start	= edges[3];
-	*cscatter_N 	= edges[6]  - edges[5];
 	*cscatter_start	= edges[5];
-	resamap_N 	= edges[8]  - edges[7];
-	resamap_start	= edges[7];
-	*fission_N 	= edges[10] - edges[9];
+	resamp_start	= edges[7];
 	*fission_start	= edges[9];
 
 	//correct if necessary
-	if(escatter_N<0){escatter_N=0;}
-	if(iscatter_N<0){iscatter_N=0;}
-	if(cscatter_N<0){cscatter_N=0;}
-	if(remap_N<0)   {remap_N=0;}
-	if(fission_N<0) {fission_N=0;}
+	if(*escatter_N<0){*escatter_N=0;}
+	if(*iscatter_N<0){*iscatter_N=0;}
+	if(*cscatter_N<0){*cscatter_N=0;}
+	if(resamp_N<0)   {resamp_N=0;}
+	if(*fission_N<0) {*fission_N=0;}
 
 	//calculate total active
 	if(edges[0]==1){*num_active=0;}
-	else           {*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamap_N;}
+	else           {*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N;}
 
 	// debug
-	//printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
-	//printf("Nrun %u escatter start N %u %u iscatter start N %u %u cscatter start N %u %u fission start N %u %u\n",Nrun,escatter_start,escatter_N,iscatter_start,iscatter_N,cscatter_start,cscatter_N,fission_start,fission_N);
+	printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
+	printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
 	//write_to_file(d_remap, d_rxn, N,"remap","w");
 
 	// rezero edge vector (mapped, so is reflected on GPU)
