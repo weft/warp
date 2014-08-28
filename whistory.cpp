@@ -1655,6 +1655,7 @@ void whistory::write_tally(unsigned tallynum){
 
 	//tallynum is unused at this point
 	float tally_err 	= 0;
+	float tally_err_sq 	= 0;
 	float this_square 	= 0;
 	float this_mean 	= 0;
 	float this_count 	= 0;
@@ -1669,7 +1670,11 @@ void whistory::write_tally(unsigned tallynum){
 		this_count  	= (float) 	(N*n_cycles);//tally_count_total[k];
 		this_mean 		= 			tally_score_total[k];
 		this_square 	= 			tally_square_total[k];
-		tally_err 		= sqrtf(    (1.0/((this_count - 1.0))) * ( (this_count*this_square)/(this_mean*this_mean) -  1.0 ) );
+		tally_err_sq 	= 			(1.0/((this_count - 1.0))) * ( (this_count*this_square)/(this_mean*this_mean) -  1.0 ) ;
+		if(tally_err_sq>0.0){ 	
+			tally_err = sqrtf(tally_err_sq);}
+		else{					
+			tally_err = 0.0;}
 		fprintf(tfile,"%10.8E %10.8E %lu\n", this_mean/this_count, tally_err, tally_count_total[k]);
 	}
 	fclose(tfile);
