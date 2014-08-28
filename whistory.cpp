@@ -239,6 +239,11 @@ void whistory::init_host(){
 		isonum[k]		= 0;
 		yield[k]		= 0;
 	}
+	for(int k=0;k<n_tally;k++){
+		tally_score_total[k]=0.0;
+		tally_square_total[k]=0.0;
+		tally_count_total[k]=0;
+	}
 
 }
 void whistory::init_RNG(){
@@ -325,7 +330,7 @@ void whistory::accumulate_keff(unsigned iteration, double* keff, float* keff_cyc
 	*keff = reduced_yields_total / ( (double) (iteration + 1) * N ) ;
 	*keff_cycle = reduced_yields / ( (float) N );
 
-	printf("reduced_total %lu  reduced %u keff %10.8E keff_cycle %10.8E iteration %u\n",reduced_yields_total,reduced_yields,*keff,*keff_cycle,iteration+1);
+	//printf("reduced_total %lu  reduced %u keff %10.8E keff_cycle %10.8E iteration %u\n",reduced_yields_total,reduced_yields,*keff,*keff_cycle,iteration+1);
 
 }
 void whistory::accumulate_tally(){
@@ -345,6 +350,7 @@ void whistory::accumulate_tally(){
 		tally_score_total[k] 	+=  tally_score[k];
 		tally_square_total[k]	+=  tally_square[k];
 		tally_count_total[k] 	+=  tally_count[k];
+		//printf("score %10.8E %10.8E\n",tally_score[k],tally_score_total[k]);
 	}
 
 	
@@ -373,14 +379,14 @@ void whistory::copy_to_device(){
 	// copy history data
 	std::cout << "  History data... ";
 	cudaMemcpy( d_space,		space,		Ndataset*sizeof(source_point),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_E,		E,		Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_Q,    		Q,		Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_done,		done,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
+	cudaMemcpy( d_E,			E,			Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_Q,    		Q,			Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_done,			done,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_cellnum,		cellnum,	Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_matnum,		matnum,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_isonum,		isonum,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_yield,		yield,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_rxn,		rxn,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
+	cudaMemcpy( d_rxn,			rxn,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
     cudaMemcpy( d_remap, 		remap,    	Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
     cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
     cudaMemcpy( d_zeros,		zeros,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
@@ -424,9 +430,9 @@ void whistory::copy_to_device(){
 	//std::cout << " Done.\n";
 	// zero out tally arrays
 	std::cout << "  Zeroing tally arrays... ";
-	cudaMemcpy( d_tally_score, 	zeros,	n_tally*sizeof(float),    cudaMemcpyHostToDevice); 	
-	cudaMemcpy( d_tally_square, zeros,	n_tally*sizeof(float),    cudaMemcpyHostToDevice); 	
-	cudaMemcpy( d_tally_count,	zeros,	n_tally*sizeof(unsigned), cudaMemcpyHostToDevice); 	
+	cudaMemcpy( d_tally_score, 	d_zeros,	n_tally*sizeof(float),    cudaMemcpyDeviceToDevice); 	
+	cudaMemcpy( d_tally_square, d_zeros,	n_tally*sizeof(float),    cudaMemcpyDeviceToDevice); 	
+	cudaMemcpy( d_tally_count,	d_zeros,	n_tally*sizeof(unsigned), cudaMemcpyDeviceToDevice); 	
 	std::cout << "Done.\n";
 
 
@@ -1648,34 +1654,27 @@ void whistory::write_results(float runtime, float keff, std::string opentype){
 void whistory::write_tally(unsigned tallynum){
 
 	//tallynum is unused at this point
-	float tally_err = 0;
-	float this_square = 0;
-	//float this_score_normed = 0;
-	float this_mean = 0;
-	float this_count = 0;
-
-	// copy down from device
-	cudaMemcpy( tally_score,  d_tally_score ,  n_tally*sizeof(float),    cudaMemcpyDeviceToHost);
-	cudaMemcpy( tally_square, d_tally_square , n_tally*sizeof(float),    cudaMemcpyDeviceToHost);
-	cudaMemcpy( tally_count,  d_tally_count ,  n_tally*sizeof(unsigned), cudaMemcpyDeviceToHost);
+	float tally_err 	= 0;
+	float this_square 	= 0;
+	float this_mean 	= 0;
+	float this_count 	= 0;
+	float Emin 			= 1e-11;
+	float Emax 			= 20.0;
+	float edge 			= 0.0;
 
 	// write tally values
 	std::string tallyname = filename+".tally";
 	FILE* tfile = fopen(tallyname.c_str(),"w");
 	for (int k=0;k<n_tally;k++){
-		//this_score_normed  	= 			tally_score[k]/(N*(n_cycles));
-		this_count  		= (float) 	tally_count[k];
-		this_mean 		= tally_score[k] / this_count;
-		this_square 		= tally_square[k];
-		tally_err 		= sqrtf( 1.0/(this_count - 1.0) * ( this_square/this_count - (this_mean*this_mean) ) ) / this_mean;
-		fprintf(tfile,"%10.8E %10.8E\n",this_mean*this_count/(N*n_cycles),tally_err*(N*n_cycles)/this_count);
+		this_count  	= (float) 	(N*n_cycles);//tally_count_total[k];
+		this_mean 		= 			tally_score_total[k];
+		this_square 	= 			tally_square_total[k];
+		tally_err 		= sqrtf(    (1.0/((this_count - 1.0))) * ( (this_count*this_square)/(this_mean*this_mean) -  1.0 ) );
+		fprintf(tfile,"%10.8E %10.8E %lu\n", this_mean/this_count, tally_err, tally_count_total[k]);
 	}
 	fclose(tfile);
 
-	//write spacing
-	float Emin = 1e-11;
-	float Emax = 20.0;
-	float edge = 0.0;
+	//write spacing, since there is n_tally+1 values, including it with the tally bins in a flat text messes with reading in as a matrix
 	std::string binsname = filename+".tallybins";
 	tfile = fopen(binsname.c_str(),"w");
 	for (int k=0;k<=n_tally;k++){
@@ -1785,8 +1784,8 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	else           {*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N;}
 
 	// debug
-	printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
-	printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
+	//printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
+	//printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
 	//write_to_file(d_remap, d_rxn, N,"remap","w");
 
 	// rezero edge vector (mapped, so is reflected on GPU)
