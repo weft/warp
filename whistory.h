@@ -48,6 +48,9 @@ class whistory {
 	unsigned 	n_qnodes; /**< number of quaternary nodes */
 	unsigned 	n_skip; /**< number of cycles to skip */
 	unsigned 	n_cycles; /**< number of active cycles */
+	float 		keff_sum;
+	float 		keff2_sum;
+	float 		keff_err;
 	std::string     filename; /**< file name */
 	source_point *  space; /**< source point spatial pointer */
 	/**
@@ -239,7 +242,7 @@ class whistory {
      * @param[in] keff - the running cumulative keff
      * @param[in] keff_cycle - the keff of the last cycle, used to renormalize the source vector
      */
-    void accumulate_keff(unsigned, double*, float*);
+    void accumulate_keff(unsigned, unsigned, double*, float*);
     /**
      * \brief raccumulates the flux tally
      * @param[in] 

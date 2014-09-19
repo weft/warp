@@ -27,6 +27,10 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	// set tally vector length
 	n_tally = 1024;
 	RUN_FLAG = 1;
+	// keff stuff
+	keff_sum = 0.0;
+	keff2_sum = 0.0;
+	keff_err = 0.0;
 	// device data stuff
 	N = Nin;
 	Ndataset = Nin * 5;
@@ -321,14 +325,29 @@ unsigned whistory::reduce_yield(){
 	return reduced_yields;
 
 }
-void whistory::accumulate_keff(unsigned iteration, double* keff, float* keff_cycle){
+void whistory::accumulate_keff(unsigned converged, unsigned iteration, double* keff, float* keff_cycle){
+
+	float this_count, this_square, this_mean, keff_err2;
 
 	long unsigned reduced_yields = reduce_yield();
 
-	reduced_yields_total += reduced_yields;
-
-	*keff = reduced_yields_total / ( (double) (iteration + 1) * N ) ;
 	*keff_cycle = reduced_yields / ( (float) N );
+
+	if(converged){
+		reduced_yields_total += reduced_yields;
+		*keff       = reduced_yields_total / ( (double) (iteration + 1) * N ) ;
+		keff_sum   += *keff_cycle; 
+		keff2_sum  += (*keff_cycle)*(*keff_cycle);
+		this_count  = iteration + 1; 
+		this_square = keff2_sum ;
+		this_mean   = keff_sum  ;
+		//printf("this_mean %10.8E this_square %10.8E iteration %d\n",this_mean,this_square, iteration+1);
+		keff_err2   = (1.0/((this_count - 1.0))) * ( (this_count*this_square)/(this_mean*this_mean) -  1.0 ) ;
+		if(keff_err2>0.0){ 	
+			keff_err = sqrtf(keff_err2);}
+		else{					
+			keff_err = 0.0;}
+	}
 
 	//printf("reduced_total %lu  reduced %u keff %10.8E keff_cycle %10.8E iteration %u\n",reduced_yields_total,reduced_yields,*keff,*keff_cycle,iteration+1);
 
@@ -1591,7 +1610,7 @@ void whistory::run(){
 			Nrun=Ndataset;
 		}
 		else if (RUN_FLAG==1){	
-			accumulate_keff(iteration, &keff, &keff_cycle);
+			accumulate_keff(converged, iteration, &keff, &keff_cycle);
 			accumulate_tally();
 			reset_cycle(keff_cycle);
 			Nrun=N;
@@ -1605,7 +1624,7 @@ void whistory::run(){
 		// print whatever's clever
 		if(converged){
 			     if(RUN_FLAG==0){std::cout << "Cumulative keff/sc-mult = "<< keff << " / " << 1.0/(1.0-keff) << ", ACTIVE cycle " << iteration << ", cycle keff/sc-mult = " << keff_cycle << " / " << 1.0/(1.0-keff_cycle) << "\n";}
-			else if(RUN_FLAG==1){std::cout << "Cumulative keff = " << keff << ", ACTIVE cycle " << iteration << ", cycle keff = " << keff_cycle << "\n";}
+			else if(RUN_FLAG==1){std::cout << "Cumulative keff = " << keff << " +- "<< keff_err <<", ACTIVE cycle " << iteration << ", cycle keff = " << keff_cycle << "\n";}
 		}
 		else{
 			std::cout << "Converging fission source... skipped cycle " << iteration_total+1 <<"\n";
