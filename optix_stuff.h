@@ -15,6 +15,7 @@ class optix_stuff{
 	unsigned mincell; /**< minimum (usually innermost) cell */
 	unsigned maxcell; /**< maximum (usually outermost) cell */
 	unsigned outer_cell; /**< outermost cell */
+	unsigned outer_cell_type; /**< outermost cell type */
 	unsigned n_materials; /**< number of materials */
 	unsigned compute_device; /**< compute device number (always zero) */
 	unsigned GEOM_FLAG; /**< geometry flag: 0 = primitive instancing, 1 = transform instancing, 2 = transform instancing with common primitives */
@@ -74,7 +75,6 @@ public:
 	unsigned 		stack_size_multiplier; /**< stack size multiplier */
 	unsigned 		N;		       /**< number of histories */
 	float 			outer_cell_dims[6];    /**< outermost cell dimensions */
-	unsigned 		outer_cell_type;       /**< outermost cell type */
 	/**
 	 * \brief constructor
 	 * \details sets stack size multiplier and number of histories.
@@ -171,6 +171,11 @@ public:
 	 * \returns outer_cell - number of outermost cell
 	 */  
 	unsigned get_outer_cell();
+	/**
+	 * \brief returns the outermost cell type
+	 * \returns outer_cell_type - geometrical primitive tpye of the outermost cell
+	 */  
+	unsigned get_outer_cell_type();
 };
 
 #endif

@@ -204,6 +204,7 @@ void optix_stuff::init(wgeometry problem_geom, unsigned compute_device_in, std::
 	mincell = problem_geom.get_minimum_cell();
 	maxcell = problem_geom.get_maximum_cell();
 	outer_cell = problem_geom.get_outer_cell();
+	outer_cell_type = problem_geom.get_outer_cell_type();
 	// get material numbers
 	n_materials = problem_geom.get_material_count();
 	// try to init optix
@@ -812,6 +813,12 @@ void optix_stuff::set_image_type(std::string string_in){
 unsigned optix_stuff::get_outer_cell(){
 
 	return outer_cell;
+
+}
+
+unsigned optix_stuff::get_outer_cell_type(){
+
+	return outer_cell_type;
 
 }
 

@@ -172,6 +172,17 @@ void wgeometry::set_outer_cell(unsigned ocell){
 unsigned wgeometry::get_outer_cell(){
 	return outer_cell;
 }
+unsigned wgeometry::get_outer_cell_type(){
+	unsigned outer_cell_type=99999999;
+	for(int j=0;j<n_primitives;j++){
+		for(int k=0;k<primitives[j].n_transforms;k++){
+			if (primitives[j].transforms[k].cellnum==outer_cell){
+				outer_cell_type=primitives[j].type;
+				return outer_cell_type;
+			}
+		}
+	}
+}
 unsigned wgeometry::get_minimum_cell(){
 	unsigned mincell=-1;
 	for(int j=0;j<n_primitives;j++){

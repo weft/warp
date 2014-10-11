@@ -118,6 +118,7 @@ void whistory::init(){
 	//copy any info needed
 	memcpy(outer_cell_dims,optix_obj.outer_cell_dims,6*sizeof(float));
 	outer_cell = optix_obj.get_outer_cell();
+	outer_cell_type = optix_obj.get_outer_cell_type();
 	xs_isotope_string = problem_geom.isotope_list;
 	//  map edge array
 	n_edges = 11;
@@ -583,26 +584,26 @@ void whistory::load_cross_sections(){
         return;
 	}
 
-    	//
-    	// get and copy the unionized MT array
-    	//
+    //
+    // get and copy the unionized MT array
+    //
 	MT_rows    = pBuff.shape[0];
 	MT_columns = pBuff.shape[1];
 	bytes   = pBuff.len;
 	//std::cout << "unionized MT array " << MT_rows << " " << MT_columns << " " << bytes << "\n";
-    	// allocate xs_data pointer arrays
-    	xs_data_MT       = new float  [MT_rows*MT_columns];
-    	// check to make sure bytes *= elements
-    	assert(bytes==MT_rows*MT_columns*4);
-    	// copy python buffer contents to pointer
-    	memcpy( xs_data_MT,   pBuff.buf , bytes );
-    	// cudaallocate device memory now that we know the size!
-    	cudaMalloc(&d_xs_data_MT,bytes);
-    	// release python variable to free memory
+    // allocate xs_data pointer arrays
+    xs_data_MT       = new float  [MT_rows*MT_columns];
+    // check to make sure bytes *= elements
+    assert(bytes==MT_rows*MT_columns*4);
+    // copy python buffer contents to pointer
+    memcpy( xs_data_MT,   pBuff.buf , bytes );
+    // cudaallocate device memory now that we know the size!
+    cudaMalloc(&d_xs_data_MT,bytes);
+    // release python variable to free memory
 	Py_DECREF(call_result);
 
-    	// get the unionized main energy grid buffer
-    	call_string = PyString_FromString("_get_main_Egrid_pointer");
+    // get the unionized main energy grid buffer
+    call_string = PyString_FromString("_get_main_Egrid_pointer");
 	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
 	Py_DECREF(call_string);
 	if (PyObject_CheckBuffer(call_result)){
@@ -614,26 +615,26 @@ void whistory::load_cross_sections(){
         return;
 	}
 
-    	//
-    	// get and copy unionized main energy grid
-    	//
+    //
+    // get and copy unionized main energy grid
+    //
 	rows    = pBuff.shape[0];
 	columns = pBuff.shape[1];
 	bytes   = pBuff.len;
 	//std::cout << "main e grid " << rows << " " << columns << " " << bytes << "\n";
     	// allocate xs_data pointer arrays
-    	xs_data_main_E_grid  = new float  [rows];
-    	// check to make sure bytes *= elements
-    	assert(bytes==rows*4);
-    	// copy python buffer contents to pointer
-    	memcpy( xs_data_main_E_grid,   pBuff.buf , bytes );
-    	// cudaallocate device memory now that we know the size!
-    	cudaMalloc(&d_xs_data_main_E_grid,bytes);
-    	// release python variable to free memory
-    	Py_DECREF(call_result);
+    xs_data_main_E_grid  = new float  [rows];
+    // check to make sure bytes *= elements
+    assert(bytes==rows*4);
+    // copy python buffer contents to pointer
+    memcpy( xs_data_main_E_grid,   pBuff.buf , bytes );
+    // cudaallocate device memory now that we know the size!
+    cudaMalloc(&d_xs_data_main_E_grid,bytes);
+    // release python variable to free memory
+    Py_DECREF(call_result);
 
-    	// mt number vector
-    	call_string = PyString_FromString("_get_MT_numbers_pointer");
+    // mt number vector
+    call_string = PyString_FromString("_get_MT_numbers_pointer");
 	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
 	Py_DECREF(call_string);
 	if (PyObject_CheckBuffer(call_result)){
@@ -645,26 +646,26 @@ void whistory::load_cross_sections(){
         return;
 	}
 
-    	//
-    	// get and copy mt number vector
-    	//
+    //
+    // get and copy mt number vector
+    //
 	rows    = pBuff.shape[0];
 	columns = pBuff.shape[1];
 	bytes   = pBuff.len;
 	//std::cout << "mt nums " << rows << " " << columns << " " << bytes << "\n";
-    	// allocate xs_data pointer arrays
-    	xs_MT_numbers      = new unsigned  [rows];
-    	// check to make sure bytes *= elements
-    	assert(bytes==rows*4);
-    	// copy python buffer contents to pointer
-    	memcpy( xs_MT_numbers,   pBuff.buf , bytes );
-    	// cudaallocate device memory now that we know the size!
-    	cudaMalloc(&d_xs_MT_numbers,bytes);
-    	// release python variable to free memory
-    	Py_DECREF(call_result);
+    // allocate xs_data pointer arrays
+    xs_MT_numbers      = new unsigned  [rows];
+    // check to make sure bytes *= elements
+    assert(bytes==rows*4);
+    // copy python buffer contents to pointer
+    memcpy( xs_MT_numbers,   pBuff.buf , bytes );
+    // cudaallocate device memory now that we know the size!
+    cudaMalloc(&d_xs_MT_numbers,bytes);
+    // release python variable to free memory
+    Py_DECREF(call_result);
 
-    	// mt number total vector
-    	call_string = PyString_FromString("_get_MT_numbers_total_pointer");
+    // mt number total vector
+    call_string = PyString_FromString("_get_MT_numbers_total_pointer");
 	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
 	Py_DECREF(call_string);
 	if (PyObject_CheckBuffer(call_result)){
@@ -676,26 +677,26 @@ void whistory::load_cross_sections(){
         return;
 	}
 
-    	//
-    	// get and copy unionized totals vector
-    	//
+    //
+    // get and copy unionized totals vector
+    //
 	rows    = pBuff.shape[0];
 	columns = pBuff.shape[1];
 	bytes   = pBuff.len;
 	//std::cout << "totals " << rows << " " << columns << " " << bytes << "\n";
-    	// allocate xs_data pointer arrays
-    	xs_MT_numbers_total      = new unsigned  [rows];
-    	// check to make sure bytes *= elements
-    	assert(bytes==rows*4);
-    	// copy python buffer contents to pointer
-    	memcpy( xs_MT_numbers_total,   pBuff.buf , bytes );
-    	// cudaallocate device memory now that we know the size!
-    	cudaMalloc(&d_xs_MT_numbers_total,bytes);
-    	// release python variable to free memory
-    	Py_DECREF(call_result);
+    // allocate xs_data pointer arrays
+    xs_MT_numbers_total      = new unsigned  [rows];
+    // check to make sure bytes *= elements
+    assert(bytes==rows*4);
+    // copy python buffer contents to pointer
+    memcpy( xs_MT_numbers_total,   pBuff.buf , bytes );
+    // cudaallocate device memory now that we know the size!
+    cudaMalloc(&d_xs_MT_numbers_total,bytes);
+    // release python variable to free memory
+    Py_DECREF(call_result);
 
-    	// lengths vector
-    	call_string = PyString_FromString("_get_length_numbers_pointer");
+    // lengths vector
+    call_string = PyString_FromString("_get_length_numbers_pointer");
 	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
 	Py_DECREF(call_string);
 	if (PyObject_CheckBuffer(call_result)){
@@ -789,44 +790,44 @@ void whistory::load_cross_sections(){
 
 	std::cout << "\e[1;32m" << "Loading/copying scattering data and linking..." << "\e[m \n";
 
-    	////////////////////////////////////
-    	// do scattering stuff
-    	////////////////////////////////////
+	////////////////////////////////////
+	// do scattering stuff
+	////////////////////////////////////
 
-    	float * temp = new float [128];
+    float * temp = new float [128];
 	for(int g=0;g<128;g++){temp[g]=123456789;}
 	unsigned vlen;
 
-    	//ALLOCATE THE ARRAYS.
-    	xs_data_scatter      = new float* [MT_rows*MT_columns];
-    	xs_data_energy       = new float* [MT_rows*MT_columns];
-    	xs_data_scatter_host = new float* [MT_rows*MT_columns];
-    	xs_data_energy_host  = new float* [MT_rows*MT_columns];
-    	cudaMalloc(&d_xs_data_scatter,MT_rows*MT_columns*sizeof(float*));
-    	cudaMalloc(&d_xs_data_energy, MT_rows*MT_columns*sizeof(float*));
-    	// nu container
-    	float * nuBuff 	     = new float [MT_rows];
-    	// python variables for arguments
-    	PyObject 	*E_obj, *row_obj, *col_obj;
-    	PyObject 	*cdf_vector_obj, *mu_vector_obj , *vector_length_obj, *nextDex_obj, *nextE_obj, *lastE_obj; 
-    	PyObject 	*next_cdf_vector_obj, *next_mu_vector_obj , *next_vector_length_obj;
-    	PyObject 	*obj_list;
-    	Py_buffer 	muBuff, cdfBuff, next_muBuff, next_cdfBuff;
-    	float 		*this_pointer,*cuda_pointer;
-    	float  		nextE, lastE;
-    	float       	this_energy;
-    	float 		nu_test;
-    	unsigned	this_MT, this_tope, vector_length_L;
-    	int 		vector_length,next_vector_length;
-    	int 		minusone = -1;
-    	unsigned 	muRows,  muColumns,  muBytes;
-    	unsigned 	cdfRows, cdfColumns, cdfBytes;
-    	unsigned 	next_muRows,  next_muColumns,  next_muBytes;
-    	unsigned 	next_cdfRows, next_cdfColumns, next_cdfBytes;
-    	unsigned 	nextDex;
+    //ALLOCATE THE ARRAYS.
+    xs_data_scatter      = new float* [MT_rows*MT_columns];
+    xs_data_energy       = new float* [MT_rows*MT_columns];
+    xs_data_scatter_host = new float* [MT_rows*MT_columns];
+    xs_data_energy_host  = new float* [MT_rows*MT_columns];
+    cudaMalloc(&d_xs_data_scatter,MT_rows*MT_columns*sizeof(float*));
+    cudaMalloc(&d_xs_data_energy, MT_rows*MT_columns*sizeof(float*));
+    // nu container
+    float * nuBuff 	     = new float [MT_rows];
+    // python variables for arguments
+    PyObject 	*E_obj, *row_obj, *col_obj;
+    PyObject 	*cdf_vector_obj, *mu_vector_obj , *vector_length_obj, *nextDex_obj, *nextE_obj, *lastE_obj; 
+    PyObject 	*next_cdf_vector_obj, *next_mu_vector_obj , *next_vector_length_obj;
+    PyObject 	*obj_list;
+    Py_buffer 	muBuff, cdfBuff, next_muBuff, next_cdfBuff;
+    float 		*this_pointer,*cuda_pointer;
+    float  		nextE, lastE;
+    float       this_energy;
+    float 		nu_test;
+    unsigned	this_MT, this_tope, vector_length_L;
+    int 		vector_length,next_vector_length;
+    int 		minusone = -1;
+    unsigned 	muRows,  muColumns,  muBytes;
+    unsigned 	cdfRows, cdfColumns, cdfBytes;
+    unsigned 	next_muRows,  next_muColumns,  next_muBytes;
+    unsigned 	next_cdfRows, next_cdfColumns, next_cdfBytes;
+    unsigned 	nextDex;
 
-    	//set total cross sections to NULL
-    	for (int j=0 ; j<1*xs_length_numbers[0] ; j++){  //start after the total xs vectors
+    //set total cross sections to NULL
+    for (int j=0 ; j<1*xs_length_numbers[0] ; j++){  //start after the total xs vectors
     		for (int k=0 ; k<MT_rows ; k++){
     			xs_data_scatter     [k*MT_columns + j] = 0;//NULL;
 			xs_data_scatter_host[k*MT_columns + j] = 0;//NULL;
@@ -844,21 +845,21 @@ void whistory::load_cross_sections(){
 			PyErr_Print();
 
 			// get objects in the returned list  [nextDex,next_E,vlen,nextvlen,mu,cdf,nextmu,nextcdf]
-			nextDex_obj  		= PyList_GetItem(obj_list,0);
-			lastE_obj  		= PyList_GetItem(obj_list,1);
-			nextE_obj 		= PyList_GetItem(obj_list,2);
-			vector_length_obj 	= PyList_GetItem(obj_list,3);
+			nextDex_obj  			= PyList_GetItem(obj_list,0);
+			lastE_obj  				= PyList_GetItem(obj_list,1);
+			nextE_obj 				= PyList_GetItem(obj_list,2);
+			vector_length_obj 		= PyList_GetItem(obj_list,3);
 			next_vector_length_obj 	= PyList_GetItem(obj_list,4);
-			mu_vector_obj 		= PyList_GetItem(obj_list,5);
-			cdf_vector_obj 		= PyList_GetItem(obj_list,6);
-			next_mu_vector_obj 	= PyList_GetItem(obj_list,7);
+			mu_vector_obj 			= PyList_GetItem(obj_list,5);
+			cdf_vector_obj 			= PyList_GetItem(obj_list,6);
+			next_mu_vector_obj 		= PyList_GetItem(obj_list,7);
 			next_cdf_vector_obj 	= PyList_GetItem(obj_list,8);
 			PyErr_Print();
 
 			// expand list to c variables
-			nextDex 	  	= PyInt_AsLong 	  (nextDex_obj);
-			lastE 		  	= PyFloat_AsDouble(lastE_obj);
-			nextE 		  	= PyFloat_AsDouble(nextE_obj);
+			nextDex 	  		= PyInt_AsLong 	  (nextDex_obj);
+			lastE 		  		= PyFloat_AsDouble(lastE_obj);
+			nextE 		  		= PyFloat_AsDouble(nextE_obj);
 			vector_length 		= PyInt_AsLong    (vector_length_obj);
 			next_vector_length 	= PyInt_AsLong    (next_vector_length_obj);
 			PyErr_Print();
@@ -1288,7 +1289,7 @@ void whistory::sample_fissile_points(){
 		update_RNG();
 
 		// set uniformly random positions on GPU
-		set_positions_rand ( NUM_THREADS, N , RNUM_PER_THREAD, d_space , d_rn_bank, outer_cell_dims);
+		set_positions_rand ( NUM_THREADS, N , outer_cell_type, d_space , d_rn_bank, outer_cell_dims);
 		
 		//run OptiX to get cell number, set as a hash run for fissile, writes 1/0 to matnum, trace_type=4
 		trace(3, N);

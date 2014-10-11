@@ -81,6 +81,12 @@ public:
 	 */ 
 	unsigned get_outer_cell();
 	/**
+	 * returns the outermost cell type
+	 *
+	 * \returns outer_cell_type
+	 */ 
+	unsigned get_outer_cell_type();
+	/**
 	 * adds a material and its properties to the geometry, allocates space
 	 * for all of the material information.
 	 *

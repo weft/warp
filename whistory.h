@@ -41,7 +41,8 @@ class whistory {
 	unsigned 	RUN_FLAG; /**< run flag */
 	unsigned 	qnodes_depth; /**< quaternary node depth */
 	unsigned	qnodes_width; /**< quaternary node width */
-	unsigned        outer_cell; /**< outermost cell */
+	unsigned    outer_cell; /**< outermost cell */
+	unsigned    outer_cell_type; /**< outermost cell type*/
 	unsigned 	n_materials; /**< number of materials */
 	unsigned 	n_isotopes; /**< number of isotopes */
 	unsigned 	n_tally; /**< number of tallies */
