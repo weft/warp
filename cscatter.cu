@@ -54,6 +54,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	//float		cdf1,pdf1,e1;
 	//float 		v_rel,E_rel;
 
+
 	// make target isotropic
 	mu  = (2.0*get_rand(&rn)) - 1.0;
 	phi = 2.0*pi*get_rand(&rn);
@@ -202,3 +203,4 @@ void cscatter( cudaStream_t stream, unsigned NUM_THREADS, unsigned run_mode, uns
 	cudaThreadSynchronize();
 
 }
+

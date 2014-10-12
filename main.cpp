@@ -118,7 +118,6 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		
 		//simple geom
-		geom.add_primitive();
 		type=0;
 		material=1;
 		mins[0]=-30.0;

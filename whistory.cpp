@@ -22,7 +22,9 @@ optix_stuff optix_obj;
 //wgeometry geom_obj;
 
 whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
-// do problem gemetry stuff first
+	//clear device
+	cudaDeviceReset();
+	// do problem gemetry stuff first
 	problem_geom = problem_geom_in;
 	// set tally vector length
 	n_tally = 1024;
@@ -1567,16 +1569,14 @@ void whistory::run(){
 
 			// remap threads to still active data
 			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
-			//printf("CUDA ERROR6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			// concurrent calls to do escatter/iscatter/abs/fission
-			cudaThreadSynchronize();
+			cudaThreadSynchronize();cudaDeviceSynchronize();
 			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_done, d_xs_data_scatter);
 			iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
 			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
 			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  
 			cudaDeviceSynchronize();
-			//printf("CUDA ERROR7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			if(RUN_FLAG==0){  //fixed source
 				// pop secondaries back in
@@ -1585,22 +1585,6 @@ void whistory::run(){
 				pop_secondaries( NUM_THREADS, Ndataset, RNUM_PER_THREAD, d_completed, d_scanned, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy);
 				//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
 			}
-
-			//exit(0);
-
-			//write_to_file(d_space,N,"space","w");
-			//write_to_file(d_remap,d_rxn,N,"remap","w");
-
-			//std::cout << "cycle done, press enter to continue...\n";
-			//std::cin.ignore();
-
-			//if(Nrun<5000){
-			//	keff_cycle = reduce_yield();
-			//	reset_cycle(keff_cycle);
-			//	write_to_file(d_space,d_E,N,fiss_name,"a+");
-			//	exit(0);
-			//	break;
-			//}
 
 		}
 
@@ -1614,6 +1598,7 @@ void whistory::run(){
 			accumulate_keff(converged, iteration, &keff, &keff_cycle);
 			accumulate_tally();
 			reset_cycle(keff_cycle);
+			//printf("CUDA ERROR12, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			Nrun=N;
 		}
 

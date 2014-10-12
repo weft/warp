@@ -65,7 +65,6 @@ void fission( cudaStream_t stream, unsigned NUM_THREADS, unsigned N, unsigned st
 	if(N<1){return;}
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	//fission_kernel <<< blks, NUM_THREADS >>> (   N,  RNUM_PER_THREAD, active, rxn , index, yield , rn_bank, done, scatterdat);
 	fission_kernel <<< blks, NUM_THREADS , 0 , stream >>> (   N,  starting_index, remap, rxn , index, yield , rn_bank, done, scatterdat);
 	cudaThreadSynchronize();
 
