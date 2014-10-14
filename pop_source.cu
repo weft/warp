@@ -145,15 +145,18 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 		__syncthreads();
 
 		// set data
-		space_out[ data_dex ].x 	= this_space.x;
-		space_out[ data_dex ].y 	= this_space.y;
-		space_out[ data_dex ].z 	= this_space.z;
-		space_out[ data_dex ].xhat 	= x;
-		space_out[ data_dex ].yhat 	= y;
-		space_out[ data_dex ].zhat 	= z;
-		rxn  	 [ data_dex ]		= this_rxn;
-		index 	 [ data_dex ] 		= dex;
-		isonum   [ data_dex ]  		= this_tope;
+		space_out[ data_dex ].x 			= this_space.x;
+		space_out[ data_dex ].y 			= this_space.y;
+		space_out[ data_dex ].z 			= this_space.z;
+		space_out[ data_dex ].xhat 			= x;
+		space_out[ data_dex ].yhat 			= y;
+		space_out[ data_dex ].zhat 			= z;
+		space_out[ data_dex ].enforce_BC 	= 0;
+		space_out[ data_dex ].surf_dist 	= 99999.0;
+		space_out[ data_dex ].macro_t 		= 0.0;
+		rxn  	 [ data_dex ]				= this_rxn;
+		index 	 [ data_dex ] 				= dex;
+		isonum   [ data_dex ]  				= this_tope;
 		rn_bank  [tid] = rn;
 		if(this_rxn==918){
 			E_out 	 [ data_dex ] 	= sampled_E;

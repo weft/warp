@@ -420,6 +420,11 @@ public:
 	 * @param[in] filename_in - filename
 	 */
 	void set_filename(std::string);
+	/**
+	 * \brief appends history data to file in debug mode.
+	 * @param[in] iteration - iteration number
+	 */
+	 void write_histories(unsigned iteration);
 };
 
 #endif

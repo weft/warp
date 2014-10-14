@@ -71,7 +71,7 @@ RT_PROGRAM void camera()
 	payload.hitbuff[0].mat  = -1;
 	payload.hitbuff[0].fiss = -1;
 	payload.buff_index=0;
-	payload.cont=1;
+	//payload.cont=1;
 
 	// find entering cell otherwise, trace will write, use downward z 
 	ray_direction  = make_float3(0, 0, -1.0);

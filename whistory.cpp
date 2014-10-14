@@ -1421,16 +1421,16 @@ void whistory::reset_cycle(float keff_cycle){
 	//printf("CUDA ERROR-pop, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 	// rest run arrays
-	cudaMemcpy( d_space,	d_fissile_points,	N*sizeof(source_point),		cudaMemcpyDeviceToDevice );
-	cudaMemcpy( d_E,	d_fissile_energy,	N*sizeof(unsigned),		cudaMemcpyDeviceToDevice );
-	cudaMemcpy( d_done,	done,			N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_cellnum,	cellnum,		N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_matnum,	matnum,			N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_isonum,	isonum,			N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_yield,	yield,			N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_rxn,	rxn,			N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_active,	remap,			N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_index,	zeros,			N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_space,	d_fissile_points,	N*sizeof(source_point),	cudaMemcpyDeviceToDevice );
+	cudaMemcpy( d_E,		d_fissile_energy,	N*sizeof(unsigned),		cudaMemcpyDeviceToDevice );
+	cudaMemcpy( d_done,		done,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_cellnum,	cellnum,			N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_matnum,	matnum,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_isonum,	isonum,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_yield,	yield,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_rxn,		rxn,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_active,	remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_index,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 
 	// update RNG seeds
 	update_RNG();
@@ -1440,12 +1440,12 @@ void whistory::reset_fixed(){
 
 	// rest read-in run arrays (ie not ones that are written to in-between)
 	cudaMemcpy( d_space,		space,		Ndataset*sizeof(source_point),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_done,		done,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_done,			done,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_cellnum,		cellnum,	Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_matnum,		matnum,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_isonum,		isonum,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_yield,		yield,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_rxn,		rxn,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_rxn,			rxn,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 
 	//set position, direction, energy
@@ -1474,9 +1474,6 @@ void whistory::run(){
 	unsigned active_size1, active_gap, escatter_N, escatter_start, iscatter_N, iscatter_start, cscatter_N, cscatter_start, fission_N, fission_start;
 	std::string fiss_name, stats_name;
 	float runtime = get_time();
-
-	//set mask to ones
-	//cudaMemcpy(d_mask,ones,n_tally*sizeof(unsigned),cudaMemcpyHostToDevice);
 
 	if(RUN_FLAG==0){
 		reset_fixed();
@@ -1543,6 +1540,9 @@ void whistory::run(){
 
 			//record stats
 			fprintf(statsfile,"%u %10.8E\n",Nrun,get_time());
+
+			// write histories to file
+			write_histories(iteration);
 			
 			// find what material we are in and nearest surface distance
 			trace(2, Nrun);
@@ -1577,6 +1577,7 @@ void whistory::run(){
 			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
 			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  
 			cudaDeviceSynchronize();
+			printf("CUDA ERROR12, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			if(RUN_FLAG==0){  //fixed source
 				// pop secondaries back in
@@ -1901,6 +1902,81 @@ float whistory::get_time(){
 void whistory::set_tally_cell(unsigned cell){
 
 	tally_cell = cell;
+
+}
+void whistory::write_histories(unsigned iteration){
+
+	//allocate
+	unsigned*  done2;	
+	unsigned*  cellnum2;
+	unsigned*  matnum2;	
+	unsigned*  isonum2;	
+	unsigned*  yield2;
+	unsigned*  rxn2;
+	source_point* space2;
+	float* E2;
+	done2 		= new unsigned [N];
+	cellnum2	= new unsigned [N];
+	matnum2		= new unsigned [N];
+	isonum2		= new unsigned [N];
+	yield2 		= new unsigned [N];
+	rxn2		= new unsigned [N];	
+	space2 		= new source_point [N];
+	E2 			= new float [N];
+
+	// print actions
+	std::string histfile_name = "history_file";
+	printf("Writing to \"%s\"\n",histfile_name.c_str());
+
+	// open file, appending to a new file.
+	FILE* history_file = fopen(histfile_name.c_str(),"w");
+
+	// write iteration delimiter
+	fprintf(history_file,"==== ITERATION %u ====\n",iteration);
+
+	// copy gemetrical (positions / directions)
+	cudaMemcpy(space2,d_space,N*sizeof(source_point),cudaMemcpyDeviceToHost);
+
+	// copy energies
+	cudaMemcpy(E2,d_E,N*sizeof(float),cudaMemcpyDeviceToHost);
+
+	// copy cell numbeer
+	cudaMemcpy(cellnum2,d_cellnum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// copy material numbers
+	cudaMemcpy(matnum2,d_matnum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// copy done flags
+	cudaMemcpy(done2,d_done,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// copy isotope numbers
+	cudaMemcpy(isonum2,d_isonum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// copy yields
+	cudaMemcpy(yield2,d_yield,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// copy reaction numbers
+	cudaMemcpy(rxn2,d_rxn,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// sync device before write and return
+	cudaDeviceSynchronize();
+
+	// write history data to file
+	for(unsigned k=0;k<N;k++){
+		fprintf(history_file,"tid %u (x,y,z) %8.6E %8.6E %8.6E (x,y,z)-hat %8.6E %8.6E %8.6E surf_dist %8.6E macro_t %8.6E enforce_BC %u E %8.6E cellnum %u matnum %u isonum %u rxn %u done %u yield %u\n",k,space2[k].x,space2[k].y,space2[k].z,space2[k].xhat,space2[k].yhat,space2[k].zhat,space2[k].surf_dist,space2[k].macro_t,space2[k].enforce_BC,E2[k],cellnum2[k],matnum2[k],isonum2[k],rxn2[k],done2[k],yield2[k]);
+	}
+
+ 	fclose(history_file);
+
+ 	//deallocate so can be alloaed again next time
+ 	delete done2 	;
+	delete cellnum2	;
+	delete matnum2	;
+	delete isonum2	;
+	delete yield2 	;
+	delete rxn2		;
+	delete space2 	;
+	delete E2 		;
 
 }
 void whistory::create_quad_tree(){
