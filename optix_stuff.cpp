@@ -194,6 +194,9 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 		make_geom_prim(problem_geom);
 	}
 
+	//set exceptions on
+	context->setExceptionEnabled( RT_EXCEPTION_ALL, 1 );
+
 	//validate and compile
 	context->validate();
 	context->compile();

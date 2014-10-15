@@ -90,7 +90,7 @@ RT_PROGRAM void camera()
 	else if(trace_type == 3){  //write fissile flag if fissile query
 		matnum_buffer[launch_index] 				= payload.hitbuff[0].fiss;
 		cellnum_buffer[launch_index] 				= payload.hitbuff[0].cell;
-		rxn_buffer[launch_index_in] 					= 818;
+		rxn_buffer[launch_index_in] 				= 818;
 	}
 
 }

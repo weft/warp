@@ -1264,11 +1264,19 @@ void whistory::print_pointers(){
 }
 void whistory::trace(unsigned type){
 
+	//make sure device is ready
+	cudaDeviceSynchronize();
+
+	//trace
 	optix_obj.trace(type);
 
 }
 void whistory::trace(unsigned type, unsigned n_active){
 
+	//make sure device is ready
+	cudaDeviceSynchronize();
+
+	//trace
 	optix_obj.trace(type,n_active);
 
 }
@@ -1542,7 +1550,7 @@ void whistory::run(){
 			fprintf(statsfile,"%u %10.8E\n",Nrun,get_time());
 
 			// write histories to file
-			write_histories(iteration);
+			//write_histories(iteration);
 			
 			// find what material we are in and nearest surface distance
 			trace(2, Nrun);
@@ -1577,7 +1585,7 @@ void whistory::run(){
 			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
 			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  
 			cudaDeviceSynchronize();
-			printf("CUDA ERROR12, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR12, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			if(RUN_FLAG==0){  //fixed source
 				// pop secondaries back in

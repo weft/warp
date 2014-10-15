@@ -85,7 +85,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		y += (surf_dist + 5e-5) * yhat;
 		z += (surf_dist + 5e-5) * zhat;
 		this_rxn = 800;
-		tope=999999999;
+		tope=999999998;  // make leaking a different isotope than mis-sampling
 		// enforce BC
 		if (enforce_BC){
 			isdone = 1;
@@ -107,7 +107,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	space[tid].y			= y;
 	space[tid].z			= z;
 	space[tid].macro_t 		= macro_t_total;
-	rxn[tid_in] 			= this_rxn;
+	rxn[tid_in] 			= this_rxn;  // rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
 	isonum[tid] 			= tope;
 	rn_bank[tid] 			= rn;
 	done[tid] 				= isdone;
