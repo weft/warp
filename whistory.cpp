@@ -321,7 +321,7 @@ unsigned whistory::reduce_yield(){
 
 	unsigned reduced_yields;
 
-	printf("reducing yield for %u elements\n",N);
+	//printf("reducing yield for %u elements\n",N);
 	//cudaMemcpy(yield,d_yield,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
 	//for(unsigned k=0;k<N;k++){printf("yield[%u]=%u\n",k,yield[k]);}
 
@@ -1763,7 +1763,7 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	if( (edges[2] + edges[1]) == 0){
 		*escatter_N 	=	0;}
 	else{
-		*escatter_N 	= 	edges[2]  - edges[1] + 1;
+		*escatter_N 	= 	edges[2]  - edges[1] ;
 	}
 	if( (edges[4] + edges[3]) == 0){
 		*iscatter_N 	=	0;
