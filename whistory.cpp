@@ -321,6 +321,10 @@ unsigned whistory::reduce_yield(){
 
 	unsigned reduced_yields;
 
+	printf("reducing yield for %u elements\n",N);
+	//cudaMemcpy(yield,d_yield,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	//for(unsigned k=0;k<N;k++){printf("yield[%u]=%u\n",k,yield[k]);}
+
 	res = cudppReduce(reduplan_int, d_reduced_yields, d_yield, N);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing yield values\n");exit(-1);}
 	cudaMemcpy(&reduced_yields, d_reduced_yields, 1*sizeof(unsigned), cudaMemcpyDeviceToHost);
@@ -381,6 +385,7 @@ unsigned whistory::reduce_done(){
 
 	unsigned reduced_done = 0;
 
+	printf("reducing done\n");
 	res = cudppReduce(reduplan_int, d_reduced_done, d_done, Ndataset);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing done values\n");exit(-1);}
 	cudaMemcpy(&reduced_done, d_reduced_done, 1*sizeof(unsigned), cudaMemcpyDeviceToHost);
@@ -1435,8 +1440,8 @@ void whistory::reset_cycle(float keff_cycle){
 	cudaMemcpy( d_cellnum,	cellnum,			N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_matnum,	matnum,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_isonum,	isonum,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_yield,	yield,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_rxn,		rxn,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_yield,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_rxn,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_active,	remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_index,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 
@@ -1452,8 +1457,8 @@ void whistory::reset_fixed(){
 	cudaMemcpy( d_cellnum,		cellnum,	Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_matnum,		matnum,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_isonum,		isonum,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_yield,		yield,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_rxn,			rxn,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_yield,		zeros,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_rxn,			zeros,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 
 	//set position, direction, energy
@@ -1607,7 +1612,6 @@ void whistory::run(){
 			accumulate_keff(converged, iteration, &keff, &keff_cycle);
 			accumulate_tally();
 			reset_cycle(keff_cycle);
-			//printf("CUDA ERROR12, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			Nrun=N;
 		}
 
@@ -1746,8 +1750,11 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	unsigned resamp_start = 0;
 
 	// sort key/value of rxn/tid
-	res = cudppRadixSort(radixplan, d_rxn, d_remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
-	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
+	//printf("N=%u\n",*num_active);
+	if(*num_active>1){
+		res = cudppRadixSort(radixplan, d_rxn, d_remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
+		if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
+	}
 
 	// launch edge detection kernel, writes mapped d_edges array
 	reaction_edges(NUM_THREADS, *num_active, d_edges, d_rxn);
@@ -1762,19 +1769,19 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 		*iscatter_N 	=	0;
 	}
 	else{
-		*iscatter_N		= 	edges[4]  - edges[3] + 1;
+		*iscatter_N		= 	edges[4]  - edges[3] ;
 	}
 	if( (edges[6] + edges[5]) == 0){
 		*cscatter_N 	= 	0;
 	}
 	else{
-		*cscatter_N 	= 	edges[6]  - edges[5] + 1;
+		*cscatter_N 	= 	edges[6]  - edges[5] ;
 	}
 	if( (edges[8] + edges[7]) == 0){
 		resamp_N 		=	0;
 	}
 	else{
-		resamp_N 		= edges[8]  - edges[7] + 1;
+		resamp_N 		= edges[8]  - edges[7] ;
 	}
 	if( (edges[10] + edges[9]) == 0){
 		*fission_N 		= 	0;
@@ -1783,7 +1790,7 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 		*fission_N 		= *num_active - edges[9];
 	}
 	else{
-		*fission_N 		= edges[10] - edges[9] + 1;
+		*fission_N 		= edges[10] - edges[9] ;
 	}
 	*escatter_start	= edges[1];
 	*iscatter_start	= edges[3];
