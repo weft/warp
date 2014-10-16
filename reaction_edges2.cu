@@ -23,18 +23,105 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 
 	unsigned rxn1, rxn2;
 	int diff = 0; 
-
-	// load data
-	rxn1 = rxn[tid];  
-	//printf("rxn[%u]=%u\n",tid,rxn1);
-	if(tid < N-1){  //both elements if not last
+  
+	if(tid < N-1 & N>1){  //both elements if not last and N>1
+		rxn1 = rxn[tid];
 		rxn2 = rxn[tid+1];
-		diff = rxn2-rxn1;   //diff should be >0 since the list is sorted
-		if(diff<0){printf("non-ascending value found in reaction list at index = %u (%u -> %u)\n!",tid,rxn1,rxn2);}
-	}
-	else{  //check last or only element, do not return.  write the next as the END of whatever reaction is in rxn1
+		diff = rxn2-rxn1; 
+		
+		if(diff<0){ //diff should be >0 since the list is sorted
+			printf("non-ascending value found in reaction list at index = %u (%u -> %u)\n!",tid,rxn1,rxn2);
+		}
 
-		if(rxn1==2){     
+		// return if the same element, or if last/only element (diff will not be set and remain at 0)
+		if((diff==0) || (rxn1>=50 && rxn2 <=90) || (rxn1>=811 && rxn2 <=845)){   
+   			// not an edge => same reaction or block-internal
+   			return;}
+   		else{
+    		// valid edge => determine the reaction and write into edge element
+        	if(rxn1==2){     // first element => end of this reactions block
+        	    edges[2]=tid;}
+        	else if(rxn1>=51 && rxn1<=90){
+        	    edges[4]=tid;}
+        	else if(rxn1==91){
+        	    edges[6]=tid;}
+        	else if(rxn1==800){
+        	    edges[8]=tid;}
+        	else if(rxn1>=811 && rxn1<=845){
+        	    edges[10]=tid;}
+        	
+        	if(rxn2==2){     // second element => start of this reactions block
+        	    edges[1]=tid+1;}
+        	else if(rxn2>=51 && rxn2<=90){
+        	    edges[3]=tid+1;}
+        	else if(rxn2==91){
+        	    edges[5]=tid+1;}
+        	else if(rxn2==800){
+        	    edges[7]=tid+1;}
+        	else if(rxn2>=811 && rxn2<=845){
+        	    edges[9]=tid+1;}
+        }
+
+	}
+
+	else if( N>1 & tid==N-1 ){    // end element
+
+		rxn1 = rxn[tid-1];
+		rxn2 = rxn[tid];
+		diff = rxn2-rxn1; 
+
+		if(diff==0 || (rxn1>=50 && rxn2 <=90) || (rxn1>=811 && rxn2 <=845)){
+			if(rxn2==2){     // end of this block
+        	    edges[2]=tid;}
+        	else if(rxn2>=51 && rxn2<=90){
+        	    edges[4]=tid;}
+        	else if(rxn2==91){
+        	    edges[6]=tid;}
+        	else if(rxn2==800){
+        	    edges[8]=tid;}
+        	else if(rxn2>=811 && rxn1<=845){
+        	    edges[10]=tid;}
+   			return;}
+   		else{
+    		// valid edge => determine the reaction and write into edge element
+        	if(rxn1==2){     // first element => end of this reactions block
+        	    edges[2]=tid;}
+        	else if(rxn1>=51 && rxn1<=90){
+        	    edges[4]=tid;}
+        	else if(rxn1==91){
+        	    edges[6]=tid;}
+        	else if(rxn1==800){
+        	    edges[8]=tid;}
+        	else if(rxn1>=811 && rxn1<=845){
+        	    edges[10]=tid;}
+        	
+        	if(rxn2==2){     // second element => start of this reactions block, must write end too
+        	    edges[1]=tid;
+        		edges[2]=tid+1;}
+        	else if(rxn2>=51 && rxn2<=90){
+        	    edges[3]=tid;
+        	    edges[4]=tid+1;}
+        	else if(rxn2==91){
+        	    edges[5]=tid;
+        	    edges[6]=tid+1;}
+        	else if(rxn2==800){
+        	    edges[7]=tid;
+        	    edges[8]=tid+1;}
+        	else if(rxn2>=811 && rxn2<=845){
+        	    edges[9]=tid;
+        	    edges[10]=tid+1;}
+        }
+
+	}
+	
+	else if ( N==1 ){  // only element
+		rxn1 = rxn[tid];
+
+		if(rxn1>=811){
+			edges[0] = 1;
+		}
+
+		if(rxn1==2){     // first element => end of this reactions block
             edges[2]=tid+1;}
         else if(rxn1>=51 && rxn1<=90){
             edges[4]=tid+1;}
@@ -47,56 +134,11 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 
 	}
 
-	// first (or only) element doesn't have a preceeding, write it in as the start of something, do not return
-	if(tid==0){
-		if(rxn1>=811){
-			edges[0] = 1;
-		}
-		else{
-			if(rxn1==2){     // second element => start of this reactions block
-            	edges[1]=tid;}
-       		else if(rxn1>=51 && rxn1<=90){
-       		    edges[3]=tid;}
-       		else if(rxn1==91){
-       		    edges[5]=tid;}
-       		else if(rxn1==800){
-       		    edges[7]=tid;}
-       		else if(rxn1>=811 && rxn1<=845){
-       		    edges[9]=tid;}
-		}
-	}		
+	else{  //error
+		printf("CASE NOT COVERED IN EDGE DETECTION\n");
+	}
 
-	// return if the same element, or if last/only element (diff will not be set and remain at 0)
-	if((diff==0) || (rxn1>=50 && rxn2 <=90) || (rxn1>=811 && rxn2 <=845)){   
-    	// not an edge => same reaction or block-internal
-    	return;}
-    else{
-    	// valid edge => determine the reaction and write into edge element
-       
-        if(rxn1==2){     // first element => end of this reactions block
-            edges[2]=tid;}
-        else if(rxn1>=51 && rxn1<=90){
-            edges[4]=tid;}
-        else if(rxn1==91){
-            edges[6]=tid;}
-        else if(rxn1==800){
-            edges[8]=tid;}
-        else if(rxn1>=811 && rxn1<=845){
-            edges[10]=tid;}
-
-        
-        if(rxn2==2){     // second element => start of this reactions block
-            edges[1]=tid+1;}
-        else if(rxn2>=51 && rxn2<=90){
-            edges[3]=tid+1;}
-        else if(rxn2==91){
-            edges[5]=tid+1;}
-        else if(rxn2==800){
-            edges[7]=tid+1;}
-        else if(rxn2>=811 && rxn2<=845){
-            edges[9]=tid+1;}
-        }
-
+	printf("rxn[%u]=%u\n",tid,rxn1);
 
 }
 

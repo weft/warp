@@ -1556,7 +1556,7 @@ void whistory::run(){
 
 			// write histories to file
 			//write_histories(iteration);
-			
+			printf("CUDA ERROR0, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			// find what material we are in and nearest surface distance
 			trace(2, Nrun);
 			//printf("CUDA ERROR1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
@@ -1590,7 +1590,7 @@ void whistory::run(){
 			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
 			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  
 			cudaDeviceSynchronize();
-			//printf("CUDA ERROR12, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			printf("CUDA ERROR12, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			if(RUN_FLAG==0){  //fixed source
 				// pop secondaries back in
@@ -1810,8 +1810,8 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	else           {*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N;}
 
 	// debug
-	//printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
-	//printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
+	printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
+	printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
 	//write_to_file(d_remap, d_rxn, N,"remap","w");
 
 	// rezero edge vector (mapped, so is reflected on GPU)
