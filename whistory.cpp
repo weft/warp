@@ -1414,6 +1414,7 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 void whistory::reset_cycle(float keff_cycle){
 
 	// re-base the yield so keff is 1
+	printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	rebase_yield( NUM_THREADS, N,  keff_cycle, d_rn_bank, d_yield);
 
 	//reduce to check, unecessary in real runs
@@ -1421,18 +1422,22 @@ void whistory::reset_cycle(float keff_cycle){
 	//std::cout << "real keff "<< keff_cycle <<", artificially rebased keff " << keff_new <<"\n";
 
 	// prefix sum scan (non-inclusive) yields to see where to write
+	printf("CUDA ERROR4.1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	res = cudppScan( scanplan_int, d_scanned,  d_yield,  Ndataset );
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
 
 	// swap the key/values to sort the rxn vector by tid to align the rest of data with the right reactions, done so 18 doesn't have to be assumed.  Sorting is necessary for prefix sum to work (order-dependent)
+	printf("CUDA ERROR4.2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	res = cudppRadixSort(radixplan, d_remap, d_rxn, N);  
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
 
 	//pop them in!  should be the right size now due to keff rebasing  
+	printf("CUDA ERROR4.3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	pop_source( NUM_THREADS, N, d_isonum, d_remap, d_scanned, d_remap, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy, d_fissile_points, d_fissile_energy, d_awr_list);
-	cscatter( stream[0], NUM_THREADS, 0,  N, 0 , d_remap, d_isonum, d_index, d_rn_bank, d_fissile_energy, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
+	printf("CUDA ERROR4.4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+	//cscatter( stream[0], NUM_THREADS, 0,  N, 0 , d_remap, d_isonum, d_index, d_rn_bank, d_fissile_energy, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
 	//printf("CUDA ERROR-pop, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
-
+	printf("CUDA ERROR4.5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	// rest run arrays
 	cudaMemcpy( d_space,	d_fissile_points,	N*sizeof(source_point),	cudaMemcpyDeviceToDevice );
 	cudaMemcpy( d_E,		d_fissile_energy,	N*sizeof(unsigned),		cudaMemcpyDeviceToDevice );
@@ -1444,9 +1449,13 @@ void whistory::reset_cycle(float keff_cycle){
 	cudaMemcpy( d_rxn,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_active,	remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_index,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-
+printf("CUDA ERROR4.6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	// update RNG seeds
 	update_RNG();
+printf("CUDA ERROR4.7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+	// sync, these H2D and D2D copies aren't strictly synchronous
+	cudaDeviceSynchronize();
+printf("CUDA ERROR4.8, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 }
 void whistory::reset_fixed(){
@@ -1466,6 +1475,9 @@ void whistory::reset_fixed(){
 
 	// update RNG seeds
 	update_RNG();
+
+	// sync, these H2D and D2D copies aren't strictly synchronous
+	cudaDeviceSynchronize();
 
 }
 void whistory::run(){
@@ -1522,24 +1534,30 @@ void whistory::run(){
 
 	while(iteration<n_cycles){
 
+		printf("CUDA ERROR0, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		//write source positions to file if converged
 		if(converged){
 			write_to_file(d_space,d_E,N,fiss_name,"a+");
 		}
-		//printf("not printing fissile points\n");
 
+		printf("CUDA ERROR1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+
+		// reset edges and active number
 		Nrun=N;
 		edges[0]  = 0; 
-		edges[1]  = 0; // assumes 0 indexing
+		edges[1]  = 0; 
 		edges[2]  = 0;
 		edges[3]  = 0;
 		edges[4]  = 0;
 		edges[5]  = 0;
-		edges[6]  = 0; // assumes 0 indexing
+		edges[6]  = 0; 
 		edges[7]  = 0;
 		edges[8]  = 0;
 		edges[9]  = 0;
 		edges[10] = 0;
+
+		printf("CUDA ERROR2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+		//print_data(stream[0], NUM_THREADS, N, d_space, d_E, d_cellnum, d_matnum, d_isonum, d_rxn, d_done, d_yield);
 
 		while(Nrun>0){
 			//printf("CUDA ERROR, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
@@ -1553,32 +1571,24 @@ void whistory::run(){
 
 			//record stats
 			fprintf(statsfile,"%u %10.8E\n",Nrun,get_time());
-
-			// write histories to file
-			//write_histories(iteration);
-			printf("CUDA ERROR0, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			
 			// find what material we are in and nearest surface distance
 			trace(2, Nrun);
-			//printf("CUDA ERROR1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			//find the main E grid index
 			//find_E_grid_index_quad( NUM_THREADS, N,  qnodes_depth,  qnodes_width, d_active, d_qnodes_root, d_E, d_index, d_done);
 			find_E_grid_index( NUM_THREADS, Nrun, xs_length_numbers[1],  d_remap, d_xs_data_main_E_grid, d_E, d_index, d_rxn);
-			//printf("CUDA ERROR2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
 			macroscopic( NUM_THREADS, Nrun,  n_isotopes, n_materials, MT_columns, outer_cell, d_remap, d_space, d_isonum, d_cellnum, d_index, d_matnum, d_rxn, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_number_density_matrix, d_done);
-			//printf("CUDA ERROR3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			// run tally kernel to compute spectra
 			if(converged){
 				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn);
-				//printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			}
 
 			// run microscopic kernel to fi`nd reaction type
 			microscopic( NUM_THREADS, Nrun, n_isotopes, MT_columns, d_remap, d_isonum, d_index, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_xs_MT_numbers_total, d_xs_MT_numbers, d_xs_data_Q, d_rxn, d_Q, d_done);
-			//printf("CUDA ERROR5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			// remap threads to still active data
 			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
@@ -1590,7 +1600,7 @@ void whistory::run(){
 			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
 			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  
 			cudaDeviceSynchronize();
-			printf("CUDA ERROR12, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR12, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			if(RUN_FLAG==0){  //fixed source
 				// pop secondaries back in
@@ -1610,9 +1620,14 @@ void whistory::run(){
 		}
 		else if (RUN_FLAG==1){	
 			accumulate_keff(converged, iteration, &keff, &keff_cycle);
+			printf("CUDA ERROR3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			accumulate_tally();
+			printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			reset_cycle(keff_cycle);
+			printf("CUDA ERROR5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			Nrun=N;
+			write_histories(1);
+			printf("CUDA ERROR6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		}
 
 		// update active iteration
@@ -1631,13 +1646,15 @@ void whistory::run(){
 
 		fprintf(statsfile,"---- iteration %u done ----\n",iteration);
 		
-		//std::cout << "cycle done, press enter to continue...\n";
+		write_histories(2);
+		printf("CUDA ERROR7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+		//std::cout << "press enter to continue...\n";
 		//std::cin.ignore();
 
 		// set convergence flag
 		if( iteration_total == n_skip-1){ 
-				converged=1;
-				reduced_yields_total = 0;
+			converged=1;
+			reduced_yields_total = 0;
 		}
 
 		// advance iteration number, reset cycle keff
@@ -1810,8 +1827,8 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	else           {*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N;}
 
 	// debug
-	printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
-	printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
+	//printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
+	//printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
 	//write_to_file(d_remap, d_rxn, N,"remap","w");
 
 	// rezero edge vector (mapped, so is reflected on GPU)
@@ -1941,6 +1958,9 @@ void whistory::write_histories(unsigned iteration){
 
 	// print actions
 	std::string histfile_name = "history_file";
+	char numstr[5];
+	sprintf(numstr,"%u",iteration);
+	histfile_name += numstr;
 	printf("Writing to \"%s\"\n",histfile_name.c_str());
 
 	// open file, appending to a new file.
@@ -1980,7 +2000,6 @@ void whistory::write_histories(unsigned iteration){
 	for(unsigned k=0;k<N;k++){
 		fprintf(history_file,"tid %u (x,y,z) %8.6E %8.6E %8.6E (x,y,z)-hat %8.6E %8.6E %8.6E surf_dist %8.6E macro_t %8.6E enforce_BC %u E %8.6E cellnum %u matnum %u isonum %u rxn %u done %u yield %u\n",k,space2[k].x,space2[k].y,space2[k].z,space2[k].xhat,space2[k].yhat,space2[k].zhat,space2[k].surf_dist,space2[k].macro_t,space2[k].enforce_BC,E2[k],cellnum2[k],matnum2[k],isonum2[k],rxn2[k],done2[k],yield2[k]);
 	}
-
  	fclose(history_file);
 
  	//deallocate so can be alloaed again next time

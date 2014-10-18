@@ -138,7 +138,7 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 		printf("CASE NOT COVERED IN EDGE DETECTION\n");
 	}
 
-	printf("rxn[%u]=%u\n",tid,rxn1);
+	//printf("rxn[%u]=%u\n",tid,rxn1);
 
 }
 

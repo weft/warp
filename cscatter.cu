@@ -23,7 +23,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	else{  // pop mode
 		tid=tid_in;
 		this_rxn = rxn[tid];
-		if ( this_rxn != 916 & this_rxn != 917 & this_rxn != 937 & this_rxn != 924 & this_rxn != 922 & this_rxn != 928 & this_rxn != 924 & this_rxn !=932 & this_rxn != 933 & this_rxn != 941){return;}  // return if not elastic scatter
+		if ( this_rxn != 916 & this_rxn != 917 & this_rxn != 937 & this_rxn != 924 & this_rxn != 922 & this_rxn != 928 & this_rxn != 924 & this_rxn !=932 & this_rxn != 933 & this_rxn != 941){return;}  // return if not multiplicity reaction
 	}
 
 	//constants
@@ -41,6 +41,17 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	float * 	this_Sarray = scatterdat[this_dex];
 	float * 	this_Earray =  energydat[this_dex];
 	unsigned	rn			= rn_bank[ tid ];
+
+	// check pointer
+	if(this_Sarray == 0x0){
+		printf("null pointer in cscatter!,dex %u rxn %u tope %u E %6.4E run mode %u\n",this_dex,this_rxn,this_tope,this_E,run_mode);
+		return;
+	}
+	if(this_Earray == 0x0){
+		printf("null pointer in cscatter!,dex %u rxn %u tope %u E %6.4E run mode %u\n",this_dex,this_rxn,this_tope,this_E,run_mode);
+		return;
+	}
+
 
 	// internal kernel variables
 	float 		mu, phi, next_E, last_E, sampled_E, e_start, E0, E1, Ek, next_e_start, next_e_end, last_e_start, last_e_end, diff;
@@ -184,13 +195,13 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	//printf("%u dex %u sampled_E % 10.8E norm2_lf % 10.8E mu % 10.8E\n",tid,this_dex,sampled_E,v_n_lf.norm2(),mu);
 
 	// write results
-	done[tid]       = isdone;
-	rxn[starting_index+tid_in] = this_rxn;
-	E[tid]          = E_new;
-	space[tid].xhat = hats_new.x;
-	space[tid].yhat = hats_new.y;
-	space[tid].zhat = hats_new.z;
-	rn_bank[tid] 	= rn;	
+	done[tid]       			= isdone;
+	rxn[starting_index+tid_in] 	= this_rxn;
+	E[tid]          			= E_new;
+	space[tid].xhat 			= hats_new.x;
+	space[tid].yhat 			= hats_new.y;
+	space[tid].zhat 			= hats_new.z;
+	rn_bank[tid] 				= rn;	
 
 }
 

@@ -194,16 +194,19 @@ __global__ void pop_secondaries_kernel(unsigned N, unsigned RNUM_PER_THREAD, uns
 		__syncthreads();
 
 		// set data
-		E    [ data_dex ] 		= sampled_E;
-		space[ data_dex ].x 	= this_space.x;
-		space[ data_dex ].y 	= this_space.y;
-		space[ data_dex ].z 	= this_space.z;
-		space[ data_dex ].xhat 	= sqrtf(1.0-(mu*mu))*cosf(phi);
-		space[ data_dex ].yhat 	= sqrtf(1.0-(mu*mu))*sinf(phi); 
-		space[ data_dex ].zhat 	= mu;
-		done [ data_dex ] 		= 0;
-		yield[ data_dex ] 		= 0;
-		rxn  [ data_dex ]		= 0;//this_rxn;
+		E    [ data_dex ] 				= sampled_E;
+		space[ data_dex ].x 			= this_space.x;
+		space[ data_dex ].y 			= this_space.y;
+		space[ data_dex ].z 			= this_space.z;
+		space[ data_dex ].xhat 			= sqrtf(1.0-(mu*mu))*cosf(phi);
+		space[ data_dex ].yhat 			= sqrtf(1.0-(mu*mu))*sinf(phi); 
+		space[ data_dex ].zhat 			= mu;
+		space[ data_dex ].enforce_BC 	= 0;
+		space[ data_dex ].surf_dist 	= 999999.0;
+		space[ data_dex ].macro_t 		= 9999999.0;
+		done [ data_dex ] 				= 0;
+		yield[ data_dex ] 				= 0;
+		rxn  [ data_dex ]				= 0;//this_rxn;
 		//printf("popped - dex %u rxn %u ptr %p sampled_E %6.4E\n",data_dex,this_rxn,this_array,sampled_E); 
 
 	}

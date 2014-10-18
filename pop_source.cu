@@ -153,11 +153,13 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 		space_out[ data_dex ].zhat 			= z;
 		space_out[ data_dex ].enforce_BC 	= 0;
 		space_out[ data_dex ].surf_dist 	= 99999.0;
-		space_out[ data_dex ].macro_t 		= 0.0;
+		space_out[ data_dex ].macro_t 		= 8.675309;
 		rxn  	 [ data_dex ]				= this_rxn;
 		index 	 [ data_dex ] 				= dex;
 		isonum   [ data_dex ]  				= this_tope;
 		rn_bank  [tid] = rn;
+
+		//printf("rxn %u in pop dex %u\n",this_rxn,data_dex);
 		if(this_rxn==918){
 			E_out 	 [ data_dex ] 	= sampled_E;
 		}
