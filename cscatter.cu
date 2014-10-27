@@ -61,7 +61,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	float 		E_new				=   0.0;
 	//float 		a 					= 	this_awr/(this_awr+1.0);
 	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target;
-	float 		cdf0,e0,A,R,pdf0,rn1;
+	float 		cdf0,e0,A,R,pdf0,rn1,cdf1,pdf1,e1;
 	//float		cdf1,pdf1,e1;
 	//float 		v_rel,E_rel;
 
@@ -110,14 +110,18 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	if(  get_rand(&rn) >= r ){   //sample last E
 		diff = last_e_end - last_e_start;
 		e_start = last_e_start;
-		n = binary_search( &this_Earray[ offset + vlen ] , rn1, vlen);
-		//printf("n %u vlen %u rn7 %6.4E\n",n,vlen,rn7);
-		cdf0 		= this_Earray[ (offset +   vlen ) + n+0];
-		//cdf1 		= this_Earray[ (offset +   vlen ) + n+1];
+		//n = binary_search( &this_Earray[ offset + vlen ] , rn1, vlen);
+		for ( n=0 ; n<vlen-1 ; n++ ){
+			cdf0 		= this_Earray[ (offset +   vlen ) + n+0];
+			cdf1 		= this_Earray[ (offset +   vlen ) + n+1];
+			if( rn1 >= cdf0 & rn1 < cdf1 ){
+				break;
+			}
+		}
 		pdf0		= this_Earray[ (offset + 2*vlen ) + n+0];
-		//pdf1		= this_Earray[ (offset + 2*vlen ) + n+1];
+		pdf1		= this_Earray[ (offset + 2*vlen ) + n+1];
 		e0  		= this_Earray[ (offset          ) + n+0];
-		//e1  		= this_Earray[ (offset          ) + n+1]; 
+		e1  		= this_Earray[ (offset          ) + n+1]; 
 		offset = 4;
 		A = this_Sarray[ (offset)      + n ];
 		R = this_Sarray[ (offset+vlen) + n ];
@@ -125,14 +129,18 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	else{
 		diff = next_e_end - next_e_start;
 		e_start = next_e_start;
-		n = binary_search( &this_Earray[ offset + 3*vlen + next_vlen] , rn1, next_vlen);
-		//printf("n %u next_vlen %u rn7 %6.4E\n",n,next_vlen,rn7);
-		cdf0 		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+0];
-		//cdf1  		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+1];
+		//n = binary_search( &this_Earray[ offset + 3*vlen + next_vlen] , rn1, next_vlen);
+		for ( n=0 ; n<next_vlen-1 ; n++ ){
+			cdf0 		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+0];
+			cdf1  		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+1];
+			if( rn1 >= cdf0 & rn1 < cdf1 ){
+				break;
+			}
+		}
 		pdf0		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+0];
-		//pdf1		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+1];
+		pdf1		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+1];
 		e0   		= this_Earray[ (offset + 3*vlen               ) + n+0];
-		//e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
+		e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
 		offset = 4;
 		A = this_Sarray[ (offset+2*vlen)           +n  ] ;
 		R = this_Sarray[ (offset+2*vlen+next_vlen) +n  ];
