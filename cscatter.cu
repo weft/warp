@@ -42,7 +42,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	float * 	this_Earray =  energydat[this_dex];
 	unsigned	rn			= rn_bank[ tid ];
 
-	// check pointer
+	// check pointers
 	if(this_Sarray == 0x0){
 		printf("null pointer in cscatter!,dex %u rxn %u tope %u E %6.4E run mode %u\n",this_dex,this_rxn,this_tope,this_E,run_mode);
 		return;
@@ -66,12 +66,12 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	//float 		v_rel,E_rel;
 
 
-	// make target isotropic
-	mu  = (2.0*get_rand(&rn)) - 1.0;
-	phi = 2.0*pi*get_rand(&rn);
-	hats_target.x = sqrtf(1.0-(mu*mu))*cosf(phi);
-	hats_target.y = sqrtf(1.0-(mu*mu))*sinf(phi); 
-	hats_target.z = mu;
+	// make target isotropic (continuum is high energy, good approx)
+	//mu  = (2.0*get_rand(&rn)) - 1.0;
+	//phi = 2.0*pi*get_rand(&rn);
+	//hats_target.x = sqrtf(1.0-(mu*mu))*cosf(phi);
+	//hats_target.y = sqrtf(1.0-(mu*mu))*sinf(phi); 
+	//hats_target.z = mu;
 	
 	// make speed vectors
 	v_n_lf = hats_old    * speed_n;
@@ -194,9 +194,12 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 
 	//printf("%u dex %u sampled_E % 10.8E norm2_lf % 10.8E mu % 10.8E\n",tid,this_dex,sampled_E,v_n_lf.norm2(),mu);
 
-	// write results
-	done[tid]       			= isdone;
-	rxn[starting_index+tid_in] 	= this_rxn;
+	// write reaction results if in trasport mode
+	if(run_mode){
+		done[tid]       			= isdone;
+		rxn[starting_index+tid_in] 	= this_rxn;
+	}
+	// write universal results
 	E[tid]          			= E_new;
 	space[tid].xhat 			= hats_new.x;
 	space[tid].yhat 			= hats_new.y;

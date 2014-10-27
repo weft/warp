@@ -7,8 +7,16 @@ __forceinline__ __device__ unsigned binary_search( float * array , float value, 
 	unsigned donesearching = 0;
 	unsigned cnt  = 1;
 	unsigned powtwo = 2;
-	int dex  = (len) / 2;  //N_energiesgth starts at 1, duh
+	int dex  = (len) / 2;  //N_energies starts at 1, duh
 
+	// edge check
+	if(value < array[0] | value > array[len-1]){
+		//printf("device binary search value outside array range! %p %d val % 10.8f ends % 10.8f % 10.8f\n",array,len,value,array[0],array[len-1]);
+		//printf("val %6.4E len %u outside %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E ... %6.4E %6.4E\n",value,len,array[0],array[1],array[2],array[3],array[4],array[5],array[len-1],array[len]);
+		//return 0;
+	}
+
+	// search
 	while(!donesearching){
 
 		powtwo = powtwo * 2;
@@ -19,7 +27,7 @@ __forceinline__ __device__ unsigned binary_search( float * array , float value, 
 
 		if(cnt>30){
 			donesearching=1;
-			printf("device binary search iteration overflow! %p %d val % 10.8f ends % 10.8f % 10.8f\n",array,len,value,array[0],array[len-1]);
+			printf("device binary search iteration overflow! dex %d ptr %p %d val % 10.8f ends % 10.8f % 10.8f\n",dex,array,len,value,array[0],array[len-1]);
 			dex=0;
 		}
 

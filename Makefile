@@ -1,8 +1,8 @@
 #
-CC =  /usr/local/Cellar/gcc46/4.6.4/bin/gcc-4.6
-CXX = /usr/local/Cellar/gcc46/4.6.4/bin/g++-4.6
+CC =  gcc
+CXX = g++  -mmacosx-version-min=10.7
 OPTIX = /Developer/OptiX/
-NVCC = nvcc --compiler-bindir /usr/local/Cellar/gcc46/4.6.4/bin/
+NVCC = nvcc
 ARCH = -arch sm_30
 C_FLAGS = -O3 -m64 -fPIC
 NVCC_FLAGS = -m64  -use_fast_math --compiler-options '-fPIC'
@@ -210,4 +210,4 @@ optixtest: libwarp.so
 python: libwarp.so
 	swig -python -c++ warp.i;   \
 	$(CXX) -fPIC -c $(PYTHON_FLAGS) $(CUDPP_FLAGS) $(C_FLAGS) $(CUDA_FLAGS) warp_wrap.cxx;  \
-	$(CXX) -shared $(C_FLAGS) libwarp.so warp_wrap.o -o _warp.so $(PYTHON_FLAGS) -lpython2.7
+	$(CXX) -shared $(CUDA_FLAGS) $(C_FLAGS) $(OPTIX_FLAGS) libwarp.so warp_wrap.o -o _warp.so $(PYTHON_FLAGS) -lpython2.7

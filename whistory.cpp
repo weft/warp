@@ -1414,7 +1414,7 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 void whistory::reset_cycle(float keff_cycle){
 
 	// re-base the yield so keff is 1
-	printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+	//printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	rebase_yield( NUM_THREADS, N,  keff_cycle, d_rn_bank, d_yield);
 
 	//reduce to check, unecessary in real runs
@@ -1422,46 +1422,47 @@ void whistory::reset_cycle(float keff_cycle){
 	//std::cout << "real keff "<< keff_cycle <<", artificially rebased keff " << keff_new <<"\n";
 
 	// prefix sum scan (non-inclusive) yields to see where to write
-	printf("CUDA ERROR4.1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+	//printf("CUDA ERROR4.1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	res = cudppScan( scanplan_int, d_scanned,  d_yield,  Ndataset );
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
 
 	// swap the key/values to sort the rxn vector by tid to align the rest of data with the right reactions, done so 18 doesn't have to be assumed.  Sorting is necessary for prefix sum to work (order-dependent)
-	printf("CUDA ERROR4.2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+	//printf("CUDA ERROR4.2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	res = cudppRadixSort(radixplan, d_remap, d_rxn, N);  
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
 
+	//write_histories(0);
+
 	//pop them in!  should be the right size now due to keff rebasing  
-	printf("CUDA ERROR4.3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
-	pop_source( NUM_THREADS, N, d_isonum, d_remap, d_scanned, d_remap, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy, d_fissile_points, d_fissile_energy, d_awr_list);
-	printf("CUDA ERROR4.4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
-	//cscatter( stream[0], NUM_THREADS, 0,  N, 0 , d_remap, d_isonum, d_index, d_rn_bank, d_fissile_energy, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
-	//printf("CUDA ERROR-pop, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
-	printf("CUDA ERROR4.5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
-	// rest run arrays
+	//printf("CUDA ERROR4.3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+	pop_source( NUM_THREADS, N, d_isonum, d_remap, d_scanned, d_remap, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy, d_xs_data_scatter, d_fissile_points, d_fissile_energy, d_awr_list);
+	//printf("CUDA ERROR4.4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+ 
+ 	// rest run arrays
 	cudaMemcpy( d_space,	d_fissile_points,	N*sizeof(source_point),	cudaMemcpyDeviceToDevice );
 	cudaMemcpy( d_E,		d_fissile_energy,	N*sizeof(unsigned),		cudaMemcpyDeviceToDevice );
-	cudaMemcpy( d_done,		done,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_cellnum,	cellnum,			N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_matnum,	matnum,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_isonum,	isonum,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_done,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_cellnum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_matnum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_isonum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_yield,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_rxn,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_active,	remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_remap,	remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_index,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-printf("CUDA ERROR4.6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+
+	//printf("CUDA ERROR4.6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	// update RNG seeds
 	update_RNG();
-printf("CUDA ERROR4.7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+	//printf("CUDA ERROR4.7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	// sync, these H2D and D2D copies aren't strictly synchronous
 	cudaDeviceSynchronize();
-printf("CUDA ERROR4.8, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+	//printf("CUDA ERROR4.8, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 }
 void whistory::reset_fixed(){
 
 	// rest read-in run arrays (ie not ones that are written to in-between)
-	cudaMemcpy( d_space,		space,		Ndataset*sizeof(source_point),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_space,		space,		Ndataset*sizeof(source_point),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_done,			done,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_cellnum,		cellnum,	Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_matnum,		matnum,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
@@ -1534,13 +1535,13 @@ void whistory::run(){
 
 	while(iteration<n_cycles){
 
-		printf("CUDA ERROR0, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+		//printf("CUDA ERROR0, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		//write source positions to file if converged
 		if(converged){
 			write_to_file(d_space,d_E,N,fiss_name,"a+");
 		}
 
-		printf("CUDA ERROR1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+		//printf("CUDA ERROR1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 		// reset edges and active number
 		Nrun=N;
@@ -1556,7 +1557,7 @@ void whistory::run(){
 		edges[9]  = 0;
 		edges[10] = 0;
 
-		printf("CUDA ERROR2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+		//printf("CUDA ERROR2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		//print_data(stream[0], NUM_THREADS, N, d_space, d_E, d_cellnum, d_matnum, d_isonum, d_rxn, d_done, d_yield);
 
 		while(Nrun>0){
@@ -1620,14 +1621,14 @@ void whistory::run(){
 		}
 		else if (RUN_FLAG==1){	
 			accumulate_keff(converged, iteration, &keff, &keff_cycle);
-			printf("CUDA ERROR3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			accumulate_tally();
-			printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			reset_cycle(keff_cycle);
-			printf("CUDA ERROR5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			Nrun=N;
-			write_histories(1);
-			printf("CUDA ERROR6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//write_histories(1);
+			//printf("CUDA ERROR6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		}
 
 		// update active iteration
@@ -1646,8 +1647,8 @@ void whistory::run(){
 
 		fprintf(statsfile,"---- iteration %u done ----\n",iteration);
 		
-		write_histories(2);
-		printf("CUDA ERROR7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+		//write_histories(2);
+		//printf("CUDA ERROR7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		//std::cout << "press enter to continue...\n";
 		//std::cin.ignore();
 
@@ -1945,6 +1946,7 @@ void whistory::write_histories(unsigned iteration){
 	unsigned*  isonum2;	
 	unsigned*  yield2;
 	unsigned*  rxn2;
+	unsigned*  dex2;
 	source_point* space2;
 	float* E2;
 	done2 		= new unsigned [N];
@@ -1953,6 +1955,7 @@ void whistory::write_histories(unsigned iteration){
 	isonum2		= new unsigned [N];
 	yield2 		= new unsigned [N];
 	rxn2		= new unsigned [N];	
+	dex2 		= new unsigned [N];
 	space2 		= new source_point [N];
 	E2 			= new float [N];
 
@@ -1993,12 +1996,16 @@ void whistory::write_histories(unsigned iteration){
 	// copy reaction numbers
 	cudaMemcpy(rxn2,d_rxn,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
 
+	// copy index numbers
+	cudaMemcpy(dex2,d_index,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
 	// sync device before write and return
 	cudaDeviceSynchronize();
 
 	// write history data to file
 	for(unsigned k=0;k<N;k++){
-		fprintf(history_file,"tid %u (x,y,z) %8.6E %8.6E %8.6E (x,y,z)-hat %8.6E %8.6E %8.6E surf_dist %8.6E macro_t %8.6E enforce_BC %u E %8.6E cellnum %u matnum %u isonum %u rxn %u done %u yield %u\n",k,space2[k].x,space2[k].y,space2[k].z,space2[k].xhat,space2[k].yhat,space2[k].zhat,space2[k].surf_dist,space2[k].macro_t,space2[k].enforce_BC,E2[k],cellnum2[k],matnum2[k],isonum2[k],rxn2[k],done2[k],yield2[k]);
+		//fprintf(history_file,"tid %u (x,y,z) %8.6E %8.6E %8.6E (x,y,z)-hat %8.6E %8.6E %8.6E surf_dist %8.6E macro_t %8.6E enforce_BC %u E %8.6E cellnum %u matnum %u isonum %u rxn %u done %u yield %u\n",k,space2[k].x,space2[k].y,space2[k].z,space2[k].xhat,space2[k].yhat,space2[k].zhat,space2[k].surf_dist,space2[k].macro_t,space2[k].enforce_BC,E2[k],cellnum2[k],matnum2[k],isonum2[k],rxn2[k],done2[k],yield2[k]);
+		fprintf(history_file,"a[%u,1:6]=[%8.6E,%8.6E,%8.6E,%8.6E,%u,%u,%u]\n",k,space2[k].x,space2[k].y,space2[k].z,E2[k],rxn2[k],yield2[k],dex2[k]);
 	}
  	fclose(history_file);
 
@@ -2011,6 +2018,7 @@ void whistory::write_histories(unsigned iteration){
 	delete rxn2		;
 	delete space2 	;
 	delete E2 		;
+	delete dex2		;
 
 }
 void whistory::create_quad_tree(){
