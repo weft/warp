@@ -134,7 +134,7 @@ __device__ void process_scatter(unsigned this_yield, unsigned* rn, unsigned posi
     unsigned 	k, vlen, next_vlen, offset, n, law, data_dex; 
 	float  		speed_n          	=   sqrtf(2.0*this_E/m_n);
 	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target;
-	float 		cdf0,e0,A,R,pdf0,rn1,cdf1;//,pdf1,e1;
+	float 		cdf0,e0,A,R,pdf0,rn1,cdf1,pdf1,e1;
 	
 	// make speed vectors
 	v_n_lf = hats_old    * speed_n;
