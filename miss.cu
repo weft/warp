@@ -24,11 +24,12 @@ RT_PROGRAM void miss()
 		launch_index = launch_index_in;
 	}
 	if(trace_type!=3){
-		rtPrintf("!!!MISS!!! rxn = %u outer_cell = %d launch_index = %d remapped index %u trace %d (x,y,z-source)= % 10.9E % 10.9E % 10.9E (x,y,z,dist)= % 6.4E % 6.4E % 6.4E %6.4E \n",rxn_buffer[launch_index], outer_cell, launch_index_in, launch_index, trace_type,positions_buffer[launch_index].x,positions_buffer[launch_index].y,positions_buffer[launch_index].z, payload.x,payload.y,payload.z,payload.surf_dist);
+		//rtPrintf("!!!MISS!!! rxn = %u outer_cell = %d launch_index = %d remapped index %u trace %d (x,y,z-source)= % 10.9E % 10.9E % 10.9E (x,y,z,dist)= % 6.4E % 6.4E % 6.4E %6.4E \n",rxn_buffer[launch_index], outer_cell, launch_index_in, launch_index, trace_type,positions_buffer[launch_index].x,positions_buffer[launch_index].y,positions_buffer[launch_index].z, payload.x,payload.y,payload.z,payload.surf_dist);
+		//rtPrintt("Geom miss due to epsilon written as leak.");
 	}
 	
 	payload.cont 				=  0;
-	rxn_buffer[launch_index_in]	=  997; //miss code
+	rxn_buffer[launch_index_in]	=  997; //miss code, same as leak basically
 	payload.cell_first 			=  4294967295;
 	payload.surf_dist 			= -1.0;
 	payload.hitbuff[0].cell 	=  4294967295;
