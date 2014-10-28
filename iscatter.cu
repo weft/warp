@@ -143,7 +143,9 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 		memcpy(&vlen, 		&this_Sarray[2], sizeof(float));
 		memcpy(&next_vlen, 	&this_Sarray[3], sizeof(float));
 		float r = (this_E-last_E)/(next_E-last_E);
-		//printf("(last,this,next) = %6.4E %6.4E %6.4E, prob=%6.4E, (this,next)_vlen= %u %u\n",last_E,this_E,next_E,(next_E-this_E)/(next_E-last_E),vlen,next_vlen);
+		if(r<0){
+			printf("DATA NOT WITHIN ENERGY INTERVAL tid %u r % 10.8E rxn %u isotope %u this_E % 10.8E last_E % 10.8E next_E % 10.8E dex %u\n",tid,r,this_rxn,this_tope,this_E,last_E,next_E,this_dex);
+		}		
 		if(  get_rand(&rn) >= r ){   //sample last E
 			//k = binary_search(&this_Sarray[offset+vlen], rn1, vlen);
 			for ( k=0 ; k<vlen-1 ; k++ ){	

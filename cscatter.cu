@@ -97,8 +97,8 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	if(run_mode==0 & this_E<last_E){this_E=last_E;}
 	float r = (this_E-last_E)/(next_E-last_E);
 	if(r<0){
-		printf("mode %u tid %u r % 10.8E rxn %u isotope %u this_E % 10.8E last_E % 10.8E next_E % 10.8E dex %u\n",run_mode,tid,r,this_rxn,this_tope,this_E,last_E,next_E,this_dex);
-	}
+		printf("DATA NOT WITHIN ENERGY INTERVAL tid %u r % 10.8E rxn %u isotope %u this_E % 10.8E last_E % 10.8E next_E % 10.8E dex %u\n",tid,r,this_rxn,this_tope,this_E,last_E,next_E,this_dex);
+	}	
 	last_e_start = this_Earray[ offset ];
 	last_e_end   = this_Earray[ offset + vlen - 1 ];
 	next_e_start = this_Earray[ offset + 3*vlen ];
