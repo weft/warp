@@ -1,5 +1,6 @@
 #ifndef WGEOMETRY_H
 #define WGEOMETRY_H
+#include "primitive.h"
 
 /**
  * \class wgeometry wgeometry.h
@@ -7,6 +8,7 @@
  */
 
 class wgeometry {
+public:
 	unsigned 	n_box; /**<  number of boxes */
 	unsigned 	n_cyl; /**<  number of cylinders */
 	unsigned 	n_hex; /**<  number of hexagons */
@@ -19,10 +21,8 @@ class wgeometry {
 	unsigned 	fissile_flag; /**<  indicates whether or not a material is fissile */
 	unsigned * 	material_num_list; /**<  list of material numbers */
 	unsigned * 	cell_num_list; /**<  list of cell numbers */
-public:
 	/**
 	 *  wgeometry constructor
-	 *  \todo make a google test for construction
 	 */ 
 	 wgeometry();
 	/**
