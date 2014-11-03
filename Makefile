@@ -254,7 +254,7 @@ python: libwarp.so
 
 #google test
 optix_stuff_test : libwarp.so optix_stuff.o optix_stuff_test.o gtest_main.a
-	$(CXX) $(OPTIX_FLAGS) $(OPTIX_LIBS) $(CUDPP_FLAGS) $(PYTHON_FLAGS) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
+	$(CXX) $(PNG_FLAGS) $(PNG_LIBS) $(OPTIX_FLAGS) $(OPTIX_LIBS) $(CUDPP_FLAGS) $(PYTHON_FLAGS) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
 
 primitive_test : libwarp.so primitive.o primitive_test.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
