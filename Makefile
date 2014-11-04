@@ -9,7 +9,7 @@ NVCC_FLAGS = -m64  -use_fast_math --compiler-options '-fPIC' --compiler-bindir '
 CURAND_LIBS = -lcurand
 OPTIX_FLAGS = -I$(OPTIX)/include -L$(OPTIX)/lib64 
 OPTIX_LIBS = -loptix 
-CUDA_FLAGS = -I/usr/local/cuda/include -L/usr/local/cuda/lib
+CUDA_FLAGS = -I/usr/local/cuda/include -L/usr/local/cuda/lib64
 CUDPP_PATH = /home/krowland/cudpp-2.1
 CUDPP_FLAGS = -I$(CUDPP_PATH)/include -L$(CUDPP_PATH)/lib
 CUDPP_LIBS = -lcudpp_hash -lcudpp
@@ -263,5 +263,5 @@ wgeometry_test : libwarp.so wgeometry.o wgeometry_test.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
 
 whistory_test : libwarp.so whistory.o whistory_test.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(CUDA_FLAGS) $(CURAND_LIBS) $(OPTIX_FLAGS) $(OPTIX_LIBS) $(CUDPP_FLAGS) $(CUDPP_LIBS) $(PYTHON_FLAGS) $(PYTHON_LIBS) -lcudart -pthread $^ -o $@
 #/google test
