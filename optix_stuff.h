@@ -1,6 +1,5 @@
 #ifndef OPTIX_STUFF_H
 #define OPTIX_STUFF_H
-
 #include <optix_world.h>
 
 /**

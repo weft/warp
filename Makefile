@@ -1,24 +1,32 @@
 #
-CC =  gcc
-CXX = g++  -mmacosx-version-min=10.7
-OPTIX = /Developer/OptiX/
+CC =  /usr/bin/gcc-4.4
+CXX = /usr/bin/g++-4.4
+OPTIX = /usr/local/OptiX-3.0.1
 NVCC = nvcc
-ARCH = -arch sm_30
+ARCH = -arch sm_20
 C_FLAGS = -O3 -m64 -fPIC
-NVCC_FLAGS = -m64  -use_fast_math --compiler-options '-fPIC'
+NVCC_FLAGS = -m64  -use_fast_math --compiler-options '-fPIC' --compiler-bindir '/usr/bin/gcc-4.4'
 CURAND_LIBS = -lcurand
 OPTIX_FLAGS = -I$(OPTIX)/include -L$(OPTIX)/lib64 
 OPTIX_LIBS = -loptix 
-CUDA_FLAGS = -I/usr/local/cuda/include -L/usr/local/cuda/lib
-CUDPP_PATH = /usr/local/cudpp-2.1/
-CUDPP_FLAGS = -I/$(CUDPP_PATH)/include -L/$(CUDPP_PATH)/lib
+CUDA_FLAGS = -I/usr/local/cuda/include -L/usr/local/cuda/lib64
+CUDPP_PATH = /home/krowland/cudpp-2.1
+CUDPP_FLAGS = -I$(CUDPP_PATH)/include -L$(CUDPP_PATH)/lib
 CUDPP_LIBS = -lcudpp_hash -lcudpp
-PYTHON_FLAGS = -I/System/Library/Frameworks/Python.framework/Headers -L/System/Library/Frameworks/Python.framework
+PYTHON_FLAGS = -I/home/krowland/anaconda/include/python2.7 -L/home/krowland/anaconda/lib/python2.7
 PYTHON_LIBS = -lpython2.7
-PNG_FLAGS = -L/
-PNG_LIBS = -lpng15
+PNG_FLAGS = -L/home/krowland/anaconda/lib
+PNG_LIBS = -lpng15 
 LIBS =
-
+#google test stuff
+GTEST_DIR = /home/krowland/gtest-1.7.0
+USER_DIR = /home/krowland/warp/warp
+CPPFLAGS += -I$(GTEST_DIR)/include
+CXXFLAGS += -g -Wall -Wextra
+TESTS = optix_stuff_test primitive_test wgeometry_test whistory_test
+GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
+	        $(GTEST_DIR)/include/gtest/internal/*.h
+#/google test stuff
 
 COBJS =	mt19937ar.o \
 		print_banner.o \
@@ -49,7 +57,6 @@ COBJS =	mt19937ar.o \
 		write_to_file.o \
 		reaction_edges2.o \
 		device_copies.o \
-		print_data.o \
 
 ptx_objects = 	camera.ptx \
 				hits.ptx \
@@ -67,10 +74,14 @@ ptx_objects = 	camera.ptx \
 all:  	$(ptx_objects) \
 		$(COBJS) \
 		libwarp.so \
-		python
+		python \ $(TESTS)
 
 clean:
 	rm -f *.ptx *.o *.so gpu debug optixtest warp_wrap.cxx warp.py
+
+tests: optix_stuff_test primitive_test whistory_test wgeometry_test
+
+GTEST_SRCS_ = $(GTEST_DIR)/src/*.cc $(GTEST_DIR)/src/*.h $(GTEST_HEADERS)
 
 camera.ptx:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(OPTIX_LIBS) -ptx camera.cu
@@ -180,34 +191,77 @@ reaction_edges2.o:
 write_to_file.o:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c write_to_file.cu
 
-print_data.o:
-	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c print_data.cu
+whistory.o: $(USER_DIR)/whistory.cpp $(USER_DIR)/whistory.h $(GTEST_HEADERS)
+	$(CXX) $(C_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PNG_FLAGS) $(PYTHON_FLAGS) $(CUDA_FLAGS) -c whistory.cpp
 
-whistory.o:
-	$(CXX) $(C_FLAGS)  $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PNG_FLAGS) $(PYTHON_FLAGS) $(CUDA_FLAGS)  -c whistory.cpp
+wgeometry.o: $(USER_DIR)/wgeometry.cpp $(USER_DIR)/wgeometry.h $(GTEST_HEADERS)
+	$(CXX) $(C_FLAGS) $(CPPFLAGS) $(CXXFLAGS) -c wgeometry.cpp
 
-wgeometry.o:
-	$(CXX) $(C_FLAGS)  -c wgeometry.cpp
+primitive.o: $(USER_DIR)/primitive.cpp $(USER_DIR)/primitive.h $(GTEST_HEADERS)
+	$(CXX) $(C_FLAGS) $(CPPFLAGS) $(CXXFLAGS) -c primitive.cpp
 
-primitive.o:
-	$(CXX) $(C_FLAGS)  -c primitive.cpp
+optix_stuff.o: device_copies.o $(USER_DIR)/optix_stuff.cpp $(USER_DIR)/optix_stuff.h $(GTEST_HEADERS)
+	$(CXX) $(C_FLAGS) $(CPPFLAGS) $(CXXFLAGS) $(OPTIX_FLAGS) $(OPTIX_LIBS) $(CUDA_FLAGS) $(PNG_FLAGS) -lm -c optix_stuff.cpp
 
-optix_stuff.o: device_copies.o
-	$(CXX) -m64 -fPIC  $(OPTIX_FLAGS) $(CUDA_FLAGS) $(PNG_FLAGS) -c optix_stuff.cpp
+#google test
+optix_stuff_test.o : $(USER_DIR)/optix_stuff_test.cpp \
+	$(USER_DIR)/optix_stuff.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS) $(CUDA_FLAGS) $(PNG_FLAGS) -c $(USER_DIR)/optix_stuff_test.cpp
+
+primitive_test.o : $(USER_DIR)/primitive_test.cpp \
+	$(USER_DIR)/primitive.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/primitive_test.cpp
+
+wgeometry_test.o : $(USER_DIR)/wgeometry_test.cpp \
+	$(USER_DIR)/wgeometry.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/wgeometry_test.cpp
+
+whistory_test.o : $(USER_DIR)/whistory_test.cpp \
+	$(USER_DIR)/whistory.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(CUDA_FLAGS) $(PYTHON_FLAGS) -c -g $(USER_DIR)/whistory_test.cpp
+
+gtest-all.o: $(GTEST_SRCS_)
+	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c -g \
+            $(GTEST_DIR)/src/gtest-all.cc
+
+gtest_main.o : $(GTEST_SRCS_)
+	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c -g \
+            $(GTEST_DIR)/src/gtest_main.cc
+
+gtest.a : gtest-all.o
+	$(AR) $(ARFLAGS) $@ $^
+
+gtest_main.a : gtest-all.o gtest_main.o
+	$(AR) $(ARFLAGS) $@ $^
+#/google test
 
 libwarp.so: $(ptx_objects) $(COBJS)
 	$(NVCC) --shared $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS) $(PNG_FLAGS) $(CURAND_LIBS) $(OPTIX_LIBS) $(CUDPP_LIBS) $(PYTHON_LIBS) $(PNG_LIBS) $(COBJS)  -o libwarp.so
 
 gpu: libwarp.so
-	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/warp/ -lwarp main.cpp -o $@
+	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/home/krowland/warp/warp -lwarp -loptix main.cpp -o $@
 
 debug: libwarp.so
-	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/warp/ -lwarp main.cpp -o $@
+	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/home/krowland/warp/warp -lwarp main.cpp -o $@
 
 optixtest: libwarp.so
-	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/gpu-cpp -lwarp -loptix optixtest.cpp -o $@
+	$(NVCC) -m64 $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/home/krowland/warp/warp -lwarp -loptix optixtest.cpp -o $@
 
 python: libwarp.so
 	swig -python -c++ warp.i;   \
-	$(CXX) -fPIC -c $(PYTHON_FLAGS) $(CUDPP_FLAGS) $(C_FLAGS) $(CUDA_FLAGS) warp_wrap.cxx;  \
-	$(CXX) -shared $(CUDA_FLAGS) $(C_FLAGS) $(OPTIX_FLAGS) libwarp.so warp_wrap.o -o _warp.so $(PYTHON_FLAGS) -lpython2.7
+        $(CXX) -fPIC -c $(PYTHON_FLAGS) $(CUDPP_FLAGS) $(CUDA_FLAGS) warp_wrap.cxx;  \
+        $(CXX) -shared libwarp.so warp_wrap.o -o _warp.so $(PYTHON_FLAGS) -lpython2.7
+
+#google test
+optix_stuff_test : libwarp.so optix_stuff.o optix_stuff_test.o gtest_main.a
+	$(CXX) $(PNG_FLAGS) $(PNG_LIBS) $(OPTIX_FLAGS) $(OPTIX_LIBS) $(CUDPP_FLAGS) $(PYTHON_FLAGS) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
+
+primitive_test : libwarp.so primitive.o primitive_test.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
+
+wgeometry_test : libwarp.so wgeometry.o wgeometry_test.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
+
+whistory_test : libwarp.so whistory.o whistory_test.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(CUDA_FLAGS) $(CURAND_LIBS) $(OPTIX_FLAGS) $(OPTIX_LIBS) $(CUDPP_FLAGS) $(CUDPP_LIBS) $(PYTHON_FLAGS) $(PYTHON_LIBS) -lcudart -pthread $^ -o $@
+#/google test

@@ -1,0 +1,5 @@
+#!/bin/sh
+
+./optix_stuff_test
+./primitive_test
+./wgeometry_test
