@@ -1,26 +1,26 @@
 #
-CC =  /usr/bin/gcc-4.4
-CXX = /usr/bin/g++-4.4
-OPTIX = /usr/local/OptiX-3.0.1
-NVCC = nvcc
-ARCH = -arch sm_20
+CC =  gcc -mmacosx-version-min=10.7
+CXX = g++ -mmacosx-version-min=10.7
+OPTIX = /Developer/OptiX/
+NVCC = nvcc 
+ARCH = -arch sm_30
 C_FLAGS = -O3 -m64 -fPIC
-NVCC_FLAGS = -m64  -use_fast_math --compiler-options '-fPIC' --compiler-bindir '/usr/bin/gcc-4.4'
+NVCC_FLAGS = -m64  -use_fast_math --compiler-options '-fPIC -mmacosx-version-min=10.7'
 CURAND_LIBS = -lcurand
 OPTIX_FLAGS = -I$(OPTIX)/include -L$(OPTIX)/lib64 
 OPTIX_LIBS = -loptix 
-CUDA_FLAGS = -I/usr/local/cuda/include -L/usr/local/cuda/lib64
-CUDPP_PATH = /home/krowland/cudpp-2.1
-CUDPP_FLAGS = -I$(CUDPP_PATH)/include -L$(CUDPP_PATH)/lib
+CUDA_FLAGS = -I/usr/local/cuda/include -L/usr/local/cuda/lib
+CUDPP_PATH = /usr/local/cudpp-2.1/
+CUDPP_FLAGS = -I/$(CUDPP_PATH)/include -L/$(CUDPP_PATH)/lib
 CUDPP_LIBS = -lcudpp_hash -lcudpp
-PYTHON_FLAGS = -I/home/krowland/anaconda/include/python2.7 -L/home/krowland/anaconda/lib/python2.7
+PYTHON_FLAGS = -I/System/Library/Frameworks/Python.framework/Headers -L/System/Library/Frameworks/Python.framework
 PYTHON_LIBS = -lpython2.7
-PNG_FLAGS = -L/home/krowland/anaconda/lib
-PNG_LIBS = -lpng15 
+PNG_FLAGS = -L/
+PNG_LIBS = -lpng15
 LIBS =
 #google test stuff
-GTEST_DIR = /home/krowland/gtest-1.7.0
-USER_DIR = /home/krowland/warp/warp
+GTEST_DIR = /Users/rmb/code/gtest-1.7.0
+USER_DIR = /Users/rmb/code/warp/
 CPPFLAGS += -I$(GTEST_DIR)/include
 CXXFLAGS += -g -Wall -Wextra
 TESTS = optix_stuff_test primitive_test wgeometry_test whistory_test
@@ -239,13 +239,13 @@ libwarp.so: $(ptx_objects) $(COBJS)
 	$(NVCC) --shared $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS) $(PNG_FLAGS) $(CURAND_LIBS) $(OPTIX_LIBS) $(CUDPP_LIBS) $(PYTHON_LIBS) $(PNG_LIBS) $(COBJS)  -o libwarp.so
 
 gpu: libwarp.so
-	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/home/krowland/warp/warp -lwarp -loptix main.cpp -o $@
+	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/warp/ -lwarp -loptix main.cpp -o $@
 
 debug: libwarp.so
-	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/home/krowland/warp/warp -lwarp main.cpp -o $@
+	$(NVCC) $(NVCC_FLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/warp/ -lwarp main.cpp -o $@
 
 optixtest: libwarp.so
-	$(NVCC) -m64 $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/home/krowland/warp/warp -lwarp -loptix optixtest.cpp -o $@
+	$(NVCC) -m64 $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(PYTHON_FLAGS)  -L/Users/rmb/code/warp/ -lwarp -loptix optixtest.cpp -o $@
 
 python: libwarp.so
 	swig -python -c++ warp.i;   \

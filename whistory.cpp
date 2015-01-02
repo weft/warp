@@ -236,7 +236,7 @@ void whistory::init_host(){
 		space[k].zhat 		= 0.0;
 		space[k].surf_dist 	= 10000.0;
 		space[k].macro_t 	= 0.0;
-		space[k].enforce_BC     = 0;
+		space[k].enforce_BC = 0;
 		E[k]			= 0.0;
 		Q[k]			= 0.0;
 		cellnum[k]		= 0;

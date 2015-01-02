@@ -46,17 +46,20 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, unsigned* re
 		//printf("nu %6.4E inu %u rn1 %6.4E yield %u\n",nu,inu,rn1,this_yield);
 	}
 	else if(this_rxn == 817){
-		this_yield = 3;
+		this_yield = 0;//3;  
 	}
-	else if(this_rxn == 816 | this_rxn==824 | rxn[tid] == 841){
-		this_yield = 2;
+	else if(this_rxn == 816 | this_rxn==824 | this_rxn == 841){
+		this_yield = 0;//2;
 	}
 
 	// write output and terminate history
 	yield[tid] = this_yield;
 	done[tid]  = 1;    // pop will re-activate this data slot on fixed-source runs
 	rxn[starting_index + tid_in] = this_rxn+100;  //mark as done by putting it in the 900 block
-	if (this_rxn == 818){rn_bank[tid] = rn;}  //rn was used for fission
+	
+	if (this_rxn == 818){
+		rn_bank[tid] = rn;  //rn was used for fission sampling
+	}  
 
 }
 

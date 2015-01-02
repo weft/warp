@@ -46,6 +46,7 @@ struct source_point{
     float surf_dist; /**< distance to nearest surface */
     float macro_t;   /**< total macroscopic cross section */
     unsigned enforce_BC; /**< boundary condition enforcement flag */
+    unsigned weight;
 };
 
 /**
