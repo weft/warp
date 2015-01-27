@@ -10,7 +10,7 @@ CURAND_LIBS = -lcurand
 OPTIX_FLAGS = -I$(OPTIX)/include -L$(OPTIX)/lib64 
 OPTIX_LIBS = -loptix 
 CUDA_FLAGS = -I/usr/local/cuda/include -L/usr/local/cuda/lib
-CUDPP_PATH = /usr/local/cudpp-2.1/
+CUDPP_PATH = /usr/local/cudpp-2.2/
 CUDPP_FLAGS = -I/$(CUDPP_PATH)/include -L/$(CUDPP_PATH)/lib
 CUDPP_LIBS = -lcudpp_hash -lcudpp
 PYTHON_FLAGS = -I/System/Library/Frameworks/Python.framework/Headers -L/System/Library/Frameworks/Python.framework
@@ -74,7 +74,8 @@ ptx_objects = 	camera.ptx \
 all:  	$(ptx_objects) \
 		$(COBJS) \
 		libwarp.so \
-		python \ $(TESTS)
+		python \
+		$(TESTS)
 
 clean:
 	rm -f *.ptx *.o *.so gpu debug optixtest warp_wrap.cxx warp.py
