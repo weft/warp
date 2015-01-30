@@ -45,6 +45,8 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	}
 }
 void whistory::init(){
+	// set device first
+	cudaSetDevice(compute_device);
 	// init optix stuff second
 	optix_obj.N=Ndataset;
 	optix_obj.stack_size_multiplier=1;
@@ -56,7 +58,6 @@ void whistory::init(){
 	NUM_THREADS = 256;
 	RNUM_PER_THREAD = 1;
 	blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
-	cudaSetDevice(compute_device);
 	std::cout << "\e[1;32m" << "Compute device set to "<< compute_device << ". Available devices shown below:" <<"\e[m \n";
 	device_report();
 	cudaDeviceSetLimit(cudaLimitPrintfFifoSize, (size_t) 10*1048576 );
@@ -1909,11 +1910,14 @@ void whistory::device_report(){
 	// vars
 	cudaDeviceProp 	device_prop;
 	int 		n_devices;
+	int 		enabled_dev;
 	float 		compute_cap;
 	std::string 	con_string;
+	std::string 	enabled_string;
 
 	// get the number of devices
 	cudaGetDeviceCount(&n_devices);
+	cudaGetDevice(&enabled_dev);
 
 	// loop over and print
 	std::cout << "\e[1;32m" << "--- Compute Devices Present ---" << "\e[m \n";
@@ -1925,7 +1929,8 @@ void whistory::device_report(){
 		compute_cap = (float)device_prop.major + (float)device_prop.minor/10.0;
 		con_string = "no ";
 		if(device_prop.concurrentKernels){con_string="yes";}
-		printf(  "  | %2d      | %25s   |  %3d  | %6.4f  | %6.1f  | %6.1f   | %2.1f          | %4s            |\n", k, device_prop.name, device_prop.multiProcessorCount, (float)device_prop.totalGlobalMem/(1024*1024), (float)device_prop.clockRate/1e3, (float)device_prop.memoryClockRate/1e3, compute_cap, con_string.c_str());
+		if(k==enabled_dev){enabled_string='*';}
+		printf(  "%1s | %2d      | %25s   |  %3d  | %6.4f  | %6.1f  | %6.1f   | %2.1f          | %4s            |\n", enabled_string.c_str(),k, device_prop.name, device_prop.multiProcessorCount, (float)device_prop.totalGlobalMem/(1024*1024), (float)device_prop.clockRate/1e3, (float)device_prop.memoryClockRate/1e3, compute_cap, con_string.c_str());
 		std::cout << "  --------------------------------------------------------------------------------------------------------------------\n";
 	}
 		
