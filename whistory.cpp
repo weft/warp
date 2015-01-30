@@ -1836,11 +1836,12 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	//	//exit
 	//	assert(*num_active==edges[8]-1);
 	//}
-	//// ensure order
-	//assert(*num_active==edges[8]-1);
-	//assert(*iscatter_start >= *escatter_start);
-	//assert(*cscatter_start >= *iscatter_start);
-	//assert(   resamp_start >= *cscatter_start);
+
+	// ensure order
+	assert(*num_active<=edges[8]-1);
+	if(*iscatter_N>0){ assert(*iscatter_start >= *escatter_start);}
+	if(*cscatter_N>0){ assert(*cscatter_start >= *iscatter_start);}
+	if(resamp_N>0){    assert(   resamp_start >= *cscatter_start);}
 
 	// rezero edge vector (mapped, so is reflected on GPU)
 	edges[0]  = 0; 
@@ -1916,16 +1917,16 @@ void whistory::device_report(){
 
 	// loop over and print
 	std::cout << "\e[1;32m" << "--- Compute Devices Present ---" << "\e[m \n";
-	std::cout << "  -------------------------------------------------------------------------------------------------------\n";
-	std::cout << "  Device | Model             |  SMs  | Global Mem | SM Freq | Mem Freq | Compute Cap. | Concurrent Kern |" << "\n";
-	std::cout << "  -------------------------------------------------------------------------------------------------------\n";
+	std::cout << "  -------------------------------------------------------------------------------------------------------------\n";
+	std::cout << "  | Device  | Model                |  SMs  | Global Mem | SM Freq | Mem Freq | Compute Cap. | Concurrent Kern |" << "\n";
+	std::cout << "  -------------------------------------------------------------------------------------------------------------\n";
 	for(unsigned k=0;k<n_devices;k++){
 		cudaGetDeviceProperties(&device_prop,k);
 		compute_cap = (float)device_prop.major + (float)device_prop.minor/10.0;
 		con_string = "no ";
 		if(device_prop.concurrentKernels){con_string="yes";}
-		printf(  "  %d      | %0.24s   |  %d    | %6.4f  | %6.1f  | %6.1f   | %2.1f          | %0.3s             |\n", k, device_prop.name, device_prop.multiProcessorCount, (float)device_prop.totalGlobalMem/(1024*1024), (float)device_prop.clockRate/1e3, (float)device_prop.memoryClockRate/1e3, compute_cap, con_string.c_str());
-		std::cout << "  -------------------------------------------------------------------------------------------------------\n";
+		printf(  "  | %2d      | %18s   |  %3d  | %6.4f  | %6.1f  | %6.1f   | %2.1f          | %4s            |\n", k, device_prop.name, device_prop.multiProcessorCount, (float)device_prop.totalGlobalMem/(1024*1024), (float)device_prop.clockRate/1e3, (float)device_prop.memoryClockRate/1e3, compute_cap, con_string.c_str());
+		std::cout << "  -------------------------------------------------------------------------------------------------------------\n";
 	}
 		
 }

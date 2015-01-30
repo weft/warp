@@ -52,7 +52,7 @@ class ReactionEdgesTest : public ::testing::Test {
 	}
 
 	virtual ~ReactionEdgesTest() {
-		// deallocate
+		// free mem
 		delete rxn;
 		delete edges;
 		delete edges_solution;
@@ -93,7 +93,6 @@ class ReactionEdgesTest : public ::testing::Test {
 
 		// scan array, mark edges
 		for(unsigned i=0;i<N-1;i++){
-			printf("scanning... rxn[%6u] = %4u\n",i,rxn[i]);
 
 			// 2-edge
 			if( rxn[i]==2 ){
@@ -210,17 +209,17 @@ class ReactionEdgesTest : public ::testing::Test {
 		copy_to_device( d_rxn   , rxn   ,       N*sizeof(unsigned));
 
 		// compute solution serially
-		compute_solution( );
+		compute_solution();
 
 		// compute solution on device
-		reaction_edges(  NUM_THREADS,   N,  d_edges,          d_rxn);
+		reaction_edges(  NUM_THREADS,   N,  d_edges,  d_rxn);
 		
-		// copy back
+		// copy device solution back
 		copy_from_device( edges , d_edges , n_edges*sizeof(unsigned));
 
 		// print stuff just for debugging
-		printf("rxn\n");
-		for(unsigned i=0; i<N ;i++){ printf("%4u\n",rxn[i]);}
+		//printf("rxn\n");
+		//for(unsigned i=0; i<N ;i++){ printf("%4u\n",rxn[i]);}
 		printf("device, solution\n");
 		for(unsigned i=0; i<n_edges ;i++){ printf("%6u %6u\n",edges[i],edges_solution[i]);}
 
@@ -243,22 +242,236 @@ class ReactionEdgesTest : public ::testing::Test {
 
 // TESTS GO HERE
 
-TEST_F(ReactionEdgesTest, AllReactionsGT2){
+//
+//    TEST WITH ALL LENGTHS > 2
+//
+
+TEST_F(ReactionEdgesTest, LongAll){
 	// this test does XXX
 	
 	// set size, allocate
-	N = 5;
+	N = 1000;
+	unsigned c;
 	allocate();
 
 	// set rxn for this case
-	for(unsigned i=0; i<N; i++){
+	for(unsigned i=0; i<100; i++){
 		rxn[i] = 2;
 	}
+	for(unsigned i=100; i<400; i++){
+		c = (i-100)/7;
+		if( c > 39 ){c=39;}
+		rxn[i] = 51+c;
+	}
+	for(unsigned i=400; i<500; i++){
+		rxn[i] = 91;
+	}
+	for(unsigned i=500; i<600; i++){
+		rxn[i] = 800;
+	}
+	for(unsigned i=600; i<800; i++){
+		c = (i-600)/5;
+		if( c > 34 ){c=34;}
+		rxn[i] = 811+c;
+	}
+	for(unsigned i=800; i<N; i++){
+		rxn[i] = 900+(i-800);
+	}
 
-	// run the tests
+	// run the tests for this reaction vector
 	run_test();
-
 }   
+TEST_F(ReactionEdgesTest, LongNoEscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	unsigned c;
+	allocate();
+
+	// set rxn for this case
+	for(unsigned i=0; i<400; i++){
+		c = (i-0)/8;
+		if( c > 39 ){c=39;}
+		rxn[i] = 51+c;
+	}
+	for(unsigned i=400; i<500; i++){
+		rxn[i] = 91;
+	}
+	for(unsigned i=500; i<600; i++){
+		rxn[i] = 800;
+	}
+	for(unsigned i=600; i<800; i++){
+		c = (i-600)/5;
+		if( c > 34 ){c=34;}
+		rxn[i] = 811+c;
+	}
+	for(unsigned i=800; i<N; i++){
+		rxn[i] = 900+(i-800);
+	}
+
+	// run the tests for this reaction vector
+	run_test();
+}   
+TEST_F(ReactionEdgesTest, LongNoIscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	unsigned c;
+	allocate();
+
+	// set rxn for this case
+	for(unsigned i=0; i<400; i++){
+		rxn[i] = 2;
+	}
+	for(unsigned i=400; i<500; i++){
+		rxn[i] = 91;
+	}
+	for(unsigned i=500; i<600; i++){
+		rxn[i] = 800;
+	}
+	for(unsigned i=600; i<800; i++){
+		c = (i-600)/5;
+		if( c > 34 ){c=34;}
+		rxn[i] = 811+c;
+	}
+	for(unsigned i=800; i<N; i++){
+		rxn[i] = 900+(i-800);
+	}
+
+	// run the tests for this reaction vector
+	run_test();
+} 
+TEST_F(ReactionEdgesTest, LongNoCscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	unsigned c;
+	allocate();
+
+	// set rxn for this case
+	for(unsigned i=0; i<100; i++){
+		rxn[i] = 2;
+	}
+	for(unsigned i=100; i<400; i++){
+		c = (i-100)/7;
+		if( c > 39 ){c=39;}
+		rxn[i] = 51+c;
+	}
+	for(unsigned i=400; i<600; i++){
+		rxn[i] = 800;
+	}
+	for(unsigned i=600; i<800; i++){
+		c = (i-600)/5;
+		if( c > 34 ){c=34;}
+		rxn[i] = 811+c;
+	}
+	for(unsigned i=800; i<N; i++){
+		rxn[i] = 900+(i-800);
+	}
+
+	// run the tests for this reaction vector
+	run_test();
+}  
+TEST_F(ReactionEdgesTest, LongNoResamp){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	unsigned c;
+	allocate();
+
+	// set rxn for this case
+	for(unsigned i=0; i<100; i++){
+		rxn[i] = 2;
+	}
+	for(unsigned i=100; i<400; i++){
+		c = (i-100)/7;
+		if( c > 39 ){c=39;}
+		rxn[i] = 51+c;
+	}
+	for(unsigned i=400; i<600; i++){
+		rxn[i] = 91;
+	}
+	for(unsigned i=600; i<800; i++){
+		c = (i-600)/5;
+		if( c > 34 ){c=34;}
+		rxn[i] = 811+c;
+	}
+	for(unsigned i=800; i<N; i++){
+		rxn[i] = 900+(i-800);
+	}
+
+	// run the tests for this reaction vector
+	run_test();
+}      
+TEST_F(ReactionEdgesTest, LongNoFission){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	unsigned c;
+	allocate();
+
+	// set rxn for this case
+	for(unsigned i=0; i<100; i++){
+		rxn[i] = 2;
+	}
+	for(unsigned i=100; i<400; i++){
+		c = (i-100)/7;
+		if( c > 39 ){c=39;}
+		rxn[i] = 51+c;
+	}
+	for(unsigned i=400; i<500; i++){
+		rxn[i] = 91;
+	}
+	for(unsigned i=500; i<800; i++){
+		rxn[i] = 800;
+	}
+	for(unsigned i=800; i<N; i++){
+		rxn[i] = 900+(i-800);
+	}
+
+	// run the tests for this reaction vector
+	run_test();
+}   
+TEST_F(ReactionEdgesTest, LongNoDone){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	unsigned c;
+	allocate();
+
+	// set rxn for this case
+	for(unsigned i=0; i<100; i++){
+		rxn[i] = 2;
+	}
+	for(unsigned i=100; i<400; i++){
+		c = (i-100)/7;
+		if( c > 39 ){c=39;}
+		rxn[i] = 51+c;
+	}
+	for(unsigned i=400; i<500; i++){
+		rxn[i] = 91;
+	}
+	for(unsigned i=500; i<600; i++){
+		rxn[i] = 800;
+	}
+	for(unsigned i=600; i<N; i++){
+		c = (i-600)/5;
+		if( c > 34 ){c=34;}
+		rxn[i] = 811+c;
+	}
+
+	// run the tests for this reaction vector
+	run_test();
+}   
+
+
+
 
 }  // namespace
 
