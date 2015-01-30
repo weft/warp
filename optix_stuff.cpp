@@ -101,7 +101,7 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	unsigned enabled_count = context -> getEnabledDeviceCount();
 	std::vector<int> enabled_ids = context -> getEnabledDevices();
 	printf("OptiX using device ");
-	for(unsigned h=0;h<enabled_count;h++){printf("%u ",enabled_ids[h]);}
+	for(unsigned h=0;h<enabled_count;h++){printf("%u ",enabled_ids[h]); optix_device=enabled_ids[h];}
 	printf("\n");
 	//set up scene info
   	context->setRayTypeCount( 1u );

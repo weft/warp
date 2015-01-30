@@ -271,6 +271,7 @@ void whistory::init_CUDPP(){
 	
 	std::cout << "\e[1;32m" << "Initializing CUDPP..." << "\e[m \n";
 	// global objects
+	cudaSetDevice(compute_device);
 	res = cudppCreate(&theCudpp);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error initializing CUDPP Library.\n");}
 	
