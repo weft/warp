@@ -16,7 +16,8 @@ class optix_stuff{
 	unsigned outer_cell; /**< outermost cell */
 	unsigned outer_cell_type; /**< outermost cell type */
 	unsigned n_materials; /**< number of materials */
-	unsigned compute_device; /**< compute device number (always zero) */
+	unsigned compute_device; /**< compute device number */
+	unsigned optix_device; /**< optix device number, always zero since the optix device list should only have the specified cuda device in it*/
 	unsigned GEOM_FLAG; /**< geometry flag: 0 = primitive instancing, 1 = transform instancing, 2 = transform instancing with common primitives */
 	/**
 	 * \brief makes a geometry with a transform

@@ -1,6 +1,5 @@
 #include <vector> 
 #include <iostream>
-#include <iomanip.h>
 #include <sstream>
 #include <stdio.h>
 #include <cmath>
@@ -1639,7 +1638,7 @@ void whistory::run(){
 
 		// print whatever's clever
 		if(converged){
-			     if(RUN_FLAG==0){std::cout << "Cumulative keff/sc-mult = "<< setw(7) << keff << " / " << 1.0/(1.0-keff) << ", ACTIVE cycle " << iteration << ", cycle keff/sc-mult = " << keff_cycle << " / " << 1.0/(1.0-keff_cycle) << "\n";}
+			     if(RUN_FLAG==0){std::cout << "Cumulative keff/sc-mult = " << keff << " / " << 1.0/(1.0-keff) << ", ACTIVE cycle " << iteration << ", cycle keff/sc-mult = " << keff_cycle << " / " << 1.0/(1.0-keff_cycle) << "\n";}
 			else if(RUN_FLAG==1){printf("Cumulative keff =  %8.6E +- %6.4E , ACTIVE cycle %4u, cycle keff = %8.6E\n",keff,keff_err,iteration,keff_cycle);}
 		}
 		else{
@@ -1918,16 +1917,16 @@ void whistory::device_report(){
 
 	// loop over and print
 	std::cout << "\e[1;32m" << "--- Compute Devices Present ---" << "\e[m \n";
-	std::cout << "  -------------------------------------------------------------------------------------------------------------\n";
-	std::cout << "  | Device  | Model                |  SMs  | Global Mem | SM Freq | Mem Freq | Compute Cap. | Concurrent Kern |" << "\n";
-	std::cout << "  -------------------------------------------------------------------------------------------------------------\n";
+	std::cout << "  --------------------------------------------------------------------------------------------------------------------\n";
+	std::cout << "  | Device  | Model                       |  SMs  | Global Mem | SM Freq | Mem Freq | Compute Cap. | Concurrent Kern |" << "\n";
+	std::cout << "  --------------------------------------------------------------------------------------------------------------------\n";
 	for(unsigned k=0;k<n_devices;k++){
 		cudaGetDeviceProperties(&device_prop,k);
 		compute_cap = (float)device_prop.major + (float)device_prop.minor/10.0;
 		con_string = "no ";
 		if(device_prop.concurrentKernels){con_string="yes";}
-		printf(  "  | %2d      | %18s   |  %3d  | %6.4f  | %6.1f  | %6.1f   | %2.1f          | %4s            |\n", k, device_prop.name, device_prop.multiProcessorCount, (float)device_prop.totalGlobalMem/(1024*1024), (float)device_prop.clockRate/1e3, (float)device_prop.memoryClockRate/1e3, compute_cap, con_string.c_str());
-		std::cout << "  -------------------------------------------------------------------------------------------------------------\n";
+		printf(  "  | %2d      | %25s   |  %3d  | %6.4f  | %6.1f  | %6.1f   | %2.1f          | %4s            |\n", k, device_prop.name, device_prop.multiProcessorCount, (float)device_prop.totalGlobalMem/(1024*1024), (float)device_prop.clockRate/1e3, (float)device_prop.memoryClockRate/1e3, compute_cap, con_string.c_str());
+		std::cout << "  --------------------------------------------------------------------------------------------------------------------\n";
 	}
 		
 }

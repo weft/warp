@@ -63,8 +63,9 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	RTsize	 printf_size;
 
 	//set vars
-	compute_device = compute_device_in;
-	accel_type     = accel_type_in;   
+	compute_device 	= compute_device_in;
+	optix_device 	= 0;
+	accel_type     	= accel_type_in;   
 	     if(accel_type.compare("Sbvh")==0){traverse_type="Bvh";}
 	else if(accel_type.compare("Bvh")==0) {traverse_type="Bvh";}
 	else if(accel_type.compare("MedianBvh")==0) {traverse_type="Bvh";}
@@ -120,42 +121,42 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	// Render particle buffer and attach to variable, get pointer for CUDA
 	positions_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
 	positions_buffer -> setElementSize( sizeof(source_point) );
-	positions_buffer -> getDevicePointer(compute_device,&positions_ptr);  // 0 is optix device
+	positions_buffer -> getDevicePointer(optix_device,&positions_ptr);  // 0 is optix device
 	positions_var = context["positions_buffer"];
 	positions_var -> set(positions_buffer);
 
 	// Render reaction buffer and attach to variable, get pointer for CUDA
 	rxn_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
 	rxn_buffer -> setElementSize( sizeof(unsigned) );
-	rxn_buffer -> getDevicePointer(compute_device,&rxn_ptr);
+	rxn_buffer -> getDevicePointer(optix_device,&rxn_ptr);
 	rxn_var = context["rxn_buffer"];
 	rxn_var -> set(rxn_buffer);
 
 	// Render done buffer and attach to variable, get pointer for CUDA
 	done_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
 	done_buffer -> setElementSize( sizeof(unsigned) );
-	done_buffer -> getDevicePointer(compute_device,&done_ptr);
+	done_buffer -> getDevicePointer(optix_device,&done_ptr);
 	done_var = context["done_buffer"];
 	done_var -> set(done_buffer);
 
 	// Render cellnum buffer and attach to variable, get pointer for CUDA
 	cellnum_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
 	cellnum_buffer -> setElementSize( sizeof(unsigned) );
-	cellnum_buffer -> getDevicePointer(compute_device,&cellnum_ptr);
+	cellnum_buffer -> getDevicePointer(optix_device,&cellnum_ptr);
 	cellnum_var = context["cellnum_buffer"];
 	cellnum_var -> set(cellnum_buffer);
 
 	// Render matnum buffer and attach to variable, get pointer for CUDA
 	matnum_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
 	matnum_buffer -> setElementSize( sizeof(unsigned) );
-	matnum_buffer -> getDevicePointer(compute_device,&matnum_ptr);
+	matnum_buffer -> getDevicePointer(optix_device,&matnum_ptr);
 	matnum_var = context["matnum_buffer"];
 	matnum_var -> set(matnum_buffer);
 
 	// Render remap buffer and attach to variable, get pointer for CUDA
 	remap_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
 	remap_buffer -> setElementSize( sizeof(unsigned) );
-	remap_buffer -> getDevicePointer(compute_device,&remap_ptr);
+	remap_buffer -> getDevicePointer(optix_device,&remap_ptr);
 	remap_var = context["remap_buffer"];
 	remap_var -> set(remap_buffer);
 
