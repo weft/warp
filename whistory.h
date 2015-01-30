@@ -177,7 +177,7 @@ class whistory {
 	 * \details copies history data, cross section data, and the device pointer
 	 * array. zeros out the tally arrays.
 	 */
-	void copy_to_device();
+	void copy_data_to_device();
 	/**
 	 * \brief loads cross sections
 	 * \details makes isotope list, initializes the cross section libraries, reads

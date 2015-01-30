@@ -45,11 +45,11 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, unsigned* re
 		}
 		//printf("nu %6.4E inu %u rn1 %6.4E yield %u\n",nu,inu,rn1,this_yield);
 	}
-	else if(this_rxn == 817){
-		this_yield = 3;  
-	}
 	else if(this_rxn == 816 | this_rxn==824 | this_rxn == 841){
 		this_yield = 2;
+	}
+	else if(this_rxn == 817){
+		this_yield = 3;  
 	}
 
 	// write output and terminate history

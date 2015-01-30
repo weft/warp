@@ -133,7 +133,7 @@ void whistory::init(){
 	init_CUDPP();
 	load_cross_sections();
 	//create_quad_tree();
-	copy_to_device();
+	copy_data_to_device();
 	printf("Done with init\n");
 }
 whistory::~whistory(){
@@ -393,7 +393,7 @@ unsigned whistory::reduce_done(){
 	return reduced_done;
 
 }
-void whistory::copy_to_device(){
+void whistory::copy_data_to_device(){
 
 	float * this_pointer;
 	float * cuda_pointer;
@@ -1777,60 +1777,70 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	// launch edge detection kernel, writes mapped d_edges array
 	reaction_edges(NUM_THREADS, *num_active, d_edges, d_rxn);
 
-	// calculate values for the various blocks
-	if( (edges[2] + edges[1]) == 0){
-		*escatter_N 	=	0;}
-	else{
-		*escatter_N 	= 	edges[2]  - edges[1] ;
-	}
-	if( (edges[4] + edges[3]) == 0){
-		*iscatter_N 	=	0;
+	// calculate lengths and starting indicies for the blocks, 0 indicates not found
+	if (edges[0]){
+		*escatter_N 	= (edges[1]-edges[0])+1;
+		*escatter_start	= edges[0]-1;
 	}
 	else{
-		*iscatter_N		= 	edges[4]  - edges[3] ;
+		*escatter_N 	= 0;
+		*escatter_start	= 0;
 	}
-	if( (edges[6] + edges[5]) == 0){
-		*cscatter_N 	= 	0;
-	}
-	else{
-		*cscatter_N 	= 	edges[6]  - edges[5] ;
-	}
-	if( (edges[8] + edges[7]) == 0){
-		resamp_N 		=	0;
+	if (edges[2]){
+		*iscatter_N 	= (edges[3]-edges[2])+1;
+		*iscatter_start	= edges[2]-1;
 	}
 	else{
-		resamp_N 		= edges[8]  - edges[7] ;
+		*iscatter_N 	= 0;
+		*iscatter_start	= 0;
 	}
-	if( (edges[10] + edges[9]) == 0){
-		*fission_N 		= 	0;
-	}
-	else if( edges[10] == 0 & edges[9] != 0 ){
-		*fission_N 		= *num_active - edges[9];
+	if (edges[4]){
+		*cscatter_N 	= (edges[5]-edges[4])+1;
+		*cscatter_start	= edges[4]-1;
 	}
 	else{
-		*fission_N 		= edges[10] - edges[9] ;
+		*cscatter_N 	= 0;
+		*cscatter_start	= 0;
 	}
-	*escatter_start	= edges[1];
-	*iscatter_start	= edges[3];
-	*cscatter_start	= edges[5];
-	resamp_start	= edges[7];
-	*fission_start	= edges[9];
+	if (edges[6]){
+		   resamp_N 	= (edges[7]-edges[6])+1;
+		   resamp_start	= edges[6]-1;
+	}
+	else{
+		   resamp_N 	= 0;
+		   resamp_start	= 0;
+	}
+	if (edges[8]){
+		 *fission_N 	= (edges[9]-edges[8])+1;
+		 *fission_start	= edges[8]-1;
+	}
+	else{
+		 *fission_N 	= 0;
+		 *fission_start	= 0;
+	}
 
-	//correct if necessary
-	if(*escatter_N<0){*escatter_N=0;}
-	if(*iscatter_N<0){*iscatter_N=0;}
-	if(*cscatter_N<0){*cscatter_N=0;}
-	if(resamp_N<0)   {resamp_N=0;}
-	if(*fission_N<0) {*fission_N=0;}
-
-	//calculate total active
-	if(edges[0]==1){*num_active=0;}
-	else           {*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N;}
+	//calculate total active, [10] is the starting index of >=811, so if==1, means that we are done!
+	if(edges[8]==1){*num_active=0;}
+	else           {
+		*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N;
+	}
 
 	// debug
-	//printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
-	//printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
-	//write_to_file(d_remap, d_rxn, N,"remap","w");
+	//if(*num_active!=edges[8]-1){
+	//	//print
+	//	printf("num_active %u , edges[8] %u\n",*num_active,edges[8]-1);
+	//	printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
+	//	printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
+	//	//dump
+	//	write_to_file(d_remap, d_rxn, N,"remap","w");
+	//	//exit
+	//	assert(*num_active==edges[8]-1);
+	//}
+	//// ensure order
+	//assert(*num_active==edges[8]-1);
+	//assert(*iscatter_start >= *escatter_start);
+	//assert(*cscatter_start >= *iscatter_start);
+	//assert(   resamp_start >= *cscatter_start);
 
 	// rezero edge vector (mapped, so is reflected on GPU)
 	edges[0]  = 0; 

@@ -55,7 +55,7 @@ COBJS =	mt19937ar.o \
 		optix_stuff.o \
 		primitive.o \
 		write_to_file.o \
-		reaction_edges2.o \
+		reaction_edges3.o \
 		device_copies.o \
 
 ptx_objects = 	camera.ptx \
@@ -80,7 +80,7 @@ all:  	$(ptx_objects) \
 clean:
 	rm -f *.ptx *.o *.so gpu debug optixtest warp_wrap.cxx warp.py
 
-tests: optix_stuff_test primitive_test whistory_test wgeometry_test
+tests: optix_stuff_test primitive_test whistory_test wgeometry_test reaction_edges_test
 
 GTEST_SRCS_ = $(GTEST_DIR)/src/*.cc $(GTEST_DIR)/src/*.h $(GTEST_HEADERS)
 
@@ -186,8 +186,8 @@ flip_done.o:
 device_copies.o:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c device_copies.cu
 
-reaction_edges2.o:
-	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c reaction_edges2.cu
+reaction_edges3.o:
+	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c reaction_edges3.cu
 
 write_to_file.o:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c write_to_file.cu
@@ -221,6 +221,11 @@ whistory_test.o : $(USER_DIR)/whistory_test.cpp \
 	$(USER_DIR)/whistory.h $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(CUDA_FLAGS) $(PYTHON_FLAGS) -c -g $(USER_DIR)/whistory_test.cpp
 
+reaction_edges_test.o : $(USER_DIR)/reaction_edges_test.cpp \
+	$(USER_DIR)/whistory.h $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(OPTIX_FLAGS) $(CUDPP_FLAGS) $(CUDA_FLAGS) $(PYTHON_FLAGS) -c -g $(USER_DIR)/reaction_edges_test.cpp
+
+
 gtest-all.o: $(GTEST_SRCS_)
 	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c -g \
             $(GTEST_DIR)/src/gtest-all.cc
@@ -253,16 +258,20 @@ python: libwarp.so
         $(CXX) -fPIC -c $(PYTHON_FLAGS) $(CUDPP_FLAGS) $(CUDA_FLAGS) warp_wrap.cxx;  \
         $(CXX) -shared libwarp.so warp_wrap.o -o _warp.so $(PYTHON_FLAGS) -lpython2.7
 
-#google test
-optix_stuff_test : libwarp.so optix_stuff.o optix_stuff_test.o gtest_main.a
+#google test  SHOULD NOT INCLUDE OBJECTS INDEPENDT OF libwarp.so - symbols should be in library.
+optix_stuff_test : libwarp.so optix_stuff_test.o gtest_main.a
 	$(CXX) $(PNG_FLAGS) $(PNG_LIBS) $(OPTIX_FLAGS) $(OPTIX_LIBS) $(CUDPP_FLAGS) $(PYTHON_FLAGS) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
 
-primitive_test : libwarp.so primitive.o primitive_test.o gtest_main.a
+primitive_test : libwarp.so primitive_test.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
 
-wgeometry_test : libwarp.so wgeometry.o wgeometry_test.o gtest_main.a
+wgeometry_test : libwarp.so wgeometry_test.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -pthread $^ -o $@
 
-whistory_test : libwarp.so whistory.o whistory_test.o gtest_main.a
+whistory_test : libwarp.so whistory_test.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(CUDA_FLAGS) $(CURAND_LIBS) $(OPTIX_FLAGS) $(OPTIX_LIBS) $(CUDPP_FLAGS) $(CUDPP_LIBS) $(PYTHON_FLAGS) $(PYTHON_LIBS) -lcudart -pthread $^ -o $@
+
+reaction_edges_test : libwarp.so reaction_edges_test.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(CUDA_FLAGS) $(CURAND_LIBS) $(OPTIX_FLAGS) $(OPTIX_LIBS) $(CUDPP_FLAGS) $(CUDPP_LIBS) $(PYTHON_FLAGS) $(PYTHON_LIBS) -lcudart -pthread $^ -o $@
+
 #/google test

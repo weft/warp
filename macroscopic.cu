@@ -81,20 +81,23 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	//printf("% 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E %u\n",x,y,z,xhat,yhat,zhat,surf_dist,samp_dist,enforce_BC);
 	diff = surf_dist - samp_dist;
 	if( diff < 0 ){  //move to surface, set resample flag
-		x += (surf_dist + 5e-5) * xhat;
-		y += (surf_dist + 5e-5) * yhat;
-		z += (surf_dist + 5e-5) * zhat;
+		x += (surf_dist + 1.5e-4) * xhat;
+		y += (surf_dist + 1.5e-4) * yhat;
+		z += (surf_dist + 1.5e-4) * zhat;
 		this_rxn = 800;
-		tope=999999998;  // make leaking a different isotope than mis-sampling
+		tope=999999998;  // make resampling a different isotope than mis-sampling
 		// enforce BC
 		if (enforce_BC){
 			isdone = 1;
 			this_rxn  = 999;
+			tope=999999997;  // make leaking a different isotope than resampling
 			//printf("leaked tid %u xyz % 6.4E % 6.4E % 6.4E dir % 6.4E % 6.4E % 6.4E\n",tid,x,y,z,xhat,yhat,zhat);
 		}
 	}
 	else{  //move to sampled distance, null reaction
-		if( diff <= 5e-5 ){ samp_dist = surf_dist - 5e-5; }  //adjust if diff is within epsilon so the next trace will hit the surface!
+		if( diff <= 1e-4 ){ 
+			samp_dist = surf_dist - 1.5e-4;   //adjust if diff is within epsilon so the next trace will hit the surface!
+		}  
 		x += samp_dist * xhat;
 		y += samp_dist * yhat;
 		z += samp_dist * zhat;

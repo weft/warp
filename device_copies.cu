@@ -13,3 +13,15 @@ void copy_from_device(void* dest,void* source ,unsigned bytes){
 	cudaMemcpy(dest,source,bytes,cudaMemcpyDeviceToHost);
 
 }
+
+void allocate_on_device(void** dest,unsigned bytes){
+
+	cudaMalloc(dest,bytes);
+
+}
+
+void deallocate_on_device(void* dest){
+
+	cudaFree(dest);
+
+}
