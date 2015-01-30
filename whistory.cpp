@@ -1,5 +1,6 @@
 #include <vector> 
 #include <iostream>
+#include <iomanip.h>
 #include <sstream>
 #include <stdio.h>
 #include <cmath>
@@ -1638,11 +1639,11 @@ void whistory::run(){
 
 		// print whatever's clever
 		if(converged){
-			     if(RUN_FLAG==0){std::cout << "Cumulative keff/sc-mult = "<< keff << " / " << 1.0/(1.0-keff) << ", ACTIVE cycle " << iteration << ", cycle keff/sc-mult = " << keff_cycle << " / " << 1.0/(1.0-keff_cycle) << "\n";}
-			else if(RUN_FLAG==1){std::cout << "Cumulative keff = " << keff << " +- "<< keff_err <<", ACTIVE cycle " << iteration << ", cycle keff = " << keff_cycle << "\n";}
+			     if(RUN_FLAG==0){std::cout << "Cumulative keff/sc-mult = "<< setw(7) << keff << " / " << 1.0/(1.0-keff) << ", ACTIVE cycle " << iteration << ", cycle keff/sc-mult = " << keff_cycle << " / " << 1.0/(1.0-keff_cycle) << "\n";}
+			else if(RUN_FLAG==1){printf("Cumulative keff =  %8.6E +- %6.4E , ACTIVE cycle %4u, cycle keff = %8.6E\n",keff,keff_err,iteration,keff_cycle);}
 		}
 		else{
-			std::cout << "Converging fission source... skipped cycle " << iteration_total+1 <<"\n";
+			printf("Converging fission source... skipped cycle %4u\n",iteration_total+1);
 		}
 
 		fprintf(statsfile,"---- iteration %u done ----\n",iteration);
