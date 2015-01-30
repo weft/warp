@@ -93,6 +93,7 @@ __global__ void microscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_c
 	//if( this_rxn >= 811 & this_rxn<850 & this_rxn!=818 ){printf("microscopic sampled tid %u rxn %d energy %6.4E\n",tid,this_rxn,this_E);}
 	//printf("%u\n",this_rxn);
 	if(this_rxn==4){printf("MT=4!!!\n");}
+	if(this_rxn==56){printf("MT=56 at E %10.8E\n",this_E);}
 	rxn[tid_in] = this_rxn;
 	Q[tid] 	 = this_Q;
 	rn_bank[tid] = rn;
