@@ -220,8 +220,8 @@ class ReactionEdgesTest : public ::testing::Test {
 		// print stuff just for debugging
 		//printf("rxn\n");
 		//for(unsigned i=0; i<N ;i++){ printf("%4u\n",rxn[i]);}
-		printf("device, solution\n");
-		for(unsigned i=0; i<n_edges ;i++){ printf("%6u %6u\n",edges[i],edges_solution[i]);}
+		//printf("device, solution\n");
+		//for(unsigned i=0; i<n_edges ;i++){ printf("%6u %6u\n",edges[i],edges_solution[i]);}
 
 		// check
 		EXPECT_EQ(  edges_solution[0]  ,  edges[0]   );
@@ -375,7 +375,7 @@ TEST_F(ReactionEdgesTest, LongNoCscatter){
 	// run the tests for this reaction vector
 	run_test();
 }  
-TEST_F(ReactionEdgesTest, LongNoResamp){
+TEST_F(ReactionEdgesTest, LongNoResample){
 	// this test does XXX
 	
 	// set size, allocate
@@ -468,10 +468,479 @@ TEST_F(ReactionEdgesTest, LongNoDone){
 
 	// run the tests for this reaction vector
 	run_test();
+}  
+
+TEST_F(ReactionEdgesTest, LongOnlyEscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	allocate();
+
+	// set rxn for this case
+	for(unsigned i=0; i<N; i++){
+		rxn[i] = 2;
+	}
+
+	// run the tests for this reaction vector
+	run_test();
+}    
+TEST_F(ReactionEdgesTest, LongOnlyIscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	unsigned c;
+	allocate();
+
+	// set rxn for this case
+	for(unsigned i=0; i<N; i++){
+		c = i/25;
+		if( c > 39 ){c=39;}
+		rxn[i] = 51+c;
+	}
+	
+	// run the tests for this reaction vector
+	run_test();
 }   
+TEST_F(ReactionEdgesTest, LongOnlyCscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	allocate();
 
+	// set rxn for this case
+	for(unsigned i=0; i<N; i++){
+		rxn[i] = 91;
+	}
+	
+	// run the tests for this reaction vector
+	run_test();
+}  
+TEST_F(ReactionEdgesTest, LongOnlyResample){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	allocate();
 
+	// set rxn for this case
+	for(unsigned i=0; i<N; i++){
+		rxn[i] = 800;
+	}
+	
+	// run the tests for this reaction vector
+	run_test();
+}    
+TEST_F(ReactionEdgesTest, LongOnlyFission){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	unsigned c;
+	allocate();
 
+	// set rxn for this case
+	for(unsigned i=0; i<N; i++){
+		c = i/29;
+		if( c > 34 ){c=34;}
+		rxn[i] = 811+c;
+	}
+	
+	// run the tests for this reaction vector
+	run_test();
+}   
+TEST_F(ReactionEdgesTest, LongOnlyDone){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1000;
+	unsigned c;
+	allocate();
+
+	// set rxn for this case
+	for(unsigned i=0; i<N; i++){
+		c = i/5;
+		rxn[i] = 900+c;
+	}
+	
+	// run the tests for this reaction vector
+	run_test();
+}   
+//
+//    Tests where the block len == 2
+//
+
+TEST_F(ReactionEdgesTest, TwoAll){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 12;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 2;
+	rxn[2] = 51;
+	rxn[3] = 58;
+	rxn[4] = 91;
+	rxn[5] = 91;
+	rxn[6] = 800;
+	rxn[7] = 800;
+	rxn[8] = 811;
+	rxn[9] = 816;
+	rxn[10] = 900;
+	rxn[11] = 1102;
+
+	// run the tests for this reaction vector
+	run_test();
+}   
+TEST_F(ReactionEdgesTest, TwoNoEscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 10;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 51;
+	rxn[1] = 58;
+	rxn[2] = 91;
+	rxn[3] = 91;
+	rxn[4] = 800;
+	rxn[5] = 800;
+	rxn[6] = 811;
+	rxn[7] = 816;
+	rxn[8] = 900;
+	rxn[9] = 1102;
+	
+	// run the tests for this reaction vector
+	run_test();
+}  
+TEST_F(ReactionEdgesTest, TwoNoIscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 10;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 2;
+	rxn[2] = 91;
+	rxn[3] = 91;
+	rxn[4] = 800;
+	rxn[5] = 800;
+	rxn[6] = 811;
+	rxn[7] = 816;
+	rxn[8] = 900;
+	rxn[9] = 1102;
+	
+	// run the tests for this reaction vector
+	run_test();
+} 
+TEST_F(ReactionEdgesTest, TwoNoCscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 10;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 2;
+	rxn[2] = 51;
+	rxn[3] = 90;
+	rxn[4] = 800;
+	rxn[5] = 800;
+	rxn[6] = 811;
+	rxn[7] = 816;
+	rxn[8] = 900;
+	rxn[9] = 1102;
+	
+	// run the tests for this reaction vector
+	run_test();
+}  
+TEST_F(ReactionEdgesTest, TwoNoResample){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 10;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 2;
+	rxn[2] = 51;
+	rxn[3] = 90;
+	rxn[4] = 91;
+	rxn[5] = 91;
+	rxn[6] = 811;
+	rxn[7] = 816;
+	rxn[8] = 900;
+	rxn[9] = 1102;
+	
+	// run the tests for this reaction vector
+	run_test();
+}       
+TEST_F(ReactionEdgesTest, TwoNoFission){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 10;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 2;
+	rxn[2] = 51;
+	rxn[3] = 90;
+	rxn[4] = 91;
+	rxn[5] = 91;
+	rxn[6] = 800;
+	rxn[7] = 800;
+	rxn[8] = 900;
+	rxn[9] = 1102;
+	
+	// run the tests for this reaction vector
+	run_test();
+}   
+TEST_F(ReactionEdgesTest, TwoNoDone){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 10;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 2;
+	rxn[2] = 51;
+	rxn[3] = 90;
+	rxn[4] = 91;
+	rxn[5] = 91;
+	rxn[6] = 800;
+	rxn[7] = 800;
+	rxn[8] = 811;
+	rxn[9] = 840;
+	
+	// run the tests for this reaction vector
+	run_test();
+} 
+
+//
+//    Tests where the block len == 1
+//
+
+TEST_F(ReactionEdgesTest, OneAll){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 6;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 51;
+	rxn[2] = 91;
+	rxn[3] = 800;
+	rxn[4] = 811;
+	rxn[5] = 1102;
+
+	// run the tests for this reaction vector
+	run_test();
+}   
+TEST_F(ReactionEdgesTest, OneNoEscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 5;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 51;
+	rxn[1] = 91;
+	rxn[2] = 800;
+	rxn[3] = 811;
+	rxn[4] = 1102;
+	
+	// run the tests for this reaction vector
+	run_test();
+}  
+TEST_F(ReactionEdgesTest, OneNoIscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 5;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 91;
+	rxn[2] = 800;
+	rxn[3] = 811;
+	rxn[4] = 1102;
+	
+	// run the tests for this reaction vector
+	run_test();
+} 
+TEST_F(ReactionEdgesTest, OneNoCscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 5;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 51;
+	rxn[2] = 800;
+	rxn[3] = 811;
+	rxn[4] = 1102;
+	
+	// run the tests for this reaction vector
+	run_test();
+}  
+TEST_F(ReactionEdgesTest, OneNoResample){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 5;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 51;
+	rxn[2] = 91;
+	rxn[3] = 816;
+	rxn[4] = 1102;
+	
+	// run the tests for this reaction vector
+	run_test();
+}       
+TEST_F(ReactionEdgesTest, OneNoFission){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 5;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 51;
+	rxn[2] = 91;
+	rxn[3] = 800;
+	rxn[4] = 1102;
+	
+	// run the tests for this reaction vector
+	run_test();
+}   
+TEST_F(ReactionEdgesTest, OneNoDone){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 5;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	rxn[1] = 51;
+	rxn[2] = 91;
+	rxn[3] = 800;
+	rxn[4] = 816;
+	
+	// run the tests for this reaction vector
+	run_test();
+} 
+
+//
+//   short tests
+//
+
+TEST_F(ReactionEdgesTest, ShortEscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 2;
+	
+	// run the tests for this reaction vector
+	run_test();
+} 
+TEST_F(ReactionEdgesTest, ShortIscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 51;
+	
+	// run the tests for this reaction vector
+	run_test();
+} 
+TEST_F(ReactionEdgesTest, ShortCscatter){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 91;
+	
+	// run the tests for this reaction vector
+	run_test();
+} 
+TEST_F(ReactionEdgesTest, ShortResample){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 800;
+	
+	// run the tests for this reaction vector
+	run_test();
+} 
+TEST_F(ReactionEdgesTest, ShortFission){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 816;
+	
+	// run the tests for this reaction vector
+	run_test();
+} 
+TEST_F(ReactionEdgesTest, ShortDone){
+	// this test does XXX
+	
+	// set size, allocate
+	N = 1;
+	allocate();
+
+	// set rxn for this case
+	rxn[0] = 919;
+	
+	// run the tests for this reaction vector
+	run_test();
+} 
+
+//
+//   Pathological tests?
+//   Things like list being unsorted should not happen.  Should be tested seperately from edge detection.
+//
 
 }  // namespace
 
