@@ -1928,6 +1928,7 @@ void whistory::device_report(){
 		cudaGetDeviceProperties(&device_prop,k);
 		compute_cap = (float)device_prop.major + (float)device_prop.minor/10.0;
 		con_string = "no ";
+		enabled_string=' ';
 		if(device_prop.concurrentKernels){con_string="yes";}
 		if(k==enabled_dev){enabled_string='*';}
 		printf(  "%1s | %2d      | %25s   |  %3d  | %6.4f  | %6.1f  | %6.1f   | %2.1f          | %4s            |\n", enabled_string.c_str(),k, device_prop.name, device_prop.multiProcessorCount, (float)device_prop.totalGlobalMem/(1024*1024), (float)device_prop.clockRate/1e3, (float)device_prop.memoryClockRate/1e3, compute_cap, con_string.c_str());
