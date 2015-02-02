@@ -100,9 +100,10 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	context -> setDevices(&deviceId, &deviceId+1);  // iterator_start, iterator_end
 	unsigned enabled_count = context -> getEnabledDeviceCount();
 	std::vector<int> enabled_ids = context -> getEnabledDevices();
-	printf("OptiX using device ");
-	for(unsigned h=0;h<enabled_count;h++){printf("%u ",enabled_ids[h]); optix_device=enabled_ids[h];}
-	printf("\n");
+	std::string enabled_name = context ->getDeviceName(enabled_ids[0]);
+	printf("OptiX using device %u: %s\n",enabled_ids[0],enabled_name.c_str());
+	//for(unsigned h=0;h<enabled_count;h++){printf("%u ",enabled_ids[h]); optix_device=enabled_ids[h];}
+	//printf("\n");
 	//set up scene info
   	context->setRayTypeCount( 1u );
   	context->setEntryPointCount( 1u );

@@ -133,8 +133,9 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	rn1 = get_rand(&rn);
 	offset=4;
 	if(this_Sarray == 0x0){
-		mu= 2.0*rn1-1.0; 
-		printf("null pointer in iscatter!,dex %u rxn %u tope %u E %6.4E\n",this_dex,this_rxn,this_tope,this_E);
+		mu= 2.0*rn1-1.0; // assume CM isotropic scatter if null
+		// should make print by flag
+		//printf("null pointer in iscatter!,dex %u rxn %u tope %u E %6.4E Q %6.4E\n",this_dex,this_rxn,this_tope,this_E,this_Q);
 	}
 	else{  // 
 		//printf("rxn=%u dex=%u %p %6.4E\n",rxn[tid],this_dex,this_array,this_E);

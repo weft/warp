@@ -71,7 +71,7 @@ RT_PROGRAM void camera()
 	payload.hitbuff[0].mat  = -1;
 	payload.hitbuff[0].fiss = -1;
 	payload.buff_index=0;
-	//payload.cont=1;
+	payload.cont=1;
 
 	// find entering cell otherwise, trace will write, use downward z 
 	ray_direction  = make_float3(0, 0, -1.0);
@@ -79,7 +79,7 @@ RT_PROGRAM void camera()
 	ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 	rtTrace(top_object, ray, payload); 
 	while(payload.cont){
-		ray_origin = make_float3(payload.x,payload.y,payload.z);
+		ray_origin = make_float3(payload.x+1.0*epsilon,payload.y+1.0*epsilon,payload.z+1.0*epsilon);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);      
 	}

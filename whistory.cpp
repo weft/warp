@@ -1900,6 +1900,7 @@ void whistory::set_device(unsigned dev_in){
 	// set obj
 	if(dev_in < n_devices){
 		compute_device = dev_in;
+		cudaSetDevice(dev_in);
 	}
 	else{
 		std::cout << "!!!! Device " << dev_in << " does not exist.  Max devices is " << n_devices <<"\n";

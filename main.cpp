@@ -19,6 +19,8 @@ int main(int argc, char* argv[]){
 	std::string homfuelname  = "homfuel";
 	std::string godivaname   = "godiva";
 	std::string pincellname  = "pincell";
+	std::string pincellname2  = "pincell-noO";
+
 
 	// check
 	if(argc<=2){
@@ -224,6 +226,62 @@ int main(int argc, char* argv[]){
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
 		geom.add_transform(prim_id,999,0,0,0,0,0);
 	}
+	else if(pincellname2.compare(argv[1])==0){
+		// pincell mats
+		n_topes = 3;
+		std::vector<unsigned> topes (n_topes);
+		std::vector<float>    fracs_fuel  (n_topes);
+		std::vector<float>    fracs_water (n_topes);
+		topes[0]=92235,
+		topes[1]=92238;
+		topes[2]=1001;
+		fracs_fuel[0] = 0.1;  
+		fracs_fuel[1] = 0.9;   
+		fracs_fuel[2] = 0;
+		fracs_water[0] = 0;  
+		fracs_water[1] = 0;   
+		fracs_water[2] = 2;
+		float    dens_fuel = 15;
+		float 	 dens_water = 3;
+		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
+		geom.add_material(2,0,n_topes,dens_water,topes,fracs_water);
+		
+		// run stuff
+		tallycell = 1;
+		filename = pincellname2;
+		tallyname = pincellname2;
+		tallyname.append(".tally");
+	
+		//pin cell
+		type=1;
+		material=1;
+		mins[0]=-1;
+		mins[1]=-1;
+		mins[2]=-20;
+		maxs[0]= 1; 
+		maxs[1]= 1; 
+		maxs[2]= 20;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,1,0,0,0,0,0);
+
+		//water 
+		type=0;
+		material=2;
+		mins[0]=-5.0;
+		mins[1]=-5.0;
+		mins[2]=-25.0;
+		maxs[0]= 5.0;
+		maxs[1]= 5.0;
+		maxs[2]= 25.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,999,0,0,0,0,0);
+	}
 	else{
 		printf("MUST ENTER A *VALID* RUN TYPE : %s, %s, %s, or %s\n",assemblyname.c_str(),homfuelname.c_str(), godivaname.c_str(),  pincellname.c_str() );
 		exit(0);
@@ -256,7 +314,7 @@ int main(int argc, char* argv[]){
 	/////////////////////////////////////////////////////////////////
 
 	whistory hist ( N , geom );
-	hist.set_device(0);
+	hist.set_device(1);
 	hist.init();
 	hist.print_xs_data();
 	hist.print_materials_table();
@@ -267,7 +325,7 @@ int main(int argc, char* argv[]){
 
 	hist.set_run_type("criticality");
 	hist.set_tally_cell(tallycell);
-	hist.set_run_param(400,100);  //run, skip
+	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
 	hist.run();
 	hist.write_tally(0);
