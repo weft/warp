@@ -102,6 +102,7 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	std::vector<int> enabled_ids = context -> getEnabledDevices();
 	std::string enabled_name = context ->getDeviceName(enabled_ids[0]);
 	printf("OptiX using device %u: %s\n",enabled_ids[0],enabled_name.c_str());
+	optix_device = 0;
 	//for(unsigned h=0;h<enabled_count;h++){printf("%u ",enabled_ids[h]); optix_device=enabled_ids[h];}
 	//printf("\n");
 	//set up scene info

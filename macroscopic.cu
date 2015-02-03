@@ -34,7 +34,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float 		cum_prob 		= 0.0;
 	float 		diff			= 0.0;
 	unsigned 	tope 			= 999999999;
-	float 		epsilon 		= 1e-5;
+	float 		epsilon 		= 2.0e-5;
 	//unsigned    this_rxn		= 0;
 	//unsigned    this_rxn = rxn[tid_in];
 	unsigned 	isdone 			= 0;
@@ -81,10 +81,10 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	// do surf/samp compare
 	//printf("% 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E %u\n",x,y,z,xhat,yhat,zhat,surf_dist,samp_dist,enforce_BC);
 	diff = surf_dist - samp_dist;
-	if( diff < 0 ){  //move to surface, set resample flag
-		x += (surf_dist + 2.0*epsilon) * xhat;
-		y += (surf_dist + 2.0*epsilon) * yhat;
-		z += (surf_dist + 2.0*epsilon) * zhat;
+	if( diff < 0.0 ){  //move to surface, set resample flag, offset x-y to make sure cell determination works
+		x += (surf_dist + epsilon) * xhat;
+		y += (surf_dist + epsilon) * yhat;
+		z += (surf_dist) * zhat;
 		this_rxn = 800;
 		tope=999999998;  // make resampling a different isotope than mis-sampling
 		// enforce BC
@@ -96,12 +96,16 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		}
 	}
 	else{  //move to sampled distance, null reaction
-		if( diff <= 2.0*epsilon ){ 
-			samp_dist = surf_dist - 2.0*epsilon;   //adjust if diff is within epsilon so the next trace will hit the surface!
-		}  
-		x += samp_dist * xhat;
-		y += samp_dist * yhat;
-		z += samp_dist * zhat;
+		if( diff <= epsilon ){ 
+			x += (samp_dist - epsilon) * xhat;
+			y += (samp_dist - epsilon) * yhat;
+			z += samp_dist * zhat;   //adjust if diff is within epsilon so the next trace will hit the surface!
+		} 
+		else{ 
+			x += samp_dist * xhat;
+			y += samp_dist * yhat;
+			z += samp_dist * zhat;
+		}
 		this_rxn = 0;
 	}
 

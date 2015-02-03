@@ -1622,6 +1622,8 @@ void whistory::run(){
 			Nrun=Ndataset;
 		}
 		else if (RUN_FLAG==1){	
+			if(iteration==22){
+			write_histories(22);}
 			accumulate_keff(converged, iteration, &keff, &keff_cycle);
 			//printf("CUDA ERROR3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			accumulate_tally();
@@ -1629,7 +1631,6 @@ void whistory::run(){
 			reset_cycle(keff_cycle);
 			//printf("CUDA ERROR5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			Nrun=N;
-			//write_histories(1);
 			//printf("CUDA ERROR6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		}
 
@@ -1989,7 +1990,7 @@ void whistory::write_histories(unsigned iteration){
 	FILE* history_file = fopen(histfile_name.c_str(),"w");
 
 	// write iteration delimiter
-	fprintf(history_file,"==== ITERATION %u ====\n",iteration);
+	//fprintf(history_file,"==== ITERATION %u ====\n",iteration);
 
 	// copy gemetrical (positions / directions)
 	cudaMemcpy(space2,d_space,N*sizeof(source_point),cudaMemcpyDeviceToHost);
@@ -2022,9 +2023,10 @@ void whistory::write_histories(unsigned iteration){
 	cudaDeviceSynchronize();
 
 	// write history data to file
+	fprintf(history_file,"a=zeros(%u,7)\n",N);
 	for(unsigned k=0;k<N;k++){
 		//fprintf(history_file,"tid %u (x,y,z) %8.6E %8.6E %8.6E (x,y,z)-hat %8.6E %8.6E %8.6E surf_dist %8.6E macro_t %8.6E enforce_BC %u E %8.6E cellnum %u matnum %u isonum %u rxn %u done %u yield %u\n",k,space2[k].x,space2[k].y,space2[k].z,space2[k].xhat,space2[k].yhat,space2[k].zhat,space2[k].surf_dist,space2[k].macro_t,space2[k].enforce_BC,E2[k],cellnum2[k],matnum2[k],isonum2[k],rxn2[k],done2[k],yield2[k]);
-		fprintf(history_file,"a[%u,1:6]=[%8.6E,%8.6E,%8.6E,%8.6E,%u,%u,%u]\n",k,space2[k].x,space2[k].y,space2[k].z,E2[k],rxn2[k],yield2[k],dex2[k]);
+		fprintf(history_file,"a(%u,1:7)=[%8.6E,%8.6E,%8.6E,%8.6E,%u,%u,%u];\n",k+1,space2[k].x,space2[k].y,space2[k].z,E2[k],rxn2[k],yield2[k],dex2[k]);
 	}
  	fclose(history_file);
 
