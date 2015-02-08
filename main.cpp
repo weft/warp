@@ -313,8 +313,8 @@ int main(int argc, char* argv[]){
 	// INIT CUDA and HISTORY STUFF and LOAD/UNIONIZE CROS SECTIONS //
 	/////////////////////////////////////////////////////////////////
 
-	whistory hist ( N , geom );
-	hist.set_device(0);
+	unsigned compute_device = 0;
+	whistory hist ( compute_device, N , geom );
 	hist.init();
 	hist.print_xs_data();
 	hist.print_materials_table();
@@ -325,7 +325,7 @@ int main(int argc, char* argv[]){
 
 	hist.set_run_type("criticality");
 	hist.set_tally_cell(tallycell);
-	hist.set_run_param(40,20);  //run, skip
+	hist.set_run_param(400,40);  //run, skip
 	hist.set_filename(filename);
 	hist.run();
 	hist.write_tally(0);

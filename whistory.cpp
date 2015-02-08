@@ -21,9 +21,12 @@
 optix_stuff optix_obj;
 //wgeometry geom_obj;
 
-whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
+whistory::whistory(unsigned compute_device_in, unsigned Nin, wgeometry problem_geom_in){
 	//clear device
 	cudaDeviceReset();
+	// device must be set BEFORE an CUDA creation (streams included)
+	compute_device = compute_device_in;
+	cudaSetDevice(compute_device);
 	// do problem gemetry stuff first
 	problem_geom = problem_geom_in;
 	// set tally vector length
@@ -37,7 +40,6 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	N = Nin;
 	Ndataset = Nin * 5;
 	n_qnodes = 0;
-	compute_device = 0;	
 	reduced_yields_total = 0;
 	accel_type = "Sbvh";
 	for (int i = 0; i < 4; ++i){
@@ -45,9 +47,7 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	}
 }
 void whistory::init(){
-	// set device first
-	cudaSetDevice(compute_device);
-	// init optix stuff second
+	// init optix stuff 
 	optix_obj.N=Ndataset;
 	optix_obj.stack_size_multiplier=1;
 	optix_obj.set_image_type("cell");
@@ -271,7 +271,6 @@ void whistory::init_CUDPP(){
 	
 	std::cout << "\e[1;32m" << "Initializing CUDPP..." << "\e[m \n";
 	// global objects
-	cudaSetDevice(compute_device);
 	res = cudppCreate(&theCudpp);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error initializing CUDPP Library.\n");}
 	
@@ -1889,22 +1888,6 @@ void whistory::set_run_param(unsigned n_cycles_in, unsigned n_skip_in){
 
 	n_skip = n_skip_in;
 	n_cycles = n_cycles_in;
-
-}
-void whistory::set_device(unsigned dev_in){
-
-	//get number to make sure this is a valid device
-	int 			n_devices;
-	cudaGetDeviceCount(&n_devices);
-
-	// set obj
-	if(dev_in < n_devices){
-		compute_device = dev_in;
-		cudaSetDevice(dev_in);
-	}
-	else{
-		std::cout << "!!!! Device " << dev_in << " does not exist.  Max devices is " << n_devices <<"\n";
-	}
 
 }
 void whistory::device_report(){

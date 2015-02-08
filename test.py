@@ -75,7 +75,9 @@ geom.print_summary()
 
 
 # init hist and run
-hist = warp.whistory(100000,geom)
+compute_device 	= int(0)
+N_per_cycle		= 100000
+hist = warp.whistory(compute_device,N_per_cycle,geom)
 hist.init()
 hist.print_xs_data()
 hist.print_materials_table()
