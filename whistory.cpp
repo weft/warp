@@ -21,12 +21,7 @@
 optix_stuff optix_obj;
 //wgeometry geom_obj;
 
-whistory::whistory(unsigned compute_device_in, unsigned Nin, wgeometry problem_geom_in){
-	//clear device
-	cudaDeviceReset();
-	// device must be set BEFORE an CUDA creation (streams included)
-	compute_device = compute_device_in;
-	cudaSetDevice(compute_device);
+whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	// do problem gemetry stuff first
 	problem_geom = problem_geom_in;
 	// set tally vector length
@@ -42,11 +37,20 @@ whistory::whistory(unsigned compute_device_in, unsigned Nin, wgeometry problem_g
 	n_qnodes = 0;
 	reduced_yields_total = 0;
 	accel_type = "Sbvh";
+	// default device to 0
+	compute_device = 0;
+	// not initialized
+	is_initialized = 0;
+}
+void whistory::init(){
+	// device must be set BEFORE an CUDA creation (streams included)
+	cudaSetDevice(compute_device);
+	//clear device
+	cudaDeviceReset();
+	// create streams
 	for (int i = 0; i < 4; ++i){
 		cudaStreamCreate(&stream[i]);
 	}
-}
-void whistory::init(){
 	// init optix stuff 
 	optix_obj.N=Ndataset;
 	optix_obj.stack_size_multiplier=1;
@@ -135,6 +139,7 @@ void whistory::init(){
 	load_cross_sections();
 	//create_quad_tree();
 	copy_data_to_device();
+	is_initialized = 1;
 	printf("Done with init\n");
 }
 whistory::~whistory(){
@@ -1888,6 +1893,26 @@ void whistory::set_run_param(unsigned n_cycles_in, unsigned n_skip_in){
 
 	n_skip = n_skip_in;
 	n_cycles = n_cycles_in;
+
+}
+void whistory::set_device(unsigned dev_in){
+
+	if (is_initialized){
+		printf("Cannot change device after initialization.  Device already set to %u\n",compute_device);
+		return;
+	}
+
+	//get number to make sure this is a valid device
+	int 			n_devices;
+	cudaGetDeviceCount(&n_devices);
+
+	// set obj
+	if(dev_in < n_devices){
+		compute_device = dev_in;
+	}
+	else{
+		std::cout << "!!!! Device " << dev_in << " does not exist.  Max devices is " << n_devices <<"\n";
+	}
 
 }
 void whistory::device_report(){

@@ -53,6 +53,7 @@ class whistory {
 	float 		keff2_sum;
 	float 		keff_err;
 	std::string     filename; /**< file name */
+	unsigned 	is_initialized;  /**< init flag */
 	source_point *  space; /**< source point spatial pointer */
 	/**
 	 * \brief cross section length numbers
@@ -333,7 +334,7 @@ public:
 	 * \details makes geometry, sets tally vector length, creates dataset size, sets
 	 * compute device and acceleration type, creates CUDA streams.
 	 */
-	whistory(unsigned,unsigned,wgeometry);
+	whistory(unsigned,wgeometry);
 	/**
 	 * \brief destructor
 	 */
@@ -405,6 +406,11 @@ public:
 	 * available compute devices
 	 */
 	void device_report();
+	/**
+	 * \brief sets device number to input value
+	 * @param[in] dev_in - device number
+	 */
+	void set_device(unsigned);
 	/**
 	 * \brief does nothing
 	 * @param[in] accel_in - acceleration type

@@ -11,7 +11,7 @@ TEST_F(whistoryTest, Construction)
 {
 	N = 10000;
 	wgeometry geom;
-	whistory construct_hist(0, N, geom);
+	whistory construct_hist(N, geom);
 }
 
 /**
@@ -40,7 +40,7 @@ TEST_F(whistoryTest, SetRunType)
         geom.set_outer_cell(999);
         geom.update();
         geom.check();
-        whistory hist(0, N, geom);
+        whistory hist(N, geom);
 	hist.set_run_type("criticality");
 }
 
@@ -70,7 +70,7 @@ TEST_F(whistoryTest, SetTallyCell)
         geom.set_outer_cell(999);
         geom.update();
         geom.check();
-        whistory hist(0, N, geom);
+        whistory hist(N, geom);
 	hist.set_tally_cell(999);
 }
 
@@ -100,7 +100,7 @@ TEST_F(whistoryTest, SetRunParam)
         geom.set_outer_cell(999);
         geom.update();
         geom.check();
-        whistory hist(0, N, geom);
+        whistory hist(N, geom);
 	hist.set_run_param(40,20);
 }
 
@@ -130,7 +130,7 @@ TEST_F(whistoryTest, SetFilename)
         geom.set_outer_cell(999);
         geom.update();
         geom.check();
-        whistory hist(0, N, geom);
+        whistory hist(N, geom);
 	EXPECT_NO_THROW(hist.set_filename("whistory_test_log.txt"));
 }
 
@@ -140,30 +140,29 @@ TEST_F(whistoryTest, SetFilename)
  * \details creates a wgeometry object that contains a fissile material and constructs a whistory with 
  * that wgeometry. tests that no error is thrown when the device is set.
  */
- // NO LONGER IMPLEMENTED
-//TEST_F(whistoryTest, SetDevice)
-//{
-//        N = 10000;
-//        wgeometry geom;
-//        material = 1;
-//        is_fissile = 1;
-//        n_isotopes = 1;
-//        density = 19.816;
-//        isotopes.push_back(94239);
-//        mat_fracs.push_back(1);
-//        geom.add_material(material,is_fissile,n_isotopes,density,isotopes,mat_fracs);
-//        type = 3;
-//        min[0] = -5.1; min[1] = -5.1; min[2] = -5.1;
-//        max[0] =  5.1; max[1] =  5.1; max[2] =  5.1;
-//        origin[0] = 0; origin[1] = 0; origin[2] = 0;
-//        geom.add_primitive(type, material, min, max, origin);
-//        geom.add_transform(0,999,0,0,0,0,0);
-//        geom.set_outer_cell(999);
-//        geom.update();
-//        geom.check();
-//        whistory hist(N, geom);
-//	EXPECT_NO_THROW(hist.set_device(0));
-//}
+TEST_F(whistoryTest, SetDevice)
+{
+        N = 10000;
+        wgeometry geom;
+        material = 1;
+        is_fissile = 1;
+        n_isotopes = 1;
+        density = 19.816;
+        isotopes.push_back(94239);
+        mat_fracs.push_back(1);
+        geom.add_material(material,is_fissile,n_isotopes,density,isotopes,mat_fracs);
+        type = 3;
+        min[0] = -5.1; min[1] = -5.1; min[2] = -5.1;
+        max[0] =  5.1; max[1] =  5.1; max[2] =  5.1;
+        origin[0] = 0; origin[1] = 0; origin[2] = 0;
+        geom.add_primitive(type, material, min, max, origin);
+        geom.add_transform(0,999,0,0,0,0,0);
+        geom.set_outer_cell(999);
+        geom.update();
+        geom.check();
+        whistory hist(N, geom);
+	EXPECT_NO_THROW(hist.set_device(0));
+}
 
 /**
  * \brief initialization test
@@ -191,7 +190,7 @@ TEST_F(whistoryTest, Init)
 	geom.set_outer_cell(999);
 	geom.update();
 	geom.check();
-        whistory init_hist(0, N, geom);
+        whistory init_hist(N, geom);
 	init_hist.init();
 }
 
