@@ -33,7 +33,7 @@ RT_PROGRAM void camera()
 
 	// declare important stuff
 	int                 cnt;
-	float               epsilon=1e-5; 	
+	float               epsilon=5.0e-4; 	
 	intersection_point  payload;
 	
 	// init payload flags
@@ -74,12 +74,12 @@ RT_PROGRAM void camera()
 	payload.cont=1;
 
 	// find entering cell otherwise, trace will write, use downward z 
-	ray_direction  = make_float3(0, 0, -1.0);
+	//ray_direction  = make_float3(0, 0, -1.0);
 	ray_origin     = make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
 	ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 	rtTrace(top_object, ray, payload); 
 	while(payload.cont){
-		ray_origin = make_float3(payload.x+1.0*epsilon,payload.y+1.0*epsilon,payload.z+1.0*epsilon);
+		ray_origin = make_float3(payload.x,payload.y,payload.z);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);      
 	}

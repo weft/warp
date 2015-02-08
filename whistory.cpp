@@ -1622,8 +1622,7 @@ void whistory::run(){
 			Nrun=Ndataset;
 		}
 		else if (RUN_FLAG==1){	
-			if(iteration==22){
-			write_histories(22);}
+			//if(iteration==22){write_histories(22);}
 			accumulate_keff(converged, iteration, &keff, &keff_cycle);
 			//printf("CUDA ERROR3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			accumulate_tally();

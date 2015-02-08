@@ -10,8 +10,17 @@ __global__ void microscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_c
 	if (tid_in >= N){return;}
 
 	unsigned 	this_rxn 		= rxn[tid_in];
-	if(this_rxn>=800){return;} //return if flagged to resample or leaked (leak can be in here since set by macro and remap hasn't been done)
-
+	if 		(this_rxn>=800){
+		return;  //return if flagged to resample or leaked (leak can be in here since set by macro and remap hasn't been done)
+	} 
+	else if (this_rxn==0){
+		this_rxn = 999999999;
+	}
+	else{
+		this_rxn = 999999999;
+		printf("microscopic got reaction between 1 and 799 from macro!\n");
+	}
+	
 	//remap
 	int tid=remap[tid_in];
 	//printf("tid %u remapped_tid %u\n",tid_in,tid);
