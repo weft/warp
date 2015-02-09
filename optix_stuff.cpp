@@ -99,9 +99,7 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	assert(deviceId<deviceCount);
 	context -> setDevices(&deviceId, &deviceId+1);  // iterator_start, iterator_end
 	unsigned enabled_count = context -> getEnabledDeviceCount();
-	std::vector<int> enabled_ids = context -> getEnabledDevices();
-	std::string enabled_name = context ->getDeviceName(enabled_ids[0]);
-	printf("OptiX using device %u: %s\n",enabled_ids[0],enabled_name.c_str());
+	optix_device = 0;  // always the first enabled device, 0!
 	//for(unsigned h=0;h<enabled_count;h++){printf("%u ",enabled_ids[h]); optix_device=enabled_ids[h];}
 	//printf("\n");
 	//set up scene info
@@ -771,7 +769,11 @@ void optix_stuff::print(){
 	if(GEOM_FLAG==1){instancing="transform";}
 	else if(GEOM_FLAG==2){instancing="common node transform";}
 	else         {instancing="primitive";}
+	std::vector<int> enabled_ids = context -> getEnabledDevices();
+	std::string enabled_name = context ->getDeviceName(enabled_ids[0]);
+
 	std::cout << "\e[1;32m" << "--- OptiX SUMMARY ---" << "\e[m \n";
+	printf(      "  Using device %u: \e[1;31m%s\e[m\n",enabled_ids[0],enabled_name.c_str());	
 	std::cout << "  Using \e[1;31m"<< instancing <<"\e[m-based instancing\n";
 	std::cout << "  Image type set to \e[1;31m"<< image_type <<"\e[m\n";	
 	std::cout << "  Device set to "<<compute_device<<"\n";

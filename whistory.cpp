@@ -22,8 +22,6 @@ optix_stuff optix_obj;
 //wgeometry geom_obj;
 
 whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
-	//clear device
-	cudaDeviceReset();
 	// do problem gemetry stuff first
 	problem_geom = problem_geom_in;
 	// set tally vector length
@@ -37,17 +35,23 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	N = Nin;
 	Ndataset = Nin * 5;
 	n_qnodes = 0;
-	compute_device = 0;	
 	reduced_yields_total = 0;
 	accel_type = "Sbvh";
+	// default device to 0
+	compute_device = 0;
+	// not initialized
+	is_initialized = 0;
+}
+void whistory::init(){
+	// device must be set BEFORE an CUDA creation (streams included)
+	cudaSetDevice(compute_device);
+	//clear device
+	cudaDeviceReset();
+	// create streams
 	for (int i = 0; i < 4; ++i){
 		cudaStreamCreate(&stream[i]);
 	}
-}
-void whistory::init(){
-	// set device first
-	cudaSetDevice(compute_device);
-	// init optix stuff second
+	// init optix stuff 
 	optix_obj.N=Ndataset;
 	optix_obj.stack_size_multiplier=1;
 	optix_obj.set_image_type("cell");
@@ -135,6 +139,7 @@ void whistory::init(){
 	load_cross_sections();
 	//create_quad_tree();
 	copy_data_to_device();
+	is_initialized = 1;
 	printf("Done with init\n");
 }
 whistory::~whistory(){
@@ -271,7 +276,6 @@ void whistory::init_CUDPP(){
 	
 	std::cout << "\e[1;32m" << "Initializing CUDPP..." << "\e[m \n";
 	// global objects
-	cudaSetDevice(compute_device);
 	res = cudppCreate(&theCudpp);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error initializing CUDPP Library.\n");}
 	
@@ -1622,6 +1626,7 @@ void whistory::run(){
 			Nrun=Ndataset;
 		}
 		else if (RUN_FLAG==1){	
+			//if(iteration==22){write_histories(22);}
 			accumulate_keff(converged, iteration, &keff, &keff_cycle);
 			//printf("CUDA ERROR3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			accumulate_tally();
@@ -1629,7 +1634,6 @@ void whistory::run(){
 			reset_cycle(keff_cycle);
 			//printf("CUDA ERROR5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 			Nrun=N;
-			//write_histories(1);
 			//printf("CUDA ERROR6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		}
 
@@ -1893,6 +1897,11 @@ void whistory::set_run_param(unsigned n_cycles_in, unsigned n_skip_in){
 }
 void whistory::set_device(unsigned dev_in){
 
+	if (is_initialized){
+		printf("Cannot change device after initialization.  Device already set to %u\n",compute_device);
+		return;
+	}
+
 	//get number to make sure this is a valid device
 	int 			n_devices;
 	cudaGetDeviceCount(&n_devices);
@@ -1900,7 +1909,6 @@ void whistory::set_device(unsigned dev_in){
 	// set obj
 	if(dev_in < n_devices){
 		compute_device = dev_in;
-		cudaSetDevice(dev_in);
 	}
 	else{
 		std::cout << "!!!! Device " << dev_in << " does not exist.  Max devices is " << n_devices <<"\n";
@@ -1989,7 +1997,7 @@ void whistory::write_histories(unsigned iteration){
 	FILE* history_file = fopen(histfile_name.c_str(),"w");
 
 	// write iteration delimiter
-	fprintf(history_file,"==== ITERATION %u ====\n",iteration);
+	//fprintf(history_file,"==== ITERATION %u ====\n",iteration);
 
 	// copy gemetrical (positions / directions)
 	cudaMemcpy(space2,d_space,N*sizeof(source_point),cudaMemcpyDeviceToHost);
@@ -2022,9 +2030,10 @@ void whistory::write_histories(unsigned iteration){
 	cudaDeviceSynchronize();
 
 	// write history data to file
+	fprintf(history_file,"a=zeros(%u,7)\n",N);
 	for(unsigned k=0;k<N;k++){
 		//fprintf(history_file,"tid %u (x,y,z) %8.6E %8.6E %8.6E (x,y,z)-hat %8.6E %8.6E %8.6E surf_dist %8.6E macro_t %8.6E enforce_BC %u E %8.6E cellnum %u matnum %u isonum %u rxn %u done %u yield %u\n",k,space2[k].x,space2[k].y,space2[k].z,space2[k].xhat,space2[k].yhat,space2[k].zhat,space2[k].surf_dist,space2[k].macro_t,space2[k].enforce_BC,E2[k],cellnum2[k],matnum2[k],isonum2[k],rxn2[k],done2[k],yield2[k]);
-		fprintf(history_file,"a[%u,1:6]=[%8.6E,%8.6E,%8.6E,%8.6E,%u,%u,%u]\n",k,space2[k].x,space2[k].y,space2[k].z,E2[k],rxn2[k],yield2[k],dex2[k]);
+		fprintf(history_file,"a(%u,1:7)=[%8.6E,%8.6E,%8.6E,%8.6E,%u,%u,%u];\n",k+1,space2[k].x,space2[k].y,space2[k].z,E2[k],rxn2[k],yield2[k],dex2[k]);
 	}
  	fclose(history_file);
 

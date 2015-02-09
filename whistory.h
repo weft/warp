@@ -53,6 +53,7 @@ class whistory {
 	float 		keff2_sum;
 	float 		keff_err;
 	std::string     filename; /**< file name */
+	unsigned 	is_initialized;  /**< init flag */
 	source_point *  space; /**< source point spatial pointer */
 	/**
 	 * \brief cross section length numbers
