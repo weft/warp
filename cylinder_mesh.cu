@@ -11,10 +11,12 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(unsigned,  cellnum,     attribute cell_num, );
 rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
+rtDeclareVariable(float3, normal, attribute normal, );
 
 RT_PROGRAM void intersect(int object_dex)
 {
-	float t1, t2, z1, z2, sdisc;
+	float t1, t2, sdisc;
+	float3 this_norm1, this_norm2, int1, int2;
 
 	float3 loc  = make_float3(dims[object_dex].loc[0],dims[object_dex].loc[1],dims[object_dex].loc[2]);
 	float3 xformed_origin = ray.origin - loc;
@@ -39,28 +41,37 @@ RT_PROGRAM void intersect(int object_dex)
         t1 = (-b-sdisc)/(2*a);
         t2 = (-b+sdisc)/(2*a);
 
-		z1 = ray.direction.z * t1 + xformed_origin.z;
-		z2 = ray.direction.z * t2 + xformed_origin.z;
+		int1 = ray.direction * t1 + xformed_origin;
+		int2 = ray.direction * t2 + xformed_origin;
+
+		float this_norm1_mag = sqrtf((int1.x-xformed_origin.x)*(int1.x-xformed_origin.x)+(int1.y-xformed_origin.y)*(int1.y-xformed_origin.y));
+		float this_norm2_mag = sqrtf((int2.x-xformed_origin.x)*(int2.x-xformed_origin.x)+(int2.y-xformed_origin.y)*(int2.y-xformed_origin.y));
+        this_norm1 = -1.0 * make_float3((xformed_origin.x-int1.x)/this_norm1_mag,(xformed_origin.y-int1.y)/this_norm1_mag,0);
+		this_norm2 = -1.0 * make_float3((xformed_origin.x-int2.x)/this_norm2_mag,(xformed_origin.y-int2.y)/this_norm2_mag,0);
 
 		//rtPrintf("zmin %6.4E zmax %6.4E t1 %6.4E t2 %6.4E z1 %6.4E z2 %6.4E report %u\n",zmin,zmax,t1,t2,z1,z2,report);
 
-		if( ((z1 > zmax) & (z2 > zmax)) | ((z1 < zmin) & (z2 < zmin)) ){  //miss in corners
+		if( ((int1.z > zmax) & (int2.z > zmax)) | ((int1.z < zmin) & (int2.z < zmin)) ){  //miss in corners
 			report=false;
 		}
-		else{ 
+		else{   // t1 always first 
 
-			if (z1 > zmax ){  //  top intersection z1
+			if (int1.z > zmax ){  //  top intersection z1
 				t1 = (zmax - xformed_origin.z) / ray.direction.z;
+				this_norm1 = make_float3(0, 0, -1);
 			}
-			else if(z1 < zmin ) { // bottom intersection z1
+			else if(int1.z < zmin ) { // bottom intersection z1
 				t1 = (zmin - xformed_origin.z) / ray.direction.z;
+				this_norm1 = make_float3(0, 0, 1);
 			}
 
-			if (z2 > zmax){  //  top intersection z2
+			if (int2.z > zmax){  //  top intersection z2
 				t2 = (zmax - xformed_origin.z) / ray.direction.z;
+				this_norm2 = make_float3(0, 0, 1);
 			}
-			else if(z2 < zmin) { // bottom intersection z2
+			else if(int2.z < zmin) { // bottom intersection z2
 				t2 = (zmin - xformed_origin.z) / ray.direction.z;
+				this_norm2 = make_float3(0, 0, -1);
 			}
 		}
 	    
@@ -71,10 +82,19 @@ RT_PROGRAM void intersect(int object_dex)
 
 		t1 = fminf((zmax - xformed_origin.z) / ray.direction.z , (zmin - xformed_origin.z) / ray.direction.z);
 		t2 = fmaxf((zmax - xformed_origin.z) / ray.direction.z , (zmin - xformed_origin.z) / ray.direction.z);	
+		this_norm1 = make_float3(0,0,1);
+		this_norm2 = make_float3(0,0,1);
 
 	}
 
+	//rtPrintf("norm1 %6.4E %6.4E %6.4E norm2 %6.4E %6.4E %6.4E\n",this_norm1.x,this_norm1.y,this_norm1.z,this_norm2.x,this_norm2.y,this_norm2.z);
 	//rtPrintf("zmin %6.4E zmax %6.4E t1 %6.4E t2 %6.4E z1 %6.4E z2 %6.4E report %u\n",zmin,zmax,t1,t2,z1,z2,report);
+	if (t1 < 0.0 ){
+		this_norm1 = -this_norm1;
+	}
+	if (t2 < 0.0 ){
+		this_norm2 = -this_norm2;
+	}
 
 	if (report){
 		if(t1>0){
@@ -82,6 +102,7 @@ RT_PROGRAM void intersect(int object_dex)
 				cellnum     = dims[object_dex].cellnum;
 				cellmat     = dims[object_dex].matnum;
 				cellfissile = dims[object_dex].is_fissile;
+				normal 		= this_norm1;
 				if(rtReportIntersection(0)){
 					check_second=false;
 				}
@@ -92,6 +113,7 @@ RT_PROGRAM void intersect(int object_dex)
 				cellnum     = dims[object_dex].cellnum;
 				cellmat     = dims[object_dex].matnum;
 				cellfissile = dims[object_dex].is_fissile;
+				normal 		= this_norm2;
 				rtReportIntersection(0);
 			}
 		}

@@ -44,7 +44,6 @@ COBJS =	mt19937ar.o \
 		cscatter.o \
 		fission.o \
 		absorb.o \
-		make_mask.o \
 		print_histories.o \
 		pop_secondaries.o \
 		pop_source.o \
@@ -164,9 +163,6 @@ fission.o:
 
 absorb.o:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c absorb.cu
-
-make_mask.o:
-	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c make_mask.cu
 
 print_histories.o:
 	$(NVCC) $(ARCH) $(NVCC_FLAGS) -c print_histories.cu

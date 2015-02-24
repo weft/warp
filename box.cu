@@ -8,6 +8,7 @@ using namespace optix;
 rtDeclareVariable(float3, mins, , );
 rtDeclareVariable(float3, maxs, , );
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(float3, normal, attribute normal, );
 
 RT_PROGRAM void intersect(int)
 {
@@ -21,11 +22,13 @@ RT_PROGRAM void intersect(int)
   if(tmin <= tmax) {
     bool check_second = true;
     if( rtPotentialIntersection( tmin ) ) {
+        //normal = 
        if(rtReportIntersection(0))
          check_second = false;
     } 
     if(check_second) {
       if( rtPotentialIntersection( tmax ) ) {
+        //normal = 
         rtReportIntersection(0);
       }
     }

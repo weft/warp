@@ -11,6 +11,14 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(unsigned,  cellnum,     attribute cell_num, );
 rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
+rtDeclareVariable(float3, normal, attribute normal, );
+
+static __device__ float3 boxnormal(float t, float3 t0, float3 t1)
+{
+  float3 neg = make_float3(t==t0.x?1:0, t==t0.y?1:0, t==t0.z?1:0);
+  float3 pos = make_float3(t==t1.x?1:0, t==t1.y?1:0, t==t1.z?1:0);
+  return pos-neg;
+}
 
 RT_PROGRAM void intersect(int object_dex)
 {
@@ -36,6 +44,7 @@ RT_PROGRAM void intersect(int object_dex)
         cellnum     = dims[object_dex].cellnum;
         cellmat     = dims[object_dex].matnum;
         cellfissile = dims[object_dex].is_fissile;
+        normal      = boxnormal( tmin , t0 , t1 );
        if(rtReportIntersection(0))
          check_second = false;
     } 
@@ -44,6 +53,7 @@ RT_PROGRAM void intersect(int object_dex)
          cellnum     = dims[object_dex].cellnum;
          cellmat     = dims[object_dex].matnum;
          cellfissile = dims[object_dex].is_fissile;
+         normal      = boxnormal( tmax , t0 , t1 );
         rtReportIntersection(0);
       }
     }

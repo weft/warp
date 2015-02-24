@@ -11,6 +11,8 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(unsigned,  cellnum,     attribute cell_num, );
 rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
+rtDeclareVariable(float3, normal, attribute normal, );
+
 
 RT_PROGRAM void intersect(int object_dex)
 {
@@ -34,6 +36,7 @@ RT_PROGRAM void intersect(int object_dex)
           cellnum     = dims[object_dex].cellnum;
           cellmat     = dims[object_dex].matnum;
           cellfissile = dims[object_dex].is_fissile;
+          normal      = xformed_origin + (t0 * ray.direction) / radius;
          if(rtReportIntersection(0))
            check_second = false;
       } 
@@ -42,6 +45,7 @@ RT_PROGRAM void intersect(int object_dex)
            cellnum     = dims[object_dex].cellnum;
            cellmat     = dims[object_dex].matnum;
            cellfissile = dims[object_dex].is_fissile;
+           normal      = xformed_origin + (t1 * ray.direction) / radius;
           rtReportIntersection(0);
         }
       }

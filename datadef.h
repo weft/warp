@@ -45,6 +45,7 @@ struct source_point{
     float zhat; /**< shifted z-coordinate */
     float surf_dist; /**< distance to nearest surface */
     float macro_t;   /**< total macroscopic cross section */
+    float norm[3];
     unsigned enforce_BC; /**< boundary condition enforcement flag */
     unsigned weight;
 };
@@ -94,6 +95,7 @@ struct intersection_point {
     int         cont;       /**< continuity flag */
     hit_buffer  hitbuff[10]; /**< hit buffer array */
     unsigned    buff_index;  /**< index in hit buffer array */
+    float       norm[3];
 };
 
 /**

@@ -221,6 +221,9 @@ void whistory::init_host(){
 		space[k].surf_dist 	= 10000.0;
 		space[k].macro_t 	= 0.0;
 		space[k].enforce_BC     = 0;
+		space[k].norm[0]     = 0;
+		space[k].norm[1]     = 0;
+		space[k].norm[2]     = 0;
 		E[k]			= 2.5;
 		Q[k]			= 0.0;
 		cellnum[k]		= 0;
@@ -243,6 +246,9 @@ void whistory::init_host(){
 		space[k].surf_dist 	= 10000.0;
 		space[k].macro_t 	= 0.0;
 		space[k].enforce_BC = 0;
+		space[k].norm[0]     = 0;
+		space[k].norm[1]     = 0;
+		space[k].norm[2]     = 0;
 		E[k]			= 0.0;
 		Q[k]			= 0.0;
 		cellnum[k]		= 0;
@@ -1617,6 +1623,9 @@ void whistory::run(){
 				//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
 			}
 
+			//std::cout << "press enter to continue...\n";
+			//std::cin.ignore();
+
 		}
 
 		//reduce yield and reset cycle
@@ -1652,7 +1661,7 @@ void whistory::run(){
 		}
 
 		fprintf(statsfile,"---- iteration %u done ----\n",iteration);
-		
+
 		//write_histories(2);
 		//printf("CUDA ERROR7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		//std::cout << "press enter to continue...\n";

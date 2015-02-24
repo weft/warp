@@ -55,6 +55,9 @@ RT_PROGRAM void camera()
 	// first trace to find closest hit, set bc flag
 	rtTrace(top_object, ray, payload);
 	//rtPrintf("did first trace, type %u\n",trace_type);
+	positions_buffer[launch_index].norm[0] = payload.norm[0];
+	positions_buffer[launch_index].norm[1] = payload.norm[1];
+	positions_buffer[launch_index].norm[2] = payload.norm[2];
 	positions_buffer[launch_index].surf_dist = payload.surf_dist; 
 	if(trace_type==2){
 		if(payload.hitbuff[0].cell == outer_cell){
@@ -67,6 +70,7 @@ RT_PROGRAM void camera()
 		}
 	}
 
+	// reset first hti buffer
 	payload.hitbuff[0].cell = -1;
 	payload.hitbuff[0].mat  = -1;
 	payload.hitbuff[0].fiss = -1;
@@ -74,7 +78,7 @@ RT_PROGRAM void camera()
 	payload.cont=1;
 
 	// find entering cell otherwise, trace will write, use downward z 
-	//ray_direction  = make_float3(0, 0, -1.0);
+	ray_direction  = make_float3(0, 0, -1.0);
 	ray_origin     = make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
 	ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 	rtTrace(top_object, ray, payload); 
