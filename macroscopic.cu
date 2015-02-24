@@ -30,11 +30,16 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float		zhat 			= space[tid].zhat;
 	float		surf_dist 		= space[tid].surf_dist;
 	unsigned 	enforce_BC 		= space[tid].enforce_BC;  
+	float 		norm[3];
+	memcpy(norm,space[tid].norm,3*sizeof(float));
+	//norm[0] = 0.0;
+	//norm[1] = 0.0;
+	//norm[2] = 0.0;
 	float 		samp_dist 		= 0.0;
 	float 		cum_prob 		= 0.0;
 	float 		diff			= 0.0;
 	unsigned 	tope 			= 999999999;
-	//float 		epsilon 		= 2.0e-5;
+	float 		epsilon 		= 5.0e-4;
 	//unsigned    this_rxn		= 0;
 	//unsigned    this_rxn = rxn[tid_in];
 	unsigned 	isdone 			= 0;
@@ -79,12 +84,13 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	}
 
 	// do surf/samp compare
+	//printf("norm %6.4E %6.4E %6.4E\n",norm[0],norm[1],norm[2]);
 	//printf("% 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E %u\n",x,y,z,xhat,yhat,zhat,surf_dist,samp_dist,enforce_BC);
 	diff = surf_dist - samp_dist;
-	if( diff < 0.0 ){  //move to surface, set resample flag, offset x-y to make sure cell determination works
-		x += (surf_dist) * xhat;
-		y += (surf_dist) * yhat;
-		z += (surf_dist) * zhat;
+	if( diff < 0.0 ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
+		x += (surf_dist * xhat  +  1.2 * epsilon * norm[0]);
+		y += (surf_dist * yhat  +  1.2 * epsilon * norm[1]);
+		z += (surf_dist * zhat  +  1.2 * epsilon * norm[2]);
 		this_rxn = 800;
 		tope=999999998;  // make resampling a different isotope than mis-sampling
 		// enforce BC
