@@ -19,7 +19,7 @@ int main(int argc, char* argv[]){
 	std::string homfuelname  = "homfuel";
 	std::string godivaname   = "godiva";
 	std::string pincellname  = "pincell";
-	std::string pincellname2  = "pincell-noO";
+	std::string pincellname2  = "pincell-square";
 
 
 	// check
@@ -228,19 +228,22 @@ int main(int argc, char* argv[]){
 	}
 	else if(pincellname2.compare(argv[1])==0){
 		// pincell mats
-		n_topes = 3;
+		n_topes = 4;
 		std::vector<unsigned> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
 		topes[0]=92235,
 		topes[1]=92238;
-		topes[2]=1001;
+		topes[2]=8016;
+		topes[3]=1001;
 		fracs_fuel[0] = 0.1;  
 		fracs_fuel[1] = 0.9;   
-		fracs_fuel[2] = 0;
+		fracs_fuel[2] = 2;   
+		fracs_fuel[3] = 0;
 		fracs_water[0] = 0;  
 		fracs_water[1] = 0;   
-		fracs_water[2] = 2;
+		fracs_water[2] = 1;   
+		fracs_water[3] = 2;
 		float    dens_fuel = 15;
 		float 	 dens_water = 3;
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
@@ -253,7 +256,7 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 	
 		//pin cell
-		type=1;
+		type=0;
 		material=1;
 		mins[0]=-1;
 		mins[1]=-1;

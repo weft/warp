@@ -52,7 +52,7 @@ RT_PROGRAM void camera()
 		payload.hitbuff[cnt].fiss = -1;
 	}
 
-	// first trace to find closest hit, set bc flag
+	// first trace to find closest hit, set norm/distance, set bc flag
 	rtTrace(top_object, ray, payload);
 	//rtPrintf("did first trace, type %u\n",trace_type);
 	positions_buffer[launch_index].norm[0] = payload.norm[0];
@@ -70,7 +70,7 @@ RT_PROGRAM void camera()
 		}
 	}
 
-	// reset first hti buffer
+	// reset first hit buffer
 	payload.hitbuff[0].cell = -1;
 	payload.hitbuff[0].mat  = -1;
 	payload.hitbuff[0].fiss = -1;
