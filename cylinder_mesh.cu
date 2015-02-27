@@ -38,16 +38,16 @@ RT_PROGRAM void intersect(int object_dex)
 		report = true;
 
 		sdisc = sqrt(disc);
-        t1 = (-b-sdisc)/(2*a);
-        t2 = (-b+sdisc)/(2*a);
+        t1 = (-b-sdisc)/(2.0*a);
+        t2 = (-b+sdisc)/(2.0*a);
 
 		int1 = ray.direction * t1 + xformed_origin;
 		int2 = ray.direction * t2 + xformed_origin;
 
-		float this_norm1_mag = sqrtf((int1.x-xformed_origin.x)*(int1.x-xformed_origin.x)+(int1.y-xformed_origin.y)*(int1.y-xformed_origin.y));
-		float this_norm2_mag = sqrtf((int2.x-xformed_origin.x)*(int2.x-xformed_origin.x)+(int2.y-xformed_origin.y)*(int2.y-xformed_origin.y));
-        this_norm1 = -1.0 * make_float3((xformed_origin.x-int1.x)/this_norm1_mag,(xformed_origin.y-int1.y)/this_norm1_mag,0);
-		this_norm2 = -1.0 * make_float3((xformed_origin.x-int2.x)/this_norm2_mag,(xformed_origin.y-int2.y)/this_norm2_mag,0);
+		float this_norm1_mag = sqrtf( int1.x*int1.x + int1.y*int1.y );
+		float this_norm2_mag = sqrtf( int2.x*int2.x + int2.y*int2.y );
+        this_norm1 = make_float3( -int1.x/this_norm1_mag , -int1.y/this_norm1_mag , 0 );
+		this_norm2 = make_float3(  int2.x/this_norm2_mag ,  int2.y/this_norm2_mag , 0 );
 
 		//rtPrintf("zmin %6.4E zmax %6.4E t1 %6.4E t2 %6.4E z1 %6.4E z2 %6.4E report %u\n",zmin,zmax,t1,t2,z1,z2,report);
 
@@ -81,20 +81,30 @@ RT_PROGRAM void intersect(int object_dex)
 		report = true;
 
 		t1 = fminf((zmax - xformed_origin.z) / ray.direction.z , (zmin - xformed_origin.z) / ray.direction.z);
-		t2 = fmaxf((zmax - xformed_origin.z) / ray.direction.z , (zmin - xformed_origin.z) / ray.direction.z);	
-		this_norm1 = make_float3(0,0,1);
-		this_norm2 = make_float3(0,0,1);
+		t2 = fmaxf((zmax - xformed_origin.z) / ray.direction.z , (zmin - xformed_origin.z) / ray.direction.z);
+		
+		int1 = ray.direction * t1 + xformed_origin;
+		int2 = ray.direction * t2 + xformed_origin;	
+
+		if(int1.z == zmin){
+			this_norm1 = make_float3(0,0,1);
+			this_norm2 = make_float3(0,0,-1);
+		}
+		else{
+			this_norm1 = make_float3(0,0,-1);
+			this_norm2 = make_float3(0,0,1);
+		}
 
 	}
 
 	//rtPrintf("norm1 %6.4E %6.4E %6.4E norm2 %6.4E %6.4E %6.4E\n",this_norm1.x,this_norm1.y,this_norm1.z,this_norm2.x,this_norm2.y,this_norm2.z);
 	//rtPrintf("zmin %6.4E zmax %6.4E t1 %6.4E t2 %6.4E z1 %6.4E z2 %6.4E report %u\n",zmin,zmax,t1,t2,z1,z2,report);
-	if (t1 < 0.0 ){
-		this_norm1 = -this_norm1;
-	}
-	if (t2 < 0.0 ){
-		this_norm2 = -this_norm2;
-	}
+	//if (t1 < 0.0 ){
+	//	this_norm1 = -this_norm1;
+	//}
+	//if (t2 < 0.0 ){
+	//	this_norm2 = -this_norm2;
+	//}
 
 	if (report){
 		if(t1>0){
