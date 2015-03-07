@@ -55,6 +55,8 @@ class whistory {
 	std::string     filename; /**< file name */
 	unsigned 	is_initialized;  /**< init flag */
 	source_point *  space; /**< source point spatial pointer */
+	unsigned  	print_flag; /**< print verbosity level*/
+	unsigned 	dump_flag; /**< dump level*/
 	/**
 	 * \brief cross section length numbers
 	 * \details 0 = isotopes, 1 = main menergy points, 2 = total number of reaction channels, 
@@ -426,6 +428,16 @@ public:
 	 * @param[in] iteration - iteration number
 	 */
 	 void write_histories(unsigned iteration);
+	/**
+	 * \brief sets amount of information printed to stdout
+	 * @param[in] level - level of verbosity
+	 */
+	 void set_print_level(unsigned level);
+	 /**
+	 * \brief sets what types of information are dumped to files
+	 * @param[in] level - dump type flag
+	 */
+	 void set_dump_level(unsigned level);
 };
 
 #endif
