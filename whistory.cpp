@@ -41,6 +41,9 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	compute_device = 0;
 	// not initialized
 	is_initialized = 0;
+	// prints
+	print_flag = 1;
+	dump_flag = 0;
 }
 void whistory::init(){
 	// device must be set BEFORE an CUDA creation (streams included)
@@ -56,14 +59,22 @@ void whistory::init(){
 	optix_obj.stack_size_multiplier=1;
 	optix_obj.set_image_type("cell");
 	optix_obj.init(problem_geom,compute_device,accel_type);
-	optix_obj.print();
+	if(print_flag >= 1){
+		optix_obj.print();
+	}
 	// CUDA stuff
-	std::cout << "\e[1;32m" << "Dataset size is "<< N << "\e[m \n";
+	if(print_flag >= 1){
+		std::cout << "\e[1;32m" << "Dataset size is "<< N << "\e[m \n";
+	}
 	NUM_THREADS = 256;
 	RNUM_PER_THREAD = 1;
 	blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
-	std::cout << "\e[1;32m" << "Compute device set to "<< compute_device << ". Available devices shown below:" <<"\e[m \n";
-	device_report();
+	if(print_flag >= 1){
+		std::cout << "\e[1;32m" << "Compute device set to "<< compute_device << "\e[m \n";
+	}
+	if(print_flag >= 2){
+		device_report();
+	}
 	cudaDeviceSetLimit(cudaLimitPrintfFifoSize, (size_t) 10*1048576 );
 	//device data
 	d_space 	= (source_point*) optix_obj.positions_ptr;
@@ -140,7 +151,9 @@ void whistory::init(){
 	//create_quad_tree();
 	copy_data_to_device();
 	is_initialized = 1;
-	printf("Done with init\n");
+	if(print_flag >= 2){
+		printf("Done with init\n");
+	}
 }
 whistory::~whistory(){
 	//cudaFree( d_xs_length_numbers 	);
@@ -267,7 +280,9 @@ void whistory::init_host(){
 }
 void whistory::init_RNG(){
 	unsigned seed = time( NULL );
-	std::cout << "\e[1;32m" << "Initializing random number bank on device using MTGP32 with seed of " << seed << "..." << "\e[m \n";
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Initializing random number bank on device using MTGP32 with seed of " << seed << "..." << "\e[m \n";
+	}
 	curandCreateGenerator( &rand_gen , CURAND_RNG_PSEUDO_MTGP32 );  //mersenne twister type
 	curandSetPseudoRandomGeneratorSeed( rand_gen , 123456789ULL );
 	curandGenerate( rand_gen , d_rn_bank , Ndataset * RNUM_PER_THREAD );
@@ -280,12 +295,16 @@ void whistory::update_RNG(){
 }
 void whistory::init_CUDPP(){
 	
-	std::cout << "\e[1;32m" << "Initializing CUDPP..." << "\e[m \n";
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Initializing CUDPP..." << "\e[m \n";
+	}
 	// global objects
 	res = cudppCreate(&theCudpp);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error initializing CUDPP Library.\n");}
 	
-	std::cout << "  configuring compact..." << "\n";
+	if(print_flag >= 2){
+		std::cout << "  configuring compact..." << "\n";
+	}
 	// sort stuff
 	compact_config.op = CUDPP_ADD;
 	compact_config.datatype = CUDPP_INT;
@@ -294,7 +313,9 @@ void whistory::init_CUDPP(){
 	res = cudppPlan(theCudpp, &compactplan, compact_config, Ndataset, 1, 0);
 	if (CUDPP_SUCCESS != res){printf("Error creating CUDPPPlan for compact\n");exit(-1);}
 
-	std::cout << "  configuring reduction..." << "\n";
+	if(print_flag >= 2){
+		std::cout << "  configuring reduction..." << "\n";
+	}
 	// int reduction stuff
 	redu_int_config.op = CUDPP_ADD;
 	redu_int_config.datatype = CUDPP_INT;
@@ -311,7 +332,9 @@ void whistory::init_CUDPP(){
 	res = cudppPlan(theCudpp, &reduplan_float, redu_float_config, Ndataset, 1, 0);
 	if (CUDPP_SUCCESS != res){printf("Error creating CUDPPPlan for reduction\n");exit(-1);}
 
-	std::cout << "  configuring scan..." << "\n";
+	if(print_flag >= 2){
+		std::cout << "  configuring scan..." << "\n";
+	}
 	// int reduction stuff
 	scan_int_config.op = CUDPP_ADD;
 	scan_int_config.datatype = CUDPP_INT;
@@ -320,7 +343,9 @@ void whistory::init_CUDPP(){
 	res = cudppPlan(theCudpp, &scanplan_int, scan_int_config, Ndataset, 1, 0);
 	if (CUDPP_SUCCESS != res){printf("Error creating CUDPPPlan for scan\n");exit(-1);}
 
-	std::cout << "  configuring radix sort..." << "\n";
+	if(print_flag >= 2){
+		std::cout << "  configuring radix sort..." << "\n";
+	}
 	// int reduction stuff
 	radix_config.algorithm = CUDPP_SORT_RADIX;
 	radix_config.datatype = CUDPP_UINT;
@@ -413,10 +438,14 @@ void whistory::copy_data_to_device(){
 	float * temp = new float [128];
 	for(int g=0;g<128;g++){temp[g]=123456789;}
 
-	std::cout << "\e[1;32m" << "Copying data to device (number?)..." << "\e[m \n";
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Copying data to device "<<  compute_device << "\e[m \n";
+	}
 
 	// copy history data
-	std::cout << "  History data... ";
+	if(print_flag >= 2){
+		std::cout << "  History data... ";
+	}
 	cudaMemcpy( d_space,		space,		Ndataset*sizeof(source_point),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_E,			E,			Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_Q,    		Q,			Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
@@ -429,8 +458,10 @@ void whistory::copy_data_to_device(){
     cudaMemcpy( d_remap, 		remap,    	Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
     cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
     cudaMemcpy( d_zeros,		zeros,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    std::cout << "Done.\n";
-    std::cout << "  Unionized cross sections... ";
+    if(print_flag >= 2){
+    	std::cout << "Done.\n";
+    	std::cout << "  Unionized cross sections... ";
+	}
     // copy xs_data,  0=isotopes, 1=main E points, 2=total numer of reaction channels
     cudaMemcpy( d_xs_length_numbers,     xs_length_numbers,     3*sizeof(unsigned),						  cudaMemcpyHostToDevice );
     cudaMemcpy( d_xs_MT_numbers_total,   xs_MT_numbers_total,   xs_length_numbers[0]*sizeof(unsigned),			  cudaMemcpyHostToDevice );
@@ -442,12 +473,18 @@ void whistory::copy_data_to_device(){
 	cudaMemcpy( d_isotope_list,          isotope_list,          xs_length_numbers[0]*sizeof(unsigned), 			  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_number_density_matrix, number_density_matrix, n_materials*xs_length_numbers[0]*sizeof(float),    		  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_xs_data_Q,	     xs_data_Q, 	    (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(float),    cudaMemcpyHostToDevice );
-	std::cout << "Done.\n";
+	if(print_flag >= 2){
+		std::cout << "Done.\n";
+	}
 	// copy device pointer array to device array
-	std::cout << "  Linked pointer arrays... ";
+	if(print_flag >= 2){
+		std::cout << "  Linked pointer arrays... ";
+	}
 	cudaMemcpy( d_xs_data_scatter, 	xs_data_scatter_host,	MT_rows*MT_columns*sizeof(float*), cudaMemcpyHostToDevice); 	
 	cudaMemcpy( d_xs_data_energy, 	xs_data_energy_host,	MT_rows*MT_columns*sizeof(float*), cudaMemcpyHostToDevice); 	
-	std::cout << "Done.\n";
+	if(print_flag >= 2){
+		std::cout << "Done.\n";
+	}
 	// copy scattering data to device array pointers
 	//std::cout << "  Scattering data... ";
 	//for (int j=0 ; j < MT_columns ; j++){  //start after the total xs and total abs vectors
@@ -468,17 +505,23 @@ void whistory::copy_data_to_device(){
 	//}
 	//std::cout << " Done.\n";
 	// zero out tally arrays
-	std::cout << "  Zeroing tally arrays... ";
+	if(print_flag >= 2){
+		std::cout << "  Zeroing tally arrays... ";
+	}
 	cudaMemcpy( d_tally_score, 	d_zeros,	n_tally*sizeof(float),    cudaMemcpyDeviceToDevice); 	
 	cudaMemcpy( d_tally_square, d_zeros,	n_tally*sizeof(float),    cudaMemcpyDeviceToDevice); 	
 	cudaMemcpy( d_tally_count,	d_zeros,	n_tally*sizeof(unsigned), cudaMemcpyDeviceToDevice); 	
-	std::cout << "Done.\n";
+	if(print_flag >= 2){
+		std::cout << "Done.\n";
+	}
 
 
 }
 void whistory::load_cross_sections(){
 	
-	std::cout << "\e[1;32m" << "Loading cross sections and unionizing..." << "\e[m \n";
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Loading cross sections and unionizing..." << "\e[m \n";
+	}
 
 	// set the string, make ints list
 	std::istringstream ss(xs_isotope_string);
@@ -512,7 +555,9 @@ void whistory::load_cross_sections(){
     int i, do_final;
 
     if (Py_IsInitialized()){
-    	printf("Python interpreter already initialized\n");
+    	if(print_flag >= 2){
+    		printf("Python interpreter already initialized\n");
+    	}
     	do_final=0;
     }
     else{
@@ -807,7 +852,9 @@ void whistory::load_cross_sections(){
 	// release python variable to free memory
 	Py_DECREF(call_result);
 
-	std::cout << "\e[1;32m" << "Loading/copying scattering data and linking..." << "\e[m \n";
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Loading/copying scattering data and linking..." << "\e[m \n";
+	}
 
 	////////////////////////////////////
 	// do scattering stuff
@@ -1005,7 +1052,9 @@ void whistory::load_cross_sections(){
 	}
 
 
-	std::cout << "\e[1;32m" << "Loading/copying energy distribution data and linking..." << "\e[m \n";
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Loading/copying energy distribution data and linking..." << "\e[m \n";
+	}
 
 
     	////////////////////////////////////
@@ -1157,7 +1206,9 @@ void whistory::load_cross_sections(){
     	Py_Finalize();
     }
 
-	std::cout << "\e[1;32m" << "Making material table..." << "\e[m \n";
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Making material table..." << "\e[m \n";
+	}
 
     	//pass awr pointer to geometry object, make the number density table, copy pointers back
     	problem_geom.awr_list = awr_list;
@@ -1304,7 +1355,9 @@ void whistory::print_materials_table(){
 }
 void whistory::sample_fissile_points(){
 
-	std::cout << "\e[1;32m" << "Sampling initial fissile starting points uniformly... " << "\e[m \n";
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Sampling initial fissile starting points uniformly... " << "\e[m \n";
+	}
 
 	// iterate
 	unsigned current_index = 0;
@@ -1336,26 +1389,34 @@ void whistory::sample_fissile_points(){
 		std::cout << (float)current_index/(float)N*100.0 <<" \% done\r";
 
 		if((float)current_index/(float)N > 1){
-			std::cout << "100.00 \% done     \n";
+			if(print_flag >= 2){
+				std::cout << "100.00 \% done     \n";
+			}
 		} 
 	}
 
-	std::cout << "Copying to starting points...\n";
+	if(print_flag >= 2){
+		std::cout << "Copying to starting points...\n";
+	}
 
 	cudaMemcpy(d_space,	d_fissile_points	,N*sizeof(source_point),	cudaMemcpyDeviceToDevice);
 	cudaMemcpy(d_E,    	d_fissile_energy	,N*sizeof(float),		cudaMemcpyDeviceToDevice);
 	cudaMemcpy(d_rxn,  	rxn 			,N*sizeof(unsigned),		cudaMemcpyHostToDevice);
 	//cudaFree(d_fissile_points);
 
-	std::cout << "Done.\n";
+	if(print_flag >= 2){
+		std::cout << "Done.\n";
+	}
 
 	//write starting positions to file
-	cudaMemcpy(space,d_space,N*sizeof(source_point),cudaMemcpyDeviceToHost);
-	FILE* positionsfile = fopen("starting_positions","w");
-	for(int k=0;k<N;k++){
-		fprintf(positionsfile,"% 10.8E % 10.8E % 10.8E % 10.8E % 10.8E % 10.8E\n",space[k].x,space[k].y,space[k].z,space[k].xhat,space[k].yhat,space[k].zhat);
+	if(dump_flag >= 3){
+		cudaMemcpy(space,d_space,N*sizeof(source_point),cudaMemcpyDeviceToHost);
+		FILE* positionsfile = fopen("starting_positions","w");
+		for(int k=0;k<N;k++){
+			fprintf(positionsfile,"% 10.8E % 10.8E % 10.8E % 10.8E % 10.8E % 10.8E\n",space[k].x,space[k].y,space[k].z,space[k].xhat,space[k].yhat,space[k].zhat);
+		}
+		fclose(positionsfile);
 	}
-	fclose(positionsfile);
 
 	// advance RN bank
 	update_RNG();
@@ -1511,6 +1572,7 @@ void whistory::run(){
 	unsigned converged = 0;
 	unsigned active_size1, active_gap, escatter_N, escatter_start, iscatter_N, iscatter_start, cscatter_N, cscatter_start, fission_N, fission_start;
 	std::string fiss_name, stats_name;
+	FILE* statsfile;
 	float runtime = get_time();
 
 	if(RUN_FLAG==0){
@@ -1531,26 +1593,34 @@ void whistory::run(){
 	}
 	keff_cycle = 0;
 
-	std::cout << "\e[1;32m" << "--- Running in " << runtype << " source mode --- " << "\e[m \n";
-	std::cout << "\e[1;32m" << "--- Skipping "<< n_skip << " cycles, Running "<< n_cycles << " ACTIVE CYCLES, "<< N << " histories each--- " << "\e[m \n";
+	if(print_flag>=1){
+		std::cout << "\e[1;32m" << "--- Running in " << runtype << " source mode --- " << "\e[m \n";
+		std::cout << "\e[1;32m" << "--- Skipping "<< n_skip << " cycles, Running "<< n_cycles << " ACTIVE CYCLES, "<< N << " histories each--- " << "\e[m \n";
+	}
 
 	// make sure fissile_points file is cleared
-	fiss_name=filename;
-	fiss_name.append(".fission_points");
-	FILE* ffile = fopen(fiss_name.c_str(),"w");
-	fclose(ffile);
+	if(dump_flag>=3){          // level 3 includes fissile points
+		fiss_name=filename;
+		fiss_name.append(".fission_points");
+		FILE* ffile = fopen(fiss_name.c_str(),"w");
+		fclose(ffile);
+	}
 
 	// open file for run stats
-	stats_name=filename;
-	stats_name.append(".stats");
-	FILE* statsfile = fopen(stats_name.c_str(),"w");
+	if(dump_flag>=2){         // level 2 includes stats files
+		stats_name=filename;
+		stats_name.append(".stats");
+		statsfile = fopen(stats_name.c_str(),"w");
+	}
 
 	while(iteration<n_cycles){
 
 		//printf("CUDA ERROR0, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		//write source positions to file if converged
 		if(converged){
-			write_to_file(d_space,d_E,N,fiss_name,"a+");
+			if(dump_flag>=3){
+				write_to_file(d_space,d_E,N,fiss_name,"a+");
+			}
 		}
 
 		//printf("CUDA ERROR1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
@@ -1583,7 +1653,9 @@ void whistory::run(){
 			//}
 
 			//record stats
-			fprintf(statsfile,"%u %10.8E\n",Nrun,get_time());
+			if(dump_flag >= 2){
+				fprintf(statsfile,"%u %10.8E\n",Nrun,get_time());
+			}
 			
 			// find what material we are in and nearest surface distance
 			trace(2, Nrun);
@@ -1652,15 +1724,19 @@ void whistory::run(){
 		}
 
 		// print whatever's clever
-		if(converged){
-			     if(RUN_FLAG==0){std::cout << "Cumulative keff/sc-mult = " << keff << " / " << 1.0/(1.0-keff) << ", ACTIVE cycle " << iteration << ", cycle keff/sc-mult = " << keff_cycle << " / " << 1.0/(1.0-keff_cycle) << "\n";}
-			else if(RUN_FLAG==1){printf("Cumulative keff =  %8.6E +- %6.4E , ACTIVE cycle %4u, cycle keff = %8.6E\n",keff,keff_err,iteration,keff_cycle);}
-		}
-		else{
-			printf("Converging fission source... skipped cycle %4u\n",iteration_total+1);
+		if(print_flag >= 1){
+			if(converged){
+				     if(RUN_FLAG==0){std::cout << "Cumulative keff/sc-mult = " << keff << " / " << 1.0/(1.0-keff) << ", ACTIVE cycle " << iteration << ", cycle keff/sc-mult = " << keff_cycle << " / " << 1.0/(1.0-keff_cycle) << "\n";}
+				else if(RUN_FLAG==1){printf("Cumulative keff =  %8.6E +- %6.4E , ACTIVE cycle %4u, cycle keff = %8.6E\n",keff,keff_err,iteration,keff_cycle);}
+			}
+			else{
+				printf("Converging fission source... skipped cycle %4u\n",iteration_total+1);
+			}
 		}
 
-		fprintf(statsfile,"---- iteration %u done ----\n",iteration);
+		if(dump_flag>=2){
+			fprintf(statsfile,"---- iteration %u done ----\n",iteration);
+		}
 
 		//write_histories(2);
 		//printf("CUDA ERROR7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
@@ -1682,16 +1758,21 @@ void whistory::run(){
 
 	// print total transport running time
 	runtime = get_time() - runtime;
-	if(runtime>60.0){
-		std::cout << "RUNTIME = " << runtime/60.0 << " minutes.\n";
-	}
-	else{
-		std::cout << "RUNTIME = " << runtime << " seconds.\n";
+	if(print_flag >= 1){
+		if(runtime>60.0){
+			std::cout << "RUNTIME = " << runtime/60.0 << " minutes.\n";
+		}
+		else{
+			std::cout << "RUNTIME = " << runtime << " seconds.\n";
+		}
 	}
 
-	write_results(runtime,keff,"w");
-	fclose(statsfile);
-
+	if(dump_flag>=1){
+		write_results(runtime,keff,"w");
+	}
+	if(dump_flag>=2){
+		fclose(statsfile);
+	}
 }
 void whistory::write_results(float runtime, float keff, std::string opentype){
 
@@ -2057,6 +2138,12 @@ void whistory::write_histories(unsigned iteration){
 	delete E2 		;
 	delete dex2		;
 
+}
+void whistory::set_print_level(unsigned level){
+	print_flag = level;
+}
+void whistory::set_dump_level(unsigned level){
+	dump_flag = level;
 }
 void whistory::create_quad_tree(){
 
