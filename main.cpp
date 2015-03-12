@@ -328,7 +328,7 @@ int main(int argc, char* argv[]){
 
 	hist.set_run_type("criticality");
 	hist.set_tally_cell(tallycell);
-	hist.set_run_param(40,20);  //run, skip
+	hist.set_run_param(120,20);  //run, skip
 	hist.set_filename(filename);
 	hist.run();
 	hist.write_tally(0);
