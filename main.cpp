@@ -217,8 +217,8 @@ int main(int argc, char* argv[]){
 		mins[0]=-5.0;
 		mins[1]=-5.0;
 		mins[2]=-25.0;
-		maxs[0]= 5.0;
-		maxs[1]= 5.0;
+		maxs[0]= 2.0;
+		maxs[1]= 2.0;
 		maxs[2]= 25.0;
 		origin[0]=0.0;
 		origin[1]=0.0;

@@ -103,10 +103,15 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			y += (surf_dist * yhat);
 			z += (surf_dist * zhat);
 			dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
+			//printf("specular\n");
 			if(dotp>1.0 | dotp<-1.0){printf("dotp %6.4E , dir [%6.4E %6.4E %6.4E], norm [%6.4E %6.4E %6.4E]\n",dotp,xhat,yhat,zhat,norm[0],norm[1],norm[2]);}
-			xhat = 2.0*dotp*norm[0]-xhat;
-			yhat = 2.0*dotp*norm[1]-yhat;
-			zhat = 2.0*dotp*norm[2]-zhat;
+			xhat = -2.0*dotp*norm[0]-xhat;  // norm points out!  need to flip sign
+			yhat = -2.0*dotp*norm[1]-yhat;  // norm points out!  need to flip sign
+			zhat = -2.0*dotp*norm[2]-zhat;  // norm points out!  need to flip sign
+			float mag  = sqrtf(xhat*xhat + yhat*yhat + zhat*zhat);
+			xhat = xhat / mag;
+			yhat = yhat / mag;
+			zhat = zhat / mag;
 			this_rxn = 800;
 			tope=999999996;  // make reflection a different isotope 
 		}
