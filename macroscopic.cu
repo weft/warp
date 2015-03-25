@@ -99,12 +99,13 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			//printf("leaked tid %u xyz % 6.4E % 6.4E % 6.4E dir % 6.4E % 6.4E % 6.4E\n",tid,x,y,z,xhat,yhat,zhat);
 		}
 		else if(enforce_BC == 2){  // specular reflection BC
-			x += (surf_dist * xhat);
-			y += (surf_dist * yhat);
-			z += (surf_dist * zhat);
+			x += (surf_dist * xhat - 1.2 * epsilon * norm[0]);
+			y += (surf_dist * yhat - 1.2 * epsilon * norm[1]);
+			z += (surf_dist * zhat - 1.2 * epsilon * norm[2]);
 			dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
 			//printf("specular\n");
 			if(dotp>1.0 | dotp<-1.0){printf("dotp %6.4E , dir [%6.4E %6.4E %6.4E], norm [%6.4E %6.4E %6.4E]\n",dotp,xhat,yhat,zhat,norm[0],norm[1],norm[2]);}
+			//printf("dotp %6.4E ,position [%6.4E %6.4E %6.4E], dir [%6.4E %6.4E %6.4E], norm [%6.4E %6.4E %6.4E]\n",x,y,z,xhat,yhat,zhat,norm[0],norm[1],norm[2]);
 			xhat = -2.0*dotp*norm[0]-xhat;  // norm points out!  need to flip sign
 			yhat = -2.0*dotp*norm[1]-yhat;  // norm points out!  need to flip sign
 			zhat = -2.0*dotp*norm[2]-zhat;  // norm points out!  need to flip sign
@@ -113,6 +114,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			yhat = yhat / mag;
 			zhat = zhat / mag;
 			this_rxn = 800;
+			isdone = 0;
 			tope=999999996;  // make reflection a different isotope 
 		}
 		else{
@@ -120,6 +122,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			y += (surf_dist * yhat  +  1.2 * epsilon * norm[1]);
 			z += (surf_dist * zhat  +  1.2 * epsilon * norm[2]);
 			this_rxn = 800;
+			isdone = 0;
 			tope=999999998;  // make resampling a different isotope than mis-sampling
 		}
 	}

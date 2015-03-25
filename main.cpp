@@ -204,7 +204,7 @@ int main(int argc, char* argv[]){
 		mins[2]=-20;
 		maxs[0]= 1; 
 		maxs[1]= 1; 
-		maxs[2]= 20;
+		maxs[2]= 10;
 		origin[0]=0.0;
 		origin[1]=0.0;
 		origin[2]=0.0;
@@ -217,8 +217,8 @@ int main(int argc, char* argv[]){
 		mins[0]=-5.0;
 		mins[1]=-5.0;
 		mins[2]=-25.0;
-		maxs[0]= 2.0;
-		maxs[1]= 2.0;
+		maxs[0]= 5.0;
+		maxs[1]= 5.0;
 		maxs[2]= 25.0;
 		origin[0]=0.0;
 		origin[1]=0.0;
@@ -328,7 +328,7 @@ int main(int argc, char* argv[]){
 
 	hist.set_run_type("criticality");
 	hist.set_tally_cell(tallycell);
-	hist.set_run_param(120,20);  //run, skip
+	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
 	hist.run();
 	hist.write_tally(0);

@@ -55,11 +55,11 @@ RT_PROGRAM void camera()
 	// first trace to find closest hit, set norm/distance, set bc flag
 	rtTrace(top_object, ray, payload);
 	//rtPrintf("did first trace, type %u\n",trace_type);
-	positions_buffer[launch_index].norm[0] = payload.norm[0];
-	positions_buffer[launch_index].norm[1] = payload.norm[1];
-	positions_buffer[launch_index].norm[2] = payload.norm[2];
-	positions_buffer[launch_index].surf_dist = payload.surf_dist; 
 	if(trace_type==2){
+		positions_buffer[launch_index].surf_dist = payload.surf_dist; 
+		positions_buffer[launch_index].norm[0] = payload.norm[0];
+		positions_buffer[launch_index].norm[1] = payload.norm[1];
+		positions_buffer[launch_index].norm[2] = payload.norm[2];
 		if(payload.hitbuff[0].cell == outer_cell){
 			positions_buffer[launch_index].enforce_BC=boundary_condition;
 			//rtPrintf("should enforce BC\n");
