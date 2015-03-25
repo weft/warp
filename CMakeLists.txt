@@ -7,10 +7,14 @@ project(WARP)
 #define cmake commands/policies
 #need >= v2.8.10, see http://redmine.gromacs.org/issues/1051
 cmake_minimum_required(VERSION 2.8.10)
+
+#macros
+#OPTIX = /usr/local/OptiX-3.0.1/
+
 find_package(CUDA QUIET REQUIRED)
 set(CMAKE_MODULE_PATH "/usr/local/OptiX-3.0.1/SDK/CMake/;${CMAKE_MODULE_PATH}")
-include_directories("/usr/local/OptiX-3.0.1/include/")
 find_package(OptiX REQUIRED)
+include_directories("${OptiX_INCLUDE}")
 
 set(CUDA_64_BIT_DEVICE_CODE ON)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20; --use_fast_math; --compiler-options '-fPIC')
