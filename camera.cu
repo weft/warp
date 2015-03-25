@@ -61,7 +61,7 @@ RT_PROGRAM void camera()
 	positions_buffer[launch_index].surf_dist = payload.surf_dist; 
 	if(trace_type==2){
 		if(payload.hitbuff[0].cell == outer_cell){
-			positions_buffer[launch_index].enforce_BC=1;
+			positions_buffer[launch_index].enforce_BC=boundary_condition;
 			//rtPrintf("should enforce BC\n");
 		}
 		else{

@@ -291,7 +291,7 @@ int main(int argc, char* argv[]){
 	}
 
 	// finalize geom
-	geom.set_outer_cell(999);
+	geom.set_outer_cell(999,2);  // cell, BC  1=black, 2=specular
 	geom.update();
 	if(geom.check()){std::cout << "geometry failed check!\n"; return 1;}
 	//geom.print_all();
