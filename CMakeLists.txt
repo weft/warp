@@ -23,9 +23,20 @@ set(CUDA_64_BIT_DEVICE_CODE ON)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20; --use_fast_math; --compiler-options '-fPIC')
 
 cuda_compile_ptx(camera camera.cu)
-
+cuda_compile_ptx(hits hits.cu)
+cuda_compile_ptx(miss miss.cu)
+cuda_compile_ptx(box box.cu)
+cuda_compile_ptx(cylinder cylinder.cu)
+cuda_compile_ptx(hex hex.cu)
+cuda_compile_ptx(hits_mesh hits_mesh.cu)
+cuda_compile_ptx(box_mesh box_mesh.cu)
+cuda_compile_ptx(cylinder_mesh cylinder_mesh.cu)
+cuda_compile_ptx(hex_mesh hex_mesh.cu)
+cuda_compile_ptx(sphere_mesh sphere_mesh.cu)
+#http://stackoverflow.com/questions/26198294/nvcc-compile-to-ptx-using-cmakes-cuda-compile-ptx
+add_custom_command(OUTPUT camera.ptx COMMAND ${CMAKE_COMMAND} -E rename ${camera} camera.ptx DEPENDS ${camera}) 
 add_custom_target(ptx ALL
-    DEPENDS ${camera} camera.cu
+    DEPENDS camera.ptx camera.cu
     SOURCES camera.cu)
 
 #build CUDA executables
