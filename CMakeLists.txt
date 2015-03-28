@@ -80,4 +80,4 @@ add_custom_target(sphere_mesh ALL
     SOURCES sphere_mesh.cu)
 
 #build CUDA executables
-#cuda_add_executable(set_positions_rand set_positions_rand.cu)
+cuda_add_executable(set_positions_rand set_positions_rand.cu)
