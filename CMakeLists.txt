@@ -14,6 +14,7 @@ find_package(CUDA QUIET REQUIRED)
 #find OptiX; also required
 #see http://bit.ly/19nExJN for inspiration
 #note: had to append "/usr/local/OptiX-3.0.1/lib64" to $PATH in order for optix.h & friends to be found
+#i'm having to export that at the front of $PATH each time? strange...
 set(OptiX_INSTALL_DIR "/usr/local/OptiX-3.0.1")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${OptiX_INSTALL_DIR}/SDK/CMake")
 find_package(OptiX REQUIRED)
@@ -21,6 +22,40 @@ include_directories("${OptiX_INCLUDE}")
 
 set(CUDA_64_BIT_DEVICE_CODE ON)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20; --use_fast_math; --compiler-options '-fPIC')
+include_directories("${CUDA_TOOLKIT_INCLUDE}")
+
+#http://suren.me/webbzr/normxcorr/trunk/annotate/27/dict_hw/cmake/FindCUDPP.cmake?remember=7
+FIND_PATH(CUDPP_INCLUDE_DIR cudpp.h
+   ${CUDPP_ROOT_DIR}/cudpp/include
+   ${CUDPP_ROOT_DIR}/include
+)
+
+FIND_LIBRARY(CUDPP_LIBRARY
+  NAMES cudpp cudpp${CMAKE_SIZEOF_VOID_P}
+  PATHS
+     ${CUDPP_ROOT_DIR}/lib
+)
+
+IF(CUDPP_LIBRARY)
+  IF (CUDPP_INCLUDE_DIR)
+    # OK, found all we need
+    SET(CUDPP_FOUND TRUE)		
+    GET_FILENAME_COMPONENT(CUDPP_LINK_DIRECTORIES ${CUDPP_LIBRARY} PATH)
+
+  ELSE (CUDPP_INCLUDE_DIR)
+    MESSAGE("CUDPP include dir not found. Set CUDPP_ROOT_DIR to find it.")
+  ENDIF(CUDPP_INCLUDE_DIR)
+ELSE(CUDPP_LIBRARY)
+  MESSAGE("CUDPP lib not found. Set CUDPP_ROOT_DIR to find it.")
+ENDIF(CUDPP_LIBRARY)
+
+MARK_AS_ADVANCED(
+  CUDPP_INCLUDE_DIR	
+  CUDPP_LIBRARY
+  CUDPP_LINK_DIRECTORIES		
+)
+
+include_directories(${CUDPP_INCLUDE_DIR})
 
 cuda_compile_ptx(camera camera.cu)
 cuda_compile_ptx(hits hits.cu)
@@ -80,4 +115,12 @@ add_custom_target(sphere_mesh ALL
     SOURCES sphere_mesh.cu)
 
 #build CUDA executables
-cuda_add_executable(set_positions_rand set_positions_rand.cu)
+#cuda_compile(set_positions_rand_o set_positions_rand.cu)
+#cuda_add_executable(set_positions_rand ${set_positions_rand_o})
+
+add_executable(gpu
+	main.cpp
+	optix_stuff.cpp
+	primitive.cpp
+	wgeometry.cpp
+	whistory.cpp)
