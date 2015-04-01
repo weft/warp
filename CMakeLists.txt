@@ -57,6 +57,10 @@ MARK_AS_ADVANCED(
 
 include_directories(${CUDPP_INCLUDE_DIR})
 
+#http://stackoverflow.com/questions/11041299/python-h-no-such-file-or-directory
+find_package(PythonLibs REQUIRED)
+include_directories(${PYTHON_INCLUDE_DIRS})
+
 cuda_compile_ptx(camera camera.cu)
 cuda_compile_ptx(hits hits.cu)
 cuda_compile_ptx(miss miss.cu)
