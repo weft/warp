@@ -8,6 +8,8 @@ project(WARP)
 #need >= v2.8.10, see http://redmine.gromacs.org/issues/1051
 cmake_minimum_required(VERSION 2.8.10)
 
+set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} LD_LIBRARY_PATH)
+
 #find CUDA; we need that
 find_package(CUDA QUIET REQUIRED)
 
@@ -15,15 +17,51 @@ find_package(CUDA QUIET REQUIRED)
 #see http://bit.ly/19nExJN for inspiration
 #note: had to append "/usr/local/OptiX-3.0.1/lib64" to $PATH in order for optix.h & friends to be found
 #i'm having to export that at the front of $PATH each time? strange...
-set(OptiX_INSTALL_DIR "/usr/local/OptiX-3.0.1")
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${OptiX_INSTALL_DIR}/SDK/CMake")
-find_package(OptiX REQUIRED)
-include_directories("${OptiX_INCLUDE}")
+#set(OptiX_INSTALL_DIR "/usr/local/OptiX-3.0.1")
+#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${OptiX_INSTALL_DIR}/SDK/CMake")
+#set(OptiX_INSTALL_DIR "${CMAKE_SOURCE_DIR}/../" CACHE PATH "Path to OptiX installed location.")
+#set(OptiX_DIR "${OptiX_INSTALL_DIR}/SDK/CMake")
+#find_package(OptiX REQUIRED)
+#include_directories("${OptiX_INCLUDE}")
+
+set(OptiX_ROOT_DIR "/usr/local/OptiX-3.0.1")
+
+FIND_PATH(OptiX_INCLUDE_DIR optix.h
+   ${OptiX_ROOT_DIR}/include
+)
+
+FIND_LIBRARY(OptiX_LIBRARY
+  NAMES optix optix${CMAKE_SIZEOF_VOID_P}
+  PATHS
+     ${OptiX_ROOT_DIR}/lib64
+)
+
+IF(OptiX_LIBRARY)
+  IF (OptiX_INCLUDE_DIR)
+    # OK, found all we need
+    SET(OptiX_FOUND TRUE)		
+    GET_FILENAME_COMPONENT(OptiX_LINK_DIRECTORIES ${OptiX_LIBRARY} PATH)
+
+  ELSE (OptiX_INCLUDE_DIR)
+    MESSAGE("OptiX include dir not found. Set OptiX_ROOT_DIR to find it.")
+  ENDIF(OptiX_INCLUDE_DIR)
+ELSE(OptiX_LIBRARY)
+  MESSAGE("OptiX lib not found. Set OptiX_ROOT_DIR to find it.")
+ENDIF(OptiX_LIBRARY)
+
+MARK_AS_ADVANCED(
+  OptiX_INCLUDE_DIR
+  OptiX_LIBRARY
+  OptiX_LINK_DIRECTORIES		
+)
+
+include_directories(${OptiX_INCLUDE_DIR})
 
 set(CUDA_64_BIT_DEVICE_CODE ON)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20; --use_fast_math; --compiler-options '-fPIC')
 include_directories("${CUDA_TOOLKIT_INCLUDE}")
 
+set (CUDPP_ROOT_DIR "/home/krowland/cudpp-2.1")
 #http://suren.me/webbzr/normxcorr/trunk/annotate/27/dict_hw/cmake/FindCUDPP.cmake?remember=7
 FIND_PATH(CUDPP_INCLUDE_DIR cudpp.h
    ${CUDPP_ROOT_DIR}/cudpp/include
