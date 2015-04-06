@@ -182,6 +182,51 @@ cuda_compile(reaction_edges3_o reaction_edges3.cu)
 cuda_compile(write_to_file_o write_to_file.cu)
 cuda_add_executable(set_positions_rand.o ${set_positions_rand_o})
 
+# Sources:
+SET(warp_executable_srcs
+    print_banner.cpp
+    warp.pyc
+    primitive.cpp
+    unionize.pyc
+    main.cpp
+#    primitive_test.cpp
+    mt19937ar.cpp
+    optix_stuff.cpp
+    whistory.cpp
+#    optixtest.cpp
+#    optix_stuff_test.cpp
+#    reaction_edges_test.cpp
+#    wgeometry_test.cpp
+#    whistory_test.cpp
+    wgeometry.cpp
+)
+
+# Headers:
+SET(warp_executable_hdrs
+#    primitive_test.h
+    optix_stuff.h
+    warp.h
+    device_copies.h
+    binary_search.h
+    warp_cuda.h
+    warp_header.h
+    primitive.h
+#    whistory_test.h
+#    wgeometry_test.h
+#    optix_stuff_test.h
+    whistory.h
+    wgeometry.h
+    LCRNG.cuh
+    datadef.h
+    wfloat3.h
+)
+
+# actual target:
+ADD_EXECUTABLE(gpu ${warp_executable_srcs})
+
+# add install target:
+INSTALL(TARGETS gpu DESTINATION bin)
+
 if(FALSE)
 add_executable(gpu
 	main.cpp
