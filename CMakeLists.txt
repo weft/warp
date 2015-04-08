@@ -93,6 +93,10 @@ MARK_AS_ADVANCED(
   CUDPP_LINK_DIRECTORIES		
 )
 
+SET(libs ${libs} ${CUDPP_LIBRARY})
+SET(libs ${libs} ${OptiX_LIBRARY})
+SET(libs ${libs} ${CUDA_LIBRARY})
+
 include_directories(${CUDPP_INCLUDE_DIR})
 
 #http://stackoverflow.com/questions/11041299/python-h-no-such-file-or-directory
@@ -223,6 +227,9 @@ SET(warp_executable_hdrs
 
 # actual target:
 ADD_EXECUTABLE(gpu ${warp_executable_srcs})
+
+# link libs
+TARGET_LINK_LIBRARIES(gpu ${libs})
 
 # add install target:
 INSTALL(TARGETS gpu DESTINATION bin)
