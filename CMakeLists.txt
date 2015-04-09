@@ -59,8 +59,9 @@ include_directories(${OptiX_INCLUDE_DIR})
 
 set(CUDA_64_BIT_DEVICE_CODE ON)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20; --use_fast_math; --compiler-options '-fPIC')
-include_directories("${CUDA_TOOLKIT_INCLUDE}")
 
+include_directories("${CUDA_TOOLKIT_INCLUDE}")
+include_directories("${CUDA_INCLUDE_DIRS}")
 set (CUDPP_ROOT_DIR "/home/krowland/cudpp-2.1")
 #http://suren.me/webbzr/normxcorr/trunk/annotate/27/dict_hw/cmake/FindCUDPP.cmake?remember=7
 FIND_PATH(CUDPP_INCLUDE_DIR cudpp.h
@@ -96,6 +97,8 @@ MARK_AS_ADVANCED(
 SET(libs ${libs} ${CUDPP_LIBRARY})
 SET(libs ${libs} ${OptiX_LIBRARY})
 SET(libs ${libs} ${CUDA_LIBRARY})
+SET(libs ${libs} ${CUDA_CUDART_LIBRARY})
+SET(libs ${libs} ${CUDA_CUBLAS_LIBRARY})
 
 include_directories(${CUDPP_INCLUDE_DIR})
 
@@ -205,25 +208,7 @@ SET(warp_executable_srcs
     wgeometry.cpp
 )
 
-# Headers:
-SET(warp_executable_hdrs
-#    primitive_test.h
-    optix_stuff.h
-    warp.h
-    device_copies.h
-    binary_search.h
-    warp_cuda.h
-    warp_header.h
-    primitive.h
-#    whistory_test.h
-#    wgeometry_test.h
-#    optix_stuff_test.h
-    whistory.h
-    wgeometry.h
-    LCRNG.cuh
-    datadef.h
-    wfloat3.h
-)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 
 # actual target:
 ADD_EXECUTABLE(gpu ${warp_executable_srcs})
@@ -254,3 +239,7 @@ endif()
 #if(FALSE)
 #lines to be commented out
 #endif()
+
+#look into:
+#add target library
+#link 
