@@ -106,6 +106,8 @@ include_directories(${CUDPP_INCLUDE_DIR})
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
+find_package(PNG REQUIRED)
+
 cuda_compile_ptx(camera camera.cu)
 cuda_compile_ptx(hits hits.cu)
 cuda_compile_ptx(miss miss.cu)
@@ -164,30 +166,28 @@ add_custom_target(sphere_mesh ALL
     SOURCES sphere_mesh.cu)
 
 #build CUDA executables
-#cuda_compile(print_banner_o print_banner.cpp)
-cuda_compile(set_positions_rand_o set_positions_rand.cu)
-cuda_compile(find_E_grid_index_o find_E_grid_index.cu)
-cuda_compile(find_E_grid_index_quad_o find_E_grid_index_quad.cu)
-cuda_compile(sample_fission_spectra_o sample_fission_spectra.cu)
-cuda_compile(sample_fixed_source_o sample_fixed_source.cu)
-cuda_compile(macrosocpic_o macroscopic.cu)
-cuda_compile(microscopic_o microscopic.cu)
-cuda_compile(copy_points_o copy_points.cu)
-cuda_compile(tally_spec_o tally_spec.cu)
-cuda_compile(escatter_o escatter.cu)
-cuda_compile(iscatter_o iscatter.cu)
-cuda_compile(cscatter_o cscatter.cu)
-cuda_compile(fission_o fission.cu)
-cuda_compile(absorb_o absorb.cu)
-cuda_compile(print_histories_o print_histories.cu)
-cuda_compile(pop_secondaries_o pop_secondaries.cu)
-cuda_compile(pop_source_o pop_source.cu)
-cuda_compile(rebase_yield_o rebase_yield.cu)
-cuda_compile(flip_done_o flip_done.cu)
-cuda_compile(device_copies_o device_copies.cu)
-cuda_compile(reaction_edges3_o reaction_edges3.cu) 
-cuda_compile(write_to_file_o write_to_file.cu)
-cuda_add_executable(set_positions_rand.o ${set_positions_rand_o})
+cuda_compile(set_positions_rand set_positions_rand.cu)
+cuda_compile(find_E_grid_index find_E_grid_index.cu)
+cuda_compile(find_E_grid_index_quad find_E_grid_index_quad.cu)
+cuda_compile(sample_fission_spectra sample_fission_spectra.cu)
+cuda_compile(sample_fixed_source sample_fixed_source.cu)
+cuda_compile(macrosocpic macroscopic.cu)
+cuda_compile(microscopic microscopic.cu)
+cuda_compile(copy_points copy_points.cu)
+cuda_compile(tally_spec tally_spec.cu)
+cuda_compile(escatter escatter.cu)
+cuda_compile(iscatter iscatter.cu)
+cuda_compile(cscatter cscatter.cu)
+cuda_compile(fission fission.cu)
+cuda_compile(absorb absorb.cu)
+cuda_compile(print_histories print_histories.cu)
+cuda_compile(pop_secondaries pop_secondaries.cu)
+cuda_compile(pop_source pop_source.cu)
+cuda_compile(rebase_yield rebase_yield.cu)
+cuda_compile(flip_done flip_done.cu)
+cuda_compile(device_copies device_copies.cu)
+cuda_compile(reaction_edges3 reaction_edges3.cu) 
+cuda_compile(write_to_file write_to_file.cu)
 
 # Sources:
 SET(warp_executable_srcs
@@ -208,32 +208,41 @@ SET(warp_executable_srcs
     wgeometry.cpp
 )
 
+SET(warp_cuda_srcs
+    ${set_positions_rand}
+    ${find_E_grid_index}
+    ${find_E_grid_index_quad}
+    ${sample_fission_spectra}
+    ${sample_fixed_source}
+    ${macroscopic}
+    ${microscopic}
+    ${copy_points}
+    ${tally_spec}
+    ${escatter}
+    ${iscatter}
+    ${cscatter}
+    ${fission}
+    ${absorb}
+    ${print_histories}
+    ${pop_secondaries}
+    ${pop_source}
+    ${rebase_yield}
+    ${flip_done}
+    ${device_copies}
+    ${reaction_edges3}
+    ${write_to_file}
+)
+
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 
 # actual target:
-ADD_EXECUTABLE(gpu ${warp_executable_srcs})
+ADD_EXECUTABLE(warp ${warp_executable_srcs} ${warp_cuda_srcs})
 
 # link libs
-TARGET_LINK_LIBRARIES(gpu ${libs})
+TARGET_LINK_LIBRARIES(warp ${libs})
 
 # add install target:
-INSTALL(TARGETS gpu DESTINATION bin)
-
-if(FALSE)
-add_executable(gpu
-	main.cpp
-	optix_stuff.cpp
-	primitive.cpp
-	wgeometry.cpp
-	whistory.cpp
-	optix_stuff.h
-	primitive.h
-	wgeometry.h
-	whistory.h
-	warp.h
-	warp_cuda.h
-)
-endif()
+INSTALL(TARGETS warp DESTINATION bin)
 
 #note: how to do "block comments"
 #if(FALSE)
