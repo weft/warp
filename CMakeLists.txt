@@ -107,6 +107,7 @@ find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
 find_package(PNG REQUIRED)
+SET(libs ${libs} ${PNG_LIBRARY})
 
 cuda_compile_ptx(camera camera.cu)
 cuda_compile_ptx(hits hits.cu)
