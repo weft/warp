@@ -96,15 +96,17 @@ MARK_AS_ADVANCED(
 
 SET(libs ${libs} ${CUDPP_LIBRARY})
 SET(libs ${libs} ${OptiX_LIBRARY})
-SET(libs ${libs} ${CUDA_LIBRARY})
+SET(libs ${libs} ${CUDA_LIBRARIES})
 SET(libs ${libs} ${CUDA_CUDART_LIBRARY})
 SET(libs ${libs} ${CUDA_CUBLAS_LIBRARY})
+SET(libs ${libs} ${CUDA_curand_LIBRARY})
 
 include_directories(${CUDPP_INCLUDE_DIR})
 
 #http://stackoverflow.com/questions/11041299/python-h-no-such-file-or-directory
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
+SET(libs ${libs} ${PYTHON_LIBRARIES})
 
 find_package(PNG REQUIRED)
 SET(libs ${libs} ${PNG_LIBRARY})
@@ -236,14 +238,16 @@ SET(warp_cuda_srcs
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 
+ADD_LIBRARY(libwarp SHARED ${warp_executable_srcs} ${warp_cuda_srcs})
+
 # actual target:
-ADD_EXECUTABLE(warp ${warp_executable_srcs} ${warp_cuda_srcs})
+#ADD_EXECUTABLE(warp ${TARGET_OBJECTS:libwarp})
 
 # link libs
-TARGET_LINK_LIBRARIES(warp ${libs})
+#TARGET_LINK_LIBRARIES(warp ${libs})
 
 # add install target:
-INSTALL(TARGETS warp DESTINATION bin)
+#INSTALL(TARGETS warp DESTINATION bin)
 
 #note: how to do "block comments"
 #if(FALSE)
