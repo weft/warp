@@ -1,6 +1,3 @@
-#run command
-#cmake -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc-4.4 ..
-
 #set project name
 project(WARP)
 
@@ -9,20 +6,13 @@ project(WARP)
 cmake_minimum_required(VERSION 2.8.10)
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} LD_LIBRARY_PATH)
+#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake") 
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 
 #find CUDA; we need that
 find_package(CUDA QUIET REQUIRED)
-
-#find OptiX; also required
-#see http://bit.ly/19nExJN for inspiration
-#note: had to append "/usr/local/OptiX-3.0.1/lib64" to $PATH in order for optix.h & friends to be found
-#i'm having to export that at the front of $PATH each time? strange...
-#set(OptiX_INSTALL_DIR "/usr/local/OptiX-3.0.1")
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${OptiX_INSTALL_DIR}/SDK/CMake")
-#set(OptiX_INSTALL_DIR "${CMAKE_SOURCE_DIR}/../" CACHE PATH "Path to OptiX installed location.")
-#set(OptiX_DIR "${OptiX_INSTALL_DIR}/SDK/CMake")
-#find_package(OptiX REQUIRED)
-#include_directories("${OptiX_INCLUDE}")
+include_directories("${CUDA_TOOLKIT_INCLUDE}")
+include_directories("${CUDA_INCLUDE_DIRS}")
 
 set(OptiX_ROOT_DIR "/usr/local/OptiX-3.0.1")
 
@@ -60,9 +50,7 @@ include_directories(${OptiX_INCLUDE_DIR})
 set(CUDA_64_BIT_DEVICE_CODE ON)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20; --use_fast_math; --compiler-options '-fPIC')
 
-include_directories("${CUDA_TOOLKIT_INCLUDE}")
-include_directories("${CUDA_INCLUDE_DIRS}")
-set (CUDPP_ROOT_DIR "/home/krowland/cudpp-2.1")
+#set (CUDPP_ROOT_DIR "/home/krowland/cudpp-2.1")
 #http://suren.me/webbzr/normxcorr/trunk/annotate/27/dict_hw/cmake/FindCUDPP.cmake?remember=7
 FIND_PATH(CUDPP_INCLUDE_DIR cudpp.h
    ${CUDPP_ROOT_DIR}/cudpp/include
@@ -78,7 +66,7 @@ FIND_LIBRARY(CUDPP_LIBRARY
 IF(CUDPP_LIBRARY)
   IF (CUDPP_INCLUDE_DIR)
     # OK, found all we need
-    SET(CUDPP_FOUND TRUE)		
+    SET(CUDPP_FOUND TRUE)
     GET_FILENAME_COMPONENT(CUDPP_LINK_DIRECTORIES ${CUDPP_LIBRARY} PATH)
 
   ELSE (CUDPP_INCLUDE_DIR)
@@ -89,9 +77,9 @@ ELSE(CUDPP_LIBRARY)
 ENDIF(CUDPP_LIBRARY)
 
 MARK_AS_ADVANCED(
-  CUDPP_INCLUDE_DIR	
+  CUDPP_INCLUDE_DIR     
   CUDPP_LIBRARY
-  CUDPP_LINK_DIRECTORIES		
+  CUDPP_LINK_DIRECTORIES                
 )
 
 SET(libs ${libs} ${CUDPP_LIBRARY})
@@ -174,7 +162,7 @@ cuda_compile(find_E_grid_index find_E_grid_index.cu)
 cuda_compile(find_E_grid_index_quad find_E_grid_index_quad.cu)
 cuda_compile(sample_fission_spectra sample_fission_spectra.cu)
 cuda_compile(sample_fixed_source sample_fixed_source.cu)
-cuda_compile(macrosocpic macroscopic.cu)
+cuda_compile(macroscopic macroscopic.cu)
 cuda_compile(microscopic microscopic.cu)
 cuda_compile(copy_points copy_points.cu)
 cuda_compile(tally_spec tally_spec.cu)
@@ -236,24 +224,13 @@ SET(warp_cuda_srcs
     ${write_to_file}
 )
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
-
 ADD_LIBRARY(libwarp SHARED ${warp_executable_srcs} ${warp_cuda_srcs})
 
+# link libs
+TARGET_LINK_LIBRARIES(libwarp ${libs})
+
 # actual target:
-#ADD_EXECUTABLE(warp ${TARGET_OBJECTS:libwarp})
+ADD_EXECUTABLE(warp ${warp_executable_srcs} ${warp_cuda_srcs})
 
 # link libs
-#TARGET_LINK_LIBRARIES(warp ${libs})
-
-# add install target:
-#INSTALL(TARGETS warp DESTINATION bin)
-
-#note: how to do "block comments"
-#if(FALSE)
-#lines to be commented out
-#endif()
-
-#look into:
-#add target library
-#link 
+TARGET_LINK_LIBRARIES(warp ${libs})
