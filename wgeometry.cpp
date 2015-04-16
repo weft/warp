@@ -21,10 +21,11 @@ wgeometry::wgeometry(){
 	n_materials  = 0;
 	n_isotopes   = 0;
 	fissile_flag = 0;
+	boundary_condition = 0;
 }
 wgeometry::~wgeometry(){
 	//material destructor
-	//for(int k=0;k<n_materials;k++){
+	//for(unsigned k=0;k<n_materials;k++){
 	//	delete materials[k].fractions;
 	//	delete materials[k].isotopes;
 	//}
@@ -55,7 +56,7 @@ void wgeometry::update(){
 	n_hex        = 0;
 	n_sph 	     = 0;
 	n_transforms = 0;
-	for(int k=0;k<n_primitives;k++){
+	for(unsigned k=0;k<n_primitives;k++){
 		if (primitives[k].n_transforms==0){
 			std::cout << "No transforms for primitive id = " << primitives[k].primitive_id << ", it will not be included in problem geometry" << "\n";
 		}
@@ -85,7 +86,7 @@ void wgeometry::update(){
 	std::vector<unsigned>  all_isotopes;
 	for(this_mat=0 ; this_mat<n_materials ; this_mat++){
 		n_topes = materials[this_mat].num_isotopes;
-		for(int k=0;k<n_topes;k++){
+		for(unsigned k=0;k<n_topes;k++){
 			all_isotopes.push_back(materials[this_mat].isotopes[k]);
 		}
 	}
@@ -93,9 +94,9 @@ void wgeometry::update(){
 	n_isotopes = 0;
 	unsigned notfound=0;
 	//std::cout << "all_isotopes.size() = " << all_isotopes.size() << "\n";
-	for(int k=0;k<all_isotopes.size();k++){
+	for(unsigned k=0;k<all_isotopes.size();k++){
 		notfound=1;
-		for(int j=0;j<isotopes.size();j++){
+		for(unsigned j=0;j<isotopes.size();j++){
 			if(isotopes[j]==all_isotopes[k])
 				notfound=0; 
 		}
@@ -107,7 +108,7 @@ void wgeometry::update(){
 
 	//make string from isotope table
 	char numstr[16];
-	for(int k =0;k<n_isotopes;k++){
+	for(unsigned k =0;k<n_isotopes;k++){
 		sprintf(numstr,"%u",isotopes[k]);
 		isotope_list += numstr;
 		if(k<n_isotopes-1){
@@ -117,6 +118,10 @@ void wgeometry::update(){
 
 }
 void wgeometry::print_summary(){
+	std::string bc_type;
+	if (boundary_condition == 0){bc_type="(ERROR)";}
+	if (boundary_condition == 1){bc_type="(black)";}
+	if (boundary_condition == 2){bc_type="(specular)";}
 	std::cout << "\e[1;32m" << "--- GEOMETRY SUMMARY ---" << "\e[m \n";
 	std::cout << "rectangular prisms = " << n_box << "\n";
 	std::cout << "cylinders          = " << n_cyl << "\n";
@@ -125,17 +130,18 @@ void wgeometry::print_summary(){
 	std::cout << "total primitives   = " << n_primitives << "\n";
 	std::cout << "total transforms   = " << n_transforms << "\n";
 	std::cout << "outer cell         = " << outer_cell << "\n";
+	std::cout << "boundary_condition = " << boundary_condition << " " << bc_type <<  "\n";
 	std::cout << "\e[1;32m" << "--- INPUT MATERIAL SUMMARY ---" << "\e[m \n";
 	std::cout << "materials          = " << n_materials << "\n";
 	std::cout << "isotopes           = " << n_isotopes << "\n";
 	std::cout << "isotope list:    " << isotope_list << "\n";
 	std::cout << "  --------------   " << n_materials << "\n";
-	for(int k=0;k<n_materials;k++){
+	for(unsigned k=0;k<n_materials;k++){
 		std::cout << "material #       = " << materials[k].matnum << "\n";
 		std::cout << "density (g/cc)   = " << materials[k].density << "\n";
 		std::cout << "is fissile       = " << materials[k].is_fissile << "\n";
 		std::cout << "isotopes         = " << materials[k].num_isotopes << "\n";
-		for(int j=0;j<materials[k].num_isotopes;j++){
+		for(unsigned j=0;j<materials[k].num_isotopes;j++){
 			std::cout << "  number "<< j << ":  isotope " << materials[k].isotopes[j] << " frac = " << materials[k].fractions[j] << "\n";
 		}
 		if(k!=n_materials-1){
@@ -144,7 +150,7 @@ void wgeometry::print_summary(){
 	}
 }
 void wgeometry::print_all(){
-	for(int k=0;k<n_primitives;k++){
+	for(unsigned k=0;k<n_primitives;k++){
 		primitives[k].print_transform();
 	}
 	print_summary();
@@ -155,15 +161,17 @@ unsigned wgeometry::get_primitive_count(){
 unsigned wgeometry::get_transform_count(){
 	return(n_transforms);
 }
-void wgeometry::set_outer_cell(unsigned ocell){
-	outer_cell = ocell;
+void wgeometry::set_outer_cell(unsigned ocell, unsigned BC){
 	unsigned this_cell;
-	for(int j=0;j<n_primitives;j++){
-		for(int k=0;k<primitives[j].n_transforms;k++){
+	for(unsigned j=0;j<n_primitives;j++){
+		for(unsigned k=0;k<primitives[j].n_transforms;k++){
 			this_cell = primitives[j].transforms[k].cellnum;
-			if (this_cell==outer_cell){break;}
+			if (this_cell==ocell){
+				outer_cell = ocell;
+				boundary_condition=BC;
+				break;}
 		}
-		if (this_cell==outer_cell){break;}
+		if (this_cell==ocell){;break;}
 	}
 	if (this_cell!=outer_cell) {
 		std::cout << "Cell " << ocell << " not found, outer cell not set!!!" << "\n";
@@ -172,10 +180,13 @@ void wgeometry::set_outer_cell(unsigned ocell){
 unsigned wgeometry::get_outer_cell(){
 	return outer_cell;
 }
+unsigned wgeometry::get_boundary_condition(){
+	return boundary_condition;
+}
 unsigned wgeometry::get_outer_cell_type(){
 	unsigned outer_cell_type=99999999;
-	for(int j=0;j<n_primitives;j++){
-		for(int k=0;k<primitives[j].n_transforms;k++){
+	for(unsigned j=0;j<n_primitives;j++){
+		for(unsigned k=0;k<primitives[j].n_transforms;k++){
 			if (primitives[j].transforms[k].cellnum==outer_cell){
 				outer_cell_type=primitives[j].type;
 				return outer_cell_type;
@@ -185,8 +196,8 @@ unsigned wgeometry::get_outer_cell_type(){
 }
 unsigned wgeometry::get_minimum_cell(){
 	unsigned mincell=-1;
-	for(int j=0;j<n_primitives;j++){
-		for(int k=0;k<primitives[j].n_transforms;k++){
+	for(unsigned j=0;j<n_primitives;j++){
+		for(unsigned k=0;k<primitives[j].n_transforms;k++){
 			if (primitives[j].transforms[k].cellnum<mincell){mincell=primitives[j].transforms[k].cellnum;}
 		}
 	}
@@ -194,8 +205,8 @@ unsigned wgeometry::get_minimum_cell(){
 }
 unsigned wgeometry::get_maximum_cell(){
 	unsigned maxcell=0;
-	for(int j=0;j<n_primitives;j++){
-		for(int k=0;k<primitives[j].n_transforms;k++){
+	for(unsigned j=0;j<n_primitives;j++){
+		for(unsigned k=0;k<primitives[j].n_transforms;k++){
 			if (primitives[j].transforms[k].cellnum>maxcell){maxcell=primitives[j].transforms[k].cellnum;}
 		}
 	}
@@ -216,7 +227,7 @@ void wgeometry::add_material(unsigned matnum, unsigned is_fissile, unsigned num_
 	this_material_def.id 		= dex;
 	this_material_def.density       = density;
 	this_material_def.is_fissile    = is_fissile;
-	for (int i=0; i<num_topes;i++){
+	for (unsigned i=0; i<num_topes;i++){
 		this_material_def.isotopes[i] = isotopes[i];
 		this_material_def.fractions[i] = fractions[i];
 	}
@@ -237,8 +248,8 @@ int wgeometry::check(){
 	unsigned mat_list_index  = 0;
 	unsigned z,notfound,found_cell;
 	// check that all cells have their own ID
-	for (int k=0;k<n_primitives;k++){
-		for (int j=0;j<primitives[k].n_transforms;j++){	
+	for (unsigned k=0;k<n_primitives;k++){
+		for (unsigned j=0;j<primitives[k].n_transforms;j++){	
 			cellnum = primitives[k].transforms[j].cellnum;
 			matnum  = primitives[k].transforms[j].cellmat;
 			// scan the cell list 
@@ -267,9 +278,9 @@ int wgeometry::check(){
 	}
 
 	// check that there are materials for each number specified in the geom
-	for(int k=0;k<mat_list_index;k++){
+	for(unsigned k=0;k<mat_list_index;k++){
 		notfound=1;
-		for(int j=0;j<n_materials;j++){
+		for(unsigned j=0;j<n_materials;j++){
 			if(material_num_list[k]==materials[j].matnum){
 				notfound=0;
 				break;
@@ -283,8 +294,8 @@ int wgeometry::check(){
 
 	// check to make sure the outer cell exists
 	notfound = 1;
-	for (int k=0;k<n_primitives;k++){
-		for (int j=0;j<primitives[k].n_transforms;j++){	
+	for (unsigned k=0;k<n_primitives;k++){
+		for (unsigned j=0;j<primitives[k].n_transforms;j++){	
 			if(primitives[k].transforms[j].cellnum==outer_cell & notfound){
 				notfound=0;
 			}
@@ -296,7 +307,7 @@ int wgeometry::check(){
 	}
 
 	//see if there are any fissile isotopes
-	for(int k=0;k<n_materials;k++){
+	for(unsigned k=0;k<n_materials;k++){
 		fissile_flag += materials[k].is_fissile;
 	}
 
@@ -309,8 +320,8 @@ unsigned wgeometry::get_outer_cell_dims(float * input_array){
 	float this_min[3];
 	float this_max[3];
 
-	for (int k=0;k<n_primitives;k++){
-		for (int j=0;j<primitives[k].n_transforms;j++){	
+	for (unsigned k=0;k<n_primitives;k++){
+		for (unsigned j=0;j<primitives[k].n_transforms;j++){	
 			if(primitives[k].transforms[j].cellnum==outer_cell){
 				// apply transform to base primitive, just translation now, maybe add rotation later?  no this is a maximum extent projection onto the axes, should always be a box.
 				memcpy(this_min , primitives[k].min , 3*sizeof(float));
@@ -346,7 +357,7 @@ void wgeometry::make_material_table(){
 
 	// allocate and copy the material number list to the array
 	material_list_array = new unsigned [n_materials];
-	for(int k=0;k<n_materials;k++){
+	for(unsigned k=0;k<n_materials;k++){
 		material_list_array[k]=materials[k].matnum;
 	}
 
@@ -354,8 +365,8 @@ void wgeometry::make_material_table(){
 	unsigned notfound=1;
 	int z=0;
 	concentrations_matrix = new float [n_materials*n_isotopes];
-	for(int j=0;j<n_materials;j++){     // isotope in a column
-		for(int k=0;k<n_isotopes;k++){  // material in a row
+	for(unsigned j=0;j<n_materials;j++){     // isotope in a column
+		for(unsigned k=0;k<n_isotopes;k++){  // material in a row
 			
 			notfound=1;
 			//scan the material object to see if the isotope is there
@@ -386,16 +397,16 @@ void wgeometry::make_material_table(){
 	float m_n    = 1.008664916;    // u
 	float barns  = 1e24;
 
-	for(int j=0;j<n_materials;j++){
+	for(unsigned j=0;j<n_materials;j++){
 
 		m_avg = 0.0;
 		frac  = 0.0;
 
 		//normalize the fractions for this material and calculate average mass
-		for(int k=0;k<n_isotopes;k++){
+		for(unsigned k=0;k<n_isotopes;k++){
 			frac += concentrations_matrix[j*n_isotopes+k];
 		}
-		for(int k=0;k<n_isotopes;k++){
+		for(unsigned k=0;k<n_isotopes;k++){
 			concentrations_matrix[j*n_isotopes+k] = concentrations_matrix[j*n_isotopes+k]/frac;
 			m_avg += concentrations_matrix[j*n_isotopes+k] * awr_list[k] * m_n;
 			//std::cout << "awr["<<k<<"] = "<<awr_list[k]<<"\n";
@@ -408,7 +419,7 @@ void wgeometry::make_material_table(){
 		N_avg = dens/(m_avg * u_to_g * barns);
 
 		//  multiply normalized fractions by average number density to get topes number density
-		for(int k=0;k<n_isotopes;k++){
+		for(unsigned k=0;k<n_isotopes;k++){
 			concentrations_matrix[j*n_isotopes+k] = concentrations_matrix[j*n_isotopes+k] * N_avg;
 			printf("material = %d, isotope %d, dens = %6.5E\n",j,k,concentrations_matrix[j*n_isotopes+k]);
 		}
@@ -431,14 +442,14 @@ void wgeometry::print_materials_table(){
 
 	std::cout << "\e[1;32m" << "--- MATERIALS SUMMARY ---" << "\e[m \n";
 
-	for(int j=0;j<n_materials;j++){
+	for(unsigned j=0;j<n_materials;j++){
 
 		assert(j==materials[j].id);
 		std::cout <<  "material index " << j << " = material " << material_list_array[j] << "\n";
 		std::cout <<  " (isotope index, ZZZAAA) \n";
 		std::cout <<  " (number density #/bn-cm) \n";
 		
-		for(int k=0;k<n_isotopes;k++){
+		for(unsigned k=0;k<n_isotopes;k++){
 
 			if (k==n_isotopes-1){
 				std::cout << "( "<< k << " , "<< isotope_list_array[k] << " ) \n";
@@ -448,7 +459,7 @@ void wgeometry::print_materials_table(){
 			}
 		}
 
-		for(int k=0;k<n_isotopes;k++){
+		for(unsigned k=0;k<n_isotopes;k++){
 
 			if (k==n_isotopes-1){
 				std::cout << "( " <<concentrations_matrix[j*n_isotopes+k] << " )\n";

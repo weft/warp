@@ -57,7 +57,7 @@ TEST_F(optixStuffTest, Init)
 	origin[0] = 0; origin[1] = 0; origin[2] = 0;
 	geom.add_primitive(type, material, min, max, origin);
 	geom.add_transform(0,999,0,0,0,0,0);
-	geom.set_outer_cell(999);
+	geom.set_outer_cell(999,1);
 	geom.update();
 	geom.check();
 	init_test.N = 10000;
@@ -91,7 +91,7 @@ TEST_F(optixStuffTest, SetTraceType)
         origin[0] = 0; origin[1] = 0; origin[2] = 0;
         geom.add_primitive(type, material, min, max, origin);
         geom.add_transform(0,999,0,0,0,0,0);
-        geom.set_outer_cell(999);
+        geom.set_outer_cell(999,1);
         geom.update();
         geom.check();
         set_trace_type_test.N = 10000;
@@ -128,7 +128,7 @@ TEST_F(optixStuffTest, DefaultTrace)
         origin[0] = 0; origin[1] = 0; origin[2] = 0;
         geom.add_primitive(type, material, min, max, origin);
         geom.add_transform(0,999,0,0,0,0,0);
-        geom.set_outer_cell(999);
+        geom.set_outer_cell(999,1);
         geom.update();
         geom.check();
         default_trace_test.init(geom,compute_device,accel_type);
@@ -181,7 +181,7 @@ TEST_F(optixStuffTest, TypeTrace)
         origin[0] = 0; origin[1] = 0; origin[2] = 0;
         geom.add_primitive(type, material, min, max, origin);
         geom.add_transform(0,999,0,0,0,0,0);
-        geom.set_outer_cell(999);
+        geom.set_outer_cell(999,1);
         geom.update();
         geom.check();
         type_trace_test.init(geom,compute_device,accel_type);
@@ -234,7 +234,7 @@ TEST_F(optixStuffTest, NumTypeTrace)
         origin[0] = 0; origin[1] = 0; origin[2] = 0;
         geom.add_primitive(type, material, min, max, origin);
         geom.add_transform(0,999,0,0,0,0,0);
-        geom.set_outer_cell(999);
+        geom.set_outer_cell(999,1);
         geom.update();
         geom.check();
         num_type_trace_test.init(geom,compute_device,accel_type);
@@ -310,7 +310,7 @@ TEST_F(optixStuffTest, GetOuterCell)
         origin[0] = 0; origin[1] = 0; origin[2] = 0;
         geom.add_primitive(type, material, min, max, origin);
         geom.add_transform(0,999,0,0,0,0,0);
-        geom.set_outer_cell(999);
+        geom.set_outer_cell(999,1);
         geom.update();
         geom.check();
         outer_cell_test.N = 10000;

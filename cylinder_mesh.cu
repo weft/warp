@@ -113,6 +113,7 @@ RT_PROGRAM void intersect(int object_dex)
 				cellmat     = dims[object_dex].matnum;
 				cellfissile = dims[object_dex].is_fissile;
 				normal 		= this_norm1;
+				normal      =  normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
 				if(rtReportIntersection(0)){
 					check_second=false;
 				}
@@ -124,6 +125,7 @@ RT_PROGRAM void intersect(int object_dex)
 				cellmat     = dims[object_dex].matnum;
 				cellfissile = dims[object_dex].is_fissile;
 				normal 		= this_norm2;
+				normal      =  normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
 				rtReportIntersection(0);
 			}
 		}

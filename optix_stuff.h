@@ -14,6 +14,7 @@ class optix_stuff{
 	unsigned mincell; /**< minimum (usually innermost) cell */
 	unsigned maxcell; /**< maximum (usually outermost) cell */
 	unsigned outer_cell; /**< outermost cell */
+	unsigned boundary_condition; /**< boundary condition of outermost cell */
 	unsigned outer_cell_type; /**< outermost cell type */
 	unsigned n_materials; /**< number of materials */
 	unsigned compute_device; /**< compute device number */
