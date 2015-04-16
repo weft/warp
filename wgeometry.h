@@ -19,6 +19,7 @@ public:
 	unsigned 	n_materials; /**<  number of materials */
 	unsigned 	n_isotopes; /**<  number of isotopes */
 	unsigned 	fissile_flag; /**<  indicates whether or not a material is fissile */
+	unsigned	boundary_condition; /**<  flag for the cell's boundary condition */
 	unsigned * 	material_num_list; /**<  list of material numbers */
 	unsigned * 	cell_num_list; /**<  list of cell numbers */
 	/**
@@ -73,9 +74,9 @@ public:
 	 *
 	 * @param[in] ocell - the outermost cell
 	 */ 
-	void set_outer_cell(unsigned);
+	void set_outer_cell(unsigned, unsigned);
 	/**
-	 * returns the outermost cell
+	 * returns the outermost cell and its boundary conition
 	 *
 	 * \returns outer_cell
 	 */ 
@@ -84,6 +85,12 @@ public:
 	 * returns the outermost cell type
 	 *
 	 * \returns outer_cell_type
+	 */ 
+	unsigned get_boundary_condition();
+	/**
+	 * returns the boundary condition flag of outermost cell type
+	 *
+	 * \returns boundary_condition
 	 */ 
 	unsigned get_outer_cell_type();
 	/**

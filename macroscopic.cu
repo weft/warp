@@ -16,6 +16,16 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	//remap
 	int tid=remap[tid_in];
 
+	// declare
+	float 		norm[3];
+	float 		samp_dist 		= 0.0;
+	float 		cum_prob 		= 0.0;
+	float 		diff			= 0.0;
+	unsigned 	tope 			= 999999999;
+	float 		epsilon 		= 5.0e-4;
+	unsigned 	isdone 			= 0;
+	float 		dotp 			= 0.0;
+
 	// load from arrays
 	unsigned 	this_mat 		= matnum[tid];
 	unsigned 	dex 			= index[tid];   
@@ -30,19 +40,8 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float		zhat 			= space[tid].zhat;
 	float		surf_dist 		= space[tid].surf_dist;
 	unsigned 	enforce_BC 		= space[tid].enforce_BC;  
-	float 		norm[3];
 	memcpy(norm,space[tid].norm,3*sizeof(float));
-	//norm[0] = 0.0;
-	//norm[1] = 0.0;
-	//norm[2] = 0.0;
-	float 		samp_dist 		= 0.0;
-	float 		cum_prob 		= 0.0;
-	float 		diff			= 0.0;
-	unsigned 	tope 			= 999999999;
-	float 		epsilon 		= 5.0e-4;
-	//unsigned    this_rxn		= 0;
-	//unsigned    this_rxn = rxn[tid_in];
-	unsigned 	isdone 			= 0;
+	
 
 
 	float macro_t_total = 0.0;
@@ -89,17 +88,42 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	diff = surf_dist - samp_dist;
 	if( diff < 0.0 ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
 		//printf("a(%u,1:9)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z,x+(surf_dist * xhat),y+(surf_dist * yhat),z+(surf_dist * zhat),norm[0],norm[1],norm[2]);
-		x += (surf_dist * xhat  +  1.2 * epsilon * norm[0]);
-		y += (surf_dist * yhat  +  1.2 * epsilon * norm[1]);
-		z += (surf_dist * zhat  +  1.2 * epsilon * norm[2]);
-		this_rxn = 800;
-		tope=999999998;  // make resampling a different isotope than mis-sampling
 		// enforce BC
-		if (enforce_BC){
+		if (enforce_BC == 1){  // black BC
+			x += (surf_dist * xhat  +  1.2 * epsilon * norm[0]);
+			y += (surf_dist * yhat  +  1.2 * epsilon * norm[1]);
+			z += (surf_dist * zhat  +  1.2 * epsilon * norm[2]);
 			isdone = 1;
 			this_rxn  = 999;
 			tope=999999997;  // make leaking a different isotope than resampling
 			//printf("leaked tid %u xyz % 6.4E % 6.4E % 6.4E dir % 6.4E % 6.4E % 6.4E\n",tid,x,y,z,xhat,yhat,zhat);
+		}
+		else if(enforce_BC == 2){  // specular reflection BC
+			x += (surf_dist * xhat - 1.2 * epsilon * norm[0]);
+			y += (surf_dist * yhat - 1.2 * epsilon * norm[1]);
+			z += (surf_dist * zhat - 1.2 * epsilon * norm[2]);
+			dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
+			//printf("specular\n");
+			if(dotp>1.0 | dotp<-1.0){printf("dotp %6.4E , dir [%6.4E %6.4E %6.4E], norm [%6.4E %6.4E %6.4E]\n",dotp,xhat,yhat,zhat,norm[0],norm[1],norm[2]);}
+			//printf("dotp %6.4E ,position [%6.4E %6.4E %6.4E], dir [%6.4E %6.4E %6.4E], norm [%6.4E %6.4E %6.4E]\n",x,y,z,xhat,yhat,zhat,norm[0],norm[1],norm[2]);
+			xhat = -2.0*dotp*norm[0]-xhat;  // norm points out!  need to flip sign
+			yhat = -2.0*dotp*norm[1]-yhat;  // norm points out!  need to flip sign
+			zhat = -2.0*dotp*norm[2]-zhat;  // norm points out!  need to flip sign
+			float mag  = sqrtf(xhat*xhat + yhat*yhat + zhat*zhat);
+			xhat = xhat / mag;
+			yhat = yhat / mag;
+			zhat = zhat / mag;
+			this_rxn = 800;
+			isdone = 0;
+			tope=999999996;  // make reflection a different isotope 
+		}
+		else{
+			x += (surf_dist * xhat  +  1.2 * epsilon * norm[0]);
+			y += (surf_dist * yhat  +  1.2 * epsilon * norm[1]);
+			z += (surf_dist * zhat  +  1.2 * epsilon * norm[2]);
+			this_rxn = 800;
+			isdone = 0;
+			tope=999999998;  // make resampling a different isotope than mis-sampling
 		}
 	}
 	else{  //move to sampled distance, null reaction
@@ -115,6 +139,11 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	space[tid].y			= y;
 	space[tid].z			= z;
 	space[tid].macro_t 		= macro_t_total;
+	if(enforce_BC==2){
+		space[tid].xhat = xhat;
+		space[tid].yhat = yhat;
+		space[tid].zhat = zhat;
+	}
 	rxn[tid_in] 			= this_rxn;  // rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
 	isonum[tid] 			= tope;
 	rn_bank[tid] 			= rn;

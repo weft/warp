@@ -175,12 +175,12 @@ TEST_F(wgeometryTest, GetTransformCount)
 TEST_F(wgeometryTest, OuterCellTest)
 {
 	wgeometry outer_cell_test_geom;
-	outer_cell_test_geom.set_outer_cell(0);
+	outer_cell_test_geom.set_outer_cell(0,1);
 	outer_cell = outer_cell_test_geom.get_outer_cell();
 	EXPECT_EQ(0u, outer_cell);
 	outer_cell_test_geom.add_primitive();
 	outer_cell_test_geom.add_transform(0,1,0,0,0,3.14159,3.14159);
-	outer_cell_test_geom.set_outer_cell(1);
+	outer_cell_test_geom.set_outer_cell(1,1);
 	outer_cell = outer_cell_test_geom.get_outer_cell();
 	EXPECT_EQ(1u, outer_cell);
 }
@@ -290,7 +290,7 @@ TEST_F(wgeometryTest, Check)
 	loc[0] =  0; loc[0] =  0; loc[2] =  0; 
 	prim_id = check_test_geom.add_primitive(prim_type,material,min,max,loc);
 	check_test_geom.add_transform(prim_id,999,0,0,0,0,0);
-	check_test_geom.set_outer_cell(999);
+	check_test_geom.set_outer_cell(999,1);
 	check_test_geom.update();
 	check = check_test_geom.check();
 	EXPECT_EQ(0, check);
@@ -312,7 +312,7 @@ TEST_F(wgeometryTest, GetOuterCellDims)
 	outer_cell_dim_test_geom.add_transform(0,0,0,0,0,3.14159,3.14159);
 	outer_cell_dim_test_geom.add_transform(0,1,-1,-1,-1,3.14159,3.14159);
 	outer_cell_dim_test_geom.add_transform(0,999,1,1,1,3.14159,3.14159);
-	outer_cell_dim_test_geom.set_outer_cell(999);
+	outer_cell_dim_test_geom.set_outer_cell(999,1);
 	prim_type = outer_cell_dim_test_geom.get_outer_cell_dims(dims);
 	EXPECT_EQ(0u,prim_type);
 }

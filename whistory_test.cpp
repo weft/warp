@@ -37,7 +37,7 @@ TEST_F(whistoryTest, SetRunType)
         origin[0] = 0; origin[1] = 0; origin[2] = 0;
         geom.add_primitive(type, material, min, max, origin);
         geom.add_transform(0,999,0,0,0,0,0);
-        geom.set_outer_cell(999);
+        geom.set_outer_cell(999,1);
         geom.update();
         geom.check();
         whistory hist(N, geom);
@@ -67,7 +67,7 @@ TEST_F(whistoryTest, SetTallyCell)
         origin[0] = 0; origin[1] = 0; origin[2] = 0;
         geom.add_primitive(type, material, min, max, origin);
         geom.add_transform(0,999,0,0,0,0,0);
-        geom.set_outer_cell(999);
+        geom.set_outer_cell(999,1);
         geom.update();
         geom.check();
         whistory hist(N, geom);
@@ -97,7 +97,7 @@ TEST_F(whistoryTest, SetRunParam)
         origin[0] = 0; origin[1] = 0; origin[2] = 0;
         geom.add_primitive(type, material, min, max, origin);
         geom.add_transform(0,999,0,0,0,0,0);
-        geom.set_outer_cell(999);
+        geom.set_outer_cell(999,1);
         geom.update();
         geom.check();
         whistory hist(N, geom);
@@ -127,7 +127,7 @@ TEST_F(whistoryTest, SetFilename)
         origin[0] = 0; origin[1] = 0; origin[2] = 0;
         geom.add_primitive(type, material, min, max, origin);
         geom.add_transform(0,999,0,0,0,0,0);
-        geom.set_outer_cell(999);
+        geom.set_outer_cell(999,1);
         geom.update();
         geom.check();
         whistory hist(N, geom);
@@ -157,7 +157,7 @@ TEST_F(whistoryTest, SetDevice)
         origin[0] = 0; origin[1] = 0; origin[2] = 0;
         geom.add_primitive(type, material, min, max, origin);
         geom.add_transform(0,999,0,0,0,0,0);
-        geom.set_outer_cell(999);
+        geom.set_outer_cell(999,1);
         geom.update();
         geom.check();
         whistory hist(N, geom);
@@ -187,7 +187,7 @@ TEST_F(whistoryTest, Init)
 	origin[0] = 0; origin[1] = 0; origin[2] = 0;
 	geom.add_primitive(type, material, min, max, origin);
 	geom.add_transform(0,999,0,0,0,0,0);
-	geom.set_outer_cell(999);
+	geom.set_outer_cell(999,1);
 	geom.update();
 	geom.check();
         whistory init_hist(N, geom);

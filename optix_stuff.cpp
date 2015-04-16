@@ -174,7 +174,7 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	context->setMissProgram( 0, miss_program ); 
 
 	//set boundary condition for outer cell
-	context["boundary_condition"]->setUint(0);
+	context["boundary_condition"]->setUint(boundary_condition);
 
 	//set trace type, 1=transport (writes intersection point and next cell), 2=fission (writes origin and current cell)
 	context["trace_type"]->setUint(1);
@@ -208,6 +208,11 @@ void optix_stuff::init(wgeometry problem_geom, unsigned compute_device_in, std::
 	maxcell = problem_geom.get_maximum_cell();
 	outer_cell = problem_geom.get_outer_cell();
 	outer_cell_type = problem_geom.get_outer_cell_type();
+	boundary_condition = problem_geom.get_boundary_condition();
+	if(boundary_condition == 0) {
+	 	printf("BC of outer cell not set!  Setting to 1 (black)...\n");
+	 	boundary_condition = 1;
+	 }
 	// get material numbers
 	n_materials = problem_geom.get_material_count();
 	// try to init optix
