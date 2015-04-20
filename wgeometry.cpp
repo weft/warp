@@ -108,14 +108,14 @@ void wgeometry::update(){
 	n_isotopes = isotopes.size();
 
 	//make string from isotope table
-	//char numstr[16];
-	//for(unsigned k =0;k<n_isotopes;k++){
-	//	sprintf(numstr,"%u",isotopes[k]);
-	//	isotope_list += numstr;
-	//	if(k<n_isotopes-1){
-	//		isotope_list += ",";
-	//	}
-	//}
+	char numstr[16];
+	for(unsigned k =0;k<n_isotopes;k++){
+		//sprintf(numstr,"%u",isotopes[k]);
+		isotope_list += isotopes[k];
+		if(k<n_isotopes-1){
+			isotope_list += ",";
+		}
+	}
 
 }
 void wgeometry::print_summary(){
@@ -354,7 +354,7 @@ unsigned wgeometry::check_fissile(){
 }
 void wgeometry::make_material_table(){
 
-	// allocate and copy the insotope list to the array
+	// allocate and copy the isotope list to the array
 	isotope_list_array = new unsigned [n_isotopes];
 	memcpy(isotope_list_array,isotopes.data(),n_isotopes*sizeof(unsigned));
 

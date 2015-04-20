@@ -172,7 +172,7 @@ public:
 	std::vector<primitive>   	primitives; /**< primitives vector */
 	std::vector<material_def>	materials;  /**< materials vector */
 	std::vector<std::string>	isotopes;   /**< isotopes vector */
-	//std::string 			    isotope_list; /**< isotope list */
+	std::string 			    isotope_list; /**< isotope list */
 	unsigned *	isotope_list_array; /**< isotope list array */
 	unsigned *	material_list_array; /**< material list array */
 	float * 	concentrations_matrix; /**< concentrations matrix */
