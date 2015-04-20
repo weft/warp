@@ -95,7 +95,7 @@ class cross_section_data:
 		for librarypath in self.libraries:
 			lib = ace.Library(librarypath)
 			lib.read()
-			for tope in self.libraries[librarypath]
+			for tope in self.libraries[librarypath]:
 				print "  loading "+tope
 				self.tables.append(lib.find_table(tope))
 				self.num_isotopes=self.num_isotopes+1
