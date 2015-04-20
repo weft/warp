@@ -84,7 +84,7 @@ void wgeometry::update(){
 	unsigned this_mat  = 0;
 	unsigned n_topes   = 0;
 	unsigned this_tope = 0;
-	std::vector<std::sring>  all_isotopes;
+	std::vector<std::string>  all_isotopes;
 	for(this_mat=0 ; this_mat<n_materials ; this_mat++){
 		n_topes = materials[this_mat].num_isotopes;
 		for(unsigned k=0;k<n_topes;k++){
@@ -228,7 +228,7 @@ void wgeometry::add_material(unsigned matnum, unsigned is_fissile, unsigned num_
 	this_material_def.density       = density;
 	this_material_def.is_fissile    = is_fissile;
 	for (unsigned i=0; i<num_topes;i++){
-		this_material_def.push_back(isotopes[i]);
+		this_material_def.isotopes.push_back(isotopes[i]);
 		this_material_def.fractions[i] = fractions[i];
 	}
 
