@@ -73,7 +73,7 @@ class cross_section_data:
 
 		self.datapath = datapath_in
 		try:
-			if re.match('xsdir',self.datapath):   #path is a xsdir file, don't append xsdir
+			if re.search('xsdir',self.datapath):   #path is a xsdir file, don't append xsdir
 				f=open(self.datapath,'r')
 				firstline=f.readline()
 				match = re.search('(/[a-zA-Z0-9/_.+-]+)',firstline)  #datapath is specified, use it.
