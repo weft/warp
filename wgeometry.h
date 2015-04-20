@@ -145,7 +145,8 @@ public:
 	 * @param[in] isotope_list_in - list of input isotopes
 	 * @param[in] conc_mat_in - input concentration matrix
 	 */
-	void get_material_table(unsigned*,unsigned*,unsigned**,unsigned**,float**);
+	//void get_material_table(unsigned*,unsigned*,unsigned**,unsigned**,float**);
+	void get_material_table(unsigned*,unsigned*,float**);
 	/**
 	 * prints out all materials, including each material's constituent isotopes 
 	 * and their number densities.

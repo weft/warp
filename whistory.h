@@ -90,8 +90,8 @@ class whistory {
 	unsigned *      rxn; /**< reaction */
 	unsigned *      done; /**< done flag */
 	unsigned *      yield; /**< yield */
-	unsigned * 	material_list; /**< material list */
-	unsigned * 	isotope_list; /**< isotope list */
+	//unsigned * 	material_list; /**< material list */
+	//unsigned * 	isotope_list; /**< isotope list */
 	float *  	number_density_matrix; /**< isotope number density matrix */
 	unsigned 	reduced_yields; /**< reduced yields */
 	unsigned * 	remap; /**< remap */

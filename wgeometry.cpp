@@ -355,14 +355,14 @@ unsigned wgeometry::check_fissile(){
 void wgeometry::make_material_table(){
 
 	// allocate and copy the isotope list to the array
-	isotope_list_array = new unsigned [n_isotopes];
-	memcpy(isotope_list_array,isotopes.data(),n_isotopes*sizeof(unsigned));
+	//isotope_list_array = new unsigned [n_isotopes];
+	///memcpy(isotope_list_array,isotopes.data(),n_isotopes*sizeof(unsigned));
 
 	// allocate and copy the material number list to the array
-	material_list_array = new unsigned [n_materials];
-	for(unsigned k=0;k<n_materials;k++){
-		material_list_array[k]=materials[k].matnum;
-	}
+	//material_list_array = new unsigned [n_materials];
+	//for(unsigned k=0;k<n_materials;k++){
+	//	material_list_array[k]=materials[k].matnum;
+	//}
 
 	// allocate and copy the fractions to the matrix
 	unsigned notfound=1;
@@ -374,7 +374,7 @@ void wgeometry::make_material_table(){
 			notfound=1;
 			//scan the material object to see if the isotope is there
 			for(z=0;z<materials[j].num_isotopes;z++){
-				if(materials[j].isotopes[z] == isotope_list_array[k]){
+				if(!materials[j].isotopes[z].compare(isotope_list_array[k])){
 					notfound=0;
 					break;
 				}
@@ -428,17 +428,17 @@ void wgeometry::make_material_table(){
 		}
 	}
 }
-void wgeometry::get_material_table(unsigned* n_mat_in, unsigned * n_tope_in, unsigned** material_list_in, unsigned** isotope_list_in, float** conc_mat_in){
+void wgeometry::get_material_table(unsigned* n_mat_in, unsigned * n_tope_in, float** conc_mat_in){
 
 	*n_mat_in  = n_materials;
 	*n_tope_in = n_isotopes;
 
-	*material_list_in 	= new unsigned [n_materials];
-	*isotope_list_in 	= new unsigned [n_isotopes];
+	//*material_list_in 	= new unsigned [n_materials];
+	//*isotope_list_in 	= new unsigned [n_isotopes];
 	*conc_mat_in 		= new float    [n_materials*n_isotopes];
 
-	memcpy(*material_list_in,  material_list_array,    n_materials*sizeof(unsigned)         );
-	memcpy(*isotope_list_in,   isotope_list_array,     n_isotopes *sizeof(unsigned)         );
+	//memcpy(*material_list_in,  material_list_array,    n_materials*sizeof(unsigned)         );
+	//memcpy(*isotope_list_in,   isotope_list_array,     n_isotopes *sizeof(unsigned)         );
 	memcpy(*conc_mat_in,       concentrations_matrix,  n_materials*n_isotopes*sizeof(float) );
 }
 void wgeometry::print_materials_table(){

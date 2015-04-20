@@ -469,8 +469,8 @@ void whistory::copy_data_to_device(){
     cudaMemcpy( d_xs_data_MT,	     xs_data_MT,	    MT_rows*MT_columns *sizeof(float), 				  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_xs_data_main_E_grid,   xs_data_main_E_grid,   xs_length_numbers[1]*sizeof(float),				  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_awr_list, 	     awr_list,   	    xs_length_numbers[0]*sizeof(float),				  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_material_list,         material_list,         n_materials*sizeof(unsigned), 				  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_isotope_list,          isotope_list,          xs_length_numbers[0]*sizeof(unsigned), 			  cudaMemcpyHostToDevice );
+	//cudaMemcpy( d_material_list,         material_list,         n_materials*sizeof(unsigned), 				  cudaMemcpyHostToDevice );
+	//cudaMemcpy( d_isotope_list,          isotope_list,          xs_length_numbers[0]*sizeof(unsigned), 			  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_number_density_matrix, number_density_matrix, n_materials*xs_length_numbers[0]*sizeof(float),    		  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_xs_data_Q,	     xs_data_Q, 	    (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(float),    cudaMemcpyHostToDevice );
 	if(print_flag >= 2){
@@ -1215,13 +1215,14 @@ void whistory::load_cross_sections(){
     	//pass awr pointer to geometry object, make the number density table, copy pointers back
     	problem_geom.awr_list = awr_list;
     	problem_geom.make_material_table();
-    	problem_geom.get_material_table(&n_materials,&n_isotopes,&material_list,&isotope_list,&number_density_matrix);  
+    	//problem_geom.get_material_table(&n_materials,&n_isotopes,&material_list,&isotope_list,&number_density_matrix);  
+    	problem_geom.get_material_table(&n_materials,&n_isotopes,&number_density_matrix);  
 
     	assert(n_isotopes == xs_length_numbers[0]);
 
     	//do cudamalloc for these arrays
-    	cudaMalloc(&d_material_list , 			n_materials*sizeof(unsigned) );
-    	cudaMalloc(&d_isotope_list , 			n_isotopes*sizeof(unsigned) );
+    	//cudaMalloc(&d_material_list , 			n_materials*sizeof(unsigned) );
+    	//cudaMalloc(&d_isotope_list , 			n_isotopes*sizeof(unsigned) );
     	cudaMalloc(&d_number_density_matrix , 	n_materials*n_isotopes*sizeof(unsigned) );
 
 }
