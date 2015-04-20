@@ -595,8 +595,10 @@ void whistory::load_cross_sections(){
 	
 		// read the tables
 		call_string = PyString_FromString("_read_tables");
-		call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
+		arg_string  = PyString_FromString(problem_geom.datapath.c_str());
+		call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, arg_string, NULL);
 		PyErr_Print();
+		Py_DECREF(arg_string);
 		Py_DECREF(call_string);
 		Py_DECREF(call_result);
 

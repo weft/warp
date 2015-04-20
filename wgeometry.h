@@ -22,6 +22,7 @@ public:
 	unsigned	boundary_condition; /**<  flag for the cell's boundary condition */
 	unsigned * 	material_num_list; /**<  list of material numbers */
 	unsigned * 	cell_num_list; /**<  list of cell numbers */
+	std::string datapath; /**< path to xsdir and data */
 	/**
 	 *  wgeometry constructor
 	 */ 
@@ -155,6 +156,12 @@ public:
 	 *
 	 * \returns fissile_flag
 	 */
+	void set_datapath(std::string);
+	/**
+	 * sets the data path
+	 *
+	 * \returns void
+	 */	
 	unsigned check_fissile();
 	unsigned add_transform(unsigned);
 	unsigned add_transform(unsigned, unsigned, float, float, float, float, float);

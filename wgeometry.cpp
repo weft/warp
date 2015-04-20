@@ -22,6 +22,7 @@ wgeometry::wgeometry(){
 	n_isotopes   = 0;
 	fissile_flag = 0;
 	boundary_condition = 0;
+	datapath 	 = "NOTSET";
 }
 wgeometry::~wgeometry(){
 	//material destructor
@@ -311,6 +312,11 @@ int wgeometry::check(){
 		fissile_flag += materials[k].is_fissile;
 	}
 
+	// check that xsdir_path is set
+	if ( datapath.compare("NOTSET") ){
+		printf("DATAPATH NOT SET!\n");
+	}
+
 	std::cout << "They check out.\n";
 	return 0;
 
@@ -530,5 +536,11 @@ void wgeometry::delete_primitive(unsigned index){
 	}
 	primitives[index].~primitive();
 	n_primitives--;
+
+}
+
+void wgeometry::set_datapath(std::string path_in){
+
+	datapath = path_in;
 
 }

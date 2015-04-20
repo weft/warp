@@ -39,6 +39,9 @@ int main(int argc, char* argv[]){
 	unsigned prim_id    = 0;
 	wgeometry geom;
 
+	// set datapath
+	geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/acedata/");
+
 	if(assemblyname.compare(argv[1])==0){
 		//assembly mats
 		n_topes    = 4;

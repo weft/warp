@@ -24,7 +24,9 @@ class cross_section_data:
 		## isotope list
 		self.isotope_list     = []
 		## library temperature extension
-		self.temp_extension   = '.03c'
+		#self.temp_extension   = '.03c'
+		## data path
+		self.datapath  		= ''
 		## cross section tables
 		self.tables           = []
 		## cross section libraries
@@ -68,25 +70,26 @@ class cross_section_data:
 	# library list, then all of the libraries are read in. the material's number
 	# of isotopes is set to how many libraries were retrieved.
 	# @param[in] self - material to get cross sections for
-	def _read_tables(self):
+	def _read_tables(self, datapath_in):
 
-		datapath = '/usr/local/SERPENT/xsdata/endfb7/acedata/'
+		datapath = datapath_in
 		
 		for tope in self.isotope_list:
-			#tope_number = nucname.mcnp(tope)
-			#print tope
-			#print nucname.mcnp(tope)
-			#print glob.glob(datapath+str(tope_number)+'[A-Z]*[0-9]*.ace')
-			librarypath=glob.glob(datapath+str(tope)+'[A-Z]*[0-9]*.ace')[0]
+			librarypath=self._resolve_library(tope) 
 			self.libraries.append(ace.Library(librarypath))
 
 		for lib in self.libraries:
 			lib.read()
-			iname=lib.tables.keys()[0][0:-4]   #strip off temp to get isotope name
-			print "  loading "+iname+self.temp_extension
-			self.tables.append(lib.find_table(iname+self.temp_extension))
+			iname=lib.tables.keys()[0] #[0:-4]   #strip off temp to get isotope name
+			print "  loading "+iname
+			self.tables.append(lib.find_table(iname))
 
 		self.num_isotopes=self.libraries.__len__()
+	
+	def _resolve_library(self,tope):
+		#glob.glob(datapath+str(tope)+'[A-Z]*[0-9]*.ace')[0]
+		
+
 
 	##
 	# \brief unionization function
