@@ -1,5 +1,7 @@
 #ifndef DATADEF_H
 #define DATADEF_H
+#include <vector> 
+#include <string> 
 
 /**
  * \struct wtransform datadef.h
@@ -110,7 +112,7 @@ struct material_def {
     unsigned    is_fissile;   /**< fissile flag */
     unsigned    num_isotopes; /**< number of isotopes */
     float       density;      /**< density [g/cc] */
-    std::vector<std::string> *  isotopes;     /**< isotope list */
+    std::vector<std::string>   isotopes;     /**< isotope list */
     float    *  fractions;    /**< isotope fractions */
 };
 

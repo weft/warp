@@ -53,7 +53,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 
 	// compute the total macroscopic cross section for this material
 	for(int k=0; k<n_isotopes; k++){
-		number_desity = material_matrix[n_isotopes*this_mat+k]
+		number_desity = material_matrix[n_isotopes*this_mat+k];
 		if(number_desity > 0.0){
 			//lienarly interpolate
 			//printf("val % 6.4E\n",s_material_matrix[n_isotopes*this_mat + k]);
@@ -70,7 +70,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 
 	// determine the isotope which the reaction occurs
 	for(int k=0; k<n_isotopes; k++){
-		number_desity = material_matrix[n_isotopes*this_mat+k]
+		number_desity = material_matrix[n_isotopes*this_mat+k];
 		if(number_desity > 0.0){
 			//lienarly interpolate
 			t0 = xs_data_MT[n_columns* dex    + k];     
