@@ -4,6 +4,7 @@ import numpy
 import sys
 import glob
 import pylab
+import re
 
 ##
 #  \class cross_section_data
@@ -23,14 +24,12 @@ class cross_section_data:
 		self.num_isotopes     = 0
 		## isotope list
 		self.isotope_list     = []
-		## library temperature extension
-		#self.temp_extension   = '.03c'
 		## data path
-		self.datapath  		= ''
+		self.datapath         = ''
 		## cross section tables
 		self.tables           = []
 		## cross section libraries
-		self.libraries        = []
+		self.libraries        = {}
 		## AWR array
 		self.awr 	      = []
 		## Q-value array
@@ -72,23 +71,44 @@ class cross_section_data:
 	# @param[in] self - material to get cross sections for
 	def _read_tables(self, datapath_in):
 
-		datapath = datapath_in
-		
+		self.datapath = datapath_in
+		try:
+			f=open(self.datapath+'/xsdir','r')
+		except :
+			print "  unable to open '"+self.datapath+"/xsdir'!"
+			exit(0)
+
+		self.xsdirstring=f.read()
+		f.close()
+
+		self.num_isotopes = 0
+
+		#  make map of file -> isotope
 		for tope in self.isotope_list:
-			librarypath=self._resolve_library(tope) 
-			self.libraries.append(ace.Library(librarypath))
+			librarypath = self._resolve_library(tope) 
+			if librarypath in self.libraries:
+				self.libraries[librarypath].append(tope)
+			else:
+				self.libraries[librarypath]=[tope]
 
-		for lib in self.libraries:
+		# open the libraries, read all isotopes present in that library
+		for librarypath in self.libraries:
+			lib = ace.Library(librarypath)
 			lib.read()
-			iname=lib.tables.keys()[0] #[0:-4]   #strip off temp to get isotope name
-			print "  loading "+iname
-			self.tables.append(lib.find_table(iname))
+			for tope in self.libraries[librarypath]
+				print "  loading "+tope
+				self.tables.append(lib.find_table(tope))
+				self.num_isotopes=self.num_isotopes+1
 
-		self.num_isotopes=self.libraries.__len__()
 	
 	def _resolve_library(self,tope):
-		#glob.glob(datapath+str(tope)+'[A-Z]*[0-9]*.ace')[0]
-		
+		exp = re.compile(tope+" +[0-9.]+ +([a-zA-Z0-9/.+-]+)")
+		a = exp.search(self.xsdirstring)
+		if a:
+			return self.datapath+'/'+a.group(1)
+		else:
+			print " ERROR: nuclide '"+tope+"' not found in '"+self.datapath+"/xsdir'!"
+			exit(0)
 
 
 	##

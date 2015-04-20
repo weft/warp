@@ -105,7 +105,7 @@ public:
 	 * @param[in] isotopes - list of isotopes
 	 * @param[in] fractions - fractions of the constituent isotopes
 	 */ 
-	void add_material(unsigned , unsigned, unsigned , float, std::vector<unsigned> , std::vector<float> );
+	void add_material(unsigned , unsigned, unsigned , float, std::vector<std::string> , std::vector<float> );
 	/**
 	 * checks that all cells have unique IDs, checks that there are materials for
 	 * each number specified in the geometry, checks to make sure that the outer 
@@ -171,8 +171,8 @@ public:
 	void delete_transform(unsigned,unsigned);
 	std::vector<primitive>   	primitives; /**< primitives vector */
 	std::vector<material_def>	materials;  /**< materials vector */
-	std::vector<unsigned>		isotopes;   /**< isotopes vector */
-	std::string 			isotope_list; /**< isotope list */
+	std::vector<std::string>	isotopes;   /**< isotopes vector */
+	//std::string 			    isotope_list; /**< isotope list */
 	unsigned *	isotope_list_array; /**< isotope list array */
 	unsigned *	material_list_array; /**< material list array */
 	float * 	concentrations_matrix; /**< concentrations matrix */

@@ -45,13 +45,13 @@ int main(int argc, char* argv[]){
 	if(assemblyname.compare(argv[1])==0){
 		//assembly mats
 		n_topes    = 4;
-		std::vector<unsigned> 	topes      (n_topes);
-		std::vector<float> 		fracs_fuel (n_topes);
-		std::vector<float> 		fracs_water(n_topes);
-		topes[0] = 92235;
-		topes[1] = 92238;
-		topes[2] = 8016;
-		topes[3] = 1001;
+		std::vector<std::string> 	topes      (n_topes);
+		std::vector<float> 			fracs_fuel (n_topes);
+		std::vector<float> 			fracs_water(n_topes);
+		topes.push_back("92235.03c");
+		topes.push_back("92238.03c");
+		topes.push_back("8016.03c" );
+		topes.push_back("1001.03c" );
 		fracs_fuel[0] = 0.1;  
 		fracs_fuel[1] = 0.9;   
 		fracs_fuel[2] = 2;   
@@ -103,12 +103,12 @@ int main(int argc, char* argv[]){
 	else if(homfuelname.compare(argv[1])==0){
 		// homogenized UO2 
 		n_topes = 4;
-		std::vector<unsigned> topes (n_topes);
+		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs (n_topes);
-		topes[0]=92235,
-		topes[1]=92238;
-		topes[2]=8016;
-		topes[3]=1001;
+		topes.push_back("92235.03c");
+		topes.push_back("92238.03c");
+		topes.push_back("8016.03c" );
+		topes.push_back("1001.03c" );
 		fracs[0]=0.1;
 		fracs[1]=0.9;  
 		fracs[2]=3.0;  
@@ -140,10 +140,10 @@ int main(int argc, char* argv[]){
 	else if(godivaname.compare(argv[1])==0){
 		// godiva mats
 		n_topes = 1;
-		std::vector<unsigned> topes (n_topes);
+		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs (n_topes);
 
-		topes[0] = 94239;
+		topes.push_back("94239.03c");
 		fracs[0] = 1;      
 		float    dens = 19.816;
 		geom.add_material(1,1,n_topes,dens,topes,fracs);
@@ -173,13 +173,13 @@ int main(int argc, char* argv[]){
 	else if(pincellname.compare(argv[1])==0){
 		// pincell mats
 		n_topes = 4;
-		std::vector<unsigned> topes (n_topes);
+		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
-		topes[0]=92235,
-		topes[1]=92238;
-		topes[2]=8016;
-		topes[3]=1001;
+		topes.push_back("92235.03c");
+		topes.push_back("92238.03c");
+		topes.push_back("8016.03c" );
+		topes.push_back("1001.03c" );
 		fracs_fuel[0] = 0.1;  
 		fracs_fuel[1] = 0.9;   
 		fracs_fuel[2] = 2;   
@@ -232,13 +232,13 @@ int main(int argc, char* argv[]){
 	else if(pincellname2.compare(argv[1])==0){
 		// pincell mats
 		n_topes = 4;
-		std::vector<unsigned> topes (n_topes);
+		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
-		topes[0]=92235,
-		topes[1]=92238;
-		topes[2]=8016;
-		topes[3]=1001;
+		topes.push_back("92235.03c");
+		topes.push_back("92238.03c");
+		topes.push_back("8016.03c" );
+		topes.push_back("1001.03c" );
 		fracs_fuel[0] = 0.1;  
 		fracs_fuel[1] = 0.9;   
 		fracs_fuel[2] = 2;   

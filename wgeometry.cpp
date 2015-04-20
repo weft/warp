@@ -84,7 +84,7 @@ void wgeometry::update(){
 	unsigned this_mat  = 0;
 	unsigned n_topes   = 0;
 	unsigned this_tope = 0;
-	std::vector<unsigned>  all_isotopes;
+	std::vector<std::sring>  all_isotopes;
 	for(this_mat=0 ; this_mat<n_materials ; this_mat++){
 		n_topes = materials[this_mat].num_isotopes;
 		for(unsigned k=0;k<n_topes;k++){
@@ -98,7 +98,7 @@ void wgeometry::update(){
 	for(unsigned k=0;k<all_isotopes.size();k++){
 		notfound=1;
 		for(unsigned j=0;j<isotopes.size();j++){
-			if(isotopes[j]==all_isotopes[k])
+			if(!isotopes[j].compare(all_isotopes[k]))
 				notfound=0; 
 		}
 		if(notfound){
@@ -108,14 +108,14 @@ void wgeometry::update(){
 	n_isotopes = isotopes.size();
 
 	//make string from isotope table
-	char numstr[16];
-	for(unsigned k =0;k<n_isotopes;k++){
-		sprintf(numstr,"%u",isotopes[k]);
-		isotope_list += numstr;
-		if(k<n_isotopes-1){
-			isotope_list += ",";
-		}
-	}
+	//char numstr[16];
+	//for(unsigned k =0;k<n_isotopes;k++){
+	//	sprintf(numstr,"%u",isotopes[k]);
+	//	isotope_list += numstr;
+	//	if(k<n_isotopes-1){
+	//		isotope_list += ",";
+	//	}
+	//}
 
 }
 void wgeometry::print_summary(){
@@ -213,7 +213,7 @@ unsigned wgeometry::get_maximum_cell(){
 	}
 	return maxcell;
 }
-void wgeometry::add_material(unsigned matnum, unsigned is_fissile, unsigned num_topes, float density, std::vector<unsigned> isotopes, std::vector<float> fractions){
+void wgeometry::add_material(unsigned matnum, unsigned is_fissile, unsigned num_topes, float density, std::vector<std::string> isotopes, std::vector<float> fractions){
 	
 	// get current material index
 	unsigned dex = materials.size(); 
@@ -221,15 +221,14 @@ void wgeometry::add_material(unsigned matnum, unsigned is_fissile, unsigned num_
 	material_def this_material_def;
 
 	this_material_def.fractions = new float    [num_topes];
-	this_material_def.isotopes  = new unsigned [num_topes];
 
 	this_material_def.num_isotopes  = num_topes;
 	this_material_def.matnum        = matnum;
-	this_material_def.id 		= dex;
+	this_material_def.id            = dex;
 	this_material_def.density       = density;
 	this_material_def.is_fissile    = is_fissile;
 	for (unsigned i=0; i<num_topes;i++){
-		this_material_def.isotopes[i] = isotopes[i];
+		this_material_def.push_back(isotopes[i]);
 		this_material_def.fractions[i] = fractions[i];
 	}
 
@@ -351,9 +350,7 @@ unsigned wgeometry::get_material_count(){
 	return n_materials;
 }
 unsigned wgeometry::check_fissile(){
-
 	return fissile_flag;
-
 }
 void wgeometry::make_material_table(){
 
