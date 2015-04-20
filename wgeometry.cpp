@@ -374,7 +374,7 @@ void wgeometry::make_material_table(){
 			notfound=1;
 			//scan the material object to see if the isotope is there
 			for(z=0;z<materials[j].num_isotopes;z++){
-				if(!materials[j].isotopes[z].compare(isotope_list_array[k])){
+				if(! materials[j].isotopes[z].compare(isotopes[k])){
 					notfound=0;
 					break;
 				}
