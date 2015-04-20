@@ -73,9 +73,17 @@ class cross_section_data:
 
 		self.datapath = datapath_in
 		try:
-			f=open(self.datapath+'/xsdir','r')
+			if re.match('xsdir',self.datapath):   #path is a xsdir file, don't append xsdir
+				f=open(self.datapath,'r')
+				firstline=f.readline()
+				match = re.search('(/[a-zA-Z0-9/_.+-]+)',firstline)  #datapath is specified, use it.
+				if match:
+					print "-> USING DATAPATH '"+match.group(1)+"'' as specified in '"+self.datapath+"'"
+					self.datapath=match.group(1)
+			else:
+				f=open(self.datapath+'/xsdir','r')
 		except :
-			print "  unable to open '"+self.datapath+"/xsdir'!"
+			print "  unable to open '"+self.datapath+"[/xsdir]'!"
 			exit(0)
 
 		self.xsdirstring=f.read()
@@ -102,9 +110,10 @@ class cross_section_data:
 
 	
 	def _resolve_library(self,tope):
-		exp = re.compile(tope+" +[0-9.]+ +([a-zA-Z0-9/.+-]+)")
+		exp = re.compile(tope+" +[0-9. a-z]+ ([a-zA-Z0-9/_.+-]+)")
 		a = exp.search(self.xsdirstring)
 		if a:
+
 			return self.datapath+'/'+a.group(1)
 		else:
 			print " ERROR: nuclide '"+tope+"' not found in '"+self.datapath+"/xsdir'!"
