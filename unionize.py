@@ -76,14 +76,18 @@ class cross_section_data:
 			if re.search('xsdir',self.datapath):   #path is a xsdir file, don't append xsdir
 				f=open(self.datapath,'r')
 				firstline=f.readline()
-				match = re.search('(/[a-zA-Z0-9/_.+-]+)',firstline)  #datapath is specified, use it.
+				match = re.match('(datapath=)*(/[a-zA-Z0-9/_.+-]+)',firstline,re.IGNORECASE)  #datapath is specified, use it.
 				if match:
-					print "-> USING DATAPATH '"+match.group(1)+"'' as specified in '"+self.datapath+"'"
-					self.datapath=match.group(1)
+					print "-> USING DATAPATH '"+match.group(2)+"' as specified in '"+self.datapath+"'."
+					self.datapath=match.group(2)
+				else:
+					print "-> NO DATAPATH specified in '"+self.datapath+"', assuming full path specified."
+					self.datapath=''
 			else:
 				f=open(self.datapath+'/xsdir','r')
+				print "-> using xsdir in '"+self.datapath+"'."
 		except :
-			print "  unable to open '"+self.datapath+"[/xsdir]'!"
+			print "!  unable to open '"+self.datapath+"[/xsdir]'!"
 			exit(0)
 
 		self.xsdirstring=f.read()
