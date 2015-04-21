@@ -48,10 +48,10 @@ int main(int argc, char* argv[]){
 		std::vector<std::string> 	topes      (n_topes);
 		std::vector<float> 			fracs_fuel (n_topes);
 		std::vector<float> 			fracs_water(n_topes);
-		topes.push_back("92235.03c");
-		topes.push_back("92238.03c");
-		topes.push_back("8016.03c" );
-		topes.push_back("1001.03c" );
+		topes[0] = "92235.03c";
+		topes[1] = "92238.03c";
+		topes[2] = "8016.03c" ;
+		topes[3] = "1001.03c" ;
 		fracs_fuel[0] = 0.1;  
 		fracs_fuel[1] = 0.9;   
 		fracs_fuel[2] = 2;   
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]){
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs (n_topes);
 
-		topes.push_back("94239.03c");
+		topes[0] = "94239.03c";
 		fracs[0] = 1;      
 		float    dens = 19.816;
 		geom.add_material(1,1,n_topes,dens,topes,fracs);
@@ -176,10 +176,10 @@ int main(int argc, char* argv[]){
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
-		topes.push_back("92235.03c");
-		topes.push_back("92238.03c");
-		topes.push_back("8016.03c" );
-		topes.push_back("1001.03c" );
+		topes[0]="92235.03c";
+		topes[1]="92238.03c";
+		topes[2]="8016.03c" ;
+		topes[3]="1001.03c" ;
 		fracs_fuel[0] = 0.1;  
 		fracs_fuel[1] = 0.9;   
 		fracs_fuel[2] = 2;   
@@ -235,10 +235,10 @@ int main(int argc, char* argv[]){
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
-		topes.push_back("92235.03c");
-		topes.push_back("92238.03c");
-		topes.push_back("8016.03c" );
-		topes.push_back("1001.03c" );
+		topes[0] = "92235.03c";
+		topes[1] = "92238.03c";
+		topes[2] = "8016.03c" ;
+		topes[3] = "1001.03c" ;
 		fracs_fuel[0] = 0.1;  
 		fracs_fuel[1] = 0.9;   
 		fracs_fuel[2] = 2;   
