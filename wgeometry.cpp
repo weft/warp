@@ -312,7 +312,7 @@ int wgeometry::check(){
 	}
 
 	// check that xsdir_path is set
-	if ( datapath.compare("NOTSET") ){
+	if ( !datapath.compare("NOTSET") ){
 		printf("DATAPATH NOT SET!\n");
 	}
 
@@ -448,17 +448,17 @@ void wgeometry::print_materials_table(){
 	for(unsigned j=0;j<n_materials;j++){
 
 		assert(j==materials[j].id);
-		std::cout <<  "material index " << j << " = material " << material_list_array[j] << "\n";
+		std::cout <<  "material index " << j << " = material " << materials[j].id << "\n";
 		std::cout <<  " (isotope index, ZZZAAA) \n";
 		std::cout <<  " (number density #/bn-cm) \n";
 		
 		for(unsigned k=0;k<n_isotopes;k++){
 
 			if (k==n_isotopes-1){
-				std::cout << "( "<< k << " , "<< isotope_list_array[k] << " ) \n";
+				std::cout << "( "<< k << " , "<< materials[j].isotopes[k] << " ) \n";
 			}
 			else{
-				std::cout << "  ( "<< k << " , "<< isotope_list_array[k] << " )     ";
+				std::cout << "  ( "<< k << " , "<< materials[j].isotopes[k] << " )     ";
 			}
 		}
 

@@ -146,7 +146,7 @@ class whistory {
 	unsigned*         edges; /**< mapped array of edges */
 	unsigned*       d_edges; /**< device mapped array of edges */
 	// xs data parameters
-	std::string xs_isotope_string; /**< cross section isotope string */
+	std::vector<std::string> isotopes; /**< cross section isotope string */
 	std::vector<unsigned> 	xs_num_rxns;     /**< cross section number of reactions */
 	std::vector<unsigned> 	xs_isotope_ints; /**< cross section isotope numbers */
 	unsigned 		total_bytes_scatter; /**< total size of scattering data */

@@ -137,7 +137,9 @@ void whistory::init(){
 	memcpy(outer_cell_dims,optix_obj.outer_cell_dims,6*sizeof(float));
 	outer_cell = optix_obj.get_outer_cell();
 	outer_cell_type = optix_obj.get_outer_cell_type();
-	xs_isotope_string = problem_geom.isotope_list;
+	isotopes = problem_geom.isotopes;
+	n_isotopes = problem_geom.n_isotopes;
+	n_materials = problem_geom.n_materials;
 	//  map edge array
 	n_edges = 11;
 	cudaHostAlloc(&edges,n_edges*sizeof(unsigned),cudaHostAllocMapped);
@@ -524,15 +526,15 @@ void whistory::load_cross_sections(){
 	}
 
 	// set the string, make ints list
-	std::istringstream ss(xs_isotope_string);
-	std::string token;
-	unsigned utoken;
+	//std::istringstream ss(xs_isotope_string);
+	//std::string token;
+	//unsigned utoken;
 	unsigned bytes,rows,columns;
 
-	while(std::getline(ss, token, ',')) {
-		utoken = std::atoi(token.c_str());
-    		xs_isotope_ints.push_back(utoken);
-	}
+	//while(std::getline(ss, token, ',')) {
+	//	utoken = std::atoi(token.c_str());
+   // 		xs_isotope_ints.push_back(utoken);
+	//}
 
 	// get data from python
 	/* 	 need to do
@@ -584,14 +586,16 @@ void whistory::load_cross_sections(){
     	if (xsdat_instance != NULL) {
 
 		// init the libraries wanted
-		char tope_string_c[256];
-		call_string = PyString_FromString("_init_from_string");
-		arg_string  = PyString_FromString(xs_isotope_string.c_str());
-		call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, arg_string, NULL);
-		PyErr_Print();
-		Py_DECREF(arg_string);
-		Py_DECREF(call_string);
-		Py_DECREF(call_result);
+		//char tope_string_c[256];
+    	for (int i=0; i<n_isotopes; i++){
+			call_string = PyString_FromString("_add_isotope");
+			arg_string  = PyString_FromString(isotopes[i].c_str());
+			call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, arg_string, NULL);
+			PyErr_Print();
+			Py_DECREF(arg_string);
+			Py_DECREF(call_string);
+			Py_DECREF(call_result);
+		}
 	
 		// read the tables
 		call_string = PyString_FromString("_read_tables");

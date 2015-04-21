@@ -62,7 +62,6 @@ class cross_section_data:
 	# @param[in] isotope - isotope to be appended
 	def _add_isotope(self,  isotope):
 		self.isotope_list.append(isotope)
-
 	##
 	# \brief reads in cross section tables
 	# \details for each isotope in the material, the acefile is appended to the 
@@ -108,7 +107,7 @@ class cross_section_data:
 			lib = ace.Library(librarypath)
 			lib.read()
 			for tope in self.libraries[librarypath]:
-				print "  loading "+tope
+				print "  loading "+tope+' from '+librarypath
 				self.tables.append(lib.find_table(tope))
 				self.num_isotopes=self.num_isotopes+1
 
@@ -117,7 +116,6 @@ class cross_section_data:
 		exp = re.compile(tope+" +[0-9. a-z]+ ([a-zA-Z0-9/_.+-]+)")
 		a = exp.search(self.xsdirstring)
 		if a:
-
 			return self.datapath+'/'+a.group(1)
 		else:
 			print " ERROR: nuclide '"+tope+"' not found in '"+self.datapath+"/xsdir'!"

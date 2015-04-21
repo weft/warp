@@ -40,7 +40,7 @@ int main(int argc, char* argv[]){
 	wgeometry geom;
 
 	// set datapath
-	geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/acedata/");
+	geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
 
 	if(assemblyname.compare(argv[1])==0){
 		//assembly mats
@@ -105,10 +105,10 @@ int main(int argc, char* argv[]){
 		n_topes = 4;
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs (n_topes);
-		topes.push_back("92235.03c");
-		topes.push_back("92238.03c");
-		topes.push_back("8016.03c" );
-		topes.push_back("1001.03c" );
+		topes[0] = "92235.03c";
+		topes[1] = "92238.03c";
+		topes[2] = "8016.03c" ;
+		topes[3] = "1001.03c" ;
 		fracs[0]=0.1;
 		fracs[1]=0.9;  
 		fracs[2]=3.0;  
