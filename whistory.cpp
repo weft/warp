@@ -859,7 +859,7 @@ void whistory::load_cross_sections(){
 	cudaMalloc(&d_temp_list,bytes);
 	// release python variable to free memory
 	Py_DECREF(call_result);
-	
+
 
 	// Q vector
 	call_string = PyString_FromString("_get_Q_pointer");
@@ -1391,7 +1391,14 @@ void whistory::trace(unsigned type, unsigned n_active){
 }
 void whistory::print_materials_table(){
 
+	// print materials
 	problem_geom.print_materials_table();
+
+	//print temperatures:
+	printf("  --------------   \n");
+	for (int i=0; i<n_isotopes;i++){
+		printf("  Isotope %3d = %10s , temp: %7.2F K\n",i,isotopes[i].c_str(),temp_list[i]/8.617332478e-11);
+	}
 
 }
 void whistory::sample_fissile_points(){
