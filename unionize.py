@@ -71,20 +71,22 @@ class cross_section_data:
 	def _read_tables(self, datapath_in):
 
 		self.datapath = datapath_in
+
+		print "  ----------- data paths ------------ "
 		try:
 			if re.search('xsdir',self.datapath):   #path is a xsdir file, don't append xsdir
 				f=open(self.datapath,'r')
 				firstline=f.readline()
 				match = re.match('(datapath=)*(/[a-zA-Z0-9/_.+-]+)',firstline,re.IGNORECASE)  #datapath is specified, use it.
 				if match:
-					print "-> USING DATAPATH '"+match.group(2)+"' as specified in '"+self.datapath+"'."
+					print "  USING DATAPATH '"+match.group(2)+"' as specified in '"+self.datapath+"'."
 					self.datapath=match.group(2)
 				else:
-					print "-> NO DATAPATH specified in '"+self.datapath+"', assuming full path specified."
+					print "  NO DATAPATH specified in '"+self.datapath+"', assuming full path specified."
 					self.datapath=''
 			else:
 				f=open(self.datapath+'/xsdir','r')
-				print "-> using xsdir in '"+self.datapath+"'."
+				print "  using xsdir in '"+self.datapath+"'."
 		except :
 			print "!  unable to open '"+self.datapath+"[/xsdir]'!"
 			exit(0)
@@ -103,13 +105,21 @@ class cross_section_data:
 				self.libraries[librarypath]=[tope]
 
 		# open the libraries, read all isotopes present in that library
+		print "  ---------  loading data  ---------- "
+		lib={}
 		for librarypath in self.libraries:
-			lib = ace.Library(librarypath)
-			lib.read()
-			for tope in self.libraries[librarypath]:
-				print "  loading "+tope+' from '+librarypath
-				self.tables.append(lib.find_table(tope))
-				self.num_isotopes=self.num_isotopes+1
+			print "  loading "+librarypath
+			lib[librarypath] = ace.Library(librarypath)
+			lib[librarypath].read()
+
+		print "  --------- extracting data --------- "
+
+		# preserve list order!
+		for tope in self.isotope_list:
+			librarypath = self._resolve_library(tope)
+			print "  extracting "+tope+' from '+librarypath
+			self.tables.append(lib[librarypath].find_table(tope))
+			self.num_isotopes=self.num_isotopes+1
 
 	
 	def _resolve_library(self,tope):
@@ -233,6 +243,7 @@ class cross_section_data:
 				MT_num_array[n] = MT_num_array[n]+800
 			elif MT_num_array[n] > 100:
 				MT_num_array[n] = MT_num_array[n]+1000
+		print "  ----- MT reaction number list ----- "
 		print MT_num_array
 		return MT_num_array
 
