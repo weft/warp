@@ -471,6 +471,7 @@ void whistory::copy_data_to_device(){
     cudaMemcpy( d_xs_data_MT,	     xs_data_MT,	    MT_rows*MT_columns *sizeof(float), 				  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_xs_data_main_E_grid,   xs_data_main_E_grid,   xs_length_numbers[1]*sizeof(float),				  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_awr_list, 	     awr_list,   	    xs_length_numbers[0]*sizeof(float),				  cudaMemcpyHostToDevice );
+	cudaMemcpy( d_temp_list, 	     temp_list,   	    xs_length_numbers[0]*sizeof(float),				  cudaMemcpyHostToDevice );
 	//cudaMemcpy( d_material_list,         material_list,         n_materials*sizeof(unsigned), 				  cudaMemcpyHostToDevice );
 	//cudaMemcpy( d_isotope_list,          isotope_list,          xs_length_numbers[0]*sizeof(unsigned), 			  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_number_density_matrix, number_density_matrix, n_materials*xs_length_numbers[0]*sizeof(float),    		  cudaMemcpyHostToDevice );
@@ -826,6 +827,39 @@ void whistory::load_cross_sections(){
 	cudaMalloc(&d_awr_list,bytes);
 	// release python variable to free memory
 	Py_DECREF(call_result);
+
+
+	// TEMP vector
+	call_string = PyString_FromString("_get_temp_pointer");
+	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
+	Py_DECREF(call_string);
+	if (PyObject_CheckBuffer(call_result)){
+		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
+	}
+	else{
+		PyErr_Print();
+	    fprintf(stderr, "Returned object does not support buffer interface\n");
+	    return;
+	}
+
+	//
+	// get and copy AWR vector
+	//
+	rows    = pBuff.shape[0];
+	columns = pBuff.shape[1];
+	bytes   = pBuff.len;
+	//std::cout << "lengths " << rows << " " << columns << " " << bytes << "\n";
+	// allocate xs_data pointer arrays
+	temp_list     = new float  [rows];
+	// check to make sure bytes *= elements
+	assert(bytes==rows*4);
+	// copy python buffer contents to pointer
+	memcpy( temp_list,   pBuff.buf , bytes );
+	// cudaallocate device memory now that we know the size!
+	cudaMalloc(&d_temp_list,bytes);
+	// release python variable to free memory
+	Py_DECREF(call_result);
+	
 
 	// Q vector
 	call_string = PyString_FromString("_get_Q_pointer");
@@ -1687,7 +1721,7 @@ void whistory::run(){
 
 			// concurrent calls to do escatter/iscatter/abs/fission
 			cudaThreadSynchronize();cudaDeviceSynchronize();
-			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_done, d_xs_data_scatter);
+			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
 			iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
 			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
 			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  

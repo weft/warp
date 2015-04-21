@@ -76,6 +76,7 @@ class whistory {
 	float *         Q; /**< Q-value */
 	unsigned *	rn_bank; /**< reaction bank */ 
 	float * 	awr_list; /**< atomic weight ratio (AWR) list */
+	float * 	temp_list; /**< isotope temperature list */
 	float *          tally_score;        /**< tally score */
 	float *          tally_square;       /**< tally square */
 	unsigned *       tally_count;        /**< tally count */
@@ -113,6 +114,7 @@ class whistory {
 	float *         d_Q; /**< device Q-value */
 	unsigned *      d_rn_bank; /**< device reaction bank */
 	float * 	d_awr_list; /**< device AWR list */
+	float * 	d_temp_list; /**< device isotope temperature list */
 	float * 	d_tally_score; /**< device tally score */
 	float *         d_tally_square; /**< device tally square */
 	unsigned * 	d_tally_count; /**< device tally count */

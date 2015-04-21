@@ -32,6 +32,8 @@ class cross_section_data:
 		self.libraries        = {}
 		## AWR array
 		self.awr 	      = []
+		## temp array
+		self.temp 	      = []
 		## Q-value array
 		self.Q 		      = []
 		## main energy
@@ -166,6 +168,8 @@ class cross_section_data:
 			self.Q.append(0)
 			#append this topes AWR
 			self.awr.append(table.awr)
+			#append this topes temp
+			self.temp.append(table.temp)
 			#append totals
 			self.reaction_numbers_total.append(table.reactions.__len__())
 
@@ -254,6 +258,14 @@ class cross_section_data:
 	def _get_awr_pointer(self):
 		awr_array = numpy.ascontiguousarray(numpy.array(self.awr,order='C'),dtype=numpy.float32)
 		return awr_array
+
+	##
+	# \brief gets pointer to temperature values
+	# @param[in] - material
+	# \returns temp_array - array of temperature values
+	def _get_temp_pointer(self):
+		temp_array = numpy.ascontiguousarray(numpy.array(self.temp,order='C'),dtype=numpy.float32)
+		return temp_array
 
 	##
 	# \brief gets pointer to Q-values
