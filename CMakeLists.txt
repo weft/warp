@@ -14,7 +14,7 @@ find_package(CUDA QUIET REQUIRED)
 include_directories("${CUDA_TOOLKIT_INCLUDE}")
 include_directories("${CUDA_INCLUDE_DIRS}")
 
-set(OptiX_ROOT_DIR "/usr/local/OptiX-3.0.1")
+set(OptiX_ROOT_DIR CACHE PATH "Root directory of OptiX")
 
 FIND_PATH(OptiX_INCLUDE_DIR optix.h
    ${OptiX_ROOT_DIR}/include
@@ -50,7 +50,7 @@ include_directories(${OptiX_INCLUDE_DIR})
 set(CUDA_64_BIT_DEVICE_CODE ON)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20; --use_fast_math; --compiler-options '-fPIC')
 
-#set (CUDPP_ROOT_DIR "/home/krowland/cudpp-2.1")
+set (CUDPP_ROOT_DIR CACHE PATH "Root directory for CUDPP")
 #http://suren.me/webbzr/normxcorr/trunk/annotate/27/dict_hw/cmake/FindCUDPP.cmake?remember=7
 FIND_PATH(CUDPP_INCLUDE_DIR cudpp.h
    ${CUDPP_ROOT_DIR}/cudpp/include
@@ -98,6 +98,15 @@ SET(libs ${libs} ${PYTHON_LIBRARIES})
 
 find_package(PNG REQUIRED)
 SET(libs ${libs} ${PNG_LIBRARY})
+
+#mac stuff
+IF(APPLE)
+ SET(CMAKE_OSX_VERSION "10.7" CACHE STRING "OSX Version number")
+ include_directories("/usr/local/include")
+ SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=${CMAKE_OSX_VERSION}")
+ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=${CMAKE_OSX_VERSION}")
+ SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options '-mmacosx-version-min=${CMAKE_OSX_VERSION}'")
+ENDIF(APPLE)
 
 cuda_compile_ptx(camera camera.cu)
 cuda_compile_ptx(hits hits.cu)

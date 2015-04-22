@@ -22,6 +22,7 @@ public:
 	unsigned	boundary_condition; /**<  flag for the cell's boundary condition */
 	unsigned * 	material_num_list; /**<  list of material numbers */
 	unsigned * 	cell_num_list; /**<  list of cell numbers */
+	std::string datapath; /**< path to xsdir and data */
 	/**
 	 *  wgeometry constructor
 	 */ 
@@ -104,7 +105,7 @@ public:
 	 * @param[in] isotopes - list of isotopes
 	 * @param[in] fractions - fractions of the constituent isotopes
 	 */ 
-	void add_material(unsigned , unsigned, unsigned , float, std::vector<unsigned> , std::vector<float> );
+	void add_material(unsigned , unsigned, unsigned , float, std::vector<std::string> , std::vector<float> );
 	/**
 	 * checks that all cells have unique IDs, checks that there are materials for
 	 * each number specified in the geometry, checks to make sure that the outer 
@@ -144,7 +145,8 @@ public:
 	 * @param[in] isotope_list_in - list of input isotopes
 	 * @param[in] conc_mat_in - input concentration matrix
 	 */
-	void get_material_table(unsigned*,unsigned*,unsigned**,unsigned**,float**);
+	//void get_material_table(unsigned*,unsigned*,unsigned**,unsigned**,float**);
+	void get_material_table(unsigned*,unsigned*,float**);
 	/**
 	 * prints out all materials, including each material's constituent isotopes 
 	 * and their number densities.
@@ -155,6 +157,12 @@ public:
 	 *
 	 * \returns fissile_flag
 	 */
+	void set_datapath(std::string);
+	/**
+	 * sets the data path
+	 *
+	 * \returns void
+	 */	
 	unsigned check_fissile();
 	unsigned add_transform(unsigned);
 	unsigned add_transform(unsigned, unsigned, float, float, float, float, float);
@@ -164,8 +172,8 @@ public:
 	void delete_transform(unsigned,unsigned);
 	std::vector<primitive>   	primitives; /**< primitives vector */
 	std::vector<material_def>	materials;  /**< materials vector */
-	std::vector<unsigned>		isotopes;   /**< isotopes vector */
-	std::string 			isotope_list; /**< isotope list */
+	std::vector<std::string>	isotopes;   /**< isotopes vector */
+	std::string 			    isotope_list; /**< isotope list */
 	unsigned *	isotope_list_array; /**< isotope list array */
 	unsigned *	material_list_array; /**< material list array */
 	float * 	concentrations_matrix; /**< concentrations matrix */

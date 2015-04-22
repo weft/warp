@@ -76,6 +76,7 @@ class whistory {
 	float *         Q; /**< Q-value */
 	unsigned *	rn_bank; /**< reaction bank */ 
 	float * 	awr_list; /**< atomic weight ratio (AWR) list */
+	float * 	temp_list; /**< isotope temperature list */
 	float *          tally_score;        /**< tally score */
 	float *          tally_square;       /**< tally square */
 	unsigned *       tally_count;        /**< tally count */
@@ -90,8 +91,8 @@ class whistory {
 	unsigned *      rxn; /**< reaction */
 	unsigned *      done; /**< done flag */
 	unsigned *      yield; /**< yield */
-	unsigned * 	material_list; /**< material list */
-	unsigned * 	isotope_list; /**< isotope list */
+	//unsigned * 	material_list; /**< material list */
+	//unsigned * 	isotope_list; /**< isotope list */
 	float *  	number_density_matrix; /**< isotope number density matrix */
 	unsigned 	reduced_yields; /**< reduced yields */
 	unsigned * 	remap; /**< remap */
@@ -113,6 +114,7 @@ class whistory {
 	float *         d_Q; /**< device Q-value */
 	unsigned *      d_rn_bank; /**< device reaction bank */
 	float * 	d_awr_list; /**< device AWR list */
+	float * 	d_temp_list; /**< device isotope temperature list */
 	float * 	d_tally_score; /**< device tally score */
 	float *         d_tally_square; /**< device tally square */
 	unsigned * 	d_tally_count; /**< device tally count */
@@ -146,7 +148,7 @@ class whistory {
 	unsigned*         edges; /**< mapped array of edges */
 	unsigned*       d_edges; /**< device mapped array of edges */
 	// xs data parameters
-	std::string xs_isotope_string; /**< cross section isotope string */
+	std::vector<std::string> isotopes; /**< cross section isotope string */
 	std::vector<unsigned> 	xs_num_rxns;     /**< cross section number of reactions */
 	std::vector<unsigned> 	xs_isotope_ints; /**< cross section isotope numbers */
 	unsigned 		total_bytes_scatter; /**< total size of scattering data */

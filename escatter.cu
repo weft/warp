@@ -14,7 +14,7 @@ inline __device__ void sample_therm(unsigned* rn, float* muout, float* vt, const
 	float mu,c,beta_vn,beta_vt,beta_vt_sq,r1,r2,alpha,accept_prob;
 	unsigned n;
 
-	beta_vn = sqrtf(awr * 1.00866491600 * E0 / (temp*k) );
+	beta_vn = sqrtf(awr * 1.00866491600 * E0 /  temp ); 
 	alpha = 1.0/(1.0 + sqrtf(pi)*beta_vn/2.0);
 	
 	for(n=0;n<100;n++){
@@ -39,13 +39,13 @@ inline __device__ void sample_therm(unsigned* rn, float* muout, float* vt, const
 		if ( get_rand(rn) < accept_prob){break;}
 	}
 
-	vt[0] = sqrtf(beta_vt_sq*2.0*k*temp/(awr*1.00866491600));
+	vt[0] = sqrtf(beta_vt_sq*2.0*temp/(awr*1.00866491600));
 	muout[0] = mu;
 	//printf("%6.4E %6.4E\n",vt[0],mu);
 
 }
 
-__global__ void escatter_kernel(unsigned N, unsigned starting_index, unsigned* remap, unsigned* isonum, unsigned * index, unsigned * rn_bank, float * E, source_point * space, unsigned * rxn, float * awr_list, unsigned* done, float** scatterdat){
+__global__ void escatter_kernel(unsigned N, unsigned starting_index, unsigned* remap, unsigned* isonum, unsigned * index, unsigned * rn_bank, float * E, source_point * space, unsigned * rxn, float * awr_list, float * temp_list, unsigned* done, float** scatterdat){
 
 
 	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
@@ -61,7 +61,6 @@ __global__ void escatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	const float  pi           =   3.14159265359 ;
 	const float  m_n          =   1.00866491600 ; // u
 	//const float  kb			  =   8.617332478e-11; //MeV/k
-	const float  temp         =   300;    // K
 	const float  E_cutoff     =   1e-11;
 	const float  E_max        =   20.0; //MeV
 	// load history data
@@ -71,6 +70,7 @@ __global__ void escatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	//float 		this_Q 		= 0.0;
 	wfloat3 	hats_old(space[tid].xhat,space[tid].yhat,space[tid].zhat);
 	float 		this_awr	= awr_list[this_tope];
+	float  		temp        = temp_list[this_tope];    // MeV!
 	float * 	this_Sarray = scatterdat[this_dex];
 	unsigned	rn 			= rn_bank[tid];
 
@@ -184,12 +184,12 @@ __global__ void escatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 
 }
 
-void escatter( cudaStream_t stream, unsigned NUM_THREADS, unsigned N, unsigned starting_index, unsigned* remap, unsigned* isonum, unsigned * index, unsigned * rn_bank, float * E, source_point * space ,unsigned * rxn, float* awr_list, unsigned* done, float** scatterdat){
+void escatter( cudaStream_t stream, unsigned NUM_THREADS, unsigned N, unsigned starting_index, unsigned* remap, unsigned* isonum, unsigned * index, unsigned * rn_bank, float * E, source_point * space ,unsigned * rxn, float* awr_list, float * temp_list, unsigned* done, float** scatterdat){
 
 	if(N<1){return;}
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	escatter_kernel <<< blks, NUM_THREADS , 0 , stream >>> (  N, starting_index, remap, isonum, index, rn_bank, E, space, rxn, awr_list, done, scatterdat);
+	escatter_kernel <<< blks, NUM_THREADS , 0 , stream >>> (  N, starting_index, remap, isonum, index, rn_bank, E, space, rxn, awr_list, temp_list, done, scatterdat);
 	cudaThreadSynchronize();
 
 }
