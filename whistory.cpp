@@ -137,7 +137,9 @@ void whistory::init(){
 	memcpy(outer_cell_dims,optix_obj.outer_cell_dims,6*sizeof(float));
 	outer_cell = optix_obj.get_outer_cell();
 	outer_cell_type = optix_obj.get_outer_cell_type();
-	xs_isotope_string = problem_geom.isotope_list;
+	isotopes = problem_geom.isotopes;
+	n_isotopes = problem_geom.n_isotopes;
+	n_materials = problem_geom.n_materials;
 	//  map edge array
 	n_edges = 11;
 	cudaHostAlloc(&edges,n_edges*sizeof(unsigned),cudaHostAllocMapped);
@@ -469,8 +471,9 @@ void whistory::copy_data_to_device(){
     cudaMemcpy( d_xs_data_MT,	     xs_data_MT,	    MT_rows*MT_columns *sizeof(float), 				  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_xs_data_main_E_grid,   xs_data_main_E_grid,   xs_length_numbers[1]*sizeof(float),				  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_awr_list, 	     awr_list,   	    xs_length_numbers[0]*sizeof(float),				  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_material_list,         material_list,         n_materials*sizeof(unsigned), 				  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_isotope_list,          isotope_list,          xs_length_numbers[0]*sizeof(unsigned), 			  cudaMemcpyHostToDevice );
+	cudaMemcpy( d_temp_list, 	     temp_list,   	    xs_length_numbers[0]*sizeof(float),				  cudaMemcpyHostToDevice );
+	//cudaMemcpy( d_material_list,         material_list,         n_materials*sizeof(unsigned), 				  cudaMemcpyHostToDevice );
+	//cudaMemcpy( d_isotope_list,          isotope_list,          xs_length_numbers[0]*sizeof(unsigned), 			  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_number_density_matrix, number_density_matrix, n_materials*xs_length_numbers[0]*sizeof(float),    		  cudaMemcpyHostToDevice );
 	cudaMemcpy( d_xs_data_Q,	     xs_data_Q, 	    (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(float),    cudaMemcpyHostToDevice );
 	if(print_flag >= 2){
@@ -524,15 +527,15 @@ void whistory::load_cross_sections(){
 	}
 
 	// set the string, make ints list
-	std::istringstream ss(xs_isotope_string);
-	std::string token;
-	unsigned utoken;
+	//std::istringstream ss(xs_isotope_string);
+	//std::string token;
+	//unsigned utoken;
 	unsigned bytes,rows,columns;
 
-	while(std::getline(ss, token, ',')) {
-		utoken = std::atoi(token.c_str());
-    		xs_isotope_ints.push_back(utoken);
-	}
+	//while(std::getline(ss, token, ',')) {
+	//	utoken = std::atoi(token.c_str());
+   // 		xs_isotope_ints.push_back(utoken);
+	//}
 
 	// get data from python
 	/* 	 need to do
@@ -584,19 +587,23 @@ void whistory::load_cross_sections(){
     	if (xsdat_instance != NULL) {
 
 		// init the libraries wanted
-		char tope_string_c[256];
-		call_string = PyString_FromString("_init_from_string");
-		arg_string  = PyString_FromString(xs_isotope_string.c_str());
-		call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, arg_string, NULL);
-		PyErr_Print();
-		Py_DECREF(arg_string);
-		Py_DECREF(call_string);
-		Py_DECREF(call_result);
+		//char tope_string_c[256];
+    	for (int i=0; i<n_isotopes; i++){
+			call_string = PyString_FromString("_add_isotope");
+			arg_string  = PyString_FromString(isotopes[i].c_str());
+			call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, arg_string, NULL);
+			PyErr_Print();
+			Py_DECREF(arg_string);
+			Py_DECREF(call_string);
+			Py_DECREF(call_result);
+		}
 	
 		// read the tables
 		call_string = PyString_FromString("_read_tables");
-		call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
+		arg_string  = PyString_FromString(problem_geom.datapath.c_str());
+		call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, arg_string, NULL);
 		PyErr_Print();
+		Py_DECREF(arg_string);
 		Py_DECREF(call_string);
 		Py_DECREF(call_result);
 
@@ -820,6 +827,39 @@ void whistory::load_cross_sections(){
 	cudaMalloc(&d_awr_list,bytes);
 	// release python variable to free memory
 	Py_DECREF(call_result);
+
+
+	// TEMP vector
+	call_string = PyString_FromString("_get_temp_pointer");
+	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
+	Py_DECREF(call_string);
+	if (PyObject_CheckBuffer(call_result)){
+		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
+	}
+	else{
+		PyErr_Print();
+	    fprintf(stderr, "Returned object does not support buffer interface\n");
+	    return;
+	}
+
+	//
+	// get and copy AWR vector
+	//
+	rows    = pBuff.shape[0];
+	columns = pBuff.shape[1];
+	bytes   = pBuff.len;
+	//std::cout << "lengths " << rows << " " << columns << " " << bytes << "\n";
+	// allocate xs_data pointer arrays
+	temp_list     = new float  [rows];
+	// check to make sure bytes *= elements
+	assert(bytes==rows*4);
+	// copy python buffer contents to pointer
+	memcpy( temp_list,   pBuff.buf , bytes );
+	// cudaallocate device memory now that we know the size!
+	cudaMalloc(&d_temp_list,bytes);
+	// release python variable to free memory
+	Py_DECREF(call_result);
+
 
 	// Q vector
 	call_string = PyString_FromString("_get_Q_pointer");
@@ -1213,13 +1253,14 @@ void whistory::load_cross_sections(){
     	//pass awr pointer to geometry object, make the number density table, copy pointers back
     	problem_geom.awr_list = awr_list;
     	problem_geom.make_material_table();
-    	problem_geom.get_material_table(&n_materials,&n_isotopes,&material_list,&isotope_list,&number_density_matrix);  
+    	//problem_geom.get_material_table(&n_materials,&n_isotopes,&material_list,&isotope_list,&number_density_matrix);  
+    	problem_geom.get_material_table(&n_materials,&n_isotopes,&number_density_matrix);  
 
     	assert(n_isotopes == xs_length_numbers[0]);
 
     	//do cudamalloc for these arrays
-    	cudaMalloc(&d_material_list , 			n_materials*sizeof(unsigned) );
-    	cudaMalloc(&d_isotope_list , 			n_isotopes*sizeof(unsigned) );
+    	//cudaMalloc(&d_material_list , 			n_materials*sizeof(unsigned) );
+    	//cudaMalloc(&d_isotope_list , 			n_isotopes*sizeof(unsigned) );
     	cudaMalloc(&d_number_density_matrix , 	n_materials*n_isotopes*sizeof(unsigned) );
 
 }
@@ -1350,7 +1391,14 @@ void whistory::trace(unsigned type, unsigned n_active){
 }
 void whistory::print_materials_table(){
 
+	// print materials
 	problem_geom.print_materials_table();
+
+	//print temperatures:
+	printf("  --------------   \n");
+	for (int i=0; i<n_isotopes;i++){
+		printf("  Isotope %3d = %10s , temp: %7.2F K\n",i,isotopes[i].c_str(),temp_list[i]/8.617332478e-11);
+	}
 
 }
 void whistory::sample_fissile_points(){
@@ -1680,7 +1728,7 @@ void whistory::run(){
 
 			// concurrent calls to do escatter/iscatter/abs/fission
 			cudaThreadSynchronize();cudaDeviceSynchronize();
-			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_done, d_xs_data_scatter);
+			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
 			iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
 			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
 			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  

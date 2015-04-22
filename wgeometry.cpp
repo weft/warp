@@ -22,6 +22,7 @@ wgeometry::wgeometry(){
 	n_isotopes   = 0;
 	fissile_flag = 0;
 	boundary_condition = 0;
+	datapath 	 = "NOTSET";
 }
 wgeometry::~wgeometry(){
 	//material destructor
@@ -83,7 +84,7 @@ void wgeometry::update(){
 	unsigned this_mat  = 0;
 	unsigned n_topes   = 0;
 	unsigned this_tope = 0;
-	std::vector<unsigned>  all_isotopes;
+	std::vector<std::string>  all_isotopes;
 	for(this_mat=0 ; this_mat<n_materials ; this_mat++){
 		n_topes = materials[this_mat].num_isotopes;
 		for(unsigned k=0;k<n_topes;k++){
@@ -97,7 +98,7 @@ void wgeometry::update(){
 	for(unsigned k=0;k<all_isotopes.size();k++){
 		notfound=1;
 		for(unsigned j=0;j<isotopes.size();j++){
-			if(isotopes[j]==all_isotopes[k])
+			if(!isotopes[j].compare(all_isotopes[k]))
 				notfound=0; 
 		}
 		if(notfound){
@@ -109,8 +110,8 @@ void wgeometry::update(){
 	//make string from isotope table
 	char numstr[16];
 	for(unsigned k =0;k<n_isotopes;k++){
-		sprintf(numstr,"%u",isotopes[k]);
-		isotope_list += numstr;
+		//sprintf(numstr,"%u",isotopes[k]);
+		isotope_list += isotopes[k];
 		if(k<n_isotopes-1){
 			isotope_list += ",";
 		}
@@ -212,7 +213,7 @@ unsigned wgeometry::get_maximum_cell(){
 	}
 	return maxcell;
 }
-void wgeometry::add_material(unsigned matnum, unsigned is_fissile, unsigned num_topes, float density, std::vector<unsigned> isotopes, std::vector<float> fractions){
+void wgeometry::add_material(unsigned matnum, unsigned is_fissile, unsigned num_topes, float density, std::vector<std::string> isotopes, std::vector<float> fractions){
 	
 	// get current material index
 	unsigned dex = materials.size(); 
@@ -220,15 +221,14 @@ void wgeometry::add_material(unsigned matnum, unsigned is_fissile, unsigned num_
 	material_def this_material_def;
 
 	this_material_def.fractions = new float    [num_topes];
-	this_material_def.isotopes  = new unsigned [num_topes];
 
 	this_material_def.num_isotopes  = num_topes;
 	this_material_def.matnum        = matnum;
-	this_material_def.id 		= dex;
+	this_material_def.id            = dex;
 	this_material_def.density       = density;
 	this_material_def.is_fissile    = is_fissile;
 	for (unsigned i=0; i<num_topes;i++){
-		this_material_def.isotopes[i] = isotopes[i];
+		this_material_def.isotopes.push_back(isotopes[i]);
 		this_material_def.fractions[i] = fractions[i];
 	}
 
@@ -311,6 +311,11 @@ int wgeometry::check(){
 		fissile_flag += materials[k].is_fissile;
 	}
 
+	// check that xsdir_path is set
+	if ( !datapath.compare("NOTSET") ){
+		printf("DATAPATH NOT SET!\n");
+	}
+
 	std::cout << "They check out.\n";
 	return 0;
 
@@ -345,21 +350,19 @@ unsigned wgeometry::get_material_count(){
 	return n_materials;
 }
 unsigned wgeometry::check_fissile(){
-
 	return fissile_flag;
-
 }
 void wgeometry::make_material_table(){
 
-	// allocate and copy the insotope list to the array
-	isotope_list_array = new unsigned [n_isotopes];
-	memcpy(isotope_list_array,isotopes.data(),n_isotopes*sizeof(unsigned));
+	// allocate and copy the isotope list to the array
+	//isotope_list_array = new unsigned [n_isotopes];
+	///memcpy(isotope_list_array,isotopes.data(),n_isotopes*sizeof(unsigned));
 
 	// allocate and copy the material number list to the array
-	material_list_array = new unsigned [n_materials];
-	for(unsigned k=0;k<n_materials;k++){
-		material_list_array[k]=materials[k].matnum;
-	}
+	//material_list_array = new unsigned [n_materials];
+	//for(unsigned k=0;k<n_materials;k++){
+	//	material_list_array[k]=materials[k].matnum;
+	//}
 
 	// allocate and copy the fractions to the matrix
 	unsigned notfound=1;
@@ -371,7 +374,7 @@ void wgeometry::make_material_table(){
 			notfound=1;
 			//scan the material object to see if the isotope is there
 			for(z=0;z<materials[j].num_isotopes;z++){
-				if(materials[j].isotopes[z] == isotope_list_array[k]){
+				if(! materials[j].isotopes[z].compare(isotopes[k])){
 					notfound=0;
 					break;
 				}
@@ -425,17 +428,17 @@ void wgeometry::make_material_table(){
 		}
 	}
 }
-void wgeometry::get_material_table(unsigned* n_mat_in, unsigned * n_tope_in, unsigned** material_list_in, unsigned** isotope_list_in, float** conc_mat_in){
+void wgeometry::get_material_table(unsigned* n_mat_in, unsigned * n_tope_in, float** conc_mat_in){
 
 	*n_mat_in  = n_materials;
 	*n_tope_in = n_isotopes;
 
-	*material_list_in 	= new unsigned [n_materials];
-	*isotope_list_in 	= new unsigned [n_isotopes];
+	//*material_list_in 	= new unsigned [n_materials];
+	//*isotope_list_in 	= new unsigned [n_isotopes];
 	*conc_mat_in 		= new float    [n_materials*n_isotopes];
 
-	memcpy(*material_list_in,  material_list_array,    n_materials*sizeof(unsigned)         );
-	memcpy(*isotope_list_in,   isotope_list_array,     n_isotopes *sizeof(unsigned)         );
+	//memcpy(*material_list_in,  material_list_array,    n_materials*sizeof(unsigned)         );
+	//memcpy(*isotope_list_in,   isotope_list_array,     n_isotopes *sizeof(unsigned)         );
 	memcpy(*conc_mat_in,       concentrations_matrix,  n_materials*n_isotopes*sizeof(float) );
 }
 void wgeometry::print_materials_table(){
@@ -445,17 +448,17 @@ void wgeometry::print_materials_table(){
 	for(unsigned j=0;j<n_materials;j++){
 
 		assert(j==materials[j].id);
-		std::cout <<  "material index " << j << " = material " << material_list_array[j] << "\n";
+		std::cout <<  "material index " << j << " = material " << materials[j].id << "\n";
 		std::cout <<  " (isotope index, ZZZAAA) \n";
 		std::cout <<  " (number density #/bn-cm) \n";
 		
 		for(unsigned k=0;k<n_isotopes;k++){
 
 			if (k==n_isotopes-1){
-				std::cout << "( "<< k << " , "<< isotope_list_array[k] << " ) \n";
+				std::cout << "( "<< k << " , "<< materials[j].isotopes[k] << " ) \n";
 			}
 			else{
-				std::cout << "  ( "<< k << " , "<< isotope_list_array[k] << " )     ";
+				std::cout << "  ( "<< k << " , "<< materials[j].isotopes[k] << " )     ";
 			}
 		}
 
@@ -530,5 +533,11 @@ void wgeometry::delete_primitive(unsigned index){
 	}
 	primitives[index].~primitive();
 	n_primitives--;
+
+}
+
+void wgeometry::set_datapath(std::string path_in){
+
+	datapath = path_in;
 
 }

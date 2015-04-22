@@ -47,18 +47,21 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float macro_t_total = 0.0;
 	float e0 = main_E_grid[dex];
 	float e1 = main_E_grid[dex+1];
-	float t0,t1;
+	float t0,t1,number_desity;
 
 	__syncthreads();
 
 	// compute the total macroscopic cross section for this material
 	for(int k=0; k<n_isotopes; k++){
-		//lienarly interpolate
-		//printf("val % 6.4E\n",s_material_matrix[n_isotopes*this_mat + k]);
-		t0 = xs_data_MT[n_columns* dex    + k];     //dex is the row number
-		t1 = xs_data_MT[n_columns*(dex+1) + k];
-		macro_t_total += ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * material_matrix[n_isotopes*this_mat+k];    //interpolated micro times number density
-		//printf("mat %u - density of tope %u = %6.3E\n",this_mat,k,material_matrix[n_isotopes*this_mat+k]);
+		number_desity = material_matrix[n_isotopes*this_mat+k];
+		if(number_desity > 0.0){
+			//lienarly interpolate
+			//printf("val % 6.4E\n",s_material_matrix[n_isotopes*this_mat + k]);
+			t0 = xs_data_MT[n_columns* dex    + k];     //dex is the row number
+			t1 = xs_data_MT[n_columns*(dex+1) + k];
+			macro_t_total += ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_desity;    //interpolated micro times number density
+			//printf("mat %u - density of tope %u = %6.3E\n",this_mat,k,material_matrix[n_isotopes*this_mat+k]);
+		}
 	}
 
 	// compute the interaction length
@@ -67,15 +70,18 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 
 	// determine the isotope which the reaction occurs
 	for(int k=0; k<n_isotopes; k++){
-		//lienarly interpolate
-		t0 = xs_data_MT[n_columns* dex    + k];     
-		t1 = xs_data_MT[n_columns*(dex+1) + k];
-		cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * material_matrix[n_isotopes*this_mat+k] ) / macro_t_total;
-		if( k==n_isotopes-1 & cum_prob<1.0){cum_prob=1.0;}  //sometimes roundoff makes this a problem
-		if( rn1 <= cum_prob){
-			// reactions happen in isotope k
-			tope = k;
-			break;
+		number_desity = material_matrix[n_isotopes*this_mat+k];
+		if(number_desity > 0.0){
+			//lienarly interpolate
+			t0 = xs_data_MT[n_columns* dex    + k];     
+			t1 = xs_data_MT[n_columns*(dex+1) + k];
+			cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_desity ) / macro_t_total;
+			if( k==n_isotopes-1 & cum_prob<1.0){cum_prob=1.0;}  //sometimes roundoff makes this a problem
+			if( rn1 <= cum_prob){
+				// reactions happen in isotope k
+				tope = k;
+				break;
+			}
 		}
 	}
 	if(tope == 999999999){ 

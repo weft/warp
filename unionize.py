@@ -4,6 +4,7 @@ import numpy
 import sys
 import glob
 import pylab
+import re
 
 ##
 #  \class cross_section_data
@@ -23,14 +24,16 @@ class cross_section_data:
 		self.num_isotopes     = 0
 		## isotope list
 		self.isotope_list     = []
-		## library temperature extension
-		self.temp_extension   = '.03c'
+		## data path
+		self.datapath         = ''
 		## cross section tables
 		self.tables           = []
 		## cross section libraries
-		self.libraries        = []
+		self.libraries        = {}
 		## AWR array
 		self.awr 	      = []
+		## temp array
+		self.temp 	      = []
 		## Q-value array
 		self.Q 		      = []
 		## main energy
@@ -61,32 +64,75 @@ class cross_section_data:
 	# @param[in] isotope - isotope to be appended
 	def _add_isotope(self,  isotope):
 		self.isotope_list.append(isotope)
-
 	##
 	# \brief reads in cross section tables
 	# \details for each isotope in the material, the acefile is appended to the 
 	# library list, then all of the libraries are read in. the material's number
 	# of isotopes is set to how many libraries were retrieved.
 	# @param[in] self - material to get cross sections for
-	def _read_tables(self):
+	def _read_tables(self, datapath_in):
 
-		datapath = '/usr/local/SERPENT/xsdata/endfb7/acedata/'
-		
+		self.datapath = datapath_in
+
+		print "  ----------- data paths ------------ "
+		try:
+			if re.search('xsdir',self.datapath):   #path is a xsdir file, don't append xsdir
+				f=open(self.datapath,'r')
+				firstline=f.readline()
+				match = re.match('(datapath=)*(/[a-zA-Z0-9/_.+-]+)',firstline,re.IGNORECASE)  #datapath is specified, use it.
+				if match:
+					print "  USING DATAPATH '"+match.group(2)+"' as specified in '"+self.datapath+"'."
+					self.datapath=match.group(2)
+				else:
+					print "  NO DATAPATH specified in '"+self.datapath+"', assuming full path specified."
+					self.datapath=''
+			else:
+				f=open(self.datapath+'/xsdir','r')
+				print "  using xsdir in '"+self.datapath+"'."
+		except :
+			print "!  unable to open '"+self.datapath+"[/xsdir]'!"
+			exit(0)
+
+		self.xsdirstring=f.read()
+		f.close()
+
+		self.num_isotopes = 0
+
+		#  make map of file -> isotope
 		for tope in self.isotope_list:
-			#tope_number = nucname.mcnp(tope)
-			#print tope
-			#print nucname.mcnp(tope)
-			#print glob.glob(datapath+str(tope_number)+'[A-Z]*[0-9]*.ace')
-			librarypath=glob.glob(datapath+str(tope)+'[A-Z]*[0-9]*.ace')[0]
-			self.libraries.append(ace.Library(librarypath))
+			librarypath = self._resolve_library(tope) 
+			if librarypath in self.libraries:
+				self.libraries[librarypath].append(tope)
+			else:
+				self.libraries[librarypath]=[tope]
 
-		for lib in self.libraries:
-			lib.read()
-			iname=lib.tables.keys()[0][0:-4]   #strip off temp to get isotope name
-			print "  loading "+iname+self.temp_extension
-			self.tables.append(lib.find_table(iname+self.temp_extension))
+		# open the libraries, read all isotopes present in that library
+		print "  ---------  loading data  ---------- "
+		lib={}
+		for librarypath in self.libraries:
+			print "  loading "+librarypath
+			lib[librarypath] = ace.Library(librarypath)
+			lib[librarypath].read()
 
-		self.num_isotopes=self.libraries.__len__()
+		print "  --------- extracting data --------- "
+
+		# preserve list order!
+		for tope in self.isotope_list:
+			librarypath = self._resolve_library(tope)
+			print "  extracting "+tope+' from '+librarypath
+			self.tables.append(lib[librarypath].find_table(tope))
+			self.num_isotopes=self.num_isotopes+1
+
+	
+	def _resolve_library(self,tope):
+		exp = re.compile(tope+" +[0-9. a-z]+ ([a-zA-Z0-9/_.+-]+)")
+		a = exp.search(self.xsdirstring)
+		if a:
+			return self.datapath+'/'+a.group(1)
+		else:
+			print " ERROR: nuclide '"+tope+"' not found in '"+self.datapath+"/xsdir'!"
+			exit(0)
+
 
 	##
 	# \brief unionization function
@@ -122,6 +168,8 @@ class cross_section_data:
 			self.Q.append(0)
 			#append this topes AWR
 			self.awr.append(table.awr)
+			#append this topes temp
+			self.temp.append(table.temp)
 			#append totals
 			self.reaction_numbers_total.append(table.reactions.__len__())
 
@@ -199,6 +247,7 @@ class cross_section_data:
 				MT_num_array[n] = MT_num_array[n]+800
 			elif MT_num_array[n] > 100:
 				MT_num_array[n] = MT_num_array[n]+1000
+		print "  ----- MT reaction number list ----- "
 		print MT_num_array
 		return MT_num_array
 
@@ -209,6 +258,14 @@ class cross_section_data:
 	def _get_awr_pointer(self):
 		awr_array = numpy.ascontiguousarray(numpy.array(self.awr,order='C'),dtype=numpy.float32)
 		return awr_array
+
+	##
+	# \brief gets pointer to temperature values
+	# @param[in] - material
+	# \returns temp_array - array of temperature values
+	def _get_temp_pointer(self):
+		temp_array = numpy.ascontiguousarray(numpy.array(self.temp,order='C'),dtype=numpy.float32)
+		return temp_array
 
 	##
 	# \brief gets pointer to Q-values
