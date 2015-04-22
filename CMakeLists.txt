@@ -233,11 +233,6 @@ SET(warp_cuda_srcs
     ${write_to_file}
 )
 
-ADD_LIBRARY(libwarp SHARED ${warp_executable_srcs} ${warp_cuda_srcs})
-
-# link libs
-TARGET_LINK_LIBRARIES(libwarp ${libs})
-
 # actual target:
 ADD_EXECUTABLE(warp ${warp_executable_srcs} ${warp_cuda_srcs})
 
