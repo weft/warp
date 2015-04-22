@@ -10,7 +10,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 set(warp_test_srcs
 #	optix_stuff_test.cpp
 	primitive_test.cpp
-#	reaction_edges_test.cpp
+	reaction_edges_test.cpp
 #	wgeometry_test.cpp
 #	whistory_test.cpp
 )
