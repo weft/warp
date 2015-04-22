@@ -1,6 +1,6 @@
 find_package(Threads)
 if(CMAKE_USE_PTHREADS_INIT)  # The pthreads library is available.
-    set(CXX_FLAGS "${CXX_FLAGS} -DGTEST_HAS_PTHREAD=1")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGTEST_HAS_PTHREAD=1")
 endif()
 
 include_directories(${GTEST_INCLUDE_DIRS})
@@ -16,6 +16,6 @@ set(warp_test_srcs
 )
 
 add_executable(warp_tests ${warp_test_srcs})
-target_link_libraries(warp_tests libwarp ${GTEST_BOTH_LIBRARIES})
+target_link_libraries(warp_tests libwarp ${GTEST_BOTH_LIBRARIES} pthread)
 
 add_test(warp_test warp_tests)

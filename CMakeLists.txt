@@ -195,7 +195,6 @@ set(warp_executable_srcs
     warp.pyc
     primitive.cpp
     unionize.pyc
-    main.cpp
 #    primitive_test.cpp
     mt19937ar.cpp
     optix_stuff.cpp
@@ -239,7 +238,7 @@ ADD_LIBRARY(libwarp SHARED ${warp_executable_srcs} ${warp_cuda_srcs})
 TARGET_LINK_LIBRARIES(libwarp ${libs})
 
 # actual target:
-add_executable(warp ${warp_executable_srcs} ${warp_cuda_srcs})
+add_executable(warp ${warp_executable_srcs} ${warp_cuda_srcs} main.cpp)
 
 # link libs
 target_link_libraries(warp ${libs})
