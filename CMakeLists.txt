@@ -7,8 +7,7 @@ cmake_minimum_required(VERSION 2.8.10)
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} LD_LIBRARY_PATH)
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake") 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
-
+include_directories(${CMAKE_SOURCE_DIR})
 
 #find CUDA; we need that
 find_package(CUDA QUIET REQUIRED)
@@ -17,30 +16,30 @@ include_directories("${CUDA_INCLUDE_DIRS}")
 
 set(OptiX_ROOT_DIR CACHE PATH "Root directory of OptiX")
 
-FIND_PATH(OptiX_INCLUDE_DIR optix.h
+find_path(OptiX_INCLUDE_DIR optix.h
    ${OptiX_ROOT_DIR}/include
 )
 
-FIND_LIBRARY(OptiX_LIBRARY
+find_library(OptiX_LIBRARY
   NAMES optix optix${CMAKE_SIZEOF_VOID_P}
   PATHS
      ${OptiX_ROOT_DIR}/lib64
 )
 
-IF(OptiX_LIBRARY)
-  IF (OptiX_INCLUDE_DIR)
+if(OptiX_LIBRARY)
+  if (OptiX_INCLUDE_DIR)
     # OK, found all we need
-    SET(OptiX_FOUND TRUE)		
-    GET_FILENAME_COMPONENT(OptiX_LINK_DIRECTORIES ${OptiX_LIBRARY} PATH)
+    set(OptiX_FOUND TRUE)		
+    get_filename_component(OptiX_LINK_DIRECTORIES ${OptiX_LIBRARY} PATH)
 
-  ELSE (OptiX_INCLUDE_DIR)
-    MESSAGE("OptiX include dir not found. Set OptiX_ROOT_DIR to find it.")
-  ENDIF(OptiX_INCLUDE_DIR)
-ELSE(OptiX_LIBRARY)
-  MESSAGE("OptiX lib not found. Set OptiX_ROOT_DIR to find it.")
-ENDIF(OptiX_LIBRARY)
+  else (OptiX_INCLUDE_DIR)
+    message("OptiX include dir not found. Set OptiX_ROOT_DIR to find it.")
+  endif(OptiX_INCLUDE_DIR)
+else(OptiX_LIBRARY)
+  message("OptiX lib not found. Set OptiX_ROOT_DIR to find it.")
+endif(OptiX_LIBRARY)
 
-MARK_AS_ADVANCED(
+mark_as_advanced(
   OptiX_INCLUDE_DIR
   OptiX_LIBRARY
   OptiX_LINK_DIRECTORIES		
@@ -53,61 +52,61 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20; --use_fast_math; --compiler-
 
 set (CUDPP_ROOT_DIR CACHE PATH "Root directory for CUDPP")
 #http://suren.me/webbzr/normxcorr/trunk/annotate/27/dict_hw/cmake/FindCUDPP.cmake?remember=7
-FIND_PATH(CUDPP_INCLUDE_DIR cudpp.h
+find_path(CUDPP_INCLUDE_DIR cudpp.h
    ${CUDPP_ROOT_DIR}/cudpp/include
    ${CUDPP_ROOT_DIR}/include
 )
 
-FIND_LIBRARY(CUDPP_LIBRARY
+find_library(CUDPP_LIBRARY
   NAMES cudpp cudpp${CMAKE_SIZEOF_VOID_P}
   PATHS
      ${CUDPP_ROOT_DIR}/lib
 )
 
-IF(CUDPP_LIBRARY)
-  IF (CUDPP_INCLUDE_DIR)
+if(CUDPP_LIBRARY)
+  if (CUDPP_INCLUDE_DIR)
     # OK, found all we need
-    SET(CUDPP_FOUND TRUE)
-    GET_FILENAME_COMPONENT(CUDPP_LINK_DIRECTORIES ${CUDPP_LIBRARY} PATH)
+    set(CUDPP_FOUND TRUE)
+    get_filename_component(CUDPP_LINK_DIRECTORIES ${CUDPP_LIBRARY} PATH)
 
-  ELSE (CUDPP_INCLUDE_DIR)
-    MESSAGE("CUDPP include dir not found. Set CUDPP_ROOT_DIR to find it.")
-  ENDIF(CUDPP_INCLUDE_DIR)
-ELSE(CUDPP_LIBRARY)
-  MESSAGE("CUDPP lib not found. Set CUDPP_ROOT_DIR to find it.")
-ENDIF(CUDPP_LIBRARY)
+  else (CUDPP_INCLUDE_DIR)
+    message("CUDPP include dir not found. Set CUDPP_ROOT_DIR to find it.")
+  endif(CUDPP_INCLUDE_DIR)
+else(CUDPP_LIBRARY)
+  message("CUDPP lib not found. Set CUDPP_ROOT_DIR to find it.")
+endif(CUDPP_LIBRARY)
 
-MARK_AS_ADVANCED(
+mark_as_advanced(
   CUDPP_INCLUDE_DIR     
   CUDPP_LIBRARY
   CUDPP_LINK_DIRECTORIES                
 )
 
-SET(libs ${libs} ${CUDPP_LIBRARY})
-SET(libs ${libs} ${OptiX_LIBRARY})
-SET(libs ${libs} ${CUDA_LIBRARIES})
-SET(libs ${libs} ${CUDA_CUDART_LIBRARY})
-SET(libs ${libs} ${CUDA_CUBLAS_LIBRARY})
-SET(libs ${libs} ${CUDA_curand_LIBRARY})
+set(libs ${libs} ${CUDPP_LIBRARY})
+set(libs ${libs} ${OptiX_LIBRARY})
+set(libs ${libs} ${CUDA_LIBRARIES})
+set(libs ${libs} ${CUDA_CUDART_LIBRARY})
+set(libs ${libs} ${CUDA_CUBLAS_LIBRARY})
+set(libs ${libs} ${CUDA_curand_LIBRARY})
 
 include_directories(${CUDPP_INCLUDE_DIR})
 
 #http://stackoverflow.com/questions/11041299/python-h-no-such-file-or-directory
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
-SET(libs ${libs} ${PYTHON_LIBRARIES})
+set(libs ${libs} ${PYTHON_LIBRARIES})
 
 find_package(PNG REQUIRED)
-SET(libs ${libs} ${PNG_LIBRARY})
+set(libs ${libs} ${PNG_LIBRARY})
 
 #mac stuff
-IF(APPLE)
- SET(CMAKE_OSX_VERSION "10.7" CACHE STRING "OSX Version number")
+if(APPLE)
+ set(CMAKE_OSX_VERSION "10.7" CACHE STRING "OSX Version number")
  include_directories("/usr/local/include")
- SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=${CMAKE_OSX_VERSION}")
- SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=${CMAKE_OSX_VERSION}")
- SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options '-mmacosx-version-min=${CMAKE_OSX_VERSION}'")
-ENDIF(APPLE)
+ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=${CMAKE_OSX_VERSION}")
+ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=${CMAKE_OSX_VERSION}")
+ set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options '-mmacosx-version-min=${CMAKE_OSX_VERSION}'")
+endif(APPLE)
 
 cuda_compile_ptx(camera camera.cu)
 cuda_compile_ptx(hits hits.cu)
@@ -191,12 +190,11 @@ cuda_compile(reaction_edges3 reaction_edges3.cu)
 cuda_compile(write_to_file write_to_file.cu)
 
 # Sources:
-SET(warp_executable_srcs
+set(warp_executable_srcs
     print_banner.cpp
     warp.pyc
     primitive.cpp
     unionize.pyc
-    main.cpp
 #    primitive_test.cpp
     mt19937ar.cpp
     optix_stuff.cpp
@@ -209,7 +207,7 @@ SET(warp_executable_srcs
     wgeometry.cpp
 )
 
-SET(warp_cuda_srcs
+set(warp_cuda_srcs
     ${set_positions_rand}
     ${find_E_grid_index}
     ${find_E_grid_index_quad}
@@ -240,7 +238,11 @@ ADD_LIBRARY(libwarp SHARED ${warp_executable_srcs} ${warp_cuda_srcs})
 TARGET_LINK_LIBRARIES(libwarp ${libs})
 
 # actual target:
-ADD_EXECUTABLE(warp ${warp_executable_srcs} ${warp_cuda_srcs})
+add_executable(warp ${warp_executable_srcs} ${warp_cuda_srcs} main.cpp)
 
 # link libs
-TARGET_LINK_LIBRARIES(warp ${libs})
+target_link_libraries(warp ${libs})
+
+enable_testing()
+find_package(GTest REQUIRED)
+add_subdirectory(test)
