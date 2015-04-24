@@ -16,7 +16,7 @@
 
 \title{WARP User's Guide}
 \author{Ryan M. Bergmann \thanks{ryanmbergmann@gmail.com} \\
-Kelly Rowland \thanks{krowland@berkeley.edu}\\
+Kelly L. Rowland \thanks{krowland@berkeley.edu}\\
 v 1.0,  May 2015}
 
 \date{}
@@ -40,7 +40,8 @@ v 1.0,  May 2015}
 %
 %\end{abstract}
 
-This user's guide is meant to introduce a user to the way in which WARP executes and how it's top-level functionality can be used to solve neutron transport problems.  For more detailed information about the algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous energyMonte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuclear Engineering (doi:10.1016/j.anucene.2014.10.039).
+This user's guide is meant to introduce a user to the way in which WARP executes and how it's top-level functionality can be used to solve neutron transport problems.  For more detailed information about the algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous energy
+Monte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuclear Engineering (doi:10.1016/j.anucene.2014.10.039).
 
 \tableofcontents
 
@@ -51,11 +52,25 @@ This user's guide is meant to introduce a user to the way in which WARP executes
 
 \section{An Introduction to WARP}
 
-WARP, which XXXXXXXX, is a C++ library that contains a set of classes and data structures that allow Monte Carlo neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and execute efficiently on GPUs.  Typical CPU codes tracks a single neutron life, from cradle to grave, marking is interactions along the way.  WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many pieces of data concurrently instead of executing many tasks concurrently.
+WARP, which XXXXXXXX, is a C\texttt{++} library that contains a set of classes and data structures that allow Monte Carlo neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and execute efficiently on GPUs.  Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the way.  WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many pieces of data concurrently instead of executing many tasks concurrently.
 
 FIGURE OF THE DATA PARALLELISM UNDER THE TRANSPORT LOOP
 
 \section{Compiling WARP}
+
+WARP has the following dependencies:
+\begin{itemize}
+	\item{C\texttt{++} compiler}
+	\item{CMake ($>=$ 2.8.10)}
+	\item{NVIDIA CUDA ($>=$ 5.0)}
+	\item{NVIDIA OptiX ($>= 3.0.1$)}
+	\item{CUDPP ($>=$ 2.1)}
+	\item{PyNE}
+	\item{SWIG}
+	\item{GoogleTest}
+\end{itemize}
+
+WARP is compiled with CMake.
 
 \begin{verbatim}
    \documentclass[11pt,twoside,a4paper]{article}
@@ -65,7 +80,11 @@ FIGURE OF THE DATA PARALLELISM UNDER THE TRANSPORT LOOP
 
 \section{The Library Interface}
 
-C++, Python wrapper
+WARP has two interfaces available for use, one in C\texttt{++} and the other in Python.
+
+\subsection{C\texttt{++}}
+
+\subsection{Python}
 
 \begin{description}
 
