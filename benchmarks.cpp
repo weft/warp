@@ -47,6 +47,7 @@ int main(int argc, char* argv[]){
 	std::vector<float> origin(3);
 	unsigned type, material, n_topes;
 	unsigned prim_id    = 0;
+	unsigned bc 		= 1;
 	wgeometry geom;
 
 	// set datapath
@@ -77,9 +78,10 @@ int main(int argc, char* argv[]){
 
 		// run stuff
 		tallycell = 316;   //center pin
-		filename = assemblyname;
+		filename  = assemblyname;
 		tallyname = assemblyname;
 		tallyname.append(".tally");
+		bc = 1;
 	
 		// assembly geom
 		type=1;
@@ -147,13 +149,14 @@ int main(int argc, char* argv[]){
 		float 	 dens_flibe = 1.94;
 
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
-		geom.add_material(2,0,n_topes,dens_water,topes,fracs_water);
+		geom.add_material(2,0,n_topes,dens_flibe,topes,fracs_flibe);
 
 		// run stuff
-		tallycell = 316;   //center pin
-		filename = assemblyname;
-		tallyname = assemblyname;
+		tallycell = 1;   //center pin
+		filename  = flibename;
+		tallyname = flibename;
 		tallyname.append(".tally");
+		bc = 2;
 	
 		// flibe geom
 		type=3;
@@ -168,7 +171,7 @@ int main(int argc, char* argv[]){
 		origin[1]=0.0;
 		origin[2]=0.0;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.make_hex_array(prim_id,15,0.0,0.0,1.164,1); 
+		geom.add_transform(prim_id,1,0,0,0,0,0);
 
 		type=2;
 		material=2;
@@ -298,6 +301,7 @@ int main(int argc, char* argv[]){
 		filename  = fusionname;
 		tallyname = fusionname;
 		tallyname.append(".tally");
+		bc = 1;
 	
 		//fusion geom
 		type=3;
@@ -382,9 +386,10 @@ int main(int argc, char* argv[]){
 		
 		// run stuff
 		tallycell = 999;
-		filename = jezebelname;
+		filename  = jezebelname;
 		tallyname = jezebelname;
 		tallyname.append(".tally");
+		bc = 1;
 	
 		//jezebel geom
 		type=3;
@@ -456,9 +461,10 @@ int main(int argc, char* argv[]){
 		
 		// run stuff
 		tallycell = 1;
-		filename = pincellname;
+		filename  = pincellname;
 		tallyname = pincellname;
 		tallyname.append(".tally");
+		bc = 1;
 	
 		//pin cell
 		type=1;
@@ -480,10 +486,10 @@ int main(int argc, char* argv[]){
 		material=3;
 		mins[0]=-2.2;
 		mins[1]=-2.2;
-		mins[2]=-20;
+		mins[2]=-20.2;
 		maxs[0]= 2.2; 
 		maxs[1]= 2.2; 
-		maxs[2]= 20;
+		maxs[2]= 20.2;
 		origin[0]=0.0;
 		origin[1]=0.0;
 		origin[2]=0.0;
@@ -506,6 +512,135 @@ int main(int argc, char* argv[]){
 		geom.add_transform(prim_id,999,0,0,0,0,0);
 	}
 	else if(sodiumpinname.compare(argv[1])==0){
+		// sodium pincell mats
+		n_topes = 15;
+		std::vector<std::string> topes    (n_topes);
+		std::vector<float>    fracs_fuel  (n_topes);
+		std::vector<float>    fracs_water (n_topes);
+		std::vector<float>    fracs_clad  (n_topes);
+		topes[0]= "92235.80c";
+		topes[1]= "92238.80c";
+		topes[2]= "11023.80c" ;
+		topes[3]= "26054.80c" ;
+		topes[4]= "26056.80c";
+ 		topes[5]= "26057.80c";
+ 		topes[6]= "26058.80c";
+ 		topes[7]= "24050.80c";
+ 		topes[8]= "24052.80c";
+ 		topes[9]= "24053.80c";
+ 		topes[10]="24054.80c";
+ 		topes[11]="28058.80c";
+ 		topes[12]="28060.80c";
+ 		topes[13]="28062.80c";
+ 		topes[14]="28064.80c";
+
+		fracs_fuel[0]  = 0.1;  
+		fracs_fuel[1]  = 0.9;   
+		fracs_fuel[2]  = 0;   
+		fracs_fuel[3]  = 0;
+		fracs_fuel[4]  = 0;
+		fracs_fuel[5]  = 0;
+		fracs_fuel[6]  = 0;  
+		fracs_fuel[7]  = 0;
+		fracs_fuel[8]  = 0;
+		fracs_fuel[9]  = 0;
+		fracs_fuel[10] = 0;
+		fracs_fuel[11] = 0;
+		fracs_fuel[12] = 0;
+		fracs_fuel[13] = 0;
+		fracs_fuel[14] = 0;
+
+		fracs_water[0]  = 0;  
+		fracs_water[1]  = 0;   
+		fracs_water[2]  = 1;   
+		fracs_water[3]  = 0;
+		fracs_water[4]  = 0;
+		fracs_water[5]  = 0;
+		fracs_water[6]  = 0;  
+		fracs_water[7]  = 0;
+		fracs_water[8]  = 0;
+		fracs_water[9]  = 0;
+		fracs_water[10] = 0;
+		fracs_water[11] = 0;
+		fracs_water[12] = 0;
+		fracs_water[13] = 0;
+		fracs_water[14] = 0;
+
+		fracs_clad[0]  = 0;  
+		fracs_clad[1]  = 0;   
+		fracs_clad[2]  = 0;   
+		fracs_clad[3]  = 0.0435;
+		fracs_clad[4]  = 0.6879;
+		fracs_clad[5]  = 0.0165;
+		fracs_clad[6]  = 0.0021;  
+		fracs_clad[7]  = 0.0065;
+		fracs_clad[8]  = 0.1257;
+		fracs_clad[9]  = 0.0143;
+		fracs_clad[10] = 0.0035;
+		fracs_clad[11] = 0.0681;
+		fracs_clad[12] = 0.0262;
+		fracs_clad[13] = 0.0036;
+		fracs_clad[14] = 0.0009;
+	   
+	
+		float    dens_fuel  = 19.100;
+		float 	 dens_water =  0.927;
+		float 	 dens_clad  =  7.990;
+		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
+		geom.add_material(2,0,n_topes,dens_water,topes,fracs_water);
+		geom.add_material(3,0,n_topes,dens_clad,topes,fracs_clad);
+		
+		// run stuff
+		tallycell = 1;
+		filename  = sodiumpinname;
+		tallyname = sodiumpinname;
+		tallyname.append(".tally");
+		bc = 2;
+	
+		//pin cell
+		type=1;
+		material=1;
+		mins[0]=-1.2;
+		mins[1]=-1.2;
+		mins[2]=-20;
+		maxs[0]= 1.2; 
+		maxs[1]= 1.2; 
+		maxs[2]= 20;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,1,0,0,0,0,0);
+
+		//clad
+		type=1;
+		material=3;
+		mins[0]=-1.8;
+		mins[1]=-1.8;
+		mins[2]=-20.2;
+		maxs[0]= 1.8; 
+		maxs[1]= 1.8; 
+		maxs[2]= 20.2;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,2,0,0,0,0,0);
+
+		//water 
+		type=2;
+		material=2;
+		mins[0]=-1.8;
+		mins[1]=-1.8;
+		mins[2]=-25.0;
+		maxs[0]= 1.8;
+		maxs[1]= 1.8;
+		maxs[2]= 25.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,999,0,0,0,0,0);
 		
 	}
 	else{
@@ -522,7 +657,7 @@ int main(int argc, char* argv[]){
 	}
 
 	// finalize geom
-	geom.set_outer_cell(999,1);  // cell, BC  1=black, 2=specular
+	geom.set_outer_cell(999,bc);  // cell, BC  1=black, 2=specular
 	geom.update();
 	if(geom.check()){std::cout << "geometry failed check!\n"; return 1;}
 	//geom.print_all();
