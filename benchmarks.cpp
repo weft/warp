@@ -145,7 +145,7 @@ int main(int argc, char* argv[]){
 		tallyname = jezebelname;
 		tallyname.append(".tally");
 	
-		//godiva geom
+		//jezebel geom
 		type=3;
 		material=1;
 		mins[0]= -6.6595;
@@ -167,6 +167,7 @@ int main(int argc, char* argv[]){
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
+		std::vector<float>    fracs_clad  (n_topes);
 		topes[0]="92235.03c";
 		topes[1]="92238.03c";
 		topes[2]="8016.03c" ;
