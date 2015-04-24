@@ -22,4 +22,5 @@
 namespace std {
 %template(Unsigned)   vector < unsigned >;
 %template(Float)      vector < float >;  
+%template(String)     vector < string >;
 }

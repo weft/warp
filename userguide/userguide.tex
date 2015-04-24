@@ -68,6 +68,7 @@ WARP has the following dependencies:
 	\item{PyNE}
 	\item{SWIG}
 	\item{GoogleTest}
+	\item{Nuclear cross section data}
 \end{itemize}
 
 WARP is compiled with CMake.
@@ -84,7 +85,124 @@ WARP has two interfaces available for use, one in C\texttt{++} and the other in 
 
 \subsection{C\texttt{++}}
 
+If using the C\texttt{++} interface, the user simply needs to compile WARP and specify which geometry
+input to use at runtime. The syntax for running WARP is
+
+\begin{verbatim}
+./warp <geometry> <histories>
+\end{verbatim}
+
+where the four current geometry input options are ``godiva", ``homfuel", ``pincell", and ``assembly". If 
+a different string is used or no string is specified, an error message is displayed, instructing the 
+user to specify an appropriate condition. The last argument is the number of neutron histories to run in 
+each cycle.
+
+Example geometry syntax: %godiva
+
+\begin{verbatim}
+		n_topes = 1;
+		std::vector<std::string> topes (n_topes);
+		std::vector<float>    fracs (n_topes);
+
+		topes[0] = "94239.03c";
+		fracs[0] = 1;      
+		float    dens = 19.816;
+		geom.add_material(1,1,n_topes,dens,topes,fracs);
+		
+		// run information
+		tallycell = 999;
+		filename = godivaname;
+		tallyname = godivaname;
+		tallyname.append(".tally");
+	
+		// geometry information
+		type=3;
+		material=1;
+		mins[0]= -5.1;
+		mins[1]= -5.1;
+		mins[2]= -5.1;
+		maxs[0]=  5.1;
+		maxs[1]=  5.1;
+		maxs[2]=  5.1;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,999,0,0,0,0,0);
+\end{verbatim}
+
 \subsection{Python}
+
+The Python interface is very similar to the C\texttt{++} interface.
+
+\begin{verbatim}
+#! /usr/bin/env python
+import warp
+
+# init setup container
+geom = warp.wgeometry()
+
+# set datapath
+geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir")
+
+# make materials
+n_topes    = 1
+prim_id    = 0
+godivaname = "godiva"
+
+topes = warp.String(n_topes)
+fracs = warp.Float(n_topes)
+mins    = warp.Float(3)
+maxs    = warp.Float(3)
+origin  = warp.Float(3)
+topes[0] = "94239.03c"
+fracs[0] = 1
+dens = 19.816
+geom.add_material(1,1,n_topes,dens,topes,fracs)
+
+# run name stuff
+tallycell = 999   #center pin
+filename = godivaname
+tallyname = godivaname
+tallyname = godivaname+".tally"
+
+# assembly geom
+typ=3
+material=1
+mins[0]=-5.1
+mins[1]=-5.1
+mins[2]=-5.1
+maxs[0]= 5.1
+maxs[1]= 5.1
+maxs[2]= 5.1
+origin[0]=0.0
+origin[1]=0.0
+origin[2]=0.0
+prim_id=geom.add_primitive(typ,material,mins,maxs,origin)
+print prim_id
+idx=geom.add_transform(prim_id,999,0,0,0,0,0)
+
+# finalize geom and check
+geom.set_outer_cell(999,1)
+geom.update()
+geom.check()
+#geom.print_all()
+geom.print_summary()
+
+
+# init hist and run
+hist = warp.whistory(100000,geom)
+hist.set_device(0)
+hist.init()
+hist.print_xs_data()
+hist.print_materials_table()
+hist.set_run_type("criticality")
+hist.set_tally_cell(tallycell)
+hist.set_run_param(40,20)
+hist.set_filename(filename)
+hist.run()
+hist.write_tally(0)
+\end{verbatim}
 
 \begin{description}
 
