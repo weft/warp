@@ -247,9 +247,7 @@ include_directories(${PYTHON_INCLUDE_PATH})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-set(CMAKE_SWIG_FLAGS "-Wall")
-
 set_source_files_properties(warp.i PROPERTIES CPLUSPLUS ON)
-#set_source_files_properties(warp.i PROPERTIES SWIG_FLAGS "-includeall")
-swig_add_module(warp_python python warp.i warp_wrap.cxx)
-swig_link_libraries(warp_python libwarp ${PYTHON_LIBRARIES})
+set_source_files_properties(warp.i PROPERTIES SWIG_FLAGS "-c++")
+swig_add_module(warp python warp.i)
+swig_link_libraries(warp libwarp ${PYTHON_LIBRARIES})
