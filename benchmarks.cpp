@@ -111,7 +111,75 @@ int main(int argc, char* argv[]){
 		//geom.print_summary();
 	}
 	else if(flibename.compare(argv[1])==0){
-		
+		//flibe pebble mats
+		n_topes    = 8;
+		std::vector<std::string> 	topes      (n_topes);
+		std::vector<float> 			fracs_fuel (n_topes);
+		std::vector<float> 			fracs_flibe(n_topes);
+		topes[0] = "92235.80c";
+		topes[1] = "92238.80c";
+		topes[2] =  "8016.80c";
+		topes[3] =  "6000.80c";
+		topes[4] =  "3006.80c";
+		topes[5] =  "3007.80c";
+		topes[6] =  "4009.80c";
+		topes[7] =  "9019.80c";
+
+		fracs_fuel[0] = 0.10 ;  
+		fracs_fuel[1] = 0.90;   
+		fracs_fuel[2] = 2;   
+		fracs_fuel[3] = 2;
+		fracs_fuel[4] = 0;  
+		fracs_fuel[5] = 0;   
+		fracs_fuel[6] = 0;   
+		fracs_fuel[7] = 0;
+
+		fracs_flibe[0] = 0;  
+		fracs_flibe[1] = 0;   
+		fracs_flibe[2] = 0;   
+		fracs_flibe[3] = 0;
+		fracs_flibe[4] = 0.15;  
+		fracs_flibe[5] = 1.85;   
+		fracs_flibe[6] = 1;   
+		fracs_flibe[7] = 4;
+
+		float    dens_fuel  = 8.75;
+		float 	 dens_flibe = 1.94;
+
+		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
+		geom.add_material(2,0,n_topes,dens_water,topes,fracs_water);
+
+		// run stuff
+		tallycell = 316;   //center pin
+		filename = assemblyname;
+		tallyname = assemblyname;
+		tallyname.append(".tally");
+	
+		// flibe geom
+		type=3;
+		material=1;
+		mins[0]=-5.0;
+		mins[1]=-5.0;
+		mins[2]=-5.0;
+		maxs[0]= 5.0;
+		maxs[1]= 5.0;
+		maxs[2]= 5.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.make_hex_array(prim_id,15,0.0,0.0,1.164,1); 
+
+		type=2;
+		material=2;
+		mins[0]=-5.1;
+		mins[1]=-5.1;
+		mins[2]=-5.1;
+		maxs[0]= 5.1;
+		maxs[1]= 5.1;
+		maxs[2]= 5.1;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,999,0,0,0,0,0);
 	}
 	else if(fusionname.compare(argv[1])==0){
 		// fusion mats
