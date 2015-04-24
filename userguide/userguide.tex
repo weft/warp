@@ -97,13 +97,25 @@ a different string is used or no string is specified, an error message is displa
 user to specify an appropriate condition. The last argument is the number of neutron histories to run in 
 each cycle.
 
-Example geometry syntax: %godiva
+The material specification works as follows. The number of isotopes in the problem must be
+specified first, then the particular isotope(s) and their corresponding material fraction(s) assigned.
+Following that, a material density is specified and the material and its information are ``added" to the
+geometry object.
+
+Information for tallying (the cell number in which to tally and the filename to which the tally data is written) is then defined.
+
+Lastly, the geometry parameters are specified. The primitive type (cube, cylinder, hexagonal prism, or sphere) is noted and the number of the material with which the primitive will be filled is defined. The 
+``mins", ``maxs", and ``origin" vectors are filled with the primitive's Cartesian minima, maxima, and origin, repsectively. The primitive is then added to the geometry object and a corresponding transform is
+also added to the geometry object.
+
+An example of geometry and material specification for a bare plutonium sphere is shown below.
 
 \begin{verbatim}
 		n_topes = 1;
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs (n_topes);
 
+		// material information
 		topes[0] = "94239.03c";
 		fracs[0] = 1;      
 		float    dens = 19.816;
@@ -133,7 +145,7 @@ Example geometry syntax: %godiva
 
 \subsection{Python}
 
-The Python interface is very similar to the C\texttt{++} interface.
+The Python interface is very similar to the C\texttt{++} interface; the syntax differs only slightly.
 
 \begin{verbatim}
 #! /usr/bin/env python
