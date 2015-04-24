@@ -195,15 +195,9 @@ set(warp_executable_srcs
     warp.pyc
     primitive.cpp
     unionize.pyc
-#    primitive_test.cpp
     mt19937ar.cpp
     optix_stuff.cpp
     whistory.cpp
-#    optixtest.cpp
-#    optix_stuff_test.cpp
-#    reaction_edges_test.cpp
-#    wgeometry_test.cpp
-#    whistory_test.cpp
     wgeometry.cpp
 )
 
@@ -246,3 +240,16 @@ target_link_libraries(warp ${libs})
 enable_testing()
 find_package(GTest REQUIRED)
 add_subdirectory(test)
+
+find_package(SWIG REQUIRED)
+include(${SWIG_USE_FILE})
+include_directories(${PYTHON_INCLUDE_PATH})
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+set(CMAKE_SWIG_FLAGS "-Wall")
+
+set_source_files_properties(warp.i PROPERTIES CPLUSPLUS ON)
+#set_source_files_properties(warp.i PROPERTIES SWIG_FLAGS "-includeall")
+swig_add_module(warp_python python warp.i warp_wrap.cxx)
+swig_link_libraries(warp_python libwarp ${PYTHON_LIBRARIES})
