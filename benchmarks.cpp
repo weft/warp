@@ -141,8 +141,8 @@ int main(int argc, char* argv[]){
 		
 		// run stuff
 		tallycell = 999;
-		filename = godivaname;
-		tallyname = godivaname;
+		filename = jezebelname;
+		tallyname = jezebelname;
 		tallyname.append(".tally");
 	
 		//godiva geom
@@ -267,7 +267,7 @@ int main(int argc, char* argv[]){
 		
 	}
 	else{
-		printf("MUST ENTER A *VALID* RUN TYPE : "0;
+		printf("MUST ENTER A *VALID* RUN TYPE : ");
 		printf("%s, ",assemblyname.c_str());
 		printf("%s, ",flibename.c_str());
 		printf("%s, ",fusionname.c_str());
