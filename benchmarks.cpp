@@ -114,7 +114,180 @@ int main(int argc, char* argv[]){
 		
 	}
 	else if(fusionname.compare(argv[1])==0){
+		// fusion mats
+		n_topes = 18;
+		std::vector<std::string> topes  (n_topes);
+		std::vector<float>  void_fracs  (n_topes);
+		std::vector<float>   sic_fracs  (n_topes);
+		std::vector<float>    li_fracs  (n_topes);
+		std::vector<float>    ss_fracs  (n_topes);
+		topes[0]  =  "6000.80c";
+		topes[1]  = "14028.80c";
+		topes[2]  = "14029.80c";
+		topes[3]  = "14030.80c";
+		topes[4]  =  "3006.80c";
+		topes[5]  =  "3007.80c";
+		topes[6]  = "26054.80c";
+		topes[7]  = "26056.80c";
+		topes[8]  = "26057.80c";
+		topes[9]  = "26058.80c";
+		topes[10] = "24050.80c";
+		topes[11] = "24052.80c";
+		topes[12] = "24053.80c";
+		topes[13] = "24054.80c";
+		topes[14] = "28058.80c";
+		topes[15] = "28060.80c";
+		topes[16] = "28062.80c";
+		topes[17] = "28064.80c";
+
+		void_fracs[0]  = 0.0;
+		void_fracs[1]  = 0.0;
+		void_fracs[2]  = 0.0;
+		void_fracs[3]  = 0.0;
+		void_fracs[4]  = 0.0;
+		void_fracs[5]  = 0.0;
+		void_fracs[6]  = 0.0;
+		void_fracs[7]  = 0.0;
+		void_fracs[8]  = 0.0;
+		void_fracs[9]  = 0.0;
+		void_fracs[10] = 0.0;
+		void_fracs[11] = 0.0;
+		void_fracs[12] = 0.0;
+		void_fracs[13] = 0.0;
+		void_fracs[14] = 0.0;
+		void_fracs[15] = 0.0;
+		void_fracs[16] = 0.0;
+		void_fracs[17] = 0.0;
+
+		sic_fracs[0]  = 1.0;
+		sic_fracs[1]  = 0.9223;
+		sic_fracs[2]  = 0.0467;
+		sic_fracs[3]  = 0.0310;
+		sic_fracs[4]  = 0.0;
+		sic_fracs[5]  = 0.0;
+		sic_fracs[6]  = 0.0;
+		sic_fracs[7]  = 0.0;
+		sic_fracs[8]  = 0.0;
+		sic_fracs[9]  = 0.0;
+		sic_fracs[10] = 0.0;
+		sic_fracs[11] = 0.0;
+		sic_fracs[12] = 0.0;
+		sic_fracs[13] = 0.0;
+		sic_fracs[14] = 0.0;
+		sic_fracs[15] = 0.0;
+		sic_fracs[16] = 0.0;
+		sic_fracs[17] = 0.0;
+
+		li_fracs[0]  = 0.0;
+		li_fracs[1]  = 0.0;
+		li_fracs[2]  = 0.0;
+		li_fracs[3]  = 0.0;
+		li_fracs[4]  = 0.075;
+		li_fracs[5]  = 0.925;
+		li_fracs[6]  = 0.0;
+		li_fracs[7]  = 0.0;
+		li_fracs[8]  = 0.0;
+		li_fracs[9]  = 0.0;
+		li_fracs[10] = 0.0;
+		li_fracs[11] = 0.0;
+		li_fracs[12] = 0.0;
+		li_fracs[13] = 0.0;
+		li_fracs[14] = 0.0;
+		li_fracs[15] = 0.0;
+		li_fracs[16] = 0.0;
+		li_fracs[17] = 0.0;
+
+		ss_fracs[0]  = 0.0;
+		ss_fracs[1]  = 0.0;
+		ss_fracs[2]  = 0.0;
+		ss_fracs[3]  = 0.0;
+		ss_fracs[4]  = 0.0;
+		ss_fracs[5]  = 0.0;
+		ss_fracs[6]  = 0.0435;
+		ss_fracs[7]  = 0.6879;
+		ss_fracs[8]  = 0.0165;
+		ss_fracs[9]  = 0.0021;
+		ss_fracs[10] = 0.0065;
+		ss_fracs[11] = 0.1257;
+		ss_fracs[12] = 0.0143;
+		ss_fracs[13] = 0.0035;
+		ss_fracs[14] = 0.0681;
+		ss_fracs[15] = 0.0262;
+		ss_fracs[16] = 0.0036;
+		ss_fracs[17] = 0.0009;
+
+		float   void_dens= 0.000;
+		float   sic_dens = 3.210;
+		float    li_dens = 0.534;
+		float    ss_dens = 7.990;
+		geom.add_material(0,0,n_topes,void_dens,topes,void_fracs);
+		geom.add_material(1,0,n_topes, sic_dens,topes, sic_fracs);
+		geom.add_material(2,0,n_topes,  li_dens,topes,  li_fracs);
+		geom.add_material(3,0,n_topes,  ss_dens,topes,  ss_fracs);
 		
+		// run stuff
+		tallycell = 999;
+		filename  = fusionname;
+		tallyname = fusionname;
+		tallyname.append(".tally");
+	
+		//fusion geom
+		type=3;
+		material=0;
+		mins[0]= -150.0;
+		mins[1]= -150.0;
+		mins[2]= -150.0;
+		maxs[0]=  150.0;
+		maxs[1]=  150.0;
+		maxs[2]=  150.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,0,0,0,0,0,0);
+
+		type=3;
+		material=1;
+		mins[0]= -151.0;
+		mins[1]= -151.0;
+		mins[2]= -151.0;
+		maxs[0]=  151.0;
+		maxs[1]=  151.0;
+		maxs[2]=  151.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,1,0,0,0,0,0);
+
+		type=3;
+		material=2;
+		mins[0]= -156.0;
+		mins[1]= -156.0;
+		mins[2]= -156.0;
+		maxs[0]=  156.0;
+		maxs[1]=  156.0;
+		maxs[2]=  156.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,2,0,0,0,0,0);
+
+		type=3;
+		material=3;
+		mins[0]= -160.0;
+		mins[1]= -160.0;
+		mins[2]= -160.0;
+		maxs[0]=  160.0;
+		maxs[1]=  160.0;
+		maxs[2]=  160.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,3,0,0,0,0,0);
+
 	}
 	else if(guidename.compare(argv[1])==0){
 		
