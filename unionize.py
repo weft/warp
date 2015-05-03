@@ -112,6 +112,7 @@ class cross_section_data:
 		for librarypath in self.libraries:
 			print "  loading "+librarypath
 			lib[librarypath] = ace.Library(librarypath)
+			print librarypath
 			lib[librarypath].read()
 
 		print "  --------- extracting data --------- "
@@ -210,7 +211,8 @@ class cross_section_data:
 
 		for table in self.tables:
 
-			#print "interpolating isotope "+str(tope_index)
+			print "interpolating isotope "+str(tope_index), self.isotope_list[tope_index], table.name
+			print "grid length =",len(table.energy)
 
 			#do this isotopes entry in the total block
 			this_array = numpy.interp( self.MT_E_grid, table.energy, table.sigma_t , left=0.0 )
@@ -218,7 +220,11 @@ class cross_section_data:
 
 			for MT in table.reactions:
 				rxn        = table.reactions[MT]
-				IE         = rxn.IE-1       #convert to python/C indexing 
+				#if rxn.IE>0:
+				#	IE = rxn.IE-1       #convert form fortran to python/C indexing 
+				#else:
+				IE = rxn.IE # in post 9/2014 pyne, -1 is already done?
+				#print MT, IE
 				#print table.energy[IE:]
 				#print rxn.sigma
 				#if hasattr(rxn,'ang_energy_in'): 
@@ -226,6 +232,7 @@ class cross_section_data:
 				#else:
 				#	print "no angular"
 				#print rxn.threshold()
+				#print len(table.energy[IE:]), len(rxn.sigma)
 				this_array = numpy.interp( self.MT_E_grid, table.energy[IE:], rxn.sigma , left=0.0 )  #interpolate MT cross section
 				self.MT_array[:,MT_array_dex] = this_array  # insert into the MT array
 

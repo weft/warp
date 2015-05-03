@@ -232,10 +232,12 @@ ADD_LIBRARY(libwarp SHARED ${warp_executable_srcs} ${warp_cuda_srcs})
 TARGET_LINK_LIBRARIES(libwarp ${libs})
 
 # actual target:
-add_executable(warp ${warp_executable_srcs} ${warp_cuda_srcs} main.cpp)
+add_executable(warp       ${warp_executable_srcs} ${warp_cuda_srcs} main.cpp)
+add_executable(benchmarks ${warp_executable_srcs} ${warp_cuda_srcs} benchmarks.cpp)
 
 # link libs
 target_link_libraries(warp ${libs})
+target_link_libraries(benchmarks ${libs})
 
 enable_testing()
 find_package(GTest REQUIRED)
