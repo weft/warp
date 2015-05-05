@@ -18,12 +18,13 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	if(run_mode){ // regular transport
 		tid=remap[starting_index + tid_in];
 		this_rxn = rxn[starting_index + tid_in];
-		if (this_rxn != 91 ){printf("cscatter kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;}  //print and return if not elastic scatter
+		//if (this_rxn != 91 ){printf("cscatter kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;}  //print and return if not continuum scatter
 	}
 	else{  // pop mode
 		tid=tid_in;
 		this_rxn = rxn[tid];
 		if ( this_rxn != 916 & this_rxn != 917 & this_rxn != 937 & this_rxn != 924 & this_rxn != 922 & this_rxn != 928 & this_rxn != 924 & this_rxn !=932 & this_rxn != 933 & this_rxn != 941){return;}  // return if not multiplicity reaction
+		
 	}
 
 	//constants
@@ -55,7 +56,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 
 	// internal kernel variables
 	float 		mu, phi, next_E, last_E, sampled_E, e_start, E0, E1, Ek, next_e_start, next_e_end, last_e_start, last_e_end, diff;
-    unsigned 	vlen, next_vlen, offset, n, law; 
+    unsigned 	vlen, next_vlen, offset, n, law, intt; 
     unsigned  	isdone = 0;
 	float  		speed_n          	=   sqrtf(2.0*this_E/m_n);
 	float 		E_new				=   0.0;
@@ -73,7 +74,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	//hats_target.y = sqrtf(1.0-(mu*mu))*sinf(phi); 
 	//hats_target.z = mu;
 	
-	// make speed vectors
+	// make speed vectors, assume high enough energy to approximate target as stationary
 	v_n_lf = hats_old    * speed_n;
 	v_t_lf = hats_target * 0.0;
 
@@ -88,91 +89,107 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	//sample energy
 	//
 	//read in values
-	offset = 5;
+	offset = 6;
 	memcpy(&last_E,   	&this_Earray[0], sizeof(float));
 	memcpy(&next_E,   	&this_Earray[1], sizeof(float));
 	memcpy(&vlen,   	&this_Earray[2], sizeof(float));
 	memcpy(&next_vlen,	&this_Earray[3], sizeof(float));
 	memcpy(&law, 		&this_Earray[4], sizeof(float));
-	if(run_mode==0 & this_E<last_E){this_E=last_E;}
-	float r = (this_E-last_E)/(next_E-last_E);
-	if(r<0){
-		printf("DATA NOT WITHIN ENERGY INTERVAL tid %u r % 10.8E rxn %u isotope %u this_E % 10.8E last_E % 10.8E next_E % 10.8E dex %u\n",tid,r,this_rxn,this_tope,this_E,last_E,next_E,this_dex);
-	}	
-	last_e_start = this_Earray[ offset ];
-	last_e_end   = this_Earray[ offset + vlen - 1 ];
-	next_e_start = this_Earray[ offset + 3*vlen ];
-	next_e_end   = this_Earray[ offset + 3*vlen + next_vlen - 1];
-	//unsigned svlen,next_svlen,len;
-	//printf("law=%u vlen/next= %u %u, E-last/this/next= %6.4E %6.4E %6.4E\n",law,vlen,next_vlen,last_E,this_E,next_E);
-	sampled_E = 0.0;
-	rn1 = get_rand(&rn);
-	if(  get_rand(&rn) >= r ){   //sample last E
-		diff = last_e_end - last_e_start;
-		e_start = last_e_start;
-		//n = binary_search( &this_Earray[ offset + vlen ] , rn1, vlen);
-		for ( n=0 ; n<vlen-1 ; n++ ){
-			cdf0 		= this_Earray[ (offset +   vlen ) + n+0];
-			cdf1 		= this_Earray[ (offset +   vlen ) + n+1];
-			if( rn1 >= cdf0 & rn1 < cdf1 ){
-				break;
-			}
+	memcpy(&intt, 		&this_Earray[5], sizeof(float));
+
+
+	//LAW = 44:
+	if (law==44){
+		if(run_mode==0 & this_E<last_E){
+			this_E = last_E;
 		}
-		pdf0		= this_Earray[ (offset + 2*vlen ) + n+0];
-		pdf1		= this_Earray[ (offset + 2*vlen ) + n+1];
-		e0  		= this_Earray[ (offset          ) + n+0];
-		e1  		= this_Earray[ (offset          ) + n+1]; 
-		offset = 4;
-		A = this_Sarray[ (offset)      + n ];
-		R = this_Sarray[ (offset+vlen) + n ];
-	}
-	else{
-		diff = next_e_end - next_e_start;
-		e_start = next_e_start;
-		//n = binary_search( &this_Earray[ offset + 3*vlen + next_vlen] , rn1, next_vlen);
-		for ( n=0 ; n<next_vlen-1 ; n++ ){
-			cdf0 		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+0];
-			cdf1  		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+1];
-			if( rn1 >= cdf0 & rn1 < cdf1 ){
-				break;
+
+		float r = (this_E-last_E)/(next_E-last_E);
+		if(r<0){
+			printf("DATA NOT WITHIN ENERGY INTERVAL tid %u r % 10.8E rxn %u isotope %u this_E % 10.8E last_E % 10.8E next_E % 10.8E dex %u\n",tid,r,this_rxn,this_tope,this_E,last_E,next_E,this_dex);
+		}	
+
+		last_e_start = this_Earray[ offset ];
+		last_e_end   = this_Earray[ offset + vlen - 1 ];
+		next_e_start = this_Earray[ offset + 3*vlen ];
+		next_e_end   = this_Earray[ offset + 3*vlen + next_vlen - 1];
+		//unsigned svlen,next_svlen,len;
+		//printf("law=%u vlen/next= %u %u, E-last/this/next= %6.4E %6.4E %6.4E\n",law,vlen,next_vlen,last_E,this_E,next_E);
+		sampled_E = 0.0;
+		rn1 = get_rand(&rn);
+		if(  get_rand(&rn) >= r ){   //sample last E
+			diff = last_e_end - last_e_start;
+			e_start = last_e_start;
+			//n = binary_search( &this_Earray[ offset + vlen ] , rn1, vlen);
+			for ( n=0 ; n<vlen-1 ; n++ ){
+				cdf0 		= this_Earray[ (offset +   vlen ) + n+0];
+				cdf1 		= this_Earray[ (offset +   vlen ) + n+1];
+				if( rn1 >= cdf0 & rn1 < cdf1 ){
+					break;
+				}
 			}
+			pdf0		= this_Earray[ (offset + 2*vlen ) + n+0];
+			pdf1		= this_Earray[ (offset + 2*vlen ) + n+1];
+			e0  		= this_Earray[ (offset          ) + n+0];
+			e1  		= this_Earray[ (offset          ) + n+1]; 
+			offset = 4;
+			A = this_Sarray[ (offset)      + n ];
+			R = this_Sarray[ (offset+vlen) + n ];
 		}
-		pdf0		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+0];
-		pdf1		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+1];
-		e0   		= this_Earray[ (offset + 3*vlen               ) + n+0];
-		e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
-		offset = 4;
-		A = this_Sarray[ (offset+2*vlen)           +n  ] ;
-		R = this_Sarray[ (offset+2*vlen+next_vlen) +n  ];
+		else{
+			diff = next_e_end - next_e_start;
+			e_start = next_e_start;
+			//n = binary_search( &this_Earray[ offset + 3*vlen + next_vlen] , rn1, next_vlen);
+			for ( n=0 ; n<next_vlen-1 ; n++ ){
+				cdf0 		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+0];
+				cdf1  		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+1];
+				if( rn1 >= cdf0 & rn1 < cdf1 ){
+					break;
+				}
+			}
+			pdf0		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+0];
+			pdf1		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+1];
+			e0   		= this_Earray[ (offset + 3*vlen               ) + n+0];
+			e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
+			offset = 4;
+			A = this_Sarray[ (offset+2*vlen)           +n  ] ;
+			R = this_Sarray[ (offset+2*vlen+next_vlen) +n  ];
+		}
+	
+		if (intt==1){
+		// histogram interpolation
+			E0 = e0 + (rn1-cdf0)/pdf0;
+		}
+		else if(intt==2){
+		//lin-lin interpolation
+			float m   = (pdf1 - pdf0)/(e1-e0);
+			float arg = pdf0*pdf0 + 2.0 * m * (rn7-cdf0);
+			if(arg<0){
+				E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn7-cdf0);
+		}
+		else{
+			E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
+		}
+	
+		//scale it
+		E1 = last_e_start + r*( next_e_start - last_e_start );
+		Ek = last_e_end   + r*( next_e_end   - last_e_end   );
+		sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
+		//printf("sampled_E % 10.8E E1 % 10.8E Ek % 10.8E E0 % 10.8E e_start % 10.8E diff % 10.8E last_e_end % 10.8E r % 10.8E next_e_end % 10.8E last_e_end % 10.8E \n",sampled_E,E1,Ek,E0,e_start,diff,last_e_end,r,next_e_end,last_e_end);
+		//sampled_E = E0;
+	
+		// find mu
+		rn1 = get_rand(&rn);
+		if(get_rand(&rn)>R){
+			float T = (2.0*rn1-1.0)*sinhf(A);
+			mu = logf(T+sqrtf(T*T+1.0))/A;
+		}
+		else{
+			mu = logf(rn1*expf(A)+(1.0-rn1)*expf(-A))/A;
+		}
 	}
+	else if (law==61){
 
-	// histogram interpolation
-	E0 = e0 + (rn1-cdf0)/pdf0;
-	//lin-lin interpolation
-	//float m   = (pdf1 - pdf0)/(e1-e0);
-	//float arg = pdf0*pdf0 + 2.0 * m * (rn7-cdf0);
-	//if(arg<0){
-	//	E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn7-cdf0);
-	//}
-	//else{
-	//	E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
-	//}
-
-	//scale it
-	E1 = last_e_start + r*( next_e_start - last_e_start );
-	Ek = last_e_end   + r*( next_e_end   - last_e_end   );
-	sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
-	//printf("sampled_E % 10.8E E1 % 10.8E Ek % 10.8E E0 % 10.8E e_start % 10.8E diff % 10.8E last_e_end % 10.8E r % 10.8E next_e_end % 10.8E last_e_end % 10.8E \n",sampled_E,E1,Ek,E0,e_start,diff,last_e_end,r,next_e_end,last_e_end);
-	//sampled_E = E0;
-
-	// find mu
-	rn1 = get_rand(&rn);
-	if(get_rand(&rn)>R){
-		float T = (2.0*rn1-1.0)*sinhf(A);
-		mu = logf(T+sqrtf(T*T+1.0))/A;
-	}
-	else{
-		mu = logf(rn1*expf(A)+(1.0-rn1)*expf(-A))/A;
 	}
 
 	// rotate direction vector

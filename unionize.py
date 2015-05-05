@@ -148,7 +148,8 @@ class cross_section_data:
 				rxn = table.reactions[MT]
 				if hasattr(rxn,"ang_energy_in"):
 					self.MT_E_grid=numpy.union1d(self.MT_E_grid,rxn.ang_energy_in)
-				if hasattr(rxn,"energy_dist") and rxn.energy_dist.law!=3:
+				if hasattr(rxn,"energy_dist") and rxn.energy_dist.law!=3 and rxn.energy_dist.law!=66:
+					print table.name, MT, "law",rxn.energy_dist.law
 					self.MT_E_grid=numpy.union1d(self.MT_E_grid,rxn.energy_dist.energy_in)
 
 		self.num_main_E   = self.MT_E_grid.__len__()
@@ -340,22 +341,29 @@ class cross_section_data:
 		table = self.tables[isotope]
 		MTnum = self.reaction_numbers[col]
 		rxn   = table.reactions[MTnum]
+
 		# get the energy from this index
 		this_E = self.MT_E_grid[row]
-		#print "isotope = "+ str(isotope)+" = "+self.tables[isotope].name+" MT = "+str(MTnum)+" row="+str(row)+" col="+str(col)
-		#print "energy="+str(self.MT_E_grid[row])
+		
 		if hasattr(rxn,"ang_energy_in"):
 			#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has scattering data"
 			scatterE   = rxn.ang_energy_in
 			scatterMu  = rxn.ang_cos 
 			scatterCDF = rxn.ang_cdf 
+			scatterPDF = rxn.ang_pdf
+			if hasattr(rxn,"energy_dist"):
+				law=rxn.energy_dist.law
+			else:
+				law=0
+				
 			# check length
 			assert scatterE.__len__() > 0
+
 			# find the index of the scattering table energy
 			if this_E >= scatterE[0] and this_E <= scatterE[-1]:
-				#print numpy.where( scatterE >= this_E )
-				#print scatterE
+				
 				scatter_dex = numpy.where( scatterE >= this_E )[0][0]
+
 				#get energy of next bin
 				if scatter_dex == scatterE.__len__()-1:
 					next_E  = self.MT_E_grid[-1]
@@ -363,44 +371,63 @@ class cross_section_data:
 				else:
 					next_E  = scatterE[scatter_dex+1]
 					plusone = 1
+
 				# find main E grid indext of next energy
 				nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-				#print row,col
-				#print this_E,next_E
-				#print scatter_dex
-				#print nextDex
-				#print scatterMu [scatter_dex]
-				#print scatterCDF[scatter_dex]
+				
 				# construct vector
 				vlen      = scatterCDF[scatter_dex].__len__()
 				cdf       = numpy.ascontiguousarray(scatterCDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
+				pdf   	  = numpy.ascontiguousarray(scatterPDF[scatter_dex],dtype=numpy.float32) 
 				mu        = numpy.ascontiguousarray(scatterMu[scatter_dex], dtype=numpy.float32)
 				nextvlen  = scatterCDF[scatter_dex+plusone].__len__()
 				nextcdf   = numpy.ascontiguousarray(scatterCDF[scatter_dex+ plusone],dtype=numpy.float32) 
+				nextpdf   = numpy.ascontiguousarray(scatterPDF[scatter_dex+ plusone],dtype=numpy.float32) 
 				nextmu    = numpy.ascontiguousarray(scatterMu[scatter_dex + plusone], dtype=numpy.float32)
+				
 				#check to make sure the same lengths
 				assert vlen == mu.__len__()
+				
 				# return
-				#print "vlen="+str(vlen)
 				self.last_loaded = MTnum
-				return [nextDex,this_E,next_E,vlen,nextvlen,mu,cdf,nextmu,nextcdf]
+				return [nextDex,this_E,next_E,vlen,nextvlen,law,0,mu,cdf,pdf,nextmu,nextcdf,nextpdf]
+
 			else:  # return 0 if below the first energy]
 				next_E = scatterE[0]
 				nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
 				#print "energy starts at dex "+str(nextDex)+", energy="+str(next_E)+","+str(self.MT_E_grid[nextDex])
-				return [nextDex,this_E,next_E,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-		elif hasattr(rxn,"energy_dist") and hasattr(rxn.energy_dist,"ang"):
-			#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has 44 data"
-			scatterE   = rxn.energy_dist.energy_in
-			scatterMu  = rxn.energy_dist.ang
-			scatterCDF = rxn.energy_dist.frac 
+				return [nextDex,this_E,next_E,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+
+		elif hasattr(rxn,"energy_dist"): #and hasattr(rxn.energy_dist,"ang"):
+			#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has angular energy distribution data"
+
+			law 		= rxn.energy_dist.law
+			if law==44:   #hasattr(rxn.energy_dist,"ang"):
+				scatterE   	= rxn.energy_dist.energy_in
+				scatterCDF 	= rxn.energy_dist.frac 
+				scatterPDF  = rxn.energy_dist.frac  # cdf/pdf is the energy dist, mistlikely this is law 44
+				scatterINTT = rxn.energy_dist.intt
+				scatterMu  	= rxn.energy_dist.ang
+			elif law==61: #hasattr(rxn.energy_dist,"a_dist_mu_out"):    
+				scatterE   	= rxn.energy_dist.energy_in
+				scatterCDF  = rxn.energy_dist.a_dist_cdf
+				scatterPDF  = rxn.energy_dist.a_dist_pdf
+				scatterINTT = rxn.energy_dist.a_dist_intt 
+				scatterMu   = rxn.energy_dist.a_dist_mu_out 
+			elif law==66: #hasattr(rxn.energy_dist,"a_dist_mu_out"):    
+				# always isotropic!
+				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+			else:
+				print "law ",law," not handled!"
+				
 			# check length
 			assert scatterE.__len__() > 0
+
 			# find the index of the scattering table energy
 			if this_E >= scatterE[0] and this_E <= scatterE[-1]:
-				#print numpy.where( scatterE >= this_E )
-				#print scatterE
+				
 				scatter_dex = numpy.where( scatterE >= this_E )[0][0]
+
 				#get energy of next bin
 				if scatter_dex == scatterE.__len__()-1:
 					next_E  = self.MT_E_grid[-1]
@@ -410,151 +437,43 @@ class cross_section_data:
 					plusone = 1
 				# find main E grid indext of next energy
 				nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-				#print row,col
-				#print this_E,next_E
-				#print scatter_dex
-				#print nextDex
-				#print scatterMu [scatter_dex]
-				#print scatterCDF[scatter_dex]
+
 				# construct vector
 				vlen      = scatterCDF[scatter_dex].__len__()
 				cdf       = numpy.ascontiguousarray(scatterCDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
+				pdf       = numpy.ascontiguousarray(scatterPDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
 				mu        = numpy.ascontiguousarray(scatterMu[scatter_dex], dtype=numpy.float32)
 				nextvlen  = scatterCDF[scatter_dex+plusone].__len__()
 				nextcdf   = numpy.ascontiguousarray(scatterCDF[scatter_dex+ plusone],dtype=numpy.float32) 
+				nextpdf   = numpy.ascontiguousarray(scatterPDF[scatter_dex+ plusone],dtype=numpy.float32) 
 				nextmu    = numpy.ascontiguousarray(scatterMu[scatter_dex + plusone], dtype=numpy.float32)
+				intt 	  = scatterINTT[scatter_dex]
+				if intt is list:
+					intt = intt[0]  # just take first value of list in intt, might be wrong :/
 				#check to make sure the same lengths
 				assert vlen == mu.__len__()
-				# return
-				#print "vlen="+str(vlen)
-				#if MTnum == 91 :
-				#	print "MT=91  thisE="+str(this_E)+" nextE="+str(next_E)+" thisdex="+str(row)+" nextdex="+str(nextDex)
-				#	pylab.plot(mu,cdf)
-				#	pylab.savefig("MT91_scatter_"+str(this_E)+".png")
-				#	pylab.cla()
+
 				self.last_loaded = MTnum
-				return [nextDex,this_E,next_E,vlen,nextvlen,mu,cdf,nextmu,nextcdf]
+				return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,mu,cdf,pdf,nextmu,nextcdf,nextpdf]
+
 			else:  # return 0 if below the first energy]
 				next_E = scatterE[0]
 				nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
 				#if MTnum==91:
 					#print "energy starts at dex "+str(nextDex)+", energy="+str(next_E)+","+str(self.MT_E_grid[nextDex])
-				return [nextDex,this_E,next_E,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+				return [nextDex,this_E,next_E,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 		elif hasattr(table,"nu_t_energy"):
 			# return interpolated nu values
 			interped_nu = numpy.interp( self.MT_E_grid, table.nu_t_energy, table.nu_t_value )   #
 			interped_nu = numpy.ascontiguousarray(interped_nu, dtype=numpy.float32)
 			#print interped_nu
 			#print "nu for MT="+str(MTnum)
-			return [-1,-1,-1,-1,-1,interped_nu,interped_nu,interped_nu,interped_nu]
+			return [-1,-1,-1,-1,-1,-1,-1,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu]
 		else:
-			#if MTnum >= 51 and MTnum <= 90:
-				#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has no angular tables.  Usings tables from MT = "+str(self.last_loaded)+" at energy = "+str(this_E)
-				#MTnum = self.last_loaded
-				#rxn   = table.reactions[MTnum]
-				#if hasattr(rxn,"ang_energy_in"):
-				#	#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has scattering data"
-				#	scatterE   = rxn.ang_energy_in
-				#	scatterMu  = rxn.ang_cos 
-				#	scatterCDF = rxn.ang_cdf 
-				#	# check length
-				#	assert scatterE.__len__() > 0
-				#	# find the index of the scattering table energy
-				#	if this_E >= scatterE[0] and this_E <= scatterE[-1]:
-				#		#print numpy.where( scatterE >= this_E )
-				#		#print scatterE
-				#		scatter_dex = numpy.where( scatterE >= this_E )[0][0]
-				#		#get energy of next bin
-				#		if scatter_dex == scatterE.__len__()-1:
-				#			next_E  = self.MT_E_grid[-1]
-				#			plusone = 0
-				#		else:
-				#			next_E  = scatterE[scatter_dex+1]
-				#			plusone = 1
-				#		# find main E grid indext of next energy
-				#		nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-				#		#print row,col
-				#		#print this_E,next_E
-				#		#print scatter_dex
-				#		#print nextDex
-				#		#print scatterMu [scatter_dex]
-				#		#print scatterCDF[scatter_dex]
-				#		# construct vector
-				#		vlen      = scatterCDF[scatter_dex].__len__()
-				#		cdf       = numpy.ascontiguousarray(scatterCDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-				#		mu        = numpy.ascontiguousarray(scatterMu[scatter_dex], dtype=numpy.float32)
-				#		nextvlen  = scatterCDF[scatter_dex+plusone].__len__()
-				#		nextcdf   = numpy.ascontiguousarray(scatterCDF[scatter_dex+ plusone],dtype=numpy.float32) 
-				#		nextmu    = numpy.ascontiguousarray(scatterMu[scatter_dex + plusone], dtype=numpy.float32)
-				#		#check to make sure the same lengths
-				#		assert vlen == mu.__len__()
-				#		# return
-				#		#print "vlen="+str(vlen)
-				#		self.last_loaded = MTnum
-				#		return [nextDex,this_E,next_E,vlen,nextvlen,mu,cdf,nextmu,nextcdf]
-				#	else:  # return 0 if below the first energy]
-				#		next_E = scatterE[0]
-				#		nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-				#		#print "energy starts at dex "+str(nextDex)+", energy="+str(next_E)+","+str(self.MT_E_grid[nextDex])
-				#		return [nextDex,this_E,next_E,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-				#elif hasattr(rxn,"energy_dist") and hasattr(rxn.energy_dist,"ang"):
-				#	#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has 44 data"
-				#	scatterE   = rxn.energy_dist.energy_in
-				#	scatterMu  = rxn.energy_dist.ang
-				#	scatterCDF = rxn.energy_dist.frac 
-				#	# check length
-				#	assert scatterE.__len__() > 0
-				#	# find the index of the scattering table energy
-				#	if this_E >= scatterE[0] and this_E <= scatterE[-1]:
-				#		#print numpy.where( scatterE >= this_E )
-				#		#print scatterE
-				#		scatter_dex = numpy.where( scatterE >= this_E )[0][0]
-				#		#get energy of next bin
-				#		if scatter_dex == scatterE.__len__()-1:
-				#			next_E  = self.MT_E_grid[-1]
-				#			plusone = 0
-				#		else:
-				#			next_E  = scatterE[scatter_dex+1]
-				#			plusone = 1
-				#		# find main E grid indext of next energy
-				#		nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-				#		#print row,col
-				#		#print this_E,next_E
-				#		#print scatter_dex
-				#		#print nextDex
-				#		#print scatterMu [scatter_dex]
-				#		#print scatterCDF[scatter_dex]
-				#		# construct vector
-				#		vlen      = scatterCDF[scatter_dex].__len__()
-				#		cdf       = numpy.ascontiguousarray(scatterCDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-				#		mu        = numpy.ascontiguousarray(scatterMu[scatter_dex], dtype=numpy.float32)
-				#		nextvlen  = scatterCDF[scatter_dex+plusone].__len__()
-				#		nextcdf   = numpy.ascontiguousarray(scatterCDF[scatter_dex+ plusone],dtype=numpy.float32) 
-				#		nextmu    = numpy.ascontiguousarray(scatterMu[scatter_dex + plusone], dtype=numpy.float32)
-				#		#check to make sure the same lengths
-				#		assert vlen == mu.__len__()
-				#		# return
-				#		#print "vlen="+str(vlen)
-				#		#if MTnum == 91 :
-				#		#	print "MT=91  thisE="+str(this_E)+" nextE="+str(next_E)+" thisdex="+str(row)+" nextdex="+str(nextDex)
-				#		#	pylab.plot(mu,cdf)
-				#		#	pylab.savefig("MT91_scatter_"+str(this_E)+".png")
-				#		#	pylab.cla()
-				#		self.last_loaded = MTnum
-				#		return [nextDex,this_E,next_E,vlen,nextvlen,mu,cdf,nextmu,nextcdf]
-				#	else:  # return 0 if below the first energy]
-				#		next_E = scatterE[0]
-				#		nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-				#		#if MTnum==91:
-				#			#print "energy starts at dex "+str(nextDex)+", energy="+str(next_E)+","+str(self.MT_E_grid[nextDex])
-				#		return [nextDex,this_E,next_E,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-				#else:
-				#	print "Oops... Energy not within range."
-			#else:
-				print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has no angular tables.  Writing NULL."
-				next_E   = self.MT_E_grid[self.num_main_E-1]
-				nextDex = self.MT_E_grid.__len__()
-				return [nextDex,this_E,next_E,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+			print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has no angular tables.  Writing NULL."
+			next_E   = self.MT_E_grid[self.num_main_E-1]
+			nextDex = self.MT_E_grid.__len__()
+			return [nextDex,this_E,next_E,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 
 
 
@@ -565,87 +484,132 @@ class cross_section_data:
 	# @param[in] row - point in energy grid
 	# @param[in] col - MT number
 	def _get_energy_data(self,row,col):
-		# scatter table returned in this form
-		# returns [nextDex, length, mu, cdf] if scattering data exists
+		# energy table returned
 
 		#find the isotope we are in
 		numbers = numpy.cumsum(self.reaction_numbers_total)
-		isotope = 0
-		for n in numbers:
-			if (col - self.num_isotopes) <= n:
-				break
-			else:
-				isotope = isotope + 1
+		isotope = numpy.argmax( (col - self.num_isotopes) < numbers )
+		table 	= self.tables[isotope]
+		MTnum 	= self.reaction_numbers[col]
+		rxn   	= table.reactions[MTnum]
 
-		table = self.tables[isotope]
-		MTnum = self.reaction_numbers[col]
-		rxn   = table.reactions[MTnum]
 		# get the energy from this index
 		this_E = self.MT_E_grid[row]
+
 		if hasattr(rxn,"energy_dist"):
+			
 			#print "LAW="+str(rxn.energy_dist.law)+" MT="+str(MTnum)
-			if rxn.energy_dist.law == 3:
+
+			#get law
+			law        = rxn.energy_dist.law
+			
+			#pack law data into vector
+			if law == 3:  
+			# level scattering
 				next_E = self.MT_E_grid[self.num_main_E-1]
-				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,3,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-			else:
-				scatterE   = rxn.energy_dist.energy_in
-				scatterMu  = rxn.energy_dist.energy_out
-				scatterCDF = rxn.energy_dist.cdf
-				scatterPDF = rxn.energy_dist.pdf
-				law        = rxn.energy_dist.law
-				#print "MT "+str(MTnum)+" law "+str(law)
+				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,3,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+			
+			elif law == 9: 
+			# evaporation spectrum
+
+				# get data
+				m_yield    	= rxn.energy_dist.multiplicity
+				dataE 		= rxn.energy_dist.energy_in
+				T 			= rxn.energy_dist.T
+				U 			= rxn.energy_dist.U
+
 				# check length
-				assert scatterE.__len__() > 0
+				assert dataE.__len__() > 0
+
 				# find the index of the scattering table energy
-				if this_E >= scatterE[0] and this_E <= scatterE[-1]:
-					scatter_dex = numpy.where( scatterE >= this_E )[0][0]
+				if this_E >= dataE[0] and this_E <= dataE[-1]:
+					
+					data_dex = numpy.where( dataE >= this_E )[0][0]
+
 					#get energy of next bin
-					if scatter_dex == scatterE.__len__()-1:
+					if data_dex == dataE.__len__()-1:
 						next_E  = self.MT_E_grid[-1]
 						plusone = 0
 					else:
-						next_E  = scatterE[scatter_dex+1]
+						next_E  = dataE[scatter_dex+1]
+						plusone = 1
+
+					# find main E grid index of next energy
+					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
+
+					# construct vector
+					vlen 			= 2
+					nextvlen		= 2
+					intt 			= 0
+					this_T   		= numpy.ascontiguousarray(numpy.array([T[data_dex],T[data_dex+ plusone]]),dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
+					this_U   		= numpy.ascontiguousarray(U          ,dtype=numpy.float32)
+					this_Eedge		= numpy.ascontiguousarray(numpy.array(dataE[ data_dex], dataE[ data_dex+plusone]), dtype=numpy.float32)
+										
+					# return
+					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,this_T,this_U,this_Eedge]
+
+			elif law == 44 or law==61:  
+			# Kalbach-87 tabular distribution, or correlated angle-energy dist
+
+				# get data
+				if hasattr(rxn.energy_dist,"multiplicity"):
+					m_yield    = rxn.energy_dist.multiplicity
+				else:
+					m_yield 	= 0
+				dataE   = rxn.energy_dist.energy_in
+				dataMu  = rxn.energy_dist.energy_out
+				dataCDF = rxn.energy_dist.cdf
+				dataPDF = rxn.energy_dist.pdf
+
+				# check length
+				assert dataE.__len__() > 0
+
+				# find the index of the scattering table energy
+				if this_E >= dataE[0] and this_E <= dataE[-1]:
+					
+					data_dex = numpy.where( dataE >= this_E )[0][0]
+
+					#get energy of next bin
+					if data_dex == dataE.__len__()-1:
+						next_E  = self.MT_E_grid[-1]
+						plusone = 0
+					else:
+						next_E  = dataE[scatter_dex+1]
 						plusone = 1
 					# find main E grid indext of next energy
 					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-					#print "isotope = "+ str(isotope)+" MT = "+str(MTnum)
-					#print row,col
-					#print this_E,next_E
-					#print scatter_dex
-					#print nextDex
-					#print scatterMu [scatter_dex]
-					#print scatterCDF[scatter_dex]
+
 					# construct vector
-					vlen  		= scatterCDF[scatter_dex].__len__()
-					cdf   		= numpy.ascontiguousarray(scatterCDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-					pdf   		= numpy.ascontiguousarray(scatterPDF[scatter_dex],dtype=numpy.float32)
-					mu    		= numpy.ascontiguousarray(scatterMu[scatter_dex], dtype=numpy.float32)
-					nextvlen 	= scatterCDF[scatter_dex+plusone].__len__()
-					nextcdf  	= numpy.ascontiguousarray(scatterCDF[scatter_dex+ plusone],dtype=numpy.float32) 
-					nextpdf  	= numpy.ascontiguousarray(scatterPDF[scatter_dex+ plusone],dtype=numpy.float32) 
-					nextmu   	= numpy.ascontiguousarray(scatterMu[scatter_dex + plusone], dtype=numpy.float32)
+					vlen  		=                         dataCDF[data_dex].__len__()
+					cdf   		= numpy.ascontiguousarray(dataCDF[data_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
+					pdf   		= numpy.ascontiguousarray(dataPDF[data_dex],dtype=numpy.float32)
+					mu    		= numpy.ascontiguousarray(dataMu[ data_dex], dtype=numpy.float32)
+					nextvlen 	=                         dataCDF[data_dex+ plusone].__len__()
+					nextcdf  	= numpy.ascontiguousarray(dataCDF[data_dex+ plusone],dtype=numpy.float32) 
+					nextpdf  	= numpy.ascontiguousarray(dataPDF[data_dex+ plusone],dtype=numpy.float32) 
+					nextmu   	= numpy.ascontiguousarray(dataMu[ data_dex+ plusone],dtype=numpy.float32)
+					intt 		= rxn.energy_dist.intt[data_dex]
+					
 					#check to make sure the same length
 					assert vlen == mu.__len__()
-					#print "vlen,next "+str(vlen)+" "+str(nextvlen)
-					# return
-					#if MTnum == 91 :
-					#	print "MT=91  thisE="+str(this_E)+" nextE="+str(next_E)+" thisdex="+str(row)+" nextdex="+str(nextDex)
-					#	print scatter_dex
-					#	pylab.plot(mu,cdf)
-					#	pylab.savefig("MT91_energy_"+str(this_E)+".png")
-					#	pylab.cla()
-					return [nextDex,this_E,next_E,vlen,nextvlen,law,mu,cdf,pdf,nextmu,nextcdf,nextpdf]
+					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,mu,cdf,pdf,nextmu,nextcdf,nextpdf]
+				
 				else:  # return 0 if below the first energy]
-					next_E = scatterE[0]
+					next_E = dataE[0]
 					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-					#if MTnum==91:
-						#print "energy starts at dex "+str(nextDex)+", energy="+str(next_E)+","+str(self.MT_E_grid[nextDex])
-					return [nextDex,0,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+					return [nextDex,0,0,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+
+			elif law == 66:
+				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+			else:
+				print "law ",law," not handled, writing nulls"
+				next_E = self.MT_E_grid[self.num_main_E-1]
+				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 		else:
 			#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has no energy tables"
 			next_E   = self.MT_E_grid[self.num_main_E-1]
 			nextDex = self.MT_E_grid.__len__()
-			return [nextDex,this_E,next_E,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+			return [nextDex,this_E,next_E,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 
 
 
