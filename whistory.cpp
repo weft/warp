@@ -1155,55 +1155,54 @@ void whistory::load_cross_sections(){
 	}
 
 
-    	////////////////////////////////////
-    	// do energy stuff
-    	////////////////////////////////////
-	PyObject 	*MT_obj,*tope_obj;  //, *pdf_vector_obj,*next_pdf_vector_obj;
-	//Py_buffer 	pdfBuff, next_pdfBuff;
-	//unsigned 	law=0;
+    ////////////////////////////////////
+    // do energy stuff
+    ////////////////////////////////////
 
-     	//set total cross sections to NULL
-    	for (int j=0 ; j<1*xs_length_numbers[0] ; j++){  //start after the total xs vectors
-    		for (int k=0 ; k<MT_rows ; k++){
-    			xs_data_energy     [k*MT_columns + j] = NULL;
+    //set total cross sections to NULL
+    for (int j=0 ; j<1*xs_length_numbers[0] ; j++){  //start after the total xs vectors
+    	for (int k=0 ; k<MT_rows ; k++){
+    		xs_data_energy     [k*MT_columns + j] = NULL;
 			xs_data_energy_host[k*MT_columns + j] = NULL;
 		}
 	}
 
-    	// do the rest of the MT numbers
-    	for (int j=1*xs_length_numbers[0] ; j<MT_columns ; j++){  //start after the total xs vectors
-    		//std::cout << "  at energy column " << j+1 << " of " << MT_columns<< "\n";
-    		for (int k=0 ; k<MT_rows ; k++){
+    // do the rest of the MT numbers
+    for (int j=1*xs_length_numbers[0] ; j<MT_columns ; j++){  //start after the total xs vectors
+    	//std::cout << "  at energy column " << j+1 << " of " << MT_columns<< "\n";
+    	for (int k=0 ; k<MT_rows ; k++){
 
-    			// call cross_section_data instance to get buffer
-    			row_obj     = PyInt_FromLong     (k);
-    			col_obj     = PyInt_FromLong     (j);
-    			call_string = PyString_FromString("_get_energy_data");
+    		// call cross_section_data instance to get buffer
+    		row_obj     = PyInt_FromLong     (k);
+    		col_obj     = PyInt_FromLong     (j);
+    		call_string = PyString_FromString("_get_energy_data");
 			obj_list    = PyObject_CallMethodObjArgs(xsdat_instance, call_string, row_obj, col_obj, NULL);
 			PyErr_Print();
-
+	
 			// get objects in the returned list
-			nextDex_obj  		= PyList_GetItem(obj_list,0);
-			lastE_obj  		= PyList_GetItem(obj_list,1);
-			nextE_obj 		= PyList_GetItem(obj_list,2);
-			vector_length_obj 	= PyList_GetItem(obj_list,3);
+			nextDex_obj  			= PyList_GetItem(obj_list,0);
+			lastE_obj  				= PyList_GetItem(obj_list,1);
+			nextE_obj 				= PyList_GetItem(obj_list,2);
+			vector_length_obj 		= PyList_GetItem(obj_list,3);
 			next_vector_length_obj 	= PyList_GetItem(obj_list,4);
-			law_obj			= PyList_GetItem(obj_list,5);
-			mu_vector_obj 		= PyList_GetItem(obj_list,6);
-			cdf_vector_obj 		= PyList_GetItem(obj_list,7);
-			pdf_vector_obj 		= PyList_GetItem(obj_list,8);
-			next_mu_vector_obj 	= PyList_GetItem(obj_list,9);
-			next_cdf_vector_obj 	= PyList_GetItem(obj_list,10);
-			next_pdf_vector_obj 	= PyList_GetItem(obj_list,11);
+			law_obj					= PyList_GetItem(obj_list,5);
+			intt_obj 				= PyList_GetItem(obj_list,6);
+			mu_vector_obj 			= PyList_GetItem(obj_list,7);
+			cdf_vector_obj 			= PyList_GetItem(obj_list,8);
+			pdf_vector_obj 			= PyList_GetItem(obj_list,9);
+			next_mu_vector_obj 		= PyList_GetItem(obj_list,10);
+			next_cdf_vector_obj 	= PyList_GetItem(obj_list,11);
+			next_pdf_vector_obj 	= PyList_GetItem(obj_list,12);
 			PyErr_Print();
 
 			// expand list to c variables
-			nextDex 	  	= PyInt_AsLong 	  (nextDex_obj);
-			lastE 		  	= PyFloat_AsDouble(lastE_obj);
-			nextE 		  	= PyFloat_AsDouble(nextE_obj);
+			nextDex 	  		= PyInt_AsLong 	  (nextDex_obj);
+			lastE 		  		= PyFloat_AsDouble(lastE_obj);
+			nextE 		  		= PyFloat_AsDouble(nextE_obj);
 			vector_length 		= PyInt_AsLong    (vector_length_obj);
 			next_vector_length 	= PyInt_AsLong    (next_vector_length_obj);
-			law 			= PyInt_AsLong    (law_obj);
+			law 				= PyInt_AsLong    (law_obj);
+			intt 				= PyInt_AsLong    (intt_obj);
 
 			// set this pointer
 			if(vector_length==0){
@@ -1229,12 +1228,12 @@ void whistory::load_cross_sections(){
 				}
 	
 				// shape info
-				muRows     =  muBuff.shape[0];
-				muColumns  =  muBuff.shape[1];
-				muBytes    =  muBuff.len;
-				cdfRows    = cdfBuff.shape[0];
-				cdfColumns = cdfBuff.shape[1];
-				cdfBytes   = cdfBuff.len;
+				muRows     		=  muBuff.shape[0];
+				muColumns  		=  muBuff.shape[1];
+				muBytes    		=  muBuff.len;
+				cdfRows    		= cdfBuff.shape[0];
+				cdfColumns 		= cdfBuff.shape[1];
+				cdfBytes   		= cdfBuff.len;
 				next_muRows     = next_muBuff.shape[0];
 				next_muColumns  = next_muBuff.shape[1];
 				next_muBytes    = next_muBuff.len;
@@ -1254,26 +1253,28 @@ void whistory::load_cross_sections(){
 	
 				//allocate pointer, write into array
 				//for cuda too
-				this_pointer = new float [muRows + 2*cdfRows + next_muRows + 2*next_cdfRows + 5];
-				cudaMalloc(&cuda_pointer,(muRows + 2*cdfRows + next_muRows + 2*next_cdfRows + 5)*sizeof(float));
-				total_bytes_energy +=    (muRows + 2*cdfRows + next_muRows + 2*next_cdfRows + 5)*sizeof(float);    // add to total count
+				array_elements = muRows + 2*cdfRows + next_muRows + 2*next_cdfRows + 6;
+				this_pointer = new float [array_elements];
+				cudaMalloc(&cuda_pointer,(array_elements)*sizeof(float));
+				total_bytes_energy +=    (array_elements)*sizeof(float);    // add to total count
 				xs_data_energy     [k*MT_columns + j] = this_pointer;
 				xs_data_energy_host[k*MT_columns + j] = cuda_pointer;
 	
 				//copy data from python buffer to pointer in array
-				memcpy(&this_pointer[0], 				&lastE,   	  sizeof(float));
-				memcpy(&this_pointer[1], 				&nextE,   	  sizeof(float));    // nextE   to first position
-				memcpy(&this_pointer[2], 				&muRows,   	  sizeof(unsigned)); // len to third position
-				memcpy(&this_pointer[3], 				&next_muRows, 	  sizeof(unsigned));
-				memcpy(&this_pointer[4], 				&law, 		  sizeof(unsigned));
-				memcpy(&this_pointer[5],				muBuff.buf,  	  muRows*sizeof(float));     // mu  to len bytes after
-				memcpy(&this_pointer[5+   muRows],			cdfBuff.buf, 	  cdfRows*sizeof(float));
-				memcpy(&this_pointer[5+ 2*muRows],			pdfBuff.buf, 	  cdfRows*sizeof(float));
-				memcpy(&this_pointer[5+ 3*muRows],			next_muBuff.buf,  next_muRows*sizeof(float));
-				memcpy(&this_pointer[5+ 3*muRows +   next_muRows],	next_cdfBuff.buf, next_cdfRows*sizeof(float));
-				memcpy(&this_pointer[5+ 3*muRows + 2*next_muRows],	next_pdfBuff.buf, next_cdfRows*sizeof(float));
+				memcpy(&this_pointer[0], 							&lastE,   	  		sizeof(float));
+				memcpy(&this_pointer[1], 							&nextE,   	  		sizeof(float));    // nextE   to first position
+				memcpy(&this_pointer[2], 							&muRows,   	  		sizeof(unsigned)); // len to third position
+				memcpy(&this_pointer[3], 							&next_muRows, 	  	sizeof(unsigned));
+				memcpy(&this_pointer[4], 							&law, 		  		sizeof(unsigned));
+				memcpy(&this_pointer[5], 							&intt, 		  		sizeof(unsigned));
+				memcpy(&this_pointer[6],							muBuff.buf,  		muRows*sizeof(float));     // mu  to len bytes after
+				memcpy(&this_pointer[6+   muRows],					cdfBuff.buf, 		cdfRows*sizeof(float));
+				memcpy(&this_pointer[6+ 2*muRows],					pdfBuff.buf, 		cdfRows*sizeof(float));
+				memcpy(&this_pointer[6+ 3*muRows],					next_muBuff.buf,	next_muRows*sizeof(float));
+				memcpy(&this_pointer[6+ 3*muRows +   next_muRows],	next_cdfBuff.buf, 	next_cdfRows*sizeof(float));
+				memcpy(&this_pointer[6+ 3*muRows + 2*next_muRows],	next_pdfBuff.buf, 	next_cdfRows*sizeof(float));
 
-				cudaMemcpy(cuda_pointer,this_pointer,(muRows+2*cdfRows+next_muRows+2*next_cdfRows+5)*sizeof(float),cudaMemcpyHostToDevice);
+				cudaMemcpy(cuda_pointer,this_pointer,(array_elements)*sizeof(float),cudaMemcpyHostToDevice);
 
 				//for(unsigned n=0;n<(muRows+2*cdfRows+next_muRows+2*next_cdfRows+5);n++){
 				//	printf("%6.4E\n",this_pointer[n]);

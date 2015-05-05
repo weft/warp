@@ -141,6 +141,8 @@ class cross_section_data:
 	# @param[in] self - material with attributes to be unionized
 	def _unionize(self):
 
+		print "  --------- unionizing grid --------- "
+
 		for table in self.tables:
 			self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.energy)
 			# unionize the scattering energies in as well!  if present of course
@@ -149,10 +151,13 @@ class cross_section_data:
 				if hasattr(rxn,"ang_energy_in"):
 					self.MT_E_grid=numpy.union1d(self.MT_E_grid,rxn.ang_energy_in)
 				if hasattr(rxn,"energy_dist") and rxn.energy_dist.law!=3 and rxn.energy_dist.law!=66:
-					print table.name, MT, "law",rxn.energy_dist.law
+					#print table.name, MT, "law",rxn.energy_dist.law
 					self.MT_E_grid=numpy.union1d(self.MT_E_grid,rxn.energy_dist.energy_in)
 
 		self.num_main_E   = self.MT_E_grid.__len__()
+
+		print "  -------------- done --------------- "
+
 		#print self.MT_E_grid.shape
 		#print self.MT_E_grid
 
@@ -212,8 +217,8 @@ class cross_section_data:
 
 		for table in self.tables:
 
-			print "interpolating isotope "+str(tope_index), self.isotope_list[tope_index], table.name
-			print "grid length =",len(table.energy)
+			#print "interpolating isotope "+str(tope_index), self.isotope_list[tope_index], table.name
+			#print "grid length =",len(table.energy)
 
 			#do this isotopes entry in the total block
 			this_array = numpy.interp( self.MT_E_grid, table.energy, table.sigma_t , left=0.0 )
@@ -473,7 +478,6 @@ class cross_section_data:
 					for i in range(0,outlen):
 						if i>0:
 							locs.append(this_len*3+1+locs[i-1])  # compute location pointer based on previous
-						print i,locs[i]
 						this_len  = rxn.energy_dist.a_dist_mu_out[scatter_dex][i].__len__()
 						flatarray = numpy.append(flatarray,this_len)
 						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_mu_out[scatter_dex][i])
@@ -534,10 +538,10 @@ class cross_section_data:
 			law        = rxn.energy_dist.law
 			
 			#pack law data into vector
-			if law == 3:  
+			if law == 3 or law == 66:  
 			# level scattering
 				next_E = self.MT_E_grid[self.num_main_E-1]
-				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,3,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 			
 			elif law == 9: 
 			# evaporation spectrum
@@ -578,7 +582,7 @@ class cross_section_data:
 					# return
 					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,this_T,this_U,this_Eedge,this_T,this_U,this_Eedge]
 
-			elif law == 44 or law==61:  
+			elif law==4 or law == 44 or law==61:  
 			# Kalbach-87 tabular distribution, or correlated angle-energy dist
 
 				# get data
@@ -628,9 +632,6 @@ class cross_section_data:
 					next_E = dataE[0]
 					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
 					return [nextDex,0,0,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-
-			elif law == 66:
-				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 			else:
 				print "law ",law," not handled, writing nulls"
 				next_E = self.MT_E_grid[self.num_main_E-1]
