@@ -161,14 +161,15 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 			E0 = e0 + (rn1-cdf0)/pdf0;
 		}
 		else if(intt==2){
-		//lin-lin interpolation
-			float m   = (pdf1 - pdf0)/(e1-e0);
-			float arg = pdf0*pdf0 + 2.0 * m * (rn7-cdf0);
-			if(arg<0){
-				E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn7-cdf0);
+		////lin-lin interpolation
+		//	float m   = (pdf1 - pdf0)/(e1-e0);
+		//	float arg = pdf0*pdf0 + 2.0 * m * (rn1-cdf0);
+		//	if(arg<0){
+		//		E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn1-cdf0);
+		//	}
 		}
 		else{
-			E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
+		//	E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
 		}
 	
 		//scale it
@@ -203,6 +204,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	v_n_lf = v_n_cm + v_cm;
 	hats_new = v_n_lf / v_n_lf.norm2();
 	hats_new = hats_new / hats_new.norm2(); // get higher precision, make SURE vector is length one
+	
 	// calculate energy in lab frame
 	E_new = 0.5 * m_n * v_n_lf.dot(v_n_lf);
 
@@ -211,12 +213,10 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 		isdone=1;
 		this_rxn = 998;  // ecutoff code
 	}
-
 	
 	//if(this_rxn==91){printf("%u % 6.4E %6.4E %6.4E %6.4E %u %u\n",this_rxn,mu,sampled_E,this_E,E_new, vlen, next_vlen);}
 	//if(this_rxn==91){printf("%6.4E %6.4E %6.4E\n",E_new,this_E,E_new/this_E);}
 	//printf("n,vlen %u %u S,Eptrs %p %p Enew,samp %6.4E %6.4E A,R %6.4E %6.4E\n",n,vlen,this_Sarray,this_Earray,E_new,sampled_E,A,R);
-
 	//printf("%u dex %u sampled_E % 10.8E norm2_lf % 10.8E mu % 10.8E\n",tid,this_dex,sampled_E,v_n_lf.norm2(),mu);
 
 	// write reaction results if in trasport mode
@@ -224,6 +224,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 		done[tid]       			= isdone;
 		rxn[starting_index+tid_in] 	= this_rxn;
 	}
+	
 	// write universal results
 	E[tid]          			= E_new;
 	space[tid].xhat 			= hats_new.x;

@@ -355,7 +355,7 @@ class cross_section_data:
 				law=rxn.energy_dist.law
 			else:
 				law=0
-				
+
 			# check length
 			assert scatterE.__len__() > 0
 
@@ -401,8 +401,13 @@ class cross_section_data:
 		elif hasattr(rxn,"energy_dist"): #and hasattr(rxn.energy_dist,"ang"):
 			#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has angular energy distribution data"
 
-			law 		= rxn.energy_dist.law
-			if law==44:   #hasattr(rxn.energy_dist,"ang"):
+			law 			= rxn.energy_dist.law
+			if law == 4 or law ==3:
+				#print "has ang?", hasattr(rxn.energy_dist,"ang")
+				next_E   = self.MT_E_grid[self.num_main_E-1]
+				nextDex = self.MT_E_grid.__len__()
+				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+			elif law==44:   #hasattr(rxn.energy_dist,"ang"):
 				scatterE   	= rxn.energy_dist.energy_in
 				scatterCDF 	= rxn.energy_dist.frac 
 				scatterPDF  = rxn.energy_dist.frac  # cdf/pdf is the energy dist, mistlikely this is law 44
@@ -416,6 +421,8 @@ class cross_section_data:
 				scatterMu   = rxn.energy_dist.a_dist_mu_out 
 			elif law==66: #hasattr(rxn.energy_dist,"a_dist_mu_out"):    
 				# always isotropic!
+				next_E   = self.MT_E_grid[self.num_main_E-1]
+				nextDex = self.MT_E_grid.__len__()
 				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 			else:
 				print "law ",law," not handled!"
@@ -438,23 +445,46 @@ class cross_section_data:
 				# find main E grid indext of next energy
 				nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
 
-				# construct vector
-				vlen      = scatterCDF[scatter_dex].__len__()
-				cdf       = numpy.ascontiguousarray(scatterCDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-				pdf       = numpy.ascontiguousarray(scatterPDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-				mu        = numpy.ascontiguousarray(scatterMu[scatter_dex], dtype=numpy.float32)
-				nextvlen  = scatterCDF[scatter_dex+plusone].__len__()
-				nextcdf   = numpy.ascontiguousarray(scatterCDF[scatter_dex+ plusone],dtype=numpy.float32) 
-				nextpdf   = numpy.ascontiguousarray(scatterPDF[scatter_dex+ plusone],dtype=numpy.float32) 
-				nextmu    = numpy.ascontiguousarray(scatterMu[scatter_dex + plusone], dtype=numpy.float32)
-				intt 	  = scatterINTT[scatter_dex]
-				if intt is list:
-					intt = intt[0]  # just take first value of list in intt, might be wrong :/
-				#check to make sure the same lengths
-				assert vlen == mu.__len__()
 
-				self.last_loaded = MTnum
-				return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,mu,cdf,pdf,nextmu,nextcdf,nextpdf]
+				if law == 44:
+					# simple, construct vector of analytical values
+					vlen      = scatterCDF[scatter_dex].__len__()
+					cdf       = numpy.ascontiguousarray(scatterCDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
+					pdf       = numpy.ascontiguousarray(scatterPDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
+					mu        = numpy.ascontiguousarray(scatterMu[ scatter_dex], dtype=numpy.float32)
+					nextvlen  = scatterCDF[scatter_dex+plusone].__len__()
+					nextcdf   = numpy.ascontiguousarray(scatterCDF[scatter_dex+ plusone],dtype=numpy.float32) 
+					nextpdf   = numpy.ascontiguousarray(scatterPDF[scatter_dex+ plusone],dtype=numpy.float32) 
+					nextmu    = numpy.ascontiguousarray(scatterMu[ scatter_dex+ plusone],dtype=numpy.float32)
+					intt 	  = scatterINTT[scatter_dex]
+					if intt is list:
+						intt = intt[0]  # just take first value of list in intt, might be wrong :/
+					#check to make sure the same lengths
+					assert vlen == mu.__len__()
+	
+					self.last_loaded = MTnum
+					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,mu,cdf,pdf,nextmu,nextcdf,nextpdf]
+				elif law == 61:
+					# more complicated, need to return a flattened matrix for each E_in
+
+					outlen = rxn.energy_dist.energy_out[scatter_dex].__len__()
+					locs = [0]
+					flatarray = numpy.array([])
+					for i in range(0,outlen):
+						if i>0:
+							locs.append(this_len*3+1+locs[i-1])  # compute location pointer based on previous
+						print i,locs[i]
+						this_len  = rxn.energy_dist.a_dist_mu_out[scatter_dex][i].__len__()
+						flatarray = numpy.append(flatarray,this_len)
+						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_mu_out[scatter_dex][i])
+						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_cdf[scatter_dex][i])
+						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_pdf[scatter_dex][i])
+
+					flatarray = numpy.append(numpy.array(locs),flatarray)
+					flatarray = numpy.ascontiguousarray(flatarray,dtype=numpy.float32)   # encoding ints as foats reduces maximum!
+
+					self.last_loaded = MTnum    #  must encode into the same number of elements as other arrays
+					return [nextDex,this_E,next_E,0,0,0,0,flatarray,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 
 			else:  # return 0 if below the first energy]
 				next_E = scatterE[0]
@@ -542,11 +572,11 @@ class cross_section_data:
 					nextvlen		= 2
 					intt 			= 0
 					this_T   		= numpy.ascontiguousarray(numpy.array([T[data_dex],T[data_dex+ plusone]]),dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-					this_U   		= numpy.ascontiguousarray(U          ,dtype=numpy.float32)
+					this_U   		= numpy.ascontiguousarray(numpy.array([U,U])          ,dtype=numpy.float32)
 					this_Eedge		= numpy.ascontiguousarray(numpy.array(dataE[ data_dex], dataE[ data_dex+plusone]), dtype=numpy.float32)
 										
 					# return
-					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,this_T,this_U,this_Eedge]
+					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,this_T,this_U,this_Eedge,this_T,this_U,this_Eedge]
 
 			elif law == 44 or law==61:  
 			# Kalbach-87 tabular distribution, or correlated angle-energy dist
@@ -574,7 +604,7 @@ class cross_section_data:
 						next_E  = self.MT_E_grid[-1]
 						plusone = 0
 					else:
-						next_E  = dataE[scatter_dex+1]
+						next_E  = dataE[data_dex+1]
 						plusone = 1
 					# find main E grid indext of next energy
 					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]

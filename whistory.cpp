@@ -843,7 +843,7 @@ void whistory::load_cross_sections(){
 	}
 
 	//
-	// get and copy AWR vector
+	// get and copy TEMP vector
 	//
 	rows    = pBuff.shape[0];
 	columns = pBuff.shape[1];
@@ -915,21 +915,23 @@ void whistory::load_cross_sections(){
     float * nuBuff 	     = new float [MT_rows];
     // python variables for arguments
     PyObject 	*E_obj, *row_obj, *col_obj;
-    PyObject 	*cdf_vector_obj, *mu_vector_obj , *vector_length_obj, *nextDex_obj, *nextE_obj, *lastE_obj; 
-    PyObject 	*next_cdf_vector_obj, *next_mu_vector_obj , *next_vector_length_obj;
-    PyObject 	*obj_list;
-    Py_buffer 	muBuff, cdfBuff, next_muBuff, next_cdfBuff;
+    PyObject 	*cdf_vector_obj, *pdf_vector_obj, *mu_vector_obj , *vector_length_obj, *nextDex_obj, *nextE_obj, *lastE_obj; 
+    PyObject 	*next_cdf_vector_obj, *next_pdf_vector_obj, *next_mu_vector_obj , *next_vector_length_obj;
+    PyObject 	*obj_list, *law_obj, *intt_obj;
+    Py_buffer 	muBuff, cdfBuff, pdfBuff, next_muBuff, next_cdfBuff, next_pdfBuff;
     float 		*this_pointer,*cuda_pointer;
     float  		nextE, lastE;
     float       this_energy;
     float 		nu_test;
-    unsigned	this_MT, this_tope, vector_length_L;
+    unsigned	this_MT, this_tope, vector_length_L, law, intt, array_elements;
     int 		vector_length,next_vector_length;
     int 		minusone = -1;
     unsigned 	muRows,  muColumns,  muBytes;
     unsigned 	cdfRows, cdfColumns, cdfBytes;
+    unsigned 	pdfRows, pdfColumns, pdfBytes;
     unsigned 	next_muRows,  next_muColumns,  next_muBytes;
     unsigned 	next_cdfRows, next_cdfColumns, next_cdfBytes;
+    unsigned 	next_pdfRows, next_pdfColumns, next_pdfBytes;
     unsigned 	nextDex;
 
     //set total cross sections to NULL
@@ -940,26 +942,30 @@ void whistory::load_cross_sections(){
 		}
 	}
 
-    	// do the rest of the MT numbers
-    	for (int j=1*xs_length_numbers[0] ; j<MT_columns ; j++){  //start after the total xs vectors
-    		for (int k=0 ; k<MT_rows ; k++){
-    			// call cross_section_data instance to get buffer
-    			row_obj     = PyInt_FromLong     (k);
-    			col_obj     = PyInt_FromLong     (j);
-    			call_string = PyString_FromString("_get_scattering_data");
+    // do the rest of the MT numbers
+    for (int j=1*xs_length_numbers[0] ; j<MT_columns ; j++){  //start after the total xs vectors
+    	for (int k=0 ; k<MT_rows ; k++){
+    		// call cross_section_data instance to get buffer
+    		row_obj     = PyInt_FromLong     (k);
+    		col_obj     = PyInt_FromLong     (j);
+    		call_string = PyString_FromString("_get_scattering_data");
 			obj_list    = PyObject_CallMethodObjArgs(xsdat_instance, call_string, row_obj, col_obj, NULL);
 			PyErr_Print();
 
 			// get objects in the returned list  [nextDex,next_E,vlen,nextvlen,mu,cdf,nextmu,nextcdf]
-			nextDex_obj  			= PyList_GetItem(obj_list,0);
+			nextDex_obj  			= PyList_GetItem(obj_list,0); // values
 			lastE_obj  				= PyList_GetItem(obj_list,1);
 			nextE_obj 				= PyList_GetItem(obj_list,2);
 			vector_length_obj 		= PyList_GetItem(obj_list,3);
 			next_vector_length_obj 	= PyList_GetItem(obj_list,4);
-			mu_vector_obj 			= PyList_GetItem(obj_list,5);
-			cdf_vector_obj 			= PyList_GetItem(obj_list,6);
-			next_mu_vector_obj 		= PyList_GetItem(obj_list,7);
-			next_cdf_vector_obj 	= PyList_GetItem(obj_list,8);
+			law_obj 				= PyList_GetItem(obj_list,5);
+			intt_obj 				= PyList_GetItem(obj_list,6);
+			mu_vector_obj 			= PyList_GetItem(obj_list,7); // vectors
+			cdf_vector_obj 			= PyList_GetItem(obj_list,8);
+			pdf_vector_obj 			= PyList_GetItem(obj_list,9);
+			next_mu_vector_obj 		= PyList_GetItem(obj_list,10);
+			next_cdf_vector_obj 	= PyList_GetItem(obj_list,11);
+			next_pdf_vector_obj 	= PyList_GetItem(obj_list,12);
 			PyErr_Print();
 
 			// expand list to c variables
@@ -968,6 +974,8 @@ void whistory::load_cross_sections(){
 			nextE 		  		= PyFloat_AsDouble(nextE_obj);
 			vector_length 		= PyInt_AsLong    (vector_length_obj);
 			next_vector_length 	= PyInt_AsLong    (next_vector_length_obj);
+			law 				= PyInt_AsLong    (law_obj);
+			intt 				= PyInt_AsLong    (intt_obj);
 			PyErr_Print();
 
 			// set this pointer
@@ -1017,17 +1025,20 @@ void whistory::load_cross_sections(){
 			}
 			else{
 				// get data buffer from numpy array
+				if(law!=61){
 				if (PyObject_CheckBuffer(mu_vector_obj) & PyObject_CheckBuffer(cdf_vector_obj) & PyObject_CheckBuffer(next_mu_vector_obj) & PyObject_CheckBuffer(next_cdf_vector_obj) ){
 					PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
 					PyObject_GetBuffer(     cdf_vector_obj,      &cdfBuff, PyBUF_ND);
+					PyObject_GetBuffer(     pdf_vector_obj,      &pdfBuff, PyBUF_ND);
 					PyObject_GetBuffer( next_mu_vector_obj,  &next_muBuff, PyBUF_ND);
 					PyObject_GetBuffer(next_cdf_vector_obj, &next_cdfBuff, PyBUF_ND);
+					PyObject_GetBuffer(next_pdf_vector_obj, &next_pdfBuff, PyBUF_ND);
 					PyErr_Print();
 				}
 				else{
 					PyErr_Print();
-    			    		fprintf(stderr, "Returned object does not support buffer interface\n");
-    			    		return;
+    			    fprintf(stderr, "Returned object does not support buffer interface\n");
+    			    return;
 				}
 	
 				// shape info
@@ -1037,41 +1048,88 @@ void whistory::load_cross_sections(){
 				cdfRows    = cdfBuff.shape[0];
 				cdfColumns = cdfBuff.shape[1];
 				cdfBytes   = cdfBuff.len;
+				pdfRows    = pdfBuff.shape[0];
+				pdfColumns = pdfBuff.shape[1];
+				pdfBytes   = pdfBuff.len;
 				next_muRows     = next_muBuff.shape[0];
 				next_muColumns  = next_muBuff.shape[1];
 				next_muBytes    = next_muBuff.len;
 				next_cdfRows    = next_cdfBuff.shape[0];
 				next_cdfColumns = next_cdfBuff.shape[1];
 				next_cdfBytes   = next_cdfBuff.len;
+				next_pdfRows    = next_pdfBuff.shape[0];
+				next_pdfColumns = next_pdfBuff.shape[1];
+				next_pdfBytes   = next_pdfBuff.len;
 	
 				//make sure every is ok
 				assert(muRows==   cdfRows);
 				assert(muColumns==cdfColumns);
 				assert(muBytes==  cdfBytes);
+				assert(muRows==   pdfRows);
+				assert(muColumns==pdfColumns);
+				assert(muBytes==  pdfBytes);
 				assert(next_muRows==   next_cdfRows);
 				assert(next_muColumns==next_cdfColumns);
 				assert(next_muBytes==  next_cdfBytes);
+				assert(next_muRows==   next_pdfRows);
+				assert(next_muColumns==next_pdfColumns);
+				assert(next_muBytes==  next_pdfBytes);
 	
 				//allocate pointer, write into array
 				//for cuda too
-				this_pointer = new float [muRows+cdfRows+next_muRows+next_cdfRows+4];
-				cudaMalloc(&cuda_pointer,(muRows+cdfRows+next_muRows+next_cdfRows+4)*sizeof(float));
-				total_bytes_scatter += (muRows+cdfRows+next_muRows+next_cdfRows  +4)*sizeof(float);  // add to total count
+				array_elements = muRows+cdfRows+pdfRows+next_muRows+next_cdfRows+next_pdfRows+6;
+				this_pointer = new float [array_elements];
+				cudaMalloc(&cuda_pointer,array_elements*sizeof(float));
+				total_bytes_scatter += array_elements*sizeof(float);  // add to total count
 				xs_data_scatter     [k*MT_columns + j] = this_pointer;
 				xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
 	
 				//copy data from python buffer to pointer in array
-				memcpy(&this_pointer[0], 			&lastE,   	  sizeof(float));
-				memcpy(&this_pointer[1], 			&nextE,   	  sizeof(float));    // nextE   to first position
-				memcpy(&this_pointer[2], 			&muRows,   	  sizeof(unsigned)); // len to third position
-				memcpy(&this_pointer[3], 			&next_muRows, 	  sizeof(unsigned));
-				memcpy(&this_pointer[4],			muBuff.buf,  	  muRows*sizeof(float));     // mu  to len bytes after
-				memcpy(&this_pointer[4+  muRows],		cdfBuff.buf, 	  cdfRows*sizeof(float));     // cdf to len bytes after that
-				memcpy(&this_pointer[4+ 2*muRows],		next_muBuff.buf,  next_muRows*sizeof(float));
-				memcpy(&this_pointer[4+ 2*muRows+next_muRows],	next_cdfBuff.buf, next_cdfRows*sizeof(float));
+				memcpy(&this_pointer[0], 						&lastE,   	  		sizeof(float));
+				memcpy(&this_pointer[1], 						&nextE,   	  		sizeof(float));    // nextE   to first position
+				memcpy(&this_pointer[2], 						&muRows,   	  		sizeof(unsigned)); // len to third position
+				memcpy(&this_pointer[3], 						&next_muRows, 	  	sizeof(unsigned));
+				memcpy(&this_pointer[4],						&law,		  	  	sizeof(unsigned));
+				memcpy(&this_pointer[5],						&intt,		  	  	sizeof(unsigned));
+				memcpy(&this_pointer[6],						muBuff.buf,  	  	muRows*sizeof(float));     // mu  to len bytes after
+				memcpy(&this_pointer[6+   muRows],				cdfBuff.buf, 		cdfRows*sizeof(float));     // cdf to len bytes after that
+				memcpy(&this_pointer[6+ 2*muRows],				pdfBuff.buf, 		pdfRows*sizeof(float));
+				memcpy(&this_pointer[6+ 3*muRows],				next_muBuff.buf,	next_muRows*sizeof(float));
+				memcpy(&this_pointer[6+ 3*muRows+  next_muRows],next_cdfBuff.buf, 	next_cdfRows*sizeof(float));
+				memcpy(&this_pointer[6+ 3*muRows+2*next_muRows],next_pdfBuff.buf, 	next_pdfRows*sizeof(float));
 				PyErr_Print();
 
-				cudaMemcpy(cuda_pointer,this_pointer,(muRows+cdfRows+next_muRows+next_cdfRows+4)*sizeof(float),cudaMemcpyHostToDevice);
+				cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
+			}
+			else{
+				// get flattened array
+				if (PyObject_CheckBuffer(mu_vector_obj)){
+					PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
+				}
+				else{
+					PyErr_Print();
+    			    fprintf(stderr, "Returned object does not support buffer interface\n");
+    			    return;
+				}
+
+				//  get the buffers
+				muRows     =  muBuff.shape[0];
+				muColumns  =  muBuff.shape[1];
+				muBytes    =  muBuff.len;
+				assert( muRows==1 | muColumns==1);  // make sure 1d
+
+				this_pointer = new float [muBytes/sizeof(float)];
+				cudaMalloc(&cuda_pointer,muBytes);
+				total_bytes_scatter +=   muBytes;  // add to total count
+				xs_data_scatter     [k*MT_columns + j] = this_pointer;
+				xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
+				PyErr_Print();
+
+				// copy to cuda pointer and host pointer
+				memcpy(this_pointer,muBuff.buf,muBytes);
+				cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
+
+			}
 
 			}
 
@@ -1100,9 +1158,9 @@ void whistory::load_cross_sections(){
     	////////////////////////////////////
     	// do energy stuff
     	////////////////////////////////////
-	PyObject 	*law_obj,*MT_obj,*tope_obj,*pdf_vector_obj,*next_pdf_vector_obj;
-	Py_buffer 	pdfBuff, next_pdfBuff;
-	unsigned 	law=0;
+	PyObject 	*MT_obj,*tope_obj;  //, *pdf_vector_obj,*next_pdf_vector_obj;
+	//Py_buffer 	pdfBuff, next_pdfBuff;
+	//unsigned 	law=0;
 
      	//set total cross sections to NULL
     	for (int j=0 ; j<1*xs_length_numbers[0] ; j++){  //start after the total xs vectors
