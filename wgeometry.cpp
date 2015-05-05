@@ -410,7 +410,12 @@ void wgeometry::make_material_table(){
 			frac += concentrations_matrix[j*n_isotopes+k];
 		}
 		for(unsigned k=0;k<n_isotopes;k++){
-			concentrations_matrix[j*n_isotopes+k] = concentrations_matrix[j*n_isotopes+k]/frac;
+			if (frac==0.0) {
+				concentrations_matrix[j*n_isotopes+k] = 0.0;   // write 0 if no isotopes, this is a VOID cell
+			}
+			else{
+				concentrations_matrix[j*n_isotopes+k] = concentrations_matrix[j*n_isotopes+k]/frac;
+			}
 			m_avg += concentrations_matrix[j*n_isotopes+k] * awr_list[k] * m_n;
 			//std::cout << "awr["<<k<<"] = "<<awr_list[k]<<"\n";
 		}
@@ -419,7 +424,15 @@ void wgeometry::make_material_table(){
 		dens = materials[j].density;
 
 		// average num density
-		N_avg = dens/(m_avg * u_to_g * barns);
+		if (m_avg == 0 & dens ==0){
+			N_avg = 0.0;    // VOID, will get NAN if we do 0/0
+		}
+		else if( m_avg == 0){
+			printf(" ERROR:  NON-ZERO DENSITY FOR MATERIAL %d (index=%d) BUT HAS ZERO ISOTOPES\n",materials[j].id,j);
+		}
+		else{
+			N_avg = dens/(m_avg * u_to_g * barns);
+		}
 
 		//  multiply normalized fractions by average number density to get topes number density
 		for(unsigned k=0;k<n_isotopes;k++){

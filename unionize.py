@@ -407,7 +407,7 @@ class cross_section_data:
 			#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has angular energy distribution data"
 
 			law 			= rxn.energy_dist.law
-			if law == 4 or law ==3:
+			if law == 4 or law ==3 or law ==9 or law ==66:   # isotropic is not specified in preceeding section
 				#print "has ang?", hasattr(rxn.energy_dist,"ang")
 				next_E   = self.MT_E_grid[self.num_main_E-1]
 				nextDex = self.MT_E_grid.__len__()
@@ -424,11 +424,6 @@ class cross_section_data:
 				scatterPDF  = rxn.energy_dist.a_dist_pdf
 				scatterINTT = rxn.energy_dist.a_dist_intt 
 				scatterMu   = rxn.energy_dist.a_dist_mu_out 
-			elif law==66: #hasattr(rxn.energy_dist,"a_dist_mu_out"):    
-				# always isotropic!
-				next_E   = self.MT_E_grid[self.num_main_E-1]
-				nextDex = self.MT_E_grid.__len__()
-				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 			else:
 				print "law ",law," not handled!"
 				
@@ -536,7 +531,7 @@ class cross_section_data:
 
 			#get law
 			law        = rxn.energy_dist.law
-			
+
 			#pack law data into vector
 			if law == 3 or law == 66:  
 			# level scattering
@@ -547,7 +542,9 @@ class cross_section_data:
 			# evaporation spectrum
 
 				# get data
-				m_yield    	= rxn.energy_dist.multiplicity
+				m_yield 	= 0	
+				if hasattr(rxn.energy_dist,"multiplicity"):
+					m_yield = rxn.energy_dist.multiplicity
 				dataE 		= rxn.energy_dist.energy_in
 				T 			= rxn.energy_dist.T
 				U 			= rxn.energy_dist.U
@@ -565,7 +562,7 @@ class cross_section_data:
 						next_E  = self.MT_E_grid[-1]
 						plusone = 0
 					else:
-						next_E  = dataE[scatter_dex+1]
+						next_E  = dataE[data_dex+1]
 						plusone = 1
 
 					# find main E grid index of next energy
@@ -575,12 +572,17 @@ class cross_section_data:
 					vlen 			= 2
 					nextvlen		= 2
 					intt 			= 0
-					this_T   		= numpy.ascontiguousarray(numpy.array([T[data_dex],T[data_dex+ plusone]]),dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-					this_U   		= numpy.ascontiguousarray(numpy.array([U,U])          ,dtype=numpy.float32)
-					this_Eedge		= numpy.ascontiguousarray(numpy.array(dataE[ data_dex], dataE[ data_dex+plusone]), dtype=numpy.float32)
-										
+					this_T   		= numpy.ascontiguousarray( numpy.array(  [T[data_dex],T[data_dex+ plusone]]           ), dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
+					this_U   		= numpy.ascontiguousarray( numpy.array(  [U,U]                                        ), dtype=numpy.float32)
+					this_Eedge		= numpy.ascontiguousarray( numpy.array(  [dataE[ data_dex], dataE[ data_dex+plusone]] ), dtype=numpy.float32)
+
 					# return
-					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,this_T,this_U,this_Eedge,this_T,this_U,this_Eedge]
+					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,this_T,this_U,this_Eedge,numpy.array([0]),numpy.array([0]),numpy.array([0])]
+
+				else:  # return 0 if below the first energy]
+					next_E = dataE[0]
+					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
+					return [nextDex,0,0,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 
 			elif law==4 or law == 44 or law==61:  
 			# Kalbach-87 tabular distribution, or correlated angle-energy dist
