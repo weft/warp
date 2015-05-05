@@ -16,7 +16,7 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 	const float Emax 	= 20.0;
 
 	//read in values
-	offset = 5;
+	offset = 6;
 	memcpy(&last_E,   	&this_array[0], sizeof(float));
 	memcpy(&next_E,   	&this_array[1], sizeof(float));
 	memcpy(&vlen,   	&this_array[2], sizeof(float));
@@ -151,7 +151,7 @@ __device__ void process_scatter(unsigned this_yield, unsigned* rn, unsigned posi
 	//sample energy
 	//
 	//read in values
-	offset = 5;
+	offset = 6;
 	memcpy(&last_E,   	&this_Earray[0], sizeof(float));
 	memcpy(&next_E,   	&this_Earray[1], sizeof(float));
 	memcpy(&vlen,   	&this_Earray[2], sizeof(float));
@@ -188,7 +188,7 @@ __device__ void process_scatter(unsigned this_yield, unsigned* rn, unsigned posi
 					break;
 				}
 			}
-			offset = 4;
+			offset = 6;
 			A = this_Sarray[ (offset)      + n ];
 			R = this_Sarray[ (offset+vlen) + n ];
 		}
@@ -207,9 +207,9 @@ __device__ void process_scatter(unsigned this_yield, unsigned* rn, unsigned posi
 					break;
 				}
 			}
-			offset = 4;
-			A = this_Sarray[ (offset+2*vlen)           +n  ] ;
-			R = this_Sarray[ (offset+2*vlen+next_vlen) +n  ];
+			offset = 6;
+			A = this_Sarray[ (offset+3*vlen)           +n  ] ;
+			R = this_Sarray[ (offset+3*vlen+next_vlen) +n  ];
 		}
 	
 		// histogram interpolation

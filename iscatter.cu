@@ -9,12 +9,12 @@ inline __device__ void sample_therm(unsigned* rn, float* muout, float* vt, const
 
 	// adapted from OpenMC's sample_target_velocity subroutine in src/physics.F90
 
-	float k 	= 8.617332478e-11; //MeV/k
+	//float k 	= 8.617332478e-11; //MeV/k
 	float pi 	= 3.14159265359 ;
 	float mu,c,beta_vn,beta_vt,beta_vt_sq,r1,r2,alpha,accept_prob;
 	unsigned n;
 
-	beta_vn = sqrtf(awr * 1.00866491600 * E0 / (temp*k) );
+	beta_vn = sqrtf(awr * 1.00866491600 * E0 / temp );
 	alpha = 1.0/(1.0 + sqrtf(pi)*beta_vn/2.0);
 	
 	for(n=0;n<100;n++){
@@ -39,7 +39,7 @@ inline __device__ void sample_therm(unsigned* rn, float* muout, float* vt, const
 		if ( get_rand(rn) < accept_prob){break;}
 	}
 
-	vt[0] = sqrtf(beta_vt_sq*2.0*k*temp/(awr*1.00866491600));
+	vt[0] = sqrtf(beta_vt_sq*2.0*temp/(awr*1.00866491600));
 	muout[0] = mu;
 	//printf("%6.4E %6.4E\n",vt[0],mu);
 
@@ -131,7 +131,7 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	// sample new phi, mu_cm
 	phi = 2.0*pi*get_rand(&rn);
 	rn1 = get_rand(&rn);
-	offset=4;
+	offset=6;
 	if(this_Sarray == 0x0){
 		mu= 2.0*rn1-1.0; // assume CM isotropic scatter if null
 		// should make print by flag
@@ -163,14 +163,14 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 		else{   // sample E+1
 			//k = binary_search(&this_Sarray[offset+2*vlen+next_vlen], rn1, next_vlen);
 			for ( k=0 ; k<next_vlen-1 ; k++ ){
-				cdf0 = this_Sarray[ (offset+2*vlen+next_vlen) +k  ];
-				cdf1 = this_Sarray[ (offset+2*vlen+next_vlen) +k+1];
+				cdf0 = this_Sarray[ (offset+3*vlen+next_vlen) +k  ];
+				cdf1 = this_Sarray[ (offset+3*vlen+next_vlen) +k+1];
 				if( rn1 >= cdf0 & rn1 < cdf1 ){
 					break;
 				}
 			}
-			mu0  = this_Sarray[ (offset+2*vlen)           +k  ];
-			mu1  = this_Sarray[ (offset+2*vlen)           +k+1];
+			mu0  = this_Sarray[ (offset+3*vlen)           +k  ];
+			mu1  = this_Sarray[ (offset+3*vlen)           +k+1];
 			mu   = (mu1-mu0)/(cdf1-cdf0)*(rn1-cdf0)+mu0; 
 		}
 	}

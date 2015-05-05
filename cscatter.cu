@@ -20,11 +20,10 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 		this_rxn = rxn[starting_index + tid_in];
 		//if (this_rxn != 91 ){printf("cscatter kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;}  //print and return if not continuum scatter
 	}
-	else{  // pop mode
+	else{  // pop mode, return if not multiplicity reaction
 		tid=tid_in;
 		this_rxn = rxn[tid];
-		if ( this_rxn != 916 & this_rxn != 917 & this_rxn != 937 & this_rxn != 924 & this_rxn != 922 & this_rxn != 928 & this_rxn != 924 & this_rxn !=932 & this_rxn != 933 & this_rxn != 941){return;}  // return if not multiplicity reaction
-		
+		if ( this_rxn != 916 & this_rxn != 917 & this_rxn != 937 & this_rxn != 924 & this_rxn != 922 & this_rxn != 928 & this_rxn != 924 & this_rxn !=932 & this_rxn != 933 & this_rxn != 941){return;}
 	}
 
 	//constants
@@ -43,13 +42,9 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	float * 	this_Earray =  energydat[this_dex];
 	unsigned	rn			= rn_bank[ tid ];
 
-	// check pointers
-	if(this_Sarray == 0x0){
-		printf("null pointer in cscatter!,dex %u rxn %u tope %u E %6.4E run mode %u\n",this_dex,this_rxn,this_tope,this_E,run_mode);
-		return;
-	}
+	// check E data pointers
 	if(this_Earray == 0x0){
-		printf("null pointer in cscatter!,dex %u rxn %u tope %u E %6.4E run mode %u\n",this_dex,this_rxn,this_tope,this_E,run_mode);
+		printf("null pointer, energy array in cscatter!,dex %u rxn %u tope %u E %6.4E run mode %u\n",this_dex,this_rxn,this_tope,this_E,run_mode);
 		return;
 	}
 
@@ -63,17 +58,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	//float 		a 					= 	this_awr/(this_awr+1.0);
 	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target;
 	float 		cdf0,e0,A,R,pdf0,rn1,cdf1,pdf1,e1;
-	//float		cdf1,pdf1,e1;
-	//float 		v_rel,E_rel;
 
-
-	// make target isotropic (continuum is high energy, good approx)
-	//mu  = (2.0*get_rand(&rn)) - 1.0;
-	//phi = 2.0*pi*get_rand(&rn);
-	//hats_target.x = sqrtf(1.0-(mu*mu))*cosf(phi);
-	//hats_target.y = sqrtf(1.0-(mu*mu))*sinf(phi); 
-	//hats_target.z = mu;
-	
 	// make speed vectors, assume high enough energy to approximate target as stationary
 	v_n_lf = hats_old    * speed_n;
 	v_t_lf = hats_target * 0.0;
@@ -85,10 +70,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	v_n_cm = v_n_lf - v_cm;
 	v_t_cm = v_t_lf - v_cm;
 
-	//
-	//sample energy
-	//
-	//read in values
+	//read in preamble values
 	offset = 6;
 	memcpy(&last_E,   	&this_Earray[0], sizeof(float));
 	memcpy(&next_E,   	&this_Earray[1], sizeof(float));
@@ -100,21 +82,31 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 
 	//LAW = 44:
 	if (law==44){
+
+		// make sure scatter array is present
+		if(this_Sarray == 0x0){
+			printf("null pointer, scatter array in cscatter!,dex %u rxn %u tope %u E %6.4E run mode %u\n",this_dex,this_rxn,this_tope,this_E,run_mode);
+			return;
+		}
+
+		// correct if below lower energy?
 		if(run_mode==0 & this_E<last_E){
 			this_E = last_E;
 		}
 
+		// compute interpolation factor
 		float r = (this_E-last_E)/(next_E-last_E);
 		if(r<0){
 			printf("DATA NOT WITHIN ENERGY INTERVAL tid %u r % 10.8E rxn %u isotope %u this_E % 10.8E last_E % 10.8E next_E % 10.8E dex %u\n",tid,r,this_rxn,this_tope,this_E,last_E,next_E,this_dex);
 		}	
 
+		// load values 
 		last_e_start = this_Earray[ offset ];
 		last_e_end   = this_Earray[ offset + vlen - 1 ];
 		next_e_start = this_Earray[ offset + 3*vlen ];
 		next_e_end   = this_Earray[ offset + 3*vlen + next_vlen - 1];
-		//unsigned svlen,next_svlen,len;
-		//printf("law=%u vlen/next= %u %u, E-last/this/next= %6.4E %6.4E %6.4E\n",law,vlen,next_vlen,last_E,this_E,next_E);
+
+		// sample energy
 		sampled_E = 0.0;
 		rn1 = get_rand(&rn);
 		if(  get_rand(&rn) >= r ){   //sample last E
@@ -152,15 +144,17 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 			e0   		= this_Earray[ (offset + 3*vlen               ) + n+0];
 			e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
 			offset = 4;
-			A = this_Sarray[ (offset+2*vlen)           +n  ] ;
-			R = this_Sarray[ (offset+2*vlen+next_vlen) +n  ];
+			A = this_Sarray[ (offset+3*vlen)           +n  ] ;
+			R = this_Sarray[ (offset+3*vlen+next_vlen) +n  ];
 		}
 	
+		// interpolate sampled energy
 		if (intt==1){
 		// histogram interpolation
 			E0 = e0 + (rn1-cdf0)/pdf0;
 		}
 		else if(intt==2){
+			printf("lin-lin not implemented yet\n");
 		////lin-lin interpolation
 		//	float m   = (pdf1 - pdf0)/(e1-e0);
 		//	float arg = pdf0*pdf0 + 2.0 * m * (rn1-cdf0);
@@ -168,16 +162,14 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 		//		E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn1-cdf0);
 		//	}
 		}
-		else{
+		else{printf("else not implemented yet\n");
 		//	E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
 		}
 	
-		//scale it
+		// scale it to bounding bins
 		E1 = last_e_start + r*( next_e_start - last_e_start );
 		Ek = last_e_end   + r*( next_e_end   - last_e_end   );
 		sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
-		//printf("sampled_E % 10.8E E1 % 10.8E Ek % 10.8E E0 % 10.8E e_start % 10.8E diff % 10.8E last_e_end % 10.8E r % 10.8E next_e_end % 10.8E last_e_end % 10.8E \n",sampled_E,E1,Ek,E0,e_start,diff,last_e_end,r,next_e_end,last_e_end);
-		//sampled_E = E0;
 	
 		// find mu
 		rn1 = get_rand(&rn);
@@ -188,8 +180,10 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 		else{
 			mu = logf(rn1*expf(A)+(1.0-rn1)*expf(-A))/A;
 		}
+
 	}
 	else if (law==61){
+
 
 	}
 

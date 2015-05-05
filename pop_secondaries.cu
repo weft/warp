@@ -35,7 +35,7 @@ __global__ void pop_secondaries_kernel(unsigned N, unsigned RNUM_PER_THREAD, uns
 	//read in values
 	rn1 = get_rand(&rn);
 	rn2 = get_rand(&rn);
-	offset = 5;
+	offset = 6;
 	//printf("rxn %u eptr %p\n",this_rxn,this_array);
 	memcpy(&last_E,   	&this_array[0], sizeof(float));
 	memcpy(&next_E,   	&this_array[1], sizeof(float));

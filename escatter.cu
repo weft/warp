@@ -110,7 +110,7 @@ __global__ void escatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	// sample new phi, mu_cm
 	phi = 2.0*pi*get_rand(&rn);
 	rn1 = get_rand(&rn);
-	offset=4;
+	offset=6;
 	if(this_Sarray == 0x0){
 		mu= 2.0*rn1-1.0; 
 		printf("null pointer in escatter!,dex %u tope %u E %6.4E\n",this_dex,this_tope,this_E);
@@ -141,14 +141,14 @@ __global__ void escatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 		else{   // sample E+1
 			//k = binary_search(&this_Sarray[offset+2*vlen+next_vlen], rn1, next_vlen);
 			for ( k=0 ; k<next_vlen-1 ; k++ ){
-				cdf0 = this_Sarray[ (offset+2*vlen+next_vlen) +k  ];
-				cdf1 = this_Sarray[ (offset+2*vlen+next_vlen) +k+1];
+				cdf0 = this_Sarray[ (offset+3*vlen+next_vlen) +k  ];
+				cdf1 = this_Sarray[ (offset+3*vlen+next_vlen) +k+1];
 				if( rn1 >= cdf0 & rn1 < cdf1 ){
 					break;
 				}
 			}
-			mu0  = this_Sarray[ (offset+2*vlen)           +k  ];
-			mu1  = this_Sarray[ (offset+2*vlen)           +k+1];
+			mu0  = this_Sarray[ (offset+3*vlen)           +k  ];
+			mu1  = this_Sarray[ (offset+3*vlen)           +k+1];
 			mu   = (mu1-mu0)/(cdf1-cdf0)*(rn1-cdf0)+mu0; 
 		}
 	}
@@ -179,6 +179,7 @@ __global__ void escatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	space[tid].xhat = hats_new.x;
 	space[tid].yhat = hats_new.y;
 	space[tid].zhat = hats_new.z;
+	//printf("%6.4E %6.4E %6.4E\n",hats_new.x,hats_new.y,hats_new.z);
 	rn_bank[tid] 	= rn;
 
 

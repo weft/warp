@@ -407,7 +407,7 @@ class cross_section_data:
 			#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has angular energy distribution data"
 
 			law 			= rxn.energy_dist.law
-			if law == 4 or law ==3 or law ==9 or law ==66:   # isotropic is not specified in preceeding section
+			if law == 4 or law ==3 or law == 7 or law ==9 or law ==66:   # isotropic is not specified in preceeding section
 				#print "has ang?", hasattr(rxn.energy_dist,"ang")
 				next_E   = self.MT_E_grid[self.num_main_E-1]
 				nextDex = self.MT_E_grid.__len__()
@@ -538,7 +538,7 @@ class cross_section_data:
 				next_E = self.MT_E_grid[self.num_main_E-1]
 				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 			
-			elif law == 9: 
+			elif law == 9 or law == 7: 
 			# evaporation spectrum
 
 				# get data
