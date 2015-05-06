@@ -165,7 +165,7 @@ __device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned
 	// internal kernel variables
 	wfloat3 	hats_old(this_space.xhat,this_space.yhat,this_space.zhat);
 	float 		mu, next_E, last_E, sampled_E, e_start, E0, E1, Ek, next_e_start, next_e_end, last_e_start, last_e_end, diff;
-    unsigned 	k, vlen, next_vlen, offset, n, law, data_dex; 
+    unsigned 	k, vlen, next_vlen, offset, n, law, data_dex, intt; 
 	float  		speed_n          	=   sqrtf(2.0*this_E/m_n);
 	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target;
 	float 		cdf0,e0,A,R,pdf0,rn1,cdf1,pdf1,e1;
@@ -191,20 +191,91 @@ __device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned
 	memcpy(&vlen,   	&this_Earray[2], sizeof(float));
 	memcpy(&next_vlen,	&this_Earray[3], sizeof(float));
 	memcpy(&law, 		&this_Earray[4], sizeof(float));
-	if (law!=44){printf("multiplicity reaction law %d needed!\n",law);}
-	//printf("%6.4E %6.4E %u %u %u ... %6.4E %6.4E ... %6.4E %6.4E %6.4E\n",this_Earray[0],this_Earray[1],vlen,next_vlen,law,this_Earray[5],this_Earray[6],this_Earray[offset],this_Earray[offset+vlen],this_Earray[offset+vlen+1]);
-	if(this_E<last_E){this_E=last_E;}
-	float r = (this_E-last_E)/(next_E-last_E);
-	if(r<0){
-		printf("r less than zero in source pop for multiplicity, r % 10.8E isotope %u this_E % 10.8E last_E % 10.8E next_E % 10.8E\n",r,this_tope,this_E,last_E,next_E);
-	}
-	last_e_start = this_Earray[ offset ];
-	last_e_end   = this_Earray[ offset + vlen - 1 ];
-	next_e_start = this_Earray[ offset + 3*vlen ];
-	next_e_end   = this_Earray[ offset + 3*vlen + next_vlen - 1];
-	for(k=0 ; k < this_yield ; k++ ){
-		//get proper data index, completed should just be an array of ascending tid?
-		data_dex = position+k ;
+	memcpy(&intt, 		&this_Earray[5], sizeof(float));
+
+	if (law==4){
+		float r = (this_E-last_E)/(next_E-last_E);
+		last_e_start = this_Earray[ offset ];
+		last_e_end   = this_Earray[ offset + vlen - 1 ];
+		next_e_start = this_Earray[ offset + 3*vlen ];
+		next_e_end   = this_Earray[ offset + 3*vlen + next_vlen - 1];
+		rn1 = get_rand(rn);
+		float rn2 = get_rand(rn);
+	
+		//sample energy dist
+		sampled_E = 0.0;
+		if(  rn2 >= r ){   //sample last E
+			diff = next_e_end - next_e_start;
+			e_start = next_e_start;
+			for ( n=0 ; n<vlen-1 ; n++ ){
+				cdf0 		= this_Earray[ (offset +   vlen ) + n+0];
+				cdf1 		= this_Earray[ (offset +   vlen ) + n+1];
+				pdf0		= this_Earray[ (offset + 2*vlen ) + n+0];
+				pdf1		= this_Earray[ (offset + 2*vlen ) + n+1];
+				e0  		= this_Earray[ (offset          ) + n+0];
+				e1  		= this_Earray[ (offset          ) + n+1]; 
+				if( rn1 >= cdf0 & rn1 < cdf1 ){
+					break;
+				}
+			}
+		}
+		else{
+			diff = next_e_end - next_e_start;
+			e_start = next_e_start;
+			for ( n=0 ; n<next_vlen-1 ; n++ ){
+				cdf0 		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+0];
+				cdf1  		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+1];
+				pdf0		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+0];
+				pdf1		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+1];
+				e0   		= this_Earray[ (offset + 3*vlen               ) + n+0];
+				e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
+				if( rn1 >= cdf0 & rn1 < cdf1 ){
+					break;
+				}
+			}
+		}
+		
+		if (intt==2){// lin-lin interpolation
+			float m 	= (pdf1 - pdf0)/(e1-e0);
+			float arg = pdf0*pdf0 + 2.0 * m * (rn1-cdf0);
+			if(arg<0){
+				E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn1-cdf0);
+			}
+			else{
+				E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
+			}
+		}
+		else if(intt==1){// histogram interpolation
+			E0 = e0 + (rn1-cdf0)/pdf0;
+		}
+		
+		//scale it
+		E1 = last_e_start + r*( next_e_start - last_e_start );
+		Ek = last_e_end   + r*( next_e_end   - last_e_end   );
+		sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
+
+		//isotropic mu
+		rn1 = get_rand(rn);
+		rn2 = get_rand(rn);
+		mu  = 2.0*rn1-1.0;
+
+	}	
+	else if (law==44){
+		if(this_Sarray == 0x0){  //Sarray value is nu for 918, might have to put check in here
+			printf("null pointer in pop multiplicity Sarray!, tope %u E %6.4E\n",this_tope,this_E);
+			return;
+		}
+		//printf("%6.4E %6.4E %u %u %u ... %6.4E %6.4E ... %6.4E %6.4E %6.4E\n",this_Earray[0],this_Earray[1],vlen,next_vlen,law,this_Earray[5],this_Earray[6],this_Earray[offset],this_Earray[offset+vlen],this_Earray[offset+vlen+1]);
+		if(this_E<last_E){this_E=last_E;}
+		float r = (this_E-last_E)/(next_E-last_E);
+		if(r<0){
+			printf("r less than zero in source pop for multiplicity, r % 10.8E isotope %u this_E % 10.8E last_E % 10.8E next_E % 10.8E\n",r,this_tope,this_E,last_E,next_E);
+		}
+		last_e_start = this_Earray[ offset ];
+		last_e_end   = this_Earray[ offset + vlen - 1 ];
+		next_e_start = this_Earray[ offset + 3*vlen ];
+		next_e_end   = this_Earray[ offset + 3*vlen + next_vlen - 1];
+
 		//sample energy dist
 		sampled_E = 0.0;
 		rn1 = get_rand(rn);
@@ -246,15 +317,15 @@ __device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned
 			A = this_Sarray[ (offset+3*vlen)           +n  ] ;
 			R = this_Sarray[ (offset+3*vlen+next_vlen) +n  ];
 		}
-	
+		
 		// histogram interpolation
 		E0 = e0 + (rn1-cdf0)/pdf0;
-	
+		
 		//scale it
 		E1 = last_e_start + r*( next_e_start - last_e_start );
 		Ek = last_e_end   + r*( next_e_end   - last_e_end   );
 		sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
-	
+		
 		// find mu
 		rn1 = get_rand(rn);
 		if(get_rand(rn)>R){
@@ -262,43 +333,46 @@ __device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned
 			mu = logf(T+sqrtf(T*T+1.0))/A;
 		}
 		else{
-			mu = logf(rn1*expf(A)+(1.0-rn1)*expf(-A))/A;
-		}
-	
-		// rotate direction vector
-		hats_old = v_n_cm / v_n_cm.norm2();
-		hats_old = hats_old.rotate(mu, get_rand(rn));
-	
-		//  scale to sampled energy
-		v_n_cm = hats_old * sqrtf(2.0*sampled_E/m_n);
-		
-		// transform back to L
-		v_n_lf = v_n_cm + v_cm;
-		hats_new = v_n_lf / v_n_lf.norm2();
-		hats_new = hats_new / hats_new.norm2(); // get higher precision, make SURE vector is length one
-
-		// calculate energy in lab frame
-		sampled_E = 0.5 * m_n * v_n_lf.dot(v_n_lf);
-
-		//check limits
-		if (sampled_E >= Emax){sampled_E = Emax * 0.99;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
-		if (sampled_E <= Emin){sampled_E = Emin * 1.01;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
-
-		// sync before writes
-		__syncthreads();
-
-		// write results
-		space_out[ data_dex ].x 			= this_space.x;
-		space_out[ data_dex ].y 			= this_space.y;
-		space_out[ data_dex ].z 			= this_space.z;
-		space_out[ data_dex ].xhat 			= hats_new.x;
-		space_out[ data_dex ].yhat 			= hats_new.y;
-		space_out[ data_dex ].zhat 			= hats_new.z;
-		space_out[ data_dex ].enforce_BC 	= 0;
-		space_out[ data_dex ].surf_dist 	= 99999.0;
-		space_out[ data_dex ].macro_t 		= 8.675309;
-		E_out 	 [ data_dex ] 				= sampled_E;
+				mu = logf(rn1*expf(A)+(1.0-rn1)*expf(-A))/A;
+			}
 	}
+	else{
+		printf("LAW %u NOT HANDLED IN multiplicity POP!\n",law);
+	}
+		
+	// rotate direction vector
+	hats_old = v_n_cm / v_n_cm.norm2();
+	hats_old = hats_old.rotate(mu, get_rand(rn));
+	
+	//  scale to sampled energy
+	v_n_cm = hats_old * sqrtf(2.0*sampled_E/m_n);
+	
+	// transform back to L
+	v_n_lf = v_n_cm + v_cm;
+	hats_new = v_n_lf / v_n_lf.norm2();
+	hats_new = hats_new / hats_new.norm2(); // get higher precision, make SURE vector is length one
+	
+	// calculate energy in lab frame
+	//sampled_E = 0.5 * m_n * v_n_lf.dot(v_n_lf);
+
+	//check limits
+	if (sampled_E >= Emax){sampled_E = Emax * 0.99;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
+	if (sampled_E <= Emin){sampled_E = Emin * 1.01;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
+
+	// sync before writes
+	__syncthreads();
+
+	// write results
+	space_out[ data_dex ].x 			= this_space.x;
+	space_out[ data_dex ].y 			= this_space.y;
+	space_out[ data_dex ].z 			= this_space.z;
+	space_out[ data_dex ].xhat 			= hats_new.x;
+	space_out[ data_dex ].yhat 			= hats_new.y;
+	space_out[ data_dex ].zhat 			= hats_new.z;
+	space_out[ data_dex ].enforce_BC 	= 0;
+	space_out[ data_dex ].surf_dist 	= 99999.0;
+	space_out[ data_dex ].macro_t 		= 8.675309;
+	E_out 	 [ data_dex ] 				= sampled_E;
 
 }
 __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* completed, unsigned* scanned, unsigned* remap, unsigned* yield, unsigned* done, unsigned* index, unsigned* rxn, source_point* space, float* E , unsigned* rn_bank, float**  energydata, float**  scatterdata, source_point* space_out, float* E_out, float * awr_list){
@@ -331,10 +405,10 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 		printf("null pointer in pop Earray,tid %u dex %u rxn %u tope %u E %6.4E\n",tid,dex,this_rxn,this_tope,this_E);
 		return;
 	}
-	if(this_Sarray == 0x0){  //Sarray value is nu for 918, might have to put check in here
-		printf("null pointer in pop Sarray!,tid %u dex %u rxn %u tope %u E %6.4E\n",tid,dex,this_rxn,this_tope,this_E);
-		return;
-	}
+	//if(this_Sarray == 0x0){  //Sarray value is nu for 918, might have to put check in here
+	//	printf("null pointer in pop Sarray!,tid %u dex %u rxn %u tope %u E %6.4E\n",tid,dex,this_rxn,this_tope,this_E);
+	//	return;
+	//}
 
 	// sampled based on reaction type
 	if(this_rxn==918){
