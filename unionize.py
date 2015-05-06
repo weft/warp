@@ -499,13 +499,13 @@ class cross_section_data:
 				#if MTnum==91:
 					#print "energy starts at dex "+str(nextDex)+", energy="+str(next_E)+","+str(self.MT_E_grid[nextDex])
 				return [nextDex,this_E,next_E,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-		elif hasattr(table,"nu_t_energy"):
-			# return interpolated nu values
-			interped_nu = numpy.interp( self.MT_E_grid, table.nu_t_energy, table.nu_t_value )   #
-			interped_nu = numpy.ascontiguousarray(interped_nu, dtype=numpy.float32)
-			#print interped_nu
-			#print "nu for MT="+str(MTnum)
-			return [-1,-1,-1,-1,-1,-1,-1,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu]
+		#elif hasattr(table,"nu_t_energy"):
+		#	# return interpolated nu values
+		#	interped_nu = numpy.interp( self.MT_E_grid, table.nu_t_energy, table.nu_t_value )   #
+		#	interped_nu = numpy.ascontiguousarray(interped_nu, dtype=numpy.float32)
+		#	#print interped_nu
+		#	#print "nu for MT="+str(MTnum)
+		#	return [-1,-1,-1,-1,-1,-1,-1,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu]
 		else:
 			print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has no angular tables.  Writing NULL."
 			next_E   = self.MT_E_grid[self.num_main_E-1]

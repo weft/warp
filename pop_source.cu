@@ -22,6 +22,7 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 	memcpy(&vlen,   	&this_array[2], sizeof(float));
 	memcpy(&next_vlen,	&this_array[3], sizeof(float));
 	memcpy(&law, 		&this_array[4], sizeof(float)); 
+	printf("law in pop %u\n",law);
 	float r = (this_E-last_E)/(next_E-last_E);
 	last_e_start = this_array[ offset ];
 	last_e_end   = this_array[ offset + vlen - 1 ];
