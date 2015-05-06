@@ -29,16 +29,16 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, unsigned* re
 
 	//printf("in fission\n");
 
-	if (this_rxn == 818){
+	if (this_rxn == 818 | this_rxn == 819 | this_rxn == 820 | this_rxn == 821){
 		// load nu from arrays
 		unsigned 	this_dex 	= index[tid];
 	
 		//load nu value, since e search has alrady been done!
 		memcpy(&nu, &scatterdat[this_dex], sizeof(float));
 		inu = (unsigned) nu;
-		if (inu==0){printf("something is wrong with fission yields, nu = %6.4E\n",nu);}
-	
-		if((float)inu+get_rand(&rn) <= nu){
+		
+		if (inu==0){this_yield=0;printf("something is wrong with fission yields, nu = %6.4E, writing %d\n",nu,this_yield); }
+		else if((float)inu+get_rand(&rn) <= nu){
 			this_yield = inu+1;
 		}
 		else{
@@ -46,11 +46,14 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, unsigned* re
 		}
 		//printf("nu %6.4E inu %u rn1 %6.4E yield %u\n",nu,inu,rn1,this_yield);
 	}
-	else if(this_rxn == 816 | this_rxn==824 | this_rxn == 841){
-		this_yield = 2;
+	else if(this_rxn == 816 | this_rxn==824 | this_rxn == 811 | this_rxn == 824 | this_rxn == 829 | this_rxn == 830 | this_rxn == 841){
+		this_yield = 2;  
 	}
-	else if(this_rxn == 817){
+	else if(this_rxn == 817 | this_rxn == 825 | this_rxn == 842){
 		this_yield = 3;  
+	}
+	else{
+		this_yield = 1;
 	}
 
 	// write output and terminate history

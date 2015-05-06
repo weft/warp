@@ -94,6 +94,7 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 			E1 = last_e_start + r*( next_e_start - last_e_start );
 			Ek = last_e_end   + r*( next_e_end   - last_e_end   );
 			sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
+
 		}
 		else if(law==7){   // maxwellian fission
 
@@ -102,7 +103,17 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 			float t1 = this_array[ offset + 1 ];
 			 e_start = this_array[ offset + vlen*2     ];
 			 next_E  = this_array[ offset + vlen*2 + 1 ];
-			float T = (t1 - t0)/(next_E - e_start) * this_E + t0;
+			float  T = 0.0;
+
+			// interpolate T
+			if (intt==2){// lin-lin interpolation
+				m = (this_E - e0)/(e1 - e0);
+                T = (1.0 - m)*t0 + m*t1;
+			}
+			else if(intt==1){// histogram interpolation
+				T  = (t1 - t0)/(e1 - e0) * this_E + t0;
+			}
+
 
 			// get random numbers
 			rn1 = get_rand(rn);
@@ -116,6 +127,40 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 
 			// mcnp5 volIII pg 2-43
 			sampled_E = -T * ( rn1*rn1*logf(get_rand(rn))/mag  +   logf(get_rand(rn)) );
+
+		}
+		else if (law==9){   //evaporation spectrum
+
+			// get tabulated temperature  
+			float t0 = this_array[ offset              ];
+			float t1 = this_array[ offset + 1          ];
+			float U  = this_array[ offset + vlen       ];
+			      e0 = this_array[ offset + vlen*2     ];
+			      e1 = this_array[ offset + vlen*2 + 1 ];
+			float  T = 0.0;
+
+			// interpolate T
+			if (intt==2){// lin-lin interpolation
+				m = (this_E - e0)/(e1 - e0);
+                T = (1.0 - m)*t0 + m*t1;
+			}
+			else if(intt==1){// histogram interpolation
+				T  = (t1 - t0)/(e1 - e0) * this_E + t0;
+			}
+
+			// rejection sample
+			m  = (this_E - U)/T;
+			e0 = 1.0-expf(-m);
+			x  = -logf(1.0-e0*get_rand(rn)) - logf(1.0-e0*get_rand(rn));
+			while (  x>m ) {
+				x  = -logf(1.0-e0*get_rand(rn)) - logf(1.0-e0*get_rand(rn));
+			}
+
+			// mcnp5 volIII pg 2-43
+			sampled_E = T * x;
+
+			//isotropic mu
+			mu  = 2.0*get_rand(rn)-1.0;
 
 		}
 		else{
@@ -255,9 +300,7 @@ __device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned
 		sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
 
 		//isotropic mu
-		rn1 = get_rand(rn);
-		rn2 = get_rand(rn);
-		mu  = 2.0*rn1-1.0;
+		mu  = 2.0*get_rand(rn)-1.0;
 
 	}	
 	else if (law==44){
@@ -318,7 +361,7 @@ __device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned
 			R = this_Sarray[ (offset+3*vlen+next_vlen) +n  ];
 		}
 		
-		// histogram interpolation
+		// histogram interpolation, intt=1
 		E0 = e0 + (rn1-cdf0)/pdf0;
 		
 		//scale it
@@ -335,6 +378,41 @@ __device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned
 		else{
 				mu = logf(rn1*expf(A)+(1.0-rn1)*expf(-A))/A;
 			}
+	}
+	else if (law==9){   //evaopration spectrum
+
+		// get tabulated temperature
+		float t0 = this_Earray[ offset              ];
+		float t1 = this_Earray[ offset + 1          ];
+		float U  = this_Earray[ offset + vlen       ];
+		      e0 = this_Earray[ offset + vlen*2     ];
+		      e1 = this_Earray[ offset + vlen*2 + 1 ];
+		float  T = 0.0;
+		float  m = 0.0;
+
+		// interpolate T
+		if (intt==2){// lin-lin interpolation
+			m = (this_E - e0)/(e1 - e0);
+            T = (1.0 - m)*t0 + m*t1;
+		}
+		else if(intt==1){// histogram interpolation
+			T  = (t1 - t0)/(e1 - e0) * this_E + t0;
+		}
+
+		// rejection sample
+		m  = (this_E - U)/T;
+		e0 = 1.0-expf(-m);
+		float x  = -logf(1.0-e0*get_rand(rn)) - logf(1.0-e0*get_rand(rn));
+		while (  x>m ) {
+			x  = -logf(1.0-e0*get_rand(rn)) - logf(1.0-e0*get_rand(rn));
+		}
+
+		// mcnp5 volIII pg 2-43
+		sampled_E = T * x;
+
+		//isotropic mu
+		mu  = 2.0*get_rand(rn)-1.0;
+
 	}
 	else{
 		printf("LAW %u NOT HANDLED IN multiplicity POP!\n",law);
@@ -411,10 +489,10 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 	//}
 
 	// sampled based on reaction type
-	if(this_rxn==918){
+	if(this_rxn==918 | this_rxn==919 | this_rxn==920 | this_rxn==921){
 		     process_fission(this_yield, &rn, position, this_tope,                      this_E, this_space, this_Earray,              space_out, E_out);
 	}
-	else if(this_rxn == 916 | this_rxn == 917 | this_rxn == 922 | this_rxn == 924 | this_rxn == 928 | this_rxn == 932 | this_rxn == 933 | this_rxn == 937 | this_rxn == 941){
+	else if(this_rxn == 916 | this_rxn==924 | this_rxn == 911 | this_rxn == 924 | this_rxn == 929 | this_rxn == 930 | this_rxn == 941 | this_rxn == 917 | this_rxn == 925 | this_rxn == 942 ){
 		process_multiplicity(this_yield, &rn, position, this_tope, awr_list[this_tope], this_E, this_space, this_Earray, this_Sarray, space_out, E_out);
 	}
 	else{
