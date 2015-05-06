@@ -192,7 +192,7 @@ cuda_compile(write_to_file write_to_file.cu)
 # Sources:
 set(warp_executable_srcs
     print_banner.cpp
-    warp.pyc
+#    warp.pyc
     primitive.cpp
     unionize.pyc
     mt19937ar.cpp
