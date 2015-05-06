@@ -124,7 +124,6 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 			pdf1		= this_Earray[ (offset + 2*vlen ) + n+1];
 			e0  		= this_Earray[ (offset          ) + n+0];
 			e1  		= this_Earray[ (offset          ) + n+1]; 
-			offset = 4;
 			A = this_Sarray[ (offset)      + n ];
 			R = this_Sarray[ (offset+vlen) + n ];
 		}
@@ -143,7 +142,6 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 			pdf1		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+1];
 			e0   		= this_Earray[ (offset + 3*vlen               ) + n+0];
 			e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
-			offset = 4;
 			A = this_Sarray[ (offset+3*vlen)           +n  ] ;
 			R = this_Sarray[ (offset+3*vlen+next_vlen) +n  ];
 		}
@@ -184,6 +182,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	}
 	else if (law==61){
 
+		printf("uhoh\n");
 
 	}
 

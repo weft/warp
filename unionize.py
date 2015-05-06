@@ -411,7 +411,15 @@ class cross_section_data:
 				#print "has ang?", hasattr(rxn.energy_dist,"ang")
 				next_E   = self.MT_E_grid[self.num_main_E-1]
 				nextDex = self.MT_E_grid.__len__()
-				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+				if hasattr(table,"nu_t_energy"):
+					# return interpolated nu values
+					interped_nu = numpy.interp( self.MT_E_grid, table.nu_t_energy, table.nu_t_value )   #
+					interped_nu = numpy.ascontiguousarray(interped_nu, dtype=numpy.float32)
+					#print interped_nu
+					#print "nu for MT="+str(MTnum)
+					return [-1,-1,-1,-1,-1,-1,-1,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu]
+				else:
+					return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 			elif law==44:   #hasattr(rxn.energy_dist,"ang"):
 				scatterE   	= rxn.energy_dist.energy_in
 				scatterCDF 	= rxn.energy_dist.frac 

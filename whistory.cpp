@@ -986,7 +986,7 @@ void whistory::load_cross_sections(){
 				PyErr_Print();
 			}
 			else if (vector_length==-1){  // NU!!!!!!!
-				//printf("(%u,%u) nu\n",k,j);
+				printf("(%u,%u) nu\n",k,j);
 				// this nu, not scatter, copy the entire column.
 				// get data buffer from numpy array
 				if (PyObject_CheckBuffer(mu_vector_obj) & PyObject_CheckBuffer(cdf_vector_obj)){
@@ -1014,7 +1014,7 @@ void whistory::load_cross_sections(){
 				for(k;k<MT_rows;k++){
 					//std::cout << "copying nu value "<< nuBuff[k] <<" at energy "<< xs_data_main_E_grid[k]<< " MeV\n";
 					memcpy( &xs_data_scatter_host[ k*MT_columns + j ] , &nuBuff[k] , 1*sizeof(float) );
-					memcpy( &nu_test , &xs_data_scatter_host[ k*MT_columns + j ], 1*sizeof(float) );
+					//memcpy( &nu_test , &xs_data_scatter_host[ k*MT_columns + j ], 1*sizeof(float) );
 					//std::cout << "copying nu value "<< nu_test <<" at energy "<< xs_data_main_E_grid[k]<< " MeV\n";
 				}
 			

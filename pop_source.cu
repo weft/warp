@@ -120,7 +120,7 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 	}
 
 }
-__device__ void process_scatter(unsigned this_yield, unsigned* rn, unsigned position, unsigned this_tope, unsigned this_awr, float this_E, source_point this_space, float* this_Earray, float* this_Sarray, source_point* space_out, float* E_out){
+__device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned position, unsigned this_tope, unsigned this_awr, float this_E, source_point this_space, float* this_Earray, float* this_Sarray, source_point* space_out, float* E_out){
 
 	//constants
 	//const float  pi           =   3.14159265359 ;
@@ -303,10 +303,10 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 
 	// sampled based on reaction type
 	if(this_rxn==918){
-		process_fission(this_yield, &rn, position, this_tope,                      this_E, this_space, this_Earray,              space_out, E_out);
+		     process_fission(this_yield, &rn, position, this_tope,                      this_E, this_space, this_Earray,              space_out, E_out);
 	}
 	else if(this_rxn == 916 | this_rxn == 917 | this_rxn == 922 | this_rxn == 924 | this_rxn == 928 | this_rxn == 932 | this_rxn == 933 | this_rxn == 937 | this_rxn == 941){
-		process_scatter(this_yield, &rn, position, this_tope, awr_list[this_tope], this_E, this_space, this_Earray, this_Sarray, space_out, E_out);
+		process_multiplicity(this_yield, &rn, position, this_tope, awr_list[this_tope], this_E, this_space, this_Earray, this_Sarray, space_out, E_out);
 	}
 	else{
 		printf("tid %u REACTION %u HAS NONZERO YIELD IN SOURCE POP!\n",tid,this_rxn);
