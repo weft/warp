@@ -986,7 +986,7 @@ void whistory::load_cross_sections(){
 				PyErr_Print();
 			}
 			else if (vector_length==-1){  // NU!!!!!!!
-				printf("(%u,%u) nu\n",k,j);
+				//printf("(%u,%u) nu\n",k,j);
 				// this nu, not scatter, copy the entire column.
 				// get data buffer from numpy array
 				if (PyObject_CheckBuffer(mu_vector_obj) & PyObject_CheckBuffer(cdf_vector_obj)){

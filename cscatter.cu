@@ -57,7 +57,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	float 		E_new				=   0.0;
 	//float 		a 					= 	this_awr/(this_awr+1.0);
 	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target;
-	float 		cdf0,e0,A,R,pdf0,rn1,cdf1,pdf1,e1;
+	float 		cdf0,e0,A,R,pdf0,rn1,rn2,cdf1,pdf1,e1;
 
 	// make speed vectors, assume high enough energy to approximate target as stationary
 	v_n_lf = hats_old    * speed_n;
@@ -80,8 +80,82 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	memcpy(&intt, 		&this_Earray[5], sizeof(float));
 
 
-	//LAW = 44:
-	if (law==44){
+	if (law ==4 ){
+
+		float r = (this_E-last_E)/(next_E-last_E);
+		last_e_start = this_Earray[ offset ];
+		last_e_end   = this_Earray[ offset + vlen - 1 ];
+		next_e_start = this_Earray[ offset + 3*vlen ];
+		next_e_end   = this_Earray[ offset + 3*vlen + next_vlen - 1];
+
+	
+		rn1 = get_rand(&rn);
+		rn2 = get_rand(&rn);
+	
+		//sample energy dist
+		sampled_E = 0.0;
+		if(  rn2 >= r ){   //sample last E
+			diff = next_e_end - next_e_start;
+			e_start = next_e_start;
+			for ( n=0 ; n<vlen-1 ; n++ ){
+				cdf0 		= this_Earray[ (offset +   vlen ) + n+0];
+				cdf1 		= this_Earray[ (offset +   vlen ) + n+1];
+				pdf0		= this_Earray[ (offset + 2*vlen ) + n+0];
+				pdf1		= this_Earray[ (offset + 2*vlen ) + n+1];
+				e0  		= this_Earray[ (offset          ) + n+0];
+				e1  		= this_Earray[ (offset          ) + n+1]; 
+				if( rn1 >= cdf0 & rn1 < cdf1 ){
+					break;
+				}
+			}
+		}
+		else{
+			diff = next_e_end - next_e_start;
+			e_start = next_e_start;
+			for ( n=0 ; n<next_vlen-1 ; n++ ){
+				cdf0 		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+0];
+				cdf1  		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+1];
+				pdf0		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+0];
+				pdf1		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+1];
+				e0   		= this_Earray[ (offset + 3*vlen               ) + n+0];
+				e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
+				if( rn1 >= cdf0 & rn1 < cdf1 ){
+					break;
+				}
+			}
+		}
+	
+		if (intt==2){// lin-lin interpolation
+			float m 	= (pdf1 - pdf0)/(e1-e0);
+			float arg = pdf0*pdf0 + 2.0 * m * (rn1-cdf0);
+			if(arg<0){
+				E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn1-cdf0);
+			}
+			else{
+				E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
+			}
+		}
+		else if(intt==1){// histogram interpolation
+			E0 = e0 + (rn1-cdf0)/pdf0;
+		}
+		
+		//scale it
+		E1 = last_e_start + r*( next_e_start - last_e_start );
+		Ek = last_e_end   + r*( next_e_end   - last_e_end   );
+		sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
+
+		// sample mu isotropically
+		mu  = 2.0*get_rand(&rn)-1.0;
+
+	}
+	else if (law==9){
+		
+		sampled_E = this_E;
+
+		// sample mu isotropically
+		mu  = 2.0*get_rand(&rn)-1.0;
+	}
+	else if (law==44){
 
 		// make sure scatter array is present
 		if(this_Sarray == 0x0){
@@ -183,6 +257,11 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	else if (law==61){
 
 		printf("uhoh\n");
+
+	}
+	else{
+
+		printf("LAW %u NOT HANDLED IN CSCATTER!  rxn %u\n",law,this_rxn);
 
 	}
 

@@ -8,8 +8,8 @@
 __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned position, unsigned this_tope, float this_E, source_point this_space, float* this_array, source_point* space_out, float* E_out){
 // 										 this_yield,          &rn,          position,          this_tope,       this_E,              this_space,        this_Earray,              space_out,        E_out
 	// internal data
-	unsigned 	k, n, offset, vlen, next_vlen, law, data_dex;
-	float 		sampled_E, phi, mu, rn1, rn2, last_E, next_E, e_start, E0, E1, Ek, next_e_start, next_e_end, last_e_start, last_e_end, diff;
+	unsigned 	k, n, offset, vlen, next_vlen, law, data_dex, intt;
+	float 		sampled_E, phi, mu, rn1, rn2, last_E, next_E, e_start, E0, E1, Ek, next_e_start, next_e_end, last_e_start, last_e_end, diff, r;
 	float 		cdf0, cdf1, e0, e1, m, pdf0, pdf1, arg,x,y,z;
 	const float pi 		= 3.14159265359;
 	const float Emin 	= 1e-11;
@@ -22,72 +22,105 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 	memcpy(&vlen,   	&this_array[2], sizeof(float));
 	memcpy(&next_vlen,	&this_array[3], sizeof(float));
 	memcpy(&law, 		&this_array[4], sizeof(float)); 
-	printf("law in pop %u\n",law);
-	float r = (this_E-last_E)/(next_E-last_E);
-	last_e_start = this_array[ offset ];
-	last_e_end   = this_array[ offset + vlen - 1 ];
-	next_e_start = this_array[ offset + 3*vlen ];
-	next_e_end   = this_array[ offset + 3*vlen + next_vlen - 1];
+	memcpy(&intt, 		&this_array[5], sizeof(float)); 
+
+
+	if (law == 4){
+		r = (this_E-last_E)/(next_E-last_E);
+		last_e_start = this_array[ offset ];
+		last_e_end   = this_array[ offset + vlen - 1 ];
+		next_e_start = this_array[ offset + 3*vlen ];
+		next_e_end   = this_array[ offset + 3*vlen + next_vlen - 1];
+	}
 
 	// loop over the for the number of (rebased) yielded particles
 	for(k=0 ; k < this_yield ; k++ ){
 
 		//get proper data index
 		data_dex = position+k ;
-		//data_dex = completed[ position+k ];   //is the completed vector of sorted tids redundant?
-		//printf("completed[position+k]=%u , position+k=%u\n",data_dex,position+k);
-		rn1 = get_rand(rn);
-		rn2 = get_rand(rn);
-
-		//sample energy dist
-		sampled_E = 0.0;
-		if(  rn2 >= r ){   //sample last E
-			diff = next_e_end - next_e_start;
-			e_start = next_e_start;
-			for ( n=0 ; n<vlen-1 ; n++ ){
-				cdf0 		= this_array[ (offset +   vlen ) + n+0];
-				cdf1 		= this_array[ (offset +   vlen ) + n+1];
-				pdf0		= this_array[ (offset + 2*vlen ) + n+0];
-				pdf1		= this_array[ (offset + 2*vlen ) + n+1];
-				e0  		= this_array[ (offset          ) + n+0];
-				e1  		= this_array[ (offset          ) + n+1]; 
-				if( rn1 >= cdf0 & rn1 < cdf1 ){
-					break;
-				}
-			}
-		}
-		else{
-			diff = next_e_end - next_e_start;
-			e_start = next_e_start;
-			for ( n=0 ; n<next_vlen-1 ; n++ ){
-				cdf0 		= this_array[ (offset + 3*vlen +   next_vlen ) + n+0];
-				cdf1  		= this_array[ (offset + 3*vlen +   next_vlen ) + n+1];
-				pdf0		= this_array[ (offset + 3*vlen + 2*next_vlen ) + n+0];
-				pdf1		= this_array[ (offset + 3*vlen + 2*next_vlen ) + n+1];
-				e0   		= this_array[ (offset + 3*vlen               ) + n+0];
-				e1   		= this_array[ (offset + 3*vlen               ) + n+1];
-				if( rn1 >= cdf0 & rn1 < cdf1 ){
-					break;
-				}
-			}
-		}
-	
-		// lin-lin interpolation
-		m 	= (pdf1 - pdf0)/(e1-e0);
-		arg = pdf0*pdf0 + 2.0 * m * (rn1-cdf0);
-		if(arg<0){
-			E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn1-cdf0);
-		}
-		else{
-			E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
-		}
-		// histogram interpolation
-		//E0 = e0 + (rn1-cdf0)/pdf0;
 		
-		//scale it
-		E1 = last_e_start + r*( next_e_start - last_e_start );
-		Ek = last_e_end   + r*( next_e_end   - last_e_end   );
-		sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
+		if (law==4){ // tabular
+			rn1 = get_rand(rn);
+			rn2 = get_rand(rn);
+	
+			//sample energy dist
+			sampled_E = 0.0;
+			if(  rn2 >= r ){   //sample last E
+				diff = next_e_end - next_e_start;
+				e_start = next_e_start;
+				for ( n=0 ; n<vlen-1 ; n++ ){
+					cdf0 		= this_array[ (offset +   vlen ) + n+0];
+					cdf1 		= this_array[ (offset +   vlen ) + n+1];
+					pdf0		= this_array[ (offset + 2*vlen ) + n+0];
+					pdf1		= this_array[ (offset + 2*vlen ) + n+1];
+					e0  		= this_array[ (offset          ) + n+0];
+					e1  		= this_array[ (offset          ) + n+1]; 
+					if( rn1 >= cdf0 & rn1 < cdf1 ){
+						break;
+					}
+				}
+			}
+			else{
+				diff = next_e_end - next_e_start;
+				e_start = next_e_start;
+				for ( n=0 ; n<next_vlen-1 ; n++ ){
+					cdf0 		= this_array[ (offset + 3*vlen +   next_vlen ) + n+0];
+					cdf1  		= this_array[ (offset + 3*vlen +   next_vlen ) + n+1];
+					pdf0		= this_array[ (offset + 3*vlen + 2*next_vlen ) + n+0];
+					pdf1		= this_array[ (offset + 3*vlen + 2*next_vlen ) + n+1];
+					e0   		= this_array[ (offset + 3*vlen               ) + n+0];
+					e1   		= this_array[ (offset + 3*vlen               ) + n+1];
+					if( rn1 >= cdf0 & rn1 < cdf1 ){
+						break;
+					}
+				}
+			}
+		
+			if (intt==2){// lin-lin interpolation
+				m 	= (pdf1 - pdf0)/(e1-e0);
+				arg = pdf0*pdf0 + 2.0 * m * (rn1-cdf0);
+				if(arg<0){
+					E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn1-cdf0);
+				}
+				else{
+					E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
+				}
+			}
+			else if(intt==1){// histogram interpolation
+				E0 = e0 + (rn1-cdf0)/pdf0;
+			}
+			
+			//scale it
+			E1 = last_e_start + r*( next_e_start - last_e_start );
+			Ek = last_e_end   + r*( next_e_end   - last_e_end   );
+			sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
+		}
+		else if(law==7){   // maxwellian fission
+
+			// get tabulated temperature
+			float t0 = this_array[ offset     ];
+			float t1 = this_array[ offset + 1 ];
+			 e_start = this_array[ offset + vlen*2     ];
+			 next_E  = this_array[ offset + vlen*2 + 1 ];
+			float T = (t1 - t0)/(next_E - e_start) * this_E + t0;
+
+			// get random numbers
+			rn1 = get_rand(rn);
+			rn2 = get_rand(rn);
+			float mag = (rn1*rn1+rn2*rn2);
+			while (  mag > 1.0) {
+				rn1 = get_rand(rn);
+				rn2 = get_rand(rn);
+				mag = (rn1*rn1+rn2*rn2);
+			}
+
+			// mcnp5 volIII pg 2-43
+			sampled_E = -T * ( rn1*rn1*logf(get_rand(rn))/mag  +   logf(get_rand(rn)) );
+
+		}
+		else{
+			printf("LAW %u NOT HANDLED IN POP!\n",law);
+		}
 
 		//sample isotropic directions
 		rn1 = get_rand(rn);
@@ -158,6 +191,7 @@ __device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned
 	memcpy(&vlen,   	&this_Earray[2], sizeof(float));
 	memcpy(&next_vlen,	&this_Earray[3], sizeof(float));
 	memcpy(&law, 		&this_Earray[4], sizeof(float));
+	if (law!=44){printf("multiplicity reaction law %d needed!\n",law);}
 	//printf("%6.4E %6.4E %u %u %u ... %6.4E %6.4E ... %6.4E %6.4E %6.4E\n",this_Earray[0],this_Earray[1],vlen,next_vlen,law,this_Earray[5],this_Earray[6],this_Earray[offset],this_Earray[offset+vlen],this_Earray[offset+vlen+1]);
 	if(this_E<last_E){this_E=last_E;}
 	float r = (this_E-last_E)/(next_E-last_E);

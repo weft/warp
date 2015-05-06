@@ -361,9 +361,10 @@ class cross_section_data:
 			else:
 				law=0
 
+			#  presence of nu overrides scattering table.  forces isotropic
 			if hasattr(table,"nu_t_energy") and ( MTnum == 18 or MTnum == 19 or MTnum == 20):
 					# return interpolated nu values
-					print "nu for mt ",MTnum, table.name
+					#print "nu for mt ",MTnum, table.name
 					interped_nu = numpy.interp( self.MT_E_grid, table.nu_t_energy, table.nu_t_value )   #
 					interped_nu = numpy.ascontiguousarray(interped_nu, dtype=numpy.float32)
 					#print interped_nu
@@ -422,7 +423,7 @@ class cross_section_data:
 				nextDex = self.MT_E_grid.__len__()
 				if hasattr(table,"nu_t_energy") and ( MTnum == 18 or MTnum == 19 or MTnum == 20):
 					# return interpolated nu values
-					print "nu for mt ",MTnum, table.name
+					#print "nu for mt ",MTnum, table.name
 					interped_nu = numpy.interp( self.MT_E_grid, table.nu_t_energy, table.nu_t_value )   #
 					interped_nu = numpy.ascontiguousarray(interped_nu, dtype=numpy.float32)
 					#print interped_nu
