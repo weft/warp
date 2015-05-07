@@ -184,7 +184,6 @@ cuda_compile(print_histories print_histories.cu)
 cuda_compile(pop_secondaries pop_secondaries.cu)
 cuda_compile(pop_source pop_source.cu)
 cuda_compile(rebase_yield rebase_yield.cu)
-cuda_compile(flip_done flip_done.cu)
 cuda_compile(device_copies device_copies.cu)
 cuda_compile(reaction_edges3 reaction_edges3.cu) 
 cuda_compile(write_to_file write_to_file.cu)
@@ -220,7 +219,6 @@ set(warp_cuda_srcs
     ${pop_secondaries}
     ${pop_source}
     ${rebase_yield}
-    ${flip_done}
     ${device_copies}
     ${reaction_edges3}
     ${write_to_file}

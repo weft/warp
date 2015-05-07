@@ -1952,23 +1952,6 @@ void whistory::prep_secondaries(){
 	//for(int k=0; k<Ndataset ; k++ ){printf("(tid,done,scanned,completed,yield) %u %u %u %u %u\n",k,tmp3[k],tmp1[k],tmp2[k],tmp4[k]);}
 
 }
-unsigned whistory::map_active(){
-
-	unsigned num_active=0;
-
-	// flip done flag
-	flip_done(NUM_THREADS, Ndataset, d_done);
-
-	// remap to active
-	res = cudppCompact( compactplan, d_active , (size_t*) d_num_active , d_remap , d_done , Ndataset);
-	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in compacting done values\n");exit(-1);}
-	cudaMemcpy(&num_active,d_num_active,1*sizeof(unsigned),cudaMemcpyDeviceToHost);
-
-	// flip done flag back	
-	flip_done(NUM_THREADS, Ndataset, d_done);
-
-	return num_active;
-}
 void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned* escatter_start, unsigned* iscatter_N, unsigned* iscatter_start, unsigned* cscatter_N, unsigned* cscatter_start, unsigned* fission_N, unsigned* fission_start){
 
 	unsigned resamp_N = 0;
