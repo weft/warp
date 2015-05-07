@@ -183,7 +183,12 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 		sampled_E = T * x;
 
 		//isotropic mu
-		mu  = 2.0*get_rand(&rn)-1.0;
+		if (this_Sarray==0x0){
+			mu  = 2.0*get_rand(&rn)-1.0;
+		}
+		else{
+			printf("law 9 in cscatter has angular tables\n");
+		}
 
 	}
 	else if (law==44){

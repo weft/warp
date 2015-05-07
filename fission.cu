@@ -35,10 +35,10 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, unsigned* re
 	
 		//load nu value, since e search has alrady been done!
 		memcpy(&nu, &scatterdat[this_dex], sizeof(float));
+		if (nu==0.0){nu=2.8;printf("something is wrong with fission yields, nu = %6.4E, guessing %4.2f\n",0.0,nu); }
 		inu = (unsigned) nu;
 		
-		if (inu==0){this_yield=0;printf("something is wrong with fission yields, nu = %6.4E, writing %d\n",nu,this_yield); }
-		else if((float)inu+get_rand(&rn) <= nu){
+		if((float)inu+get_rand(&rn) <= nu){
 			this_yield = inu+1;
 		}
 		else{
