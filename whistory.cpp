@@ -897,7 +897,7 @@ void whistory::load_cross_sections(){
 	}
 
 	////////////////////////////////////
-	// do scattering stuff
+	// S&E DATA ARRAYS
 	////////////////////////////////////
 
     float * temp = new float [128];
@@ -934,7 +934,11 @@ void whistory::load_cross_sections(){
     unsigned 	next_pdfRows, next_pdfColumns, next_pdfBytes;
     unsigned 	nextDex;
 
-    //set total cross sections to NULL
+	////////////////////////////////////
+	// do scattering stuff
+	////////////////////////////////////
+
+	//set total cross sections to NULL
     for (int j=0 ; j<1*xs_length_numbers[0] ; j++){  //start after the total xs vectors
     		for (int k=0 ; k<MT_rows ; k++){
     			xs_data_scatter     [k*MT_columns + j] = 0;//NULL;
@@ -1102,7 +1106,7 @@ void whistory::load_cross_sections(){
 				cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
 			}
 			else{
-				// get flattened array
+				// get flattened matrix for law 61
 				if (PyObject_CheckBuffer(mu_vector_obj)){
 					PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
 				}

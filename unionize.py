@@ -590,7 +590,9 @@ class cross_section_data:
 					# construct vector
 					vlen 			= 2
 					nextvlen		= 2
-					intt 			= 0
+					intt 			= 2  # assuption
+					if hasattr(rxn.energy_dist,"intt"):
+						print "INTT in law ,",law," ---- ",rxn.energy_dist.intt
 					this_T   		= numpy.ascontiguousarray( numpy.array(  [T[data_dex],T[data_dex+ plusone]]           ), dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
 					this_U   		= numpy.ascontiguousarray( numpy.array(  [U,U]                                        ), dtype=numpy.float32)
 					this_Eedge		= numpy.ascontiguousarray( numpy.array(  [dataE[ data_dex], dataE[ data_dex+plusone]] ), dtype=numpy.float32)
