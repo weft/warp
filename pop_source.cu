@@ -394,7 +394,7 @@ __device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned
 		float  m = 0.0;
 
 		// interpolate T
-			if (e1==e0){  // in top bin, both values are the same
+		if (e1==e0){  // in top bin, both values are the same
 				T = t0;
 			}
 		else if (intt==2){// lin-lin interpolation

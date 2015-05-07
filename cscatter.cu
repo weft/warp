@@ -292,7 +292,108 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	}
 	else if (law==61){
 
-		printf("uhoh\n");
+		unsigned distloc, vloc;
+		float r = (this_E-last_E)/(next_E-last_E);
+		last_e_start = this_Earray[ offset ];
+		last_e_end   = this_Earray[ offset + vlen - 1 ];
+		next_e_start = this_Earray[ offset + 3*vlen ];
+		next_e_end   = this_Earray[ offset + 3*vlen + next_vlen - 1];
+	
+		rn1 = get_rand(&rn);
+		rn2 = get_rand(&rn);
+	
+		//sample energy dist
+		sampled_E = 0.0;
+		if(  rn2 >= r ){   //sample last E
+			distloc = 1;   // use the first flattened array
+			diff = next_e_end - next_e_start;
+			e_start = next_e_start;
+			for ( n=0 ; n<vlen-1 ; n++ ){
+				cdf0 		= this_Earray[ (offset +   vlen ) + n+0];
+				cdf1 		= this_Earray[ (offset +   vlen ) + n+1];
+				pdf0		= this_Earray[ (offset + 2*vlen ) + n+0];
+				pdf1		= this_Earray[ (offset + 2*vlen ) + n+1];
+				e0  		= this_Earray[ (offset          ) + n+0];
+				e1  		= this_Earray[ (offset          ) + n+1]; 
+				if( rn1 >= cdf0 & rn1 < cdf1 ){
+					break;
+				}
+			}
+		}
+		else{
+			distloc = this_Sarray[0];   // get location of the next flattened array
+			diff = next_e_end - next_e_start;
+			e_start = next_e_start;
+			for ( n=0 ; n<next_vlen-1 ; n++ ){
+				cdf0 		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+0];
+				cdf1  		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+1];
+				pdf0		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+0];
+				pdf1		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+1];
+				e0   		= this_Earray[ (offset + 3*vlen               ) + n+0];
+				e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
+				if( rn1 >= cdf0 & rn1 < cdf1 ){
+					break;
+				}
+			}
+		}
+	
+		if (intt==2){// lin-lin interpolation
+			float m 	= (pdf1 - pdf0)/(e1-e0);
+			float arg = pdf0*pdf0 + 2.0 * m * (rn1-cdf0);
+			if(arg<0){
+				E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn1-cdf0);
+			}
+			else{
+				E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
+			}
+		}
+		else if(intt==1){// histogram interpolation
+			E0 = e0 + (rn1-cdf0)/pdf0;
+		}
+		
+		//scale it
+		E1 = last_e_start + r*( next_e_start - last_e_start );
+		Ek = last_e_end   + r*( next_e_end   - last_e_end   );
+		sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
+
+		//
+		// sample mu from tabular distributions
+		//
+
+		// get parameters
+		vloc = this_Sarray[distloc + n];  // get appropriate vector location for this E_out
+		vlen = this_Sarray[distloc    ];  // vector length
+		intt = this_Sarray[distloc + 1];  // interpolation type
+
+		// sample the dist
+		rn1 = get_rand(&rn);
+		for ( n=0 ; n<next_vlen-1 ; n++ ){
+			cdf0 		= this_Sarray[ (distloc + vloc +   vlen ) + n+0];
+			cdf1  		= this_Sarray[ (distloc + vloc +   vlen ) + n+1];
+			pdf0		= this_Sarray[ (distloc + vloc + 2*vlen ) + n+0];
+			pdf1		= this_Sarray[ (distloc + vloc + 2*vlen ) + n+1];
+			e0   		= this_Sarray[ (distloc + vloc          ) + n+0];
+			e1   		= this_Sarray[ (distloc + vloc          ) + n+1];
+			if( rn1 >= cdf0 & rn1 < cdf1 ){
+				break;
+			}
+		}
+
+		// interpolate
+		if (e1==e0){  // in top bin, both values are the same
+				mu = e0;
+			}
+		else if (intt==2){// lin-lin interpolation
+			r = (rn1 - cdf0)/(cdf1 - cdf0);
+            mu = (1.0 - r)*e0 + r*e1;
+		}
+		else if(intt==1){// histogram interpolation
+			mu  = (e1 - e0)/(cdf1 - cdf0) * rn1 + e0;
+		}
+		else{
+			printf("intt in law 61 in cscatter is invlaid (%u)!",intt);
+		}
+		
 
 	}
 	else{
