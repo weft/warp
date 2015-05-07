@@ -117,23 +117,17 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 			else if(intt==1){// histogram interpolation
 				T  = (t1 - t0)/(e1 - e0) * this_E + t0;
 			}
-
-			// get random numbers
-			rn1 = get_rand(rn);
-			rn2 = get_rand(rn);
-			float mag = (rn1*rn1+rn2*rn2);
+			else{
+				printf("something is wrong in pop for law 7");
+			}
 
 			// rejection sample
-			// from mcnp5 volIII pg 2-43
-			sampled_E = 999999999999.0;
+			sampled_E = 9999999.9;
 			while ( sampled_E > (this_E - U)){
-				while (  mag > 1.0) {
-					rn1 = get_rand(rn);
-					rn2 = get_rand(rn);
-					mag = (rn1*rn1+rn2*rn2);
-				}
-				sampled_E = -T * ( rn1*rn1*logf(get_rand(rn))/mag  +   logf(get_rand(rn)) );
+				m = cosf(pi*get_rand(rn)/2.0);
+				sampled_E = -T * ( m*m*logf(get_rand(rn))  +   logf(get_rand(rn)) );
 			}
+
 		}
 		else if (law==9){   //evaporation spectrum
 
@@ -506,6 +500,7 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 	}
 	//else if(this_rxn == 916 | this_rxn==924 | this_rxn == 911 | this_rxn == 924 | this_rxn == 929 | this_rxn == 930 | this_rxn == 941 | this_rxn == 917 | this_rxn == 925 | this_rxn == 942 ){
 	else if (this_rxn>=916 & this_rxn<=945 ){
+		//printf("processing multiplicity rxn %d\n",this_rxn);
 		process_multiplicity(this_yield, &rn, position, this_tope, awr_list[this_tope], this_E, this_space, this_Earray, this_Sarray, space_out, E_out);
 	}
 	else{

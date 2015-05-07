@@ -148,12 +148,43 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 		mu  = 2.0*get_rand(&rn)-1.0;
 
 	}
-	else if (law==9){
-		
-		sampled_E = this_E;
+	else if (law==9){   //evaopration spectrum
 
-		// sample mu isotropically
+		// get tabulated temperature
+		float t0 = this_Earray[ offset              ];
+		float t1 = this_Earray[ offset + 1          ];
+		float U  = this_Earray[ offset + vlen       ];
+		      e0 = this_Earray[ offset + vlen*2     ];
+		      e1 = this_Earray[ offset + vlen*2 + 1 ];
+		float  T = 0.0;
+		float  m = 0.0;
+
+		// interpolate T
+			if (e1==e0){  // in top bin, both values are the same
+				T = t0;
+			}
+		else if (intt==2){// lin-lin interpolation
+			m = (this_E - e0)/(e1 - e0);
+            T = (1.0 - m)*t0 + m*t1;
+		}
+		else if(intt==1){// histogram interpolation
+			T  = (t1 - t0)/(e1 - e0) * this_E + t0;
+		}
+
+		// rejection sample
+		m  = (this_E - U)/T;
+		e0 = 1.0-expf(-m);
+		float x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
+		while (  x>m ) {
+			x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
+		}
+
+		// mcnp5 volIII pg 2-43
+		sampled_E = T * x;
+
+		//isotropic mu
 		mu  = 2.0*get_rand(&rn)-1.0;
+
 	}
 	else if (law==44){
 

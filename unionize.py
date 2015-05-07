@@ -590,7 +590,7 @@ class cross_section_data:
 					# construct vector
 					vlen 			= 2
 					nextvlen		= 2
-					intt 			= 2  # assuption
+					intt 			= 1  # assuption
 					if hasattr(rxn.energy_dist,"intt"):
 						print "INTT in law ,",law," ---- ",rxn.energy_dist.intt
 					this_T   		= numpy.ascontiguousarray( numpy.array(  [T[data_dex],T[data_dex+ plusone]]           ), dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
