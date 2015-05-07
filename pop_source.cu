@@ -25,7 +25,7 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 	memcpy(&intt, 		&this_Earray[5], sizeof(float)); 
 
 
-	if (law == 4){
+	if (law == 4 | law == 44 | law == 61) {
 		r = (this_E-last_E)/(next_E-last_E);
 		last_e_start = this_Earray[ offset ];
 		last_e_end   = this_Earray[ offset + vlen - 1 ];
@@ -94,6 +94,9 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 			E1 = last_e_start + r*( next_e_start - last_e_start );
 			Ek = last_e_end   + r*( next_e_end   - last_e_end   );
 			sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
+
+			//isotropic mu
+			mu  = 2.0*get_rand(rn)-1.0;
 
 		}
 		else if (law==44){
@@ -204,6 +207,9 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 				sampled_E = -T * ( m*m*logf(get_rand(rn))  +   logf(get_rand(rn)) );
 			}
 
+			//isotropic mu
+			mu  = 2.0*get_rand(rn)-1.0;
+
 		}
 		else if (law==9){   //evaporation spectrum
 
@@ -278,191 +284,6 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 	}
 
 }
-//__device__ void process_multiplicity(unsigned this_yield, unsigned* rn, unsigned position, unsigned this_tope, unsigned this_awr, float this_E, source_point this_space, float* this_Earray, float* this_Sarray, source_point* space_out, float* E_out){
-//
-//	//constants
-//	//const float  pi           =   3.14159265359 ;
-//	const float  m_n  =   1.00866491600 ; // u
-//	const float  Emin =   1e-11;
-//	const float  Emax =   20.0; //MeV
-//
-//	// internal kernel variables
-//	wfloat3 	hats_old(this_space.xhat,this_space.yhat,this_space.zhat);
-//	float 		mu, next_E, last_E, sampled_E, e_start, E0, E1, Ek, next_e_start, next_e_end, last_e_start, last_e_end, diff;
-//    unsigned 	k, vlen, next_vlen, offset, n, law, data_dex, intt; 
-//	float  		speed_n          	=   sqrtf(2.0*this_E/m_n);
-//	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target;
-//	float 		cdf0,e0,A,R,pdf0,rn1,cdf1,pdf1,e1;
-//
-//	//get proper data index
-//	data_dex = position+k ;
-//	
-//	// make speed vectors
-//	v_n_lf = hats_old    * speed_n;
-//	v_t_lf = hats_target * 0.0;
-//
-//	// calculate  v_cm
-//	v_cm = (v_n_lf + (v_t_lf*this_awr))/(1.0+this_awr);
-//
-//	//transform neutron velocity into CM frame
-//	v_n_cm = v_n_lf - v_cm;
-//	v_t_cm = v_t_lf - v_cm;
-//
-//	//
-//	//sample energy
-//	//
-//	//read in values
-//	offset = 6;
-//	memcpy(&last_E,   	&this_Earray[0], sizeof(float));
-//	memcpy(&next_E,   	&this_Earray[1], sizeof(float));
-//	memcpy(&vlen,   	&this_Earray[2], sizeof(float));
-//	memcpy(&next_vlen,	&this_Earray[3], sizeof(float));
-//	memcpy(&law, 		&this_Earray[4], sizeof(float));
-//	memcpy(&intt, 		&this_Earray[5], sizeof(float));
-//
-//	if (law==4){
-//		float r = (this_E-last_E)/(next_E-last_E);
-//		last_e_start = this_Earray[ offset ];
-//		last_e_end   = this_Earray[ offset + vlen - 1 ];
-//		next_e_start = this_Earray[ offset + 3*vlen ];
-//		next_e_end   = this_Earray[ offset + 3*vlen + next_vlen - 1];
-//		rn1 = get_rand(rn);
-//		float rn2 = get_rand(rn);
-//	
-//		//sample energy dist
-//		sampled_E = 0.0;
-//		if(  rn2 >= r ){   //sample last E
-//			diff = next_e_end - next_e_start;
-//			e_start = next_e_start;
-//			for ( n=0 ; n<vlen-1 ; n++ ){
-//				cdf0 		= this_Earray[ (offset +   vlen ) + n+0];
-//				cdf1 		= this_Earray[ (offset +   vlen ) + n+1];
-//				pdf0		= this_Earray[ (offset + 2*vlen ) + n+0];
-//				pdf1		= this_Earray[ (offset + 2*vlen ) + n+1];
-//				e0  		= this_Earray[ (offset          ) + n+0];
-//				e1  		= this_Earray[ (offset          ) + n+1]; 
-//				if( rn1 >= cdf0 & rn1 < cdf1 ){
-//					break;
-//				}
-//			}
-//		}
-//		else{
-//			diff = next_e_end - next_e_start;
-//			e_start = next_e_start;
-//			for ( n=0 ; n<next_vlen-1 ; n++ ){
-//				cdf0 		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+0];
-//				cdf1  		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+1];
-//				pdf0		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+0];
-//				pdf1		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+1];
-//				e0   		= this_Earray[ (offset + 3*vlen               ) + n+0];
-//				e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
-//				if( rn1 >= cdf0 & rn1 < cdf1 ){
-//					break;
-//				}
-//			}
-//		}
-//		
-//		if (intt==2){// lin-lin interpolation
-//			float m 	= (pdf1 - pdf0)/(e1-e0);
-//			float arg = pdf0*pdf0 + 2.0 * m * (rn1-cdf0);
-//			if(arg<0){
-//				E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn1-cdf0);
-//			}
-//			else{
-//				E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
-//			}
-//		}
-//		else if(intt==1){// histogram interpolation
-//			E0 = e0 + (rn1-cdf0)/pdf0;
-//		}
-//		
-//		//scale it
-//		E1 = last_e_start + r*( next_e_start - last_e_start );
-//		Ek = last_e_end   + r*( next_e_end   - last_e_end   );
-//		sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
-//
-//		//isotropic mu
-//		mu  = 2.0*get_rand(rn)-1.0;
-//
-//	}	
-//
-//	else if (law==9){   //evaopration spectrum
-//
-//		// get tabulated temperature
-//		float t0 = this_Earray[ offset              ];
-//		float t1 = this_Earray[ offset + 1          ];
-//		float U  = this_Earray[ offset + vlen       ];
-//		      e0 = this_Earray[ offset + vlen*2     ];
-//		      e1 = this_Earray[ offset + vlen*2 + 1 ];
-//		float  T = 0.0;
-//		float  m = 0.0;
-//
-//		// interpolate T
-//		if (e1==e0){  // in top bin, both values are the same
-//				T = t0;
-//			}
-//		else if (intt==2){// lin-lin interpolation
-//			m = (this_E - e0)/(e1 - e0);
-//            T = (1.0 - m)*t0 + m*t1;
-//		}
-//		else if(intt==1){// histogram interpolation
-//			T  = (t1 - t0)/(e1 - e0) * this_E + t0;
-//		}
-//
-//		// rejection sample
-//		m  = (this_E - U)/T;
-//		e0 = 1.0-expf(-m);
-//		float x  = -logf(1.0-e0*get_rand(rn)) - logf(1.0-e0*get_rand(rn));
-//		while (  x>m ) {
-//			x  = -logf(1.0-e0*get_rand(rn)) - logf(1.0-e0*get_rand(rn));
-//		}
-//
-//		// mcnp5 volIII pg 2-43
-//		sampled_E = T * x;
-//
-//		//isotropic mu
-//		mu  = 2.0*get_rand(rn)-1.0;
-//
-//	}
-//	else{
-//		printf("LAW %u NOT HANDLED IN multiplicity POP!\n",law);
-//	}
-//		
-//	// rotate direction vector
-//	hats_old = v_n_cm / v_n_cm.norm2();
-//	hats_old = hats_old.rotate(mu, get_rand(rn));
-//	
-//	//  scale to sampled energy
-//	v_n_cm = hats_old * sqrtf(2.0*sampled_E/m_n);
-//	
-//	// transform back to L
-//	v_n_lf = v_n_cm + v_cm;
-//	hats_new = v_n_lf / v_n_lf.norm2();
-//	hats_new = hats_new / hats_new.norm2(); // get higher precision, make SURE vector is length one
-//	
-//	// calculate energy in lab frame
-//	//sampled_E = 0.5 * m_n * v_n_lf.dot(v_n_lf);
-//
-//	//check limits
-//	if (sampled_E >= Emax){sampled_E = Emax * 0.99;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
-//	if (sampled_E <= Emin){sampled_E = Emin * 1.01;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
-//
-//	// sync before writes
-//	__syncthreads();
-//
-//	// write results
-//	space_out[ data_dex ].x 			= this_space.x;
-//	space_out[ data_dex ].y 			= this_space.y;
-//	space_out[ data_dex ].z 			= this_space.z;
-//	space_out[ data_dex ].xhat 			= hats_new.x;
-//	space_out[ data_dex ].yhat 			= hats_new.y;
-//	space_out[ data_dex ].zhat 			= hats_new.z;
-//	space_out[ data_dex ].enforce_BC 	= 0;
-//	space_out[ data_dex ].surf_dist 	= 99999.0;
-//	space_out[ data_dex ].macro_t 		= 8.675309;
-//	E_out 	 [ data_dex ] 				= sampled_E;
-//
-//}
 __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* completed, unsigned* scanned, unsigned* remap, unsigned* yield, unsigned* done, unsigned* index, unsigned* rxn, source_point* space, float* E , unsigned* rn_bank, float**  energydata, float**  scatterdata, source_point* space_out, float* E_out, float * awr_list){
 
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
@@ -493,19 +314,10 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 		printf("null pointer in pop Earray,tid %u dex %u rxn %u tope %u E %6.4E\n",tid,dex,this_rxn,this_tope,this_E);
 		return;
 	}
-	//if(this_Sarray == 0x0){  //Sarray value is nu for 918, might have to put check in here
-	//	printf("null pointer in pop Sarray!,tid %u dex %u rxn %u tope %u E %6.4E\n",tid,dex,this_rxn,this_tope,this_E);
-	//	return;
-	//}
 
-	// sampled based on reaction type
+	// sample laws
 	if(this_rxn>=916 & this_rxn<=945 ){
 		     process_fission(this_yield, &rn, position, this_tope, awr_list[this_tope], this_E, this_space, this_Earray, this_Sarray,  space_out, E_out);
-	//}
-	//else if(this_rxn == 916 | this_rxn==924 | this_rxn == 911 | this_rxn == 924 | this_rxn == 929 | this_rxn == 930 | this_rxn == 941 | this_rxn == 917 | this_rxn == 925 | this_rxn == 942 ){
-	//else if (){
-		//printf("processing multiplicity rxn %d\n",this_rxn);
-	//	process_multiplicity(this_yield, &rn, position, this_tope, awr_list[this_tope], this_E, this_space, this_Earray, this_Sarray, space_out, E_out);
 	}
 	else{
 		printf("tid %u REACTION %u HAS NONZERO YIELD IN SOURCE POP!\n",tid,this_rxn);
