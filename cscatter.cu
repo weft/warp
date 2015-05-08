@@ -364,6 +364,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 		vloc = this_Sarray[distloc + n];  // get appropriate vector location for this E_out
 		vlen = this_Sarray[distloc    ];  // vector length
 		intt = this_Sarray[distloc + 1];  // interpolation type
+		printf("vloc %u vlen %u intt %u \n",vloc,vlen,intt);
 
 		// sample the dist
 		rn1 = get_rand(&rn);

@@ -476,7 +476,7 @@ class cross_section_data:
 					nextpdf   = numpy.ascontiguousarray(scatterPDF[scatter_dex+ plusone],dtype=numpy.float32) 
 					nextmu    = numpy.ascontiguousarray(scatterMu[ scatter_dex+ plusone],dtype=numpy.float32)
 					intt 	  = scatterINTT[scatter_dex]
-					if intt is list:
+					if type(intt) is list:
 						intt = intt[0]  # just take first value of list in intt, might be wrong :/
 					#check to make sure the same lengths
 					assert vlen == mu.__len__()
@@ -495,15 +495,16 @@ class cross_section_data:
 							locs.append(this_len*3+1+locs[i-1])  # compute location pointer based on previous
 						this_len  = rxn.energy_dist.a_dist_mu_out[scatter_dex][i].__len__()
 						intt 	  = scatterINTT[                  scatter_dex]
-						if intt is list:
+						if type(intt) is list:
 							intt = intt[0]  # just take first value of list in intt, might be wrong :/
 						flatarray = numpy.append(flatarray,this_len)
 						flatarray = numpy.append(flatarray,intt)
 						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_mu_out[scatter_dex][i])
 						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_cdf[   scatter_dex][i])
 						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_pdf[   scatter_dex][i])
-					flatarray[0]=flatarray.__len__()
+					l = flatarray.__len__()
 					flatarray = numpy.append(numpy.array(locs),flatarray)
+					flatarray[0] = l
 
 					# next E
 					outlen = rxn.energy_dist.energy_out[scatter_dex+plusone].__len__()
@@ -514,7 +515,7 @@ class cross_section_data:
 							locs.append(this_len*3+1+locs[i-1])  # compute location pointer based on previous
 						this_len  = rxn.energy_dist.a_dist_mu_out[scatter_dex+plusone][i].__len__()
 						intt 	  = scatterINTT[                  scatter_dex+plusone]
-						if intt is list:
+						if type(intt) is list:
 							intt = intt[0]  # just take first value of list in intt, might be wrong :/
 						flatarray2 = numpy.append(flatarray,this_len)
 						flatarray2 = numpy.append(flatarray,intt)
@@ -526,7 +527,7 @@ class cross_section_data:
 					flatarray_out = numpy.ascontiguousarray(numpy.append(flatarray,flatarray2),dtype=numpy.float32)   # encoding ints as foats reduces maximum!
 
 					self.last_loaded = MTnum    #  must encode into the same number of elements as other arrays
-					return [nextDex,this_E,next_E,0,0,0,0,flatarray_out,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+					return [nextDex,this_E,next_E,l,l,law,intt,flatarray_out,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 
 			else:  # return 0 if below the first energy]
 				next_E = scatterE[0]

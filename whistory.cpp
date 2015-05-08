@@ -1015,7 +1015,7 @@ void whistory::load_cross_sections(){
 				memcpy(nuBuff, muBuff.buf , MT_rows*sizeof(float));
 			
 				//write the returned values into the array, byte-copy into 64bit pointer
-				for(k;k<MT_rows;k++){
+				for(;k<MT_rows;k++){
 					//std::cout << "copying nu value "<< nuBuff[k] <<" at energy "<< xs_data_main_E_grid[k]<< " MeV\n";
 					memcpy( &xs_data_scatter_host[ k*MT_columns + j ] , &nuBuff[k] , 1*sizeof(float) );
 					//memcpy( &nu_test , &xs_data_scatter_host[ k*MT_columns + j ], 1*sizeof(float) );
@@ -1030,110 +1030,110 @@ void whistory::load_cross_sections(){
 			else{
 				// get data buffer from numpy array
 				if(law!=61){
-				if (PyObject_CheckBuffer(mu_vector_obj) & PyObject_CheckBuffer(cdf_vector_obj) & PyObject_CheckBuffer(next_mu_vector_obj) & PyObject_CheckBuffer(next_cdf_vector_obj) ){
-					PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
-					PyObject_GetBuffer(     cdf_vector_obj,      &cdfBuff, PyBUF_ND);
-					PyObject_GetBuffer(     pdf_vector_obj,      &pdfBuff, PyBUF_ND);
-					PyObject_GetBuffer( next_mu_vector_obj,  &next_muBuff, PyBUF_ND);
-					PyObject_GetBuffer(next_cdf_vector_obj, &next_cdfBuff, PyBUF_ND);
-					PyObject_GetBuffer(next_pdf_vector_obj, &next_pdfBuff, PyBUF_ND);
+					if (PyObject_CheckBuffer(mu_vector_obj) & PyObject_CheckBuffer(cdf_vector_obj) & PyObject_CheckBuffer(next_mu_vector_obj) & PyObject_CheckBuffer(next_cdf_vector_obj) ){
+						PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
+						PyObject_GetBuffer(     cdf_vector_obj,      &cdfBuff, PyBUF_ND);
+						PyObject_GetBuffer(     pdf_vector_obj,      &pdfBuff, PyBUF_ND);
+						PyObject_GetBuffer( next_mu_vector_obj,  &next_muBuff, PyBUF_ND);
+						PyObject_GetBuffer(next_cdf_vector_obj, &next_cdfBuff, PyBUF_ND);
+						PyObject_GetBuffer(next_pdf_vector_obj, &next_pdfBuff, PyBUF_ND);
+						PyErr_Print();
+					}
+					else{
+						PyErr_Print();
+    				    fprintf(stderr, "Returned object does not support buffer interface\n");
+    				    return;
+					}
+		
+					// shape info
+					muRows     =  muBuff.shape[0];
+					muColumns  =  muBuff.shape[1];
+					muBytes    =  muBuff.len;
+					cdfRows    = cdfBuff.shape[0];
+					cdfColumns = cdfBuff.shape[1];
+					cdfBytes   = cdfBuff.len;
+					pdfRows    = pdfBuff.shape[0];
+					pdfColumns = pdfBuff.shape[1];
+					pdfBytes   = pdfBuff.len;
+					next_muRows     = next_muBuff.shape[0];
+					next_muColumns  = next_muBuff.shape[1];
+					next_muBytes    = next_muBuff.len;
+					next_cdfRows    = next_cdfBuff.shape[0];
+					next_cdfColumns = next_cdfBuff.shape[1];
+					next_cdfBytes   = next_cdfBuff.len;
+					next_pdfRows    = next_pdfBuff.shape[0];
+					next_pdfColumns = next_pdfBuff.shape[1];
+					next_pdfBytes   = next_pdfBuff.len;
+		
+					//make sure every is ok
+					assert(muRows==   cdfRows);
+					assert(muColumns==cdfColumns);
+					assert(muBytes==  cdfBytes);
+					assert(muRows==   pdfRows);
+					assert(muColumns==pdfColumns);
+					assert(muBytes==  pdfBytes);
+					assert(next_muRows==   next_cdfRows);
+					assert(next_muColumns==next_cdfColumns);
+					assert(next_muBytes==  next_cdfBytes);
+					assert(next_muRows==   next_pdfRows);
+					assert(next_muColumns==next_pdfColumns);
+					assert(next_muBytes==  next_pdfBytes);
+		
+					//allocate pointer, write into array
+					//for cuda too
+					array_elements = muRows+cdfRows+pdfRows+next_muRows+next_cdfRows+next_pdfRows+6;
+					this_pointer = new float [array_elements];
+					cudaMalloc(&cuda_pointer,array_elements*sizeof(float));
+					total_bytes_scatter += array_elements*sizeof(float);  // add to total count
+					xs_data_scatter     [k*MT_columns + j] = this_pointer;
+					xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
+		
+					//copy data from python buffer to pointer in array
+					memcpy(&this_pointer[0], 						&lastE,   	  		sizeof(float));
+					memcpy(&this_pointer[1], 						&nextE,   	  		sizeof(float));    // nextE   to first position
+					memcpy(&this_pointer[2], 						&muRows,   	  		sizeof(unsigned)); // len to third position
+					memcpy(&this_pointer[3], 						&next_muRows, 	  	sizeof(unsigned));
+					memcpy(&this_pointer[4],						&law,		  	  	sizeof(unsigned));
+					memcpy(&this_pointer[5],						&intt,		  	  	sizeof(unsigned));
+					memcpy(&this_pointer[6],						muBuff.buf,  	  	muRows*sizeof(float));     // mu  to len bytes after
+					memcpy(&this_pointer[6+   muRows],				cdfBuff.buf, 		cdfRows*sizeof(float));     // cdf to len bytes after that
+					memcpy(&this_pointer[6+ 2*muRows],				pdfBuff.buf, 		pdfRows*sizeof(float));
+					memcpy(&this_pointer[6+ 3*muRows],				next_muBuff.buf,	next_muRows*sizeof(float));
+					memcpy(&this_pointer[6+ 3*muRows+  next_muRows],next_cdfBuff.buf, 	next_cdfRows*sizeof(float));
+					memcpy(&this_pointer[6+ 3*muRows+2*next_muRows],next_pdfBuff.buf, 	next_pdfRows*sizeof(float));
 					PyErr_Print();
+	
+					cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
 				}
 				else{
+					// get flattened matrix for law 61
+					if (PyObject_CheckBuffer(mu_vector_obj)){
+						PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
+					}
+					else{
+						PyErr_Print();
+    				    fprintf(stderr, "Returned object does not support buffer interface\n");
+    				    return;
+					}
+	
+					//  get the buffers
+					muRows     =  muBuff.shape[0];
+					muColumns  =  muBuff.shape[1];
+					muBytes    =  muBuff.len;
+					//assert( muRows==1 | muColumns==1);  // make sure 1d
+	
+					this_pointer = new float [muBytes/sizeof(float)];
+					cudaMalloc(&cuda_pointer,muBytes);
+					total_bytes_scatter +=   muBytes;  // add to total count
+					xs_data_scatter     [k*MT_columns + j] = this_pointer;
+					xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
 					PyErr_Print();
-    			    fprintf(stderr, "Returned object does not support buffer interface\n");
-    			    return;
-				}
 	
-				// shape info
-				muRows     =  muBuff.shape[0];
-				muColumns  =  muBuff.shape[1];
-				muBytes    =  muBuff.len;
-				cdfRows    = cdfBuff.shape[0];
-				cdfColumns = cdfBuff.shape[1];
-				cdfBytes   = cdfBuff.len;
-				pdfRows    = pdfBuff.shape[0];
-				pdfColumns = pdfBuff.shape[1];
-				pdfBytes   = pdfBuff.len;
-				next_muRows     = next_muBuff.shape[0];
-				next_muColumns  = next_muBuff.shape[1];
-				next_muBytes    = next_muBuff.len;
-				next_cdfRows    = next_cdfBuff.shape[0];
-				next_cdfColumns = next_cdfBuff.shape[1];
-				next_cdfBytes   = next_cdfBuff.len;
-				next_pdfRows    = next_pdfBuff.shape[0];
-				next_pdfColumns = next_pdfBuff.shape[1];
-				next_pdfBytes   = next_pdfBuff.len;
+					// copy to cuda pointer and host pointer
+					memcpy(this_pointer,muBuff.buf,muBytes);
+					cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
 	
-				//make sure every is ok
-				assert(muRows==   cdfRows);
-				assert(muColumns==cdfColumns);
-				assert(muBytes==  cdfBytes);
-				assert(muRows==   pdfRows);
-				assert(muColumns==pdfColumns);
-				assert(muBytes==  pdfBytes);
-				assert(next_muRows==   next_cdfRows);
-				assert(next_muColumns==next_cdfColumns);
-				assert(next_muBytes==  next_cdfBytes);
-				assert(next_muRows==   next_pdfRows);
-				assert(next_muColumns==next_pdfColumns);
-				assert(next_muBytes==  next_pdfBytes);
-	
-				//allocate pointer, write into array
-				//for cuda too
-				array_elements = muRows+cdfRows+pdfRows+next_muRows+next_cdfRows+next_pdfRows+6;
-				this_pointer = new float [array_elements];
-				cudaMalloc(&cuda_pointer,array_elements*sizeof(float));
-				total_bytes_scatter += array_elements*sizeof(float);  // add to total count
-				xs_data_scatter     [k*MT_columns + j] = this_pointer;
-				xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
-	
-				//copy data from python buffer to pointer in array
-				memcpy(&this_pointer[0], 						&lastE,   	  		sizeof(float));
-				memcpy(&this_pointer[1], 						&nextE,   	  		sizeof(float));    // nextE   to first position
-				memcpy(&this_pointer[2], 						&muRows,   	  		sizeof(unsigned)); // len to third position
-				memcpy(&this_pointer[3], 						&next_muRows, 	  	sizeof(unsigned));
-				memcpy(&this_pointer[4],						&law,		  	  	sizeof(unsigned));
-				memcpy(&this_pointer[5],						&intt,		  	  	sizeof(unsigned));
-				memcpy(&this_pointer[6],						muBuff.buf,  	  	muRows*sizeof(float));     // mu  to len bytes after
-				memcpy(&this_pointer[6+   muRows],				cdfBuff.buf, 		cdfRows*sizeof(float));     // cdf to len bytes after that
-				memcpy(&this_pointer[6+ 2*muRows],				pdfBuff.buf, 		pdfRows*sizeof(float));
-				memcpy(&this_pointer[6+ 3*muRows],				next_muBuff.buf,	next_muRows*sizeof(float));
-				memcpy(&this_pointer[6+ 3*muRows+  next_muRows],next_cdfBuff.buf, 	next_cdfRows*sizeof(float));
-				memcpy(&this_pointer[6+ 3*muRows+2*next_muRows],next_pdfBuff.buf, 	next_pdfRows*sizeof(float));
-				PyErr_Print();
-
-				cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
-			}
-			else{
-				// get flattened matrix for law 61
-				if (PyObject_CheckBuffer(mu_vector_obj)){
-					PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
-				}
-				else{
-					PyErr_Print();
-    			    fprintf(stderr, "Returned object does not support buffer interface\n");
-    			    return;
-				}
-
-				//  get the buffers
-				muRows     =  muBuff.shape[0];
-				muColumns  =  muBuff.shape[1];
-				muBytes    =  muBuff.len;
-				assert( muRows==1 | muColumns==1);  // make sure 1d
-
-				this_pointer = new float [muBytes/sizeof(float)];
-				cudaMalloc(&cuda_pointer,muBytes);
-				total_bytes_scatter +=   muBytes;  // add to total count
-				xs_data_scatter     [k*MT_columns + j] = this_pointer;
-				xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
-				PyErr_Print();
-
-				// copy to cuda pointer and host pointer
-				memcpy(this_pointer,muBuff.buf,muBytes);
-				cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
-
-			}
+				}	
 
 			}
 
@@ -2243,142 +2243,142 @@ void whistory::set_dump_level(unsigned level){
 void whistory::create_quad_tree(){
 
 	std::cout << "\e[1;32m" << "Building quad tree for energy search... " << "\e[m \n";
-
-	// node vectors
-	std::vector<qnode_host>   nodes;
-	std::vector<qnode_host>   nodes_next;
-
-	// node variables
-	qnode_host  this_qnode;
-	qnode*      cuda_qnode;
-
-	// build bottom-up from the unionized E vector
-	unsigned k, depth;
-	unsigned rows_by_four = MT_rows;
-	for(k=0; k < rows_by_four ; k = k+4){
-		this_qnode.node.values[0] = xs_data_main_E_grid[ k+0 ];
-		this_qnode.node.values[1] = xs_data_main_E_grid[ k+1 ];
-		this_qnode.node.values[2] = xs_data_main_E_grid[ k+2 ];
-		this_qnode.node.values[3] = xs_data_main_E_grid[ k+3 ];
-		this_qnode.node.leaves[0] = (qnode*) ((long unsigned)k + 0);  // recast grid index as the pointer for lowest nodes
-		this_qnode.node.leaves[1] = (qnode*) ((long unsigned)k + 1);
-		this_qnode.node.leaves[2] = (qnode*) ((long unsigned)k + 2);
-		this_qnode.node.leaves[3] = (qnode*) ((long unsigned)k + 3);
-		cudaMalloc(&cuda_qnode,sizeof(qnode));
-		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-		this_qnode.cuda_pointer = cuda_qnode;
-		nodes.push_back(this_qnode);
-	}
-	//do the last values
-	if(MT_rows%4){
-		unsigned n=0;
-		for(k=rows_by_four;k<MT_rows;k++){
-			this_qnode.node.values[n] = xs_data_main_E_grid[ k ];
-			this_qnode.node.leaves[n] = (qnode*) ((long unsigned)k); 
-			n++;
-		}
-		//repeat the last values
-		for(k=n;k<4;k++){
-			this_qnode.node.values[k] = this_qnode.node.values[n-1];
-			this_qnode.node.leaves[k] = this_qnode.node.leaves[n-1];
-		}
-		// device allocate and add to vector
-		cudaMalloc(&cuda_qnode,sizeof(qnode));
-		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-		this_qnode.cuda_pointer = cuda_qnode;
-		nodes.push_back(this_qnode);
-	}
-
-
-	//now build it up!  length will *always* need to be a multiple of 4.  this routine pads the end nodes with 
-	unsigned this_width = nodes.size();
-	unsigned lowest_length = this_width;
-	unsigned mod4 		= this_width % 4;
-	unsigned end_depth=  (logf(lowest_length)/logf(4))+1;
-	unsigned num_repeats = 1;
-	unsigned starting_index = 0;
-	float inf = 1e45;
-	//std::cout << "end_depth="<<end_depth<<"\n";
-	for(unsigned depth=0;depth<end_depth;depth++){
-		//for(unsigned copy_repeats=0;copy_repeats<num_repeats;copy_repeats++){
-		//	starting_index=copy_repeats*this_width;
-		//for(unsigned copy_iteration=0;copy_iteration<4;copy_iteration++){
-			for( k=starting_index;k<(starting_index+this_width-mod4);k=k+4){
-				//std::cout << "k=" << k << "\n";
-				this_qnode.node.values[0] = nodes[ k+0 ].node.values[0]; // can use 0 since values overlap
-				this_qnode.node.values[1] = nodes[ k+1 ].node.values[0];
-				this_qnode.node.values[2] = nodes[ k+2 ].node.values[0];
-				this_qnode.node.values[3] = nodes[ k+3 ].node.values[0];  
-				this_qnode.node.leaves[0] = nodes[ k+0 ].cuda_pointer;  // set pointers as the cuda pointer of the children
-				this_qnode.node.leaves[1] = nodes[ k+1 ].cuda_pointer;
-				this_qnode.node.leaves[2] = nodes[ k+2 ].cuda_pointer;
-				this_qnode.node.leaves[3] = nodes[ k+3 ].cuda_pointer;
-				cudaMalloc(&cuda_qnode,sizeof(qnode));
-				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-				this_qnode.cuda_pointer = cuda_qnode;
-				nodes_next.push_back(this_qnode);
-			}
-			if(mod4){
-				//std::cout << "adding padded node at " << nodes_next.size()-1 << "\n";
-				unsigned n=0;
-				for( k=(starting_index+this_width-mod4) ; k<(starting_index+this_width) ; k++){
-					//std::cout <<"n="<<n << " k="<<k<<"\n";
-					this_qnode.node.values[n] = nodes[ k ].node.values[0];
-					this_qnode.node.leaves[n] = nodes[ k ].cuda_pointer;
-					n++;
-				}
-				for( n;n<4;n++){
-					//std::cout <<"n="<<n << " k="<<k<<"\n";
-					this_qnode.node.values[n] = inf;
-					this_qnode.node.leaves[n] = NULL;
-				}
-				cudaMalloc(&cuda_qnode,sizeof(qnode));
-				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-				this_qnode.cuda_pointer = cuda_qnode;
-				nodes_next.push_back(this_qnode);
-			}
-		//}
-	//}
-		if(mod4){
-			this_width=(this_width)/4+1;
-		}
-		else{
-			this_width=this_width/4;
-		}
-		mod4=this_width%4;
-		nodes=nodes_next;
-		nodes_next.clear();
-		num_repeats=num_repeats*4;
-		//std::cout << "--------------------------------------\n";
-		//for(int g=0;g<nodes.size();g++){ //node vector check
-		//	std::cout << "node " << g << " values " << nodes[g].node.values[0] << " " << nodes[g].node.values[1] << " "<< nodes[g].node.values[2] << " "<< nodes[g].node.values[3] << " "<< nodes[g].node.values[4] << " " <<"\n";
-		//	std::cout << "node " << g << " leaves " << nodes[g].node.leaves[0] << " " << nodes[g].node.leaves[1] << " "<< nodes[g].node.leaves[2] << " "<< nodes[g].node.leaves[3] << " " <<"\n";
-		//}
-	}
-
-
-	// copy size to object vars
-	qnodes_depth = end_depth;
-	qnodes_width = nodes.size();
-
-	//copy root nodes vector to object variable
-	//qnodes = new qnode[qnodes_width];
-	//for(k=0;k<qnodes_width;k++){   //only need to copy heads, they have pointers to the rest in them
-	//		qnodes[k].values[0] = nodes[k].node.values[0];
-	//		qnodes[k].values[1] = nodes[k].node.values[1];
-	//		qnodes[k].values[2] = nodes[k].node.values[2];
-	//		qnodes[k].values[3] = nodes[k].node.values[3];
-	//		qnodes[k].values[4] = nodes[k].node.values[4];
-	//		qnodes[k].leaves[0] = nodes[k].node.leaves[0];
-	//		qnodes[k].leaves[1] = nodes[k].node.leaves[1];
-	//		qnodes[k].leaves[2] = nodes[k].node.leaves[2];
-	//		qnodes[k].leaves[3] = nodes[k].node.leaves[3];
-	//}
-
-	// make and copy device data
-	cudaMalloc(	&d_qnodes_root,				sizeof(qnode)	);
-	cudaMemcpy(	 d_qnodes_root,	&nodes[0].node,		sizeof(qnode),	cudaMemcpyHostToDevice); 
-
-	std::cout << "  Complete.  Depth of tree is "<< qnodes_depth << ", width is "<< qnodes_width <<".\n";
+//
+//	// node vectors
+//	std::vector<qnode_host>   nodes;
+//	std::vector<qnode_host>   nodes_next;
+//
+//	// node variables
+//	qnode_host  this_qnode;
+//	qnode*      cuda_qnode;
+//
+//	// build bottom-up from the unionized E vector
+//	unsigned k, depth;
+//	unsigned rows_by_four = MT_rows;
+//	for(k=0; k < rows_by_four ; k = k+4){
+//		this_qnode.node.values[0] = xs_data_main_E_grid[ k+0 ];
+//		this_qnode.node.values[1] = xs_data_main_E_grid[ k+1 ];
+//		this_qnode.node.values[2] = xs_data_main_E_grid[ k+2 ];
+//		this_qnode.node.values[3] = xs_data_main_E_grid[ k+3 ];
+//		this_qnode.node.leaves[0] = (qnode*) ((long unsigned)k + 0);  // recast grid index as the pointer for lowest nodes
+//		this_qnode.node.leaves[1] = (qnode*) ((long unsigned)k + 1);
+//		this_qnode.node.leaves[2] = (qnode*) ((long unsigned)k + 2);
+//		this_qnode.node.leaves[3] = (qnode*) ((long unsigned)k + 3);
+//		cudaMalloc(&cuda_qnode,sizeof(qnode));
+//		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
+//		this_qnode.cuda_pointer = cuda_qnode;
+//		nodes.push_back(this_qnode);
+//	}
+//	//do the last values
+//	if(MT_rows%4){
+//		unsigned n=0;
+//		for(k=rows_by_four;k<MT_rows;k++){
+//			this_qnode.node.values[n] = xs_data_main_E_grid[ k ];
+//			this_qnode.node.leaves[n] = (qnode*) ((long unsigned)k); 
+//			n++;
+//		}
+//		//repeat the last values
+//		for(k=n;k<4;k++){
+//			this_qnode.node.values[k] = this_qnode.node.values[n-1];
+//			this_qnode.node.leaves[k] = this_qnode.node.leaves[n-1];
+//		}
+//		// device allocate and add to vector
+//		cudaMalloc(&cuda_qnode,sizeof(qnode));
+//		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
+//		this_qnode.cuda_pointer = cuda_qnode;
+//		nodes.push_back(this_qnode);
+//	}
+//
+//
+//	//now build it up!  length will *always* need to be a multiple of 4.  this routine pads the end nodes with 
+//	unsigned this_width = nodes.size();
+//	unsigned lowest_length = this_width;
+//	unsigned mod4 		= this_width % 4;
+//	unsigned end_depth=  (logf(lowest_length)/logf(4))+1;
+//	unsigned num_repeats = 1;
+//	unsigned starting_index = 0;
+//	float inf = 1e45;
+//	//std::cout << "end_depth="<<end_depth<<"\n";
+//	for(unsigned depth=0;depth<end_depth;depth++){
+//		//for(unsigned copy_repeats=0;copy_repeats<num_repeats;copy_repeats++){
+//		//	starting_index=copy_repeats*this_width;
+//		//for(unsigned copy_iteration=0;copy_iteration<4;copy_iteration++){
+//			for( k=starting_index;k<(starting_index+this_width-mod4);k=k+4){
+//				//std::cout << "k=" << k << "\n";
+//				this_qnode.node.values[0] = nodes[ k+0 ].node.values[0]; // can use 0 since values overlap
+//				this_qnode.node.values[1] = nodes[ k+1 ].node.values[0];
+//				this_qnode.node.values[2] = nodes[ k+2 ].node.values[0];
+//				this_qnode.node.values[3] = nodes[ k+3 ].node.values[0];  
+//				this_qnode.node.leaves[0] = nodes[ k+0 ].cuda_pointer;  // set pointers as the cuda pointer of the children
+//				this_qnode.node.leaves[1] = nodes[ k+1 ].cuda_pointer;
+//				this_qnode.node.leaves[2] = nodes[ k+2 ].cuda_pointer;
+//				this_qnode.node.leaves[3] = nodes[ k+3 ].cuda_pointer;
+//				cudaMalloc(&cuda_qnode,sizeof(qnode));
+//				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
+//				this_qnode.cuda_pointer = cuda_qnode;
+//				nodes_next.push_back(this_qnode);
+//			}
+//			if(mod4){
+//				//std::cout << "adding padded node at " << nodes_next.size()-1 << "\n";
+//				unsigned n=0;
+//				for( k=(starting_index+this_width-mod4) ; k<(starting_index+this_width) ; k++){
+//					//std::cout <<"n="<<n << " k="<<k<<"\n";
+//					this_qnode.node.values[n] = nodes[ k ].node.values[0];
+//					this_qnode.node.leaves[n] = nodes[ k ].cuda_pointer;
+//					n++;
+//				}
+//				for( n;n<4;n++){
+//					//std::cout <<"n="<<n << " k="<<k<<"\n";
+//					this_qnode.node.values[n] = inf;
+//					this_qnode.node.leaves[n] = NULL;
+//				}
+//				cudaMalloc(&cuda_qnode,sizeof(qnode));
+//				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
+//				this_qnode.cuda_pointer = cuda_qnode;
+//				nodes_next.push_back(this_qnode);
+//			}
+//		//}
+//	//}
+//		if(mod4){
+//			this_width=(this_width)/4+1;
+//		}
+//		else{
+//			this_width=this_width/4;
+//		}
+//		mod4=this_width%4;
+//		nodes=nodes_next;
+//		nodes_next.clear();
+//		num_repeats=num_repeats*4;
+//		//std::cout << "--------------------------------------\n";
+//		//for(int g=0;g<nodes.size();g++){ //node vector check
+//		//	std::cout << "node " << g << " values " << nodes[g].node.values[0] << " " << nodes[g].node.values[1] << " "<< nodes[g].node.values[2] << " "<< nodes[g].node.values[3] << " "<< nodes[g].node.values[4] << " " <<"\n";
+//		//	std::cout << "node " << g << " leaves " << nodes[g].node.leaves[0] << " " << nodes[g].node.leaves[1] << " "<< nodes[g].node.leaves[2] << " "<< nodes[g].node.leaves[3] << " " <<"\n";
+//		//}
+//	}
+//
+//
+//	// copy size to object vars
+//	qnodes_depth = end_depth;
+//	qnodes_width = nodes.size();
+//
+//	//copy root nodes vector to object variable
+//	//qnodes = new qnode[qnodes_width];
+//	//for(k=0;k<qnodes_width;k++){   //only need to copy heads, they have pointers to the rest in them
+//	//		qnodes[k].values[0] = nodes[k].node.values[0];
+//	//		qnodes[k].values[1] = nodes[k].node.values[1];
+//	//		qnodes[k].values[2] = nodes[k].node.values[2];
+//	//		qnodes[k].values[3] = nodes[k].node.values[3];
+//	//		qnodes[k].values[4] = nodes[k].node.values[4];
+//	//		qnodes[k].leaves[0] = nodes[k].node.leaves[0];
+//	//		qnodes[k].leaves[1] = nodes[k].node.leaves[1];
+//	//		qnodes[k].leaves[2] = nodes[k].node.leaves[2];
+//	//		qnodes[k].leaves[3] = nodes[k].node.leaves[3];
+//	//}
+//
+//	// make and copy device data
+//	cudaMalloc(	&d_qnodes_root,				sizeof(qnode)	);
+//	cudaMemcpy(	 d_qnodes_root,	&nodes[0].node,		sizeof(qnode),	cudaMemcpyHostToDevice); 
+//
+//	std::cout << "  Complete.  Depth of tree is "<< qnodes_depth << ", width is "<< qnodes_width <<".\n";
 
 }

@@ -22,6 +22,7 @@ int main(int argc, char* argv[]){
 	std::string jezebelname  	= "jezebel";
 	std::string pincellname  	= "pincell";
 	std::string sodiumpinname  	= "sodiumpin";
+	std::string testname 	 	= "test";
 
 
 	// check
@@ -34,6 +35,7 @@ int main(int argc, char* argv[]){
 		printf("%s, ",jezebelname.c_str());
 		printf("%s, ",pincellname.c_str());
 		printf("%s, ",sodiumpinname.c_str());
+		printf("%s, ",testname.c_str());
 		printf("and a number of particles to run!\n");
 		exit(0);
 	}
@@ -500,6 +502,42 @@ int main(int argc, char* argv[]){
 		//water 
 		type=0;
 		material=2;
+		mins[0]=-5.0;
+		mins[1]=-5.0;
+		mins[2]=-25.0;
+		maxs[0]= 5.0;
+		maxs[1]= 5.0;
+		maxs[2]= 25.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,999,0,0,0,0,0);
+	}
+	else if(testname.compare(argv[1])==0){
+		// pincell mats
+		n_topes = 2;
+		std::vector<std::string> topes (n_topes);
+		std::vector<float>    fracs_fuel  (n_topes);
+		topes[0] = "92235.03c";
+		topes[1] = "40090.03c";
+		fracs_fuel[0] = 0.1;  
+		fracs_fuel[1] = 0.9;   
+	
+		float    dens_fuel = 10.97;
+
+		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
+		
+		// run stuff
+		tallycell = 1;
+		filename  = pincellname;
+		tallyname = pincellname;
+		tallyname.append(".tally");
+		bc = 1;
+
+		//water 
+		type=0;
+		material=1;
 		mins[0]=-5.0;
 		mins[1]=-5.0;
 		mins[2]=-25.0;
