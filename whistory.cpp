@@ -1131,7 +1131,7 @@ void whistory::load_cross_sections(){
 	
 					// copy to cuda pointer and host pointer
 					memcpy(this_pointer,muBuff.buf,muBytes);
-					cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
+					cudaMemcpy(cuda_pointer,this_pointer,muBytes,cudaMemcpyHostToDevice);
 	
 				}	
 

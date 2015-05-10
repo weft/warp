@@ -392,7 +392,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 			mu  = (e1 - e0)/(cdf1 - cdf0) * rn1 + e0;
 		}
 		else{
-			printf("intt in law 61 in cscatter is invlaid (%u)!",intt);
+			printf("intt in law 61 in cscatter is invlaid (%u)!\n",intt);
 		}
 		
 

@@ -529,7 +529,7 @@ int main(int argc, char* argv[]){
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
 		
 		// run stuff
-		tallycell = 1;
+		tallycell = 999;
 		filename  = pincellname;
 		tallyname = pincellname;
 		tallyname.append(".tally");
@@ -538,11 +538,11 @@ int main(int argc, char* argv[]){
 		//water 
 		type=0;
 		material=1;
-		mins[0]=-5.0;
-		mins[1]=-5.0;
+		mins[0]=-25.0;
+		mins[1]=-25.0;
 		mins[2]=-25.0;
-		maxs[0]= 5.0;
-		maxs[1]= 5.0;
+		maxs[0]= 25.0;
+		maxs[1]= 25.0;
 		maxs[2]= 25.0;
 		origin[0]=0.0;
 		origin[1]=0.0;
