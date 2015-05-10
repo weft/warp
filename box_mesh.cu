@@ -12,7 +12,6 @@ rtDeclareVariable(unsigned,  cellnum,     attribute cell_num, );
 rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
 rtDeclareVariable(float3, normal, attribute normal, );
-rtDeclareVariable(unsigned,  trace_type, , );
 
 
 static __device__ float3 boxnormal(float t, float3 t0, float3 t1)

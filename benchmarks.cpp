@@ -536,7 +536,7 @@ int main(int argc, char* argv[]){
 		bc = 1;
 
 		//water 
-		type=0;
+		type=2;
 		material=1;
 		mins[0]=-25.0;
 		mins[1]=-25.0;
