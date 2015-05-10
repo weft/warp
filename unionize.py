@@ -527,7 +527,7 @@ class cross_section_data:
 					flatarray2 = numpy.append(numpy.array(locs),flatarray2)
 					
 					flatarray_out = numpy.ascontiguousarray(numpy.append(flatarray,flatarray2),dtype=numpy.float32)   # encoding ints as foats reduces maximum!
-					print flatarray_out
+
 					self.last_loaded = MTnum    #  must encode into the same number of elements as other arrays
 					return [nextDex,this_E,next_E,l,l,law,intt,flatarray_out,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 
