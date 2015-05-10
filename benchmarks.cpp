@@ -530,8 +530,8 @@ int main(int argc, char* argv[]){
 		
 		// run stuff
 		tallycell = 999;
-		filename  = pincellname;
-		tallyname = pincellname;
+		filename  = testname;
+		tallyname = testname;
 		tallyname.append(".tally");
 		bc = 1;
 
