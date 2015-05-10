@@ -488,11 +488,12 @@ class cross_section_data:
 
 					# this E
 					outlen = rxn.energy_dist.energy_out[scatter_dex].__len__()
-					locs = [0]
-					flatarray = numpy.array([0])
+					this_len = 0
+					locs = [0,0]
+					flatarray = numpy.array([])
 					for i in range(0,outlen):
 						if i>0:
-							locs.append(this_len*3+1+locs[i-1])  # compute location pointer based on previous
+							locs.append(this_len*3+2+locs[i-1])  # compute location pointer based on previous
 						this_len  = rxn.energy_dist.a_dist_mu_out[scatter_dex][i].__len__()
 						intt 	  = scatterINTT[                  scatter_dex]
 						if type(intt) is list:
@@ -502,30 +503,31 @@ class cross_section_data:
 						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_mu_out[scatter_dex][i])
 						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_cdf[   scatter_dex][i])
 						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_pdf[   scatter_dex][i])
-					l = flatarray.__len__()
 					flatarray = numpy.append(numpy.array(locs),flatarray)
+					l = flatarray.__len__()
 					flatarray[0] = l
 
 					# next E
 					outlen = rxn.energy_dist.energy_out[scatter_dex+plusone].__len__()
+					this_len = 0
 					locs = [0]
 					flatarray2 = numpy.array([])
 					for i in range(0,outlen):
 						if i>0:
-							locs.append(this_len*3+1+locs[i-1])  # compute location pointer based on previous
+							locs.append(this_len*3+2+locs[i-1])  # compute location pointer based on previous
 						this_len  = rxn.energy_dist.a_dist_mu_out[scatter_dex+plusone][i].__len__()
 						intt 	  = scatterINTT[                  scatter_dex+plusone]
 						if type(intt) is list:
 							intt = intt[0]  # just take first value of list in intt, might be wrong :/
-						flatarray2 = numpy.append(flatarray,this_len)
-						flatarray2 = numpy.append(flatarray,intt)
-						flatarray2 = numpy.append(flatarray,rxn.energy_dist.a_dist_mu_out[scatter_dex+plusone][i])
-						flatarray2 = numpy.append(flatarray,rxn.energy_dist.a_dist_cdf[   scatter_dex+plusone][i])
-						flatarray2 = numpy.append(flatarray,rxn.energy_dist.a_dist_pdf[   scatter_dex+plusone][i])
+						flatarray2 = numpy.append(flatarray2,this_len)
+						flatarray2 = numpy.append(flatarray2,intt)
+						flatarray2 = numpy.append(flatarray2,rxn.energy_dist.a_dist_mu_out[scatter_dex+plusone][i])
+						flatarray2 = numpy.append(flatarray2,rxn.energy_dist.a_dist_cdf[   scatter_dex+plusone][i])
+						flatarray2 = numpy.append(flatarray2,rxn.energy_dist.a_dist_pdf[   scatter_dex+plusone][i])
 					flatarray2 = numpy.append(numpy.array(locs),flatarray2)
 					
 					flatarray_out = numpy.ascontiguousarray(numpy.append(flatarray,flatarray2),dtype=numpy.float32)   # encoding ints as foats reduces maximum!
-
+					print flatarray_out
 					self.last_loaded = MTnum    #  must encode into the same number of elements as other arrays
 					return [nextDex,this_E,next_E,l,l,law,intt,flatarray_out,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 

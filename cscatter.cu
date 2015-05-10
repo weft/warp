@@ -27,7 +27,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	}
 
 	//constants
-	const float  pi           =   3.14159265359 ;
+	//const float  pi           =   3.14159265359 ;
 	const float  m_n          =   1.00866491600 ; // u
 	//const float  temp         =   0.025865214e-6;    // MeV
 	const float  E_cutoff     =   1e-11;
@@ -50,7 +50,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 
 
 	// internal kernel variables
-	float 		mu, phi, next_E, last_E, sampled_E, e_start, E0, E1, Ek, next_e_start, next_e_end, last_e_start, last_e_end, diff;
+	float 		mu, next_E, last_E, sampled_E, e_start, E0, E1, Ek, next_e_start, next_e_end, last_e_start, last_e_end, diff;
     unsigned 	vlen, next_vlen, offset, n, law, intt; 
     unsigned  	isdone = 0;
 	float  		speed_n          	=   sqrtf(2.0*this_E/m_n);
@@ -361,20 +361,27 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 		//
 
 		// get parameters
-		vloc = this_Sarray[distloc + n];  // get appropriate vector location for this E_out
-		vlen = this_Sarray[distloc    ];  // vector length
-		intt = this_Sarray[distloc + 1];  // interpolation type
-		printf("vloc %u vlen %u intt %u \n",vloc,vlen,intt);
+		unsigned vlen_S ;
+		if(distloc){
+			unsigned l = this_Sarray[0];
+			vloc   = this_Sarray[l + n] + (l + next_vlen) ; // get appropriate vector location for this E_out
+			}                
+		else{   
+			vloc   = this_Sarray[1 + n] + (1 + vlen) ;     
+		}
+		vlen_S = this_Sarray[vloc + 0];        // vector length
+		intt   = this_Sarray[vloc + 1];        // interpolation type
+		//printf("distloc %u vloc %u vlen_S %u intt %u \n",distloc,vloc,vlen_S,intt);
 
 		// sample the dist
 		rn1 = get_rand(&rn);
-		for ( n=0 ; n<next_vlen-1 ; n++ ){
-			cdf0 		= this_Sarray[ (distloc + vloc +   vlen ) + n+0];
-			cdf1  		= this_Sarray[ (distloc + vloc +   vlen ) + n+1];
-			pdf0		= this_Sarray[ (distloc + vloc + 2*vlen ) + n+0];
-			pdf1		= this_Sarray[ (distloc + vloc + 2*vlen ) + n+1];
-			e0   		= this_Sarray[ (distloc + vloc          ) + n+0];
-			e1   		= this_Sarray[ (distloc + vloc          ) + n+1];
+		for ( n=0 ; n<vlen-1 ; n++ ){
+			cdf0 		= this_Sarray[ (vloc + 2 +   vlen_S ) + n+0];
+			cdf1  		= this_Sarray[ (vloc + 2 +   vlen_S ) + n+1];
+			pdf0		= this_Sarray[ (vloc + 2 + 2*vlen_S ) + n+0];
+			pdf1		= this_Sarray[ (vloc + 2 + 2*vlen_S ) + n+1];
+			e0   		= this_Sarray[ (vloc + 2            ) + n+0];
+			e1   		= this_Sarray[ (vloc + 2            ) + n+1];
 			if( rn1 >= cdf0 & rn1 < cdf1 ){
 				break;
 			}
