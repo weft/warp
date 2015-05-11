@@ -36,16 +36,24 @@ RT_PROGRAM void intersect(int object_dex)
   float3 far  = fmaxf(t0, t1);
   float tmin  = fmaxf( near );
   float tmax  = fminf( far );
+  float sgn   = 0;
 
-  //rtPrintf("%6.4E %6.4E\n",tmin,tmax);
+    // compute sign, if true, points should be outside.  if product is positive, point lies on same side of two parallel planes
+  if ( (t0.x*t1.x > 0) | (t0.y*t1.y > 0) | (t0.z*t1.z > 0) ){
+    sgn = -1.0;   // switch sign of normal to inward
+  }
+  else{
+    sgn =  1.0;
+  }
 
+  // report intersection
   if(tmin <= tmax) {
     bool check_second = true;
     if( rtPotentialIntersection( tmin ) ) {
         cellnum     = dims[object_dex].cellnum;
         cellmat     = dims[object_dex].matnum;
         cellfissile = dims[object_dex].is_fissile;
-        normal      = boxnormal( tmin , t0 , t1 );
+        normal      = sgn*boxnormal( tmin , t0 , t1 );
        if(rtReportIntersection(0))
          check_second = false;
     } 
@@ -54,7 +62,7 @@ RT_PROGRAM void intersect(int object_dex)
          cellnum     = dims[object_dex].cellnum;
          cellmat     = dims[object_dex].matnum;
          cellfissile = dims[object_dex].is_fissile;
-         normal      = boxnormal( tmax , t0 , t1 );
+         normal      = sgn*boxnormal( tmax , t0 , t1 );
         rtReportIntersection(0);
       }
     }

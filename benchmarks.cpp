@@ -516,27 +516,38 @@ int main(int argc, char* argv[]){
 	}
 	else if(testname.compare(argv[1])==0){
 		// pincell mats
-		n_topes = 2;
+		n_topes = 4;
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
+		std::vector<float>    fracs_water  (n_topes);
 		topes[0] = "92235.03c";
-		topes[1] = "40090.03c";
+		topes[1] = "92238.03c";
+		topes[2] = "8016.03c";
+		topes[3] = "1001.03c";
 		fracs_fuel[0] = 0.1;  
-		fracs_fuel[1] = 0.9;   
+		fracs_fuel[1] = 0.9;
+		fracs_fuel[2] = 0.0;  
+		fracs_fuel[3] = 0.0;
+		fracs_water[0] = 0.0;  
+		fracs_water[1] = 0.0;
+		fracs_water[2] = 1.0;  
+		fracs_water[3] = 2.0;
 	
 		float    dens_fuel = 10.97;
+		float 	 dens_water = 1;
 
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
+		geom.add_material(2,0,n_topes,dens_water, topes,fracs_water);
 		
 		// run stuff
-		tallycell = 999;
+		tallycell = 1;
 		filename  = testname;
 		tallyname = testname;
 		tallyname.append(".tally");
 		bc = 1;
 
-		//water 
-		type=2;
+		//fuel 
+		type=0;
 		material=1;
 		mins[0]=-25.0;
 		mins[1]=-25.0;
@@ -548,7 +559,23 @@ int main(int argc, char* argv[]){
 		origin[1]=0.0;
 		origin[2]=0.0;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,1,0,0,0,0,0);
+
+		//water 
+		type=0;
+		material=2;
+		mins[0]=-35.0;
+		mins[1]=-35.0;
+		mins[2]=-35.0;
+		maxs[0]= 35.0;
+		maxs[1]= 35.0;
+		maxs[2]= 35.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
 		geom.add_transform(prim_id,999,0,0,0,0,0);
+
 	}
 	else if(sodiumpinname.compare(argv[1])==0){
 		// sodium pincell mats
@@ -734,7 +761,7 @@ int main(int argc, char* argv[]){
 
 	hist.set_run_type("criticality");
 	hist.set_tally_cell(tallycell);
-	hist.set_run_param(40,20);  //run, skip
+	hist.set_run_param(2,2);  //run, skip
 	hist.set_filename(filename);
 	hist.run();
 	hist.write_tally(0);
