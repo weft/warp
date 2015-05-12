@@ -562,7 +562,7 @@ int main(int argc, char* argv[]){
 		//geom.add_transform(prim_id,1,0,0,0,0,0);
 
 		//water 
-		type=3;
+		type=0;
 		material=1;
 		mins[0]=-35.0;
 		mins[1]=-35.0;
