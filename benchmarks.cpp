@@ -547,23 +547,23 @@ int main(int argc, char* argv[]){
 		bc = 1;
 
 		//fuel 
-		type=0;
-		material=1;
-		mins[0]=-25.0;
-		mins[1]=-25.0;
-		mins[2]=-25.0;
-		maxs[0]= 25.0;
-		maxs[1]= 25.0;
-		maxs[2]= 25.0;
-		origin[0]=0.0;
-		origin[1]=0.0;
-		origin[2]=0.0;
-		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.add_transform(prim_id,1,0,0,0,0,0);
+		//type=2;
+		//material=1;
+		//mins[0]=-25.0;
+		//mins[1]=-25.0;
+		//mins[2]=-25.0;
+		//maxs[0]= 25.0;
+		//maxs[1]= 25.0;
+		//maxs[2]= 25.0;
+		//origin[0]=0.0;
+		//origin[1]=0.0;
+		//origin[2]=0.0;
+		//prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		//geom.add_transform(prim_id,1,0,0,0,0,0);
 
 		//water 
-		type=0;
-		material=2;
+		type=3;
+		material=1;
 		mins[0]=-35.0;
 		mins[1]=-35.0;
 		mins[2]=-35.0;

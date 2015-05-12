@@ -45,8 +45,8 @@ RT_PROGRAM void intersect(int object_dex)
         cellnum     = dims[object_dex].cellnum;
         cellmat     = dims[object_dex].matnum;
         cellfissile = dims[object_dex].is_fissile;
-        normal      = xformed_origin + (t0 * ray.direction) / radius;
-        normal      =  sgn * normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
+        normal      = (xformed_origin + (t0 * ray.direction) ) / radius;
+        //normal      =  sgn * normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
        if(rtReportIntersection(0))
          check_second = false;
     } 
@@ -56,8 +56,8 @@ RT_PROGRAM void intersect(int object_dex)
          cellnum     = dims[object_dex].cellnum;
          cellmat     = dims[object_dex].matnum;
          cellfissile = dims[object_dex].is_fissile;
-         normal      = xformed_origin + (t1 * ray.direction) / radius;
-         normal      = sgn * normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
+         normal      = (xformed_origin + (t1 * ray.direction)) / radius;
+         //normal      = sgn * normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
         rtReportIntersection(0);
       }
     }

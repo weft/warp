@@ -23,22 +23,23 @@ RT_PROGRAM void intersect(int object_dex)
   float3 xformed_origin = ray.origin - loc;
 
   float   tvec[8], tmin, ndD;
-  float   ax, ay, az, sgn;
+  float   ax, ay, az; 
+  float   sgn = 0.0;
   float3  pvec[8];
   float3  norms[8];
   int     k;
   bool    report;
 
   // box/line region delimiters
-  float x1 = maxs.y/sqrt(3.0);
+  float x1 = 2.0*maxs.y*sqrt(3.0)/3.0;
   float x2 = 2*x1;
   
   // normal vectors
   float3 this_norm;
-  float3 z_hat = make_float3( 0.0 , 0.0         , 1.0);
-  float3 y_hat = make_float3( 0.0 , 1.0         , 0.0 );
-  float3 r_hat = make_float3( sqrt(3.0)/2 , 1/2 , 0.0 );
-  float3 l_hat = make_float3(-sqrt(3.0)/2 , 1/2 , 0.0 );
+  float3 z_hat = make_float3( 0.0           , 0.0 , 1.0 );
+  float3 y_hat = make_float3( 0.0           , 1.0 , 0.0 );
+  float3 r_hat = make_float3( sqrt(3.0)/2.0 , 1/2 , 0.0 );
+  float3 l_hat = make_float3(-sqrt(3.0)/2.0 , 1/2 , 0.0 );
 
   // points that define all planes
   float3 p4 = make_float3(  x2,  0           , mins.x );
@@ -49,39 +50,71 @@ RT_PROGRAM void intersect(int object_dex)
   // find all plane intersections
   ndD=dot(z_hat,ray.direction);
   if (ndD!=0.0){
-    tvec[0]=dot(z_hat,(p1-xformed_origin))/ndD;
-    tvec[1]=dot(z_hat,(p4-xformed_origin))/ndD;
+    tvec[0] = dot(  z_hat , ( p1 - xformed_origin ) ) / ndD;
+    tvec[1] = dot(  z_hat , ( p4 - xformed_origin ) ) / ndD;
     pvec[0] = xformed_origin+tvec[0]*ray.direction;
     pvec[1] = xformed_origin+tvec[1]*ray.direction;
-    norms[0]= -z_hat;
-    norms[1]=  z_hat;
+    norms[0]=  z_hat;
+    norms[1]= -z_hat;
+  }
+  else{
+    tvec[0] = 0.0;
+    tvec[1] = 0.0;
+    pvec[0] = make_float3(0,0,0);
+    pvec[1] = make_float3(0,0,0);
+    norms[0]= make_float3(0,0,0);
+    norms[1]= make_float3(0,0,0);
   }
   ndD=dot(y_hat,ray.direction);
   if (ndD!=0.0){
-    tvec[2]=dot(  y_hat , ( p2 - xformed_origin ) ) / ndD;
-    tvec[3]=dot(  y_hat , ( p3 - xformed_origin ) ) / ndD;
+    tvec[2] = dot(  y_hat , ( p2 - xformed_origin ) ) / ndD;
+    tvec[3] = dot(  y_hat , ( p3 - xformed_origin ) ) / ndD;
     pvec[2] = xformed_origin+tvec[2]*ray.direction;
     pvec[3] = xformed_origin+tvec[3]*ray.direction;
     norms[2]=  y_hat;
     norms[3]= -y_hat;
   }
+  else{
+    tvec[2] = 0.0;
+    tvec[3] = 0.0;
+    pvec[2] = make_float3(0,0,0);
+    pvec[3] = make_float3(0,0,0);
+    norms[2]= make_float3(0,0,0);
+    norms[3]= make_float3(0,0,0);
+  }
   ndD=dot(l_hat,ray.direction);
   if (ndD!=0.0){
-    tvec[4]=dot(  l_hat , ( p2 - xformed_origin ) ) / ndD;
-    tvec[5]=dot(  l_hat , ( p1 - xformed_origin ) ) / ndD;
+    tvec[4] = dot(  l_hat , ( p2 - xformed_origin ) ) / ndD;
+    tvec[5] = dot(  l_hat , ( p1 - xformed_origin ) ) / ndD;
     pvec[4] = xformed_origin+tvec[4]*ray.direction;
     pvec[5] = xformed_origin+tvec[5]*ray.direction;
     norms[4]=  l_hat;
     norms[5]= -l_hat;
   }
+  else{
+    tvec[4] = 0.0;
+    tvec[5] = 0.0;
+    pvec[4] = make_float3(0,0,0);
+    pvec[5] = make_float3(0,0,0);
+    norms[4]= make_float3(0,0,0);
+    norms[6]= make_float3(0,0,0);
+  }
   ndD=dot(r_hat,ray.direction);
   if (ndD!=0.0){
-    tvec[6]=dot(  r_hat , ( p1 - xformed_origin ) ) / ndD;
-    tvec[7]=dot(  r_hat , ( p3 - xformed_origin ) ) / ndD;
+    tvec[6] = dot(  r_hat , ( p1 - xformed_origin ) ) / ndD;
+    tvec[7] = dot(  r_hat , ( p3 - xformed_origin ) ) / ndD;
     pvec[6] = xformed_origin+tvec[6]*ray.direction;
     pvec[7] = xformed_origin+tvec[7]*ray.direction;
     norms[6]=  r_hat;
     norms[7]= -r_hat;
+  }
+  else{
+    tvec[6] = 0.0;
+    tvec[7] = 0.0;
+    pvec[6] = make_float3(0,0,0);
+    pvec[7] = make_float3(0,0,0);
+    norms[6]= make_float3(0,0,0);
+    norms[7]= make_float3(0,0,0);
   }
 
   // compute sign, if true, points should be outside.  if product is positive, point lies on same side of two parallel planes
@@ -104,18 +137,18 @@ RT_PROGRAM void intersect(int object_dex)
             if (az>=mins.x && az<=maxs.x) {
                 if (tvec[k] >= 1e-8 && tvec[k] <= tmin) {
                     tmin=tvec[k];
-                    report=true;
                     this_norm = sgn*norms[k];
+                    report = true;
                 }
             }
         }
         // is in line region
-        else if (ax>x1 && ax<=x2 && (ay-(maxs.y*(2-ax/x1)))<=1e-6){
+        else if (ax>x1 && ax<=x2 && ( ay <= -maxs.y*(ax-x2)/(x2-x1))  ){
             if (az>=mins.x && az<=maxs.x) {
                 if (tvec[k] >= 1e-8 && tvec[k] <= tmin) {
                     tmin=tvec[k];
                     this_norm = sgn*norms[k];
-                    report=true;
+                    report = true;
                 }
             }
         }
@@ -140,10 +173,10 @@ RT_PROGRAM void bounds (int object_dex, float result[6])
   float3 maxs = make_float3(dims[object_dex].max[0],dims[object_dex].max[1],dims[object_dex].max[2]);
   float3 loc  = make_float3(dims[object_dex].loc[0],dims[object_dex].loc[1],dims[object_dex].loc[2]);
 
-  result[0] = -2*maxs.y/sqrt(3.0) + loc.x;
-  result[1] =   -maxs.y           + loc.y;
-  result[2] =    mins.x           + loc.z;
-  result[3] =  2*maxs.y/sqrt(3.0) + loc.x;
-  result[4] =    maxs.y           + loc.y;
-  result[5] =    maxs.x           + loc.z;
+  result[0] = -2.0*maxs.y*sqrt(3.0)/3.0 + loc.x;
+  result[1] =     -maxs.y               + loc.y;
+  result[2] =      mins.x               + loc.z;
+  result[3] =  2.0*maxs.y*sqrt(3.0)/3.0 + loc.x;
+  result[4] =      maxs.y               + loc.y;
+  result[5] =      maxs.x               + loc.z;
 }
