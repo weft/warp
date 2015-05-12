@@ -521,7 +521,7 @@ int main(int argc, char* argv[]){
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water  (n_topes);
 		topes[0] = "92235.03c";
-		topes[1] = "92238.03c";
+		topes[1] = "40090.03c";
 		topes[2] = "8016.03c";
 		topes[3] = "1001.03c";
 		fracs_fuel[0] = 0.1;  
@@ -761,7 +761,7 @@ int main(int argc, char* argv[]){
 
 	hist.set_run_type("criticality");
 	hist.set_tally_cell(tallycell);
-	hist.set_run_param(2,2);  //run, skip
+	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
 	hist.run();
 	hist.write_tally(0);
