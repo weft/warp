@@ -11,8 +11,8 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(unsigned,  cellnum,     attribute cell_num, );
 rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
-rtDeclareVariable(float3, normal, attribute normal, );
-
+rtDeclareVariable(float3,    normal,      attribute normal,   );
+rtDeclareVariable(uint, launch_index, rtLaunchIndex, );
 
 RT_PROGRAM void intersect(int object_dex)
 {
@@ -31,15 +31,15 @@ RT_PROGRAM void intersect(int object_dex)
   bool    report;
 
   // box/line region delimiters
-  float x1 = 2.0*maxs.y*sqrt(3.0)/3.0;
+  float x1 = maxs.y*sqrtf(3.0)/3.0;
   float x2 = 2*x1;
   
   // normal vectors
   float3 this_norm;
   float3 z_hat = make_float3( 0.0           , 0.0 , 1.0 );
   float3 y_hat = make_float3( 0.0           , 1.0 , 0.0 );
-  float3 r_hat = make_float3( sqrt(3.0)/2.0 , 1/2 , 0.0 );
-  float3 l_hat = make_float3(-sqrt(3.0)/2.0 , 1/2 , 0.0 );
+  float3 r_hat = make_float3( sqrtf(3.0)/2.0 , 1.0/2.0 , 0.0 );
+  float3 l_hat = make_float3(-sqrtf(3.0)/2.0 , 1.0/2.0 , 0.0 );
 
   // points that define all planes
   float3 p4 = make_float3(  x2,  0           , mins.x );
@@ -153,6 +153,8 @@ RT_PROGRAM void intersect(int object_dex)
             }
         }
     }
+
+    //rtPrintf("num %u\n",num);
 
   // report t value of first intersection
   if(report) {

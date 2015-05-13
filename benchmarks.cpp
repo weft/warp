@@ -540,7 +540,7 @@ int main(int argc, char* argv[]){
 		geom.add_material(2,0,n_topes,dens_water, topes,fracs_water);
 		
 		// run stuff
-		tallycell = 1;
+		tallycell = 999;
 		filename  = testname;
 		tallyname = testname;
 		tallyname.append(".tally");
@@ -562,7 +562,7 @@ int main(int argc, char* argv[]){
 		//geom.add_transform(prim_id,1,0,0,0,0,0);
 
 		//water 
-		type=0;
+		type=2;
 		material=1;
 		mins[0]=-35.0;
 		mins[1]=-35.0;
