@@ -540,30 +540,30 @@ int main(int argc, char* argv[]){
 		geom.add_material(2,0,n_topes,dens_water, topes,fracs_water);
 		
 		// run stuff
-		tallycell = 999;
+		tallycell = 1;
 		filename  = testname;
 		tallyname = testname;
 		tallyname.append(".tally");
 		bc = 1;
 
 		//fuel 
-		//type=2;
-		//material=1;
-		//mins[0]=-25.0;
-		//mins[1]=-25.0;
-		//mins[2]=-25.0;
-		//maxs[0]= 25.0;
-		//maxs[1]= 25.0;
-		//maxs[2]= 25.0;
-		//origin[0]=0.0;
-		//origin[1]=0.0;
-		//origin[2]=0.0;
-		//prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		//geom.add_transform(prim_id,1,0,0,0,0,0);
-
-		//water 
 		type=2;
 		material=1;
+		mins[0]=-25.0;
+		mins[1]=-25.0;
+		mins[2]=-25.0;
+		maxs[0]= 25.0;
+		maxs[1]= 25.0;
+		maxs[2]= 25.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,1,0,0,0,0,0);
+
+		//water 
+		type=0;
+		material=2;
 		mins[0]=-35.0;
 		mins[1]=-35.0;
 		mins[2]=-35.0;
