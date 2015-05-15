@@ -2242,86 +2242,115 @@ void whistory::set_dump_level(unsigned level){
 }
 void whistory::plot_geom(std::string type){
 
-	unsigned width_in  = 1024;
-	unsigned height_in = 1024;
-
-	if(is_initialized){
-		printf("  ! geometry plotting must be done before init, skipping.\n");
+	if(is_initialized!=1){
+		printf("  ! geometry plotting must be done AFTER init, skipping.\n");
 		return;
 	}
 
-	std::cout << "\e[1;32m" << "Plotting Geometry... " << "\e[m \n";
+	printf("\e[1;32mPlotting Geometry... \e[m \n");
 
-	////get aspect ratio and make N-compatible corresponding heights and widths
-	//float aspect = width_in / height_in;
-	//float mu, theta;
-	//float pi=3.14159;
-	//unsigned N_plot = width_in*height_in;
-	//std::cout << "width  = " << width << "\n";
-	//std::cout << "height = " << height << "\n";
-//
-	////de-allocate old array, allocate on for new size
-	//cudaFree(d_space);
-	//cudaMalloc();
-//
-//
-	////	// init the starting points to be across the z=0 plane and pointing downwards or isotropically random, should produce the same results
-	//source_point * positions_local = new source_point[N_plot];
-	//float dx = (42.0-(-42.0))/width;
-	//float dy = (42.0-(-42.0))/height;
-//
-	//unsigned index;
-	//for(int j=0;j<height;j++){
-	//	for(int k=0;k<width;k++){
-	//		mu = 2.0*rand()-1.0;
-	//		theta = 2.0*pi*rand();
-	//		index = j * width + k;
-	//		positions_local[index].x = -42.0 + dx/2 + k*dx;
-	//		positions_local[index].y = -42.0 + dy/2 + j*dy;
-	//		positions_local[index].z = 0.0;
-	//		positions_local[index].xhat = sqrtf(1-mu*mu) * cosf( theta ); 
-	//		positions_local[index].yhat = sqrtf(1-mu*mu) * sinf( theta ); 
-	//		positions_local[index].zhat =       mu; 
-	//		positions_local[index].samp_dist = 50000.0; 
-	//	}
-	//}
-//
-	//// copy starting positions data to pointer
-	//(void*)positions_ptr,positions_local,width*height*sizeof(source_point),cudaMemcpyHostToDevice);
-	//
-	//// trace with whereami?
-	//context["trace_type"]->setUint(2);
-	//context->launch(0,width*height);
-	//
-	////copy to local buffer
-	//unsigned * image_local = new unsigned[width*height];
-	//cudaMemcpy(image_local,(void*)cellnum_ptr,width*height*sizeof(unsigned),cudaMemcpyDeviceToHost);
-//
-	//// make image
-	//png::image< png::rgb_pixel > image(height, width);
-	//float * colormap = new float[3];
-	//for (size_t y = 0; y < image.get_height(); ++y)
-	//{
-	//    for (size_t x = 0; x < image.get_width(); ++x)
-	//    {
-	//    	//mincell=0;
-	//    	//maxcell=3;
-	//    	make_color(colormap,image_local[y*width+x],mincell,maxcell);
-	//    	//printf("%u %u %6.3f %6.3f %6.3f\n",mincell,maxcell,colormap[0],colormap[1],colormap[2]);
-	//        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
-	//    }
-	//}
-//
-	//image.write(filename);
-//
-	//std::cout << "Done.  Written to " << filename << "\n";
-//
-	//delete image_local;
-	//delete colormap;
-	//delete positions_local;
+	// get outer cell dims
+	float xmin = outer_cell_dims[0];
+	float ymin = outer_cell_dims[1];
+	float zmin = outer_cell_dims[2];
+	float xmax = outer_cell_dims[3];
+	float ymax = outer_cell_dims[4];
+	float zmax = outer_cell_dims[5];
+	unsigned mincell = problem_geom.get_minimum_cell();
+	unsigned maxcell = problem_geom.get_maximum_cell();
 
-	//deallocated new array, reallocated old array
+	// get aspect ratio and make N-compatible corresponding heights and widths
+	char this_filename[50];
+	float aspect = (xmax-xmin)/(ymax-ymin);
+	printf(" aspect %6.4f\n",aspect);
+	float resolution = 1024;
+	unsigned width_in  = resolution*aspect;
+	unsigned height_in = resolution;
+	unsigned width, height;
+	float mu, theta;
+	float pi = 3.14159;
+	if (width_in*height_in > N){
+		float aspect = width_in / height_in;
+		width  = sqrtf(N*aspect); 
+		height = sqrtf(N/aspect);
+		printf(" !resolution reduced by dataset size ->\n");
+		printf(" (height,width) (%u,%u) px\n",height,width);
+	}else{
+		width = width_in;
+		height = height_in;
+		printf(" (height,width) (%u,%u) px\n",height,width);
+	}
+	unsigned N_plot = width*height;
 
+	// init the starting points to be across the z=0 plane and pointing downwards or isotropically random, should produce the same result
+	source_point * positions_local = new source_point[N_plot];
+	unsigned index;
+	float dx = (xmax-xmin)/width;
+	float dy = (ymax-ymin)/height;
+	for(int j=0;j<height;j++){
+		for(int k=0;k<width;k++){
+			mu = 2.0*rand()-1.0;
+			theta = 2.0*pi*rand();
+			index = j * width + k;
+			positions_local[index].x = xmin + dx/2 + k*dx;
+			positions_local[index].y = ymin + dy/2 + j*dy;
+			positions_local[index].z = 0.0;
+			positions_local[index].xhat =  0.0;//sqrtf(1-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat =  0.0;//sqrtf(1-mu*mu) * sinf( theta ); 
+			positions_local[index].zhat = -1.0;//      mu; 
+			positions_local[index].surf_dist = 9999999999.9; 
+		}
+	}
+
+	// copy starting positions data to pointer
+	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
+	
+	// trace with whereami?
+	trace(2, N_plot);
+	
+	//copy to local buffer
+	unsigned * image_local = new unsigned[N_plot];
+	cudaMemcpy(image_local,d_cellnum,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// make image
+	png::image< png::rgb_pixel > image(height, width);
+	float * colormap = new float[3];
+	for (size_t y = 0; y < image.get_height(); ++y)
+	{
+	    for (size_t x = 0; x < image.get_width(); ++x)
+	    {
+	    	make_color(colormap,image_local[y*width+x],mincell,maxcell);
+	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	    }
+	}
+
+	sprintf(this_filename,"%sxy.png",filename.c_str());
+	image.write(this_filename);
+	printf("  Done.  Written to %s.\n",this_filename);
+
+	delete image_local;
+	delete colormap;
+	delete positions_local;
+
+}
+void whistory::make_color(float* color, unsigned x, unsigned min, unsigned max){
+	// red linear blue linear green sin colormap
+	if (x==4294967295){ //miss value
+		color[0]=0.0;
+		color[1]=0.0;
+		color[2]=0.0;
+	}
+	else{
+		float normed_value = (float) (x-min+1)/(max+2-min);
+		color[0] = normed_value;              //red
+		color[1] = sin(normed_value*3.14159); //green
+		color[2] = 1.0-normed_value;          //blue
+	}
+	
+	//bring up to 256?
+	color[0]=color[0]*256;
+	color[1]=color[1]*256;
+	color[2]=color[2]*256;
 
 }
 void whistory::create_quad_tree(){
