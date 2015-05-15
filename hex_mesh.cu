@@ -94,6 +94,7 @@ static __device__ bool accept_line(float3 pnt, float a, float x1, float x2, floa
 RT_PROGRAM void intersect(int object_dex)
 {
 
+  // max.x is apothem
   float3 mins = make_float3(dims[object_dex].min[0],dims[object_dex].min[1],dims[object_dex].min[2]);
   float3 maxs = make_float3(dims[object_dex].max[0],dims[object_dex].max[1],dims[object_dex].max[2]);
   float3 loc  = make_float3(dims[object_dex].loc[0],dims[object_dex].loc[1],dims[object_dex].loc[2]);
@@ -249,7 +250,7 @@ RT_PROGRAM void intersect(int object_dex)
     }
   }
 
-  // if a single sense is positive, point lies on same side of two parallel planes and it outside the hexagon
+  // if a single sense is positive, point lies on same side of two parallel planes and it is outside the hexagon
   if ( sense < 0.0){
     sgn =  1.0;   
   }
@@ -283,6 +284,7 @@ RT_PROGRAM void intersect(int object_dex)
 
 RT_PROGRAM void bounds (int object_dex, float result[6])
 {
+  // max.x is apothem
   float3 mins = make_float3(dims[object_dex].min[0],dims[object_dex].min[1],dims[object_dex].min[2]);
   float3 maxs = make_float3(dims[object_dex].max[0],dims[object_dex].max[1],dims[object_dex].max[2]);
   float3 loc  = make_float3(dims[object_dex].loc[0],dims[object_dex].loc[1],dims[object_dex].loc[2]);

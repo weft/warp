@@ -523,7 +523,7 @@ int main(int argc, char* argv[]){
 		topes[0] = "92235.03c";
 		topes[1] = "40090.03c";
 		topes[2] = "8016.03c";
-		topes[3] = "1001.03c";
+		topes[3] = "1002.03c";
 		fracs_fuel[0] = 0.1;  
 		fracs_fuel[1] = 0.9;
 		fracs_fuel[2] = 0.0;  
@@ -729,26 +729,12 @@ int main(int argc, char* argv[]){
 	//geom.print_all();
 	geom.print_summary();
 
-	///////////////////////////////////
-	// INIT OptiX STUFF for plotting //
-	///////////////////////////////////
-
-	// trace geom if requested
-	// make new context that fits the reqested image size, trace, then destroy to free resources
-	//unsigned geom_width  = 1024; 
-	//unsigned geom_height = 1024;
-	//unsigned N_geom = geom_width*geom_height;
-	//optix_stuff geom_optix ( N_geom , 4 );
-	//geom_optix.init(geom,0,"Sbvh");
-	//geom_optix.trace_geometry(geom_width,geom_height,"geom.png");
-	//geom_optix.~optix_stuff();
-
-
 	/////////////////////////////////////////////////////////////////
 	// INIT CUDA and HISTORY STUFF and LOAD/UNIONIZE CROS SECTIONS //
 	/////////////////////////////////////////////////////////////////
 
 	whistory hist ( N , geom );
+	hist.plot_geom("cell");  // **MUST** be called before init.
 	hist.set_print_level(2);
 	hist.set_device(0);
 	hist.init();

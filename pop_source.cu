@@ -361,6 +361,38 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 			mu  = 2.0*get_rand(rn)-1.0;
 
 		}
+		else if(law==66){   // N-body phase space
+
+			// get tabulated temperature
+			float Q 		= this_Earray[ offset     ];
+			float nbodies 	= this_Earray[ offset + 1 ];
+			if (nbodies>3) {printf("nobodies in law 66  is greater than 3!!!\n");}
+			float A 		= this_Earray[ offset + 2 ];
+			float Emax 		= (this_yield-1.0)/this_yield * (A/(A+1)*this_E + Q); 
+			float rn1       = get_rand(rn);
+			float rn2       = get_rand(rn);
+			float rn3       = get_rand(rn);
+			float rn4       = get_rand(rn);
+
+			//// rejection sample
+			while ( (rn1*rn1 + rn2*rn2) > 1.0 ){
+				rn1 = get_rand(rn);
+				rn2 = get_rand(rn);
+			}
+			while ( (rn3*rn3 + rn4*rn4) > 1.0 ){
+				rn3 = get_rand(rn);
+				rn4 = get_rand(rn);
+			}
+
+			float x = -rn1 * logf(rn1*rn1 + rn2*rn2)/ (rn1*rn1 + rn2*rn2) - logf(get_rand(rn)) ;
+			float y = -rn3 * logf(rn3*rn3 + rn4*rn4)/ (rn3*rn3 + rn4*rn4) - logf(get_rand(rn)) ;
+
+			sampled_E = Emax * x /( x + y );
+
+			//isotropic mu
+			mu  = 2.0*get_rand(rn)-1.0;
+
+		}
 		else{
 			printf("LAW %u NOT HANDLED IN POP!\n",law);
 		}

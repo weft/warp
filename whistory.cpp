@@ -2240,6 +2240,90 @@ void whistory::set_print_level(unsigned level){
 void whistory::set_dump_level(unsigned level){
 	dump_flag = level;
 }
+void whistory::plot_geom(std::string type){
+
+	unsigned width_in  = 1024;
+	unsigned height_in = 1024;
+
+	if(is_initialized){
+		printf("  ! geometry plotting must be done before init, skipping.\n");
+		return;
+	}
+
+	std::cout << "\e[1;32m" << "Plotting Geometry... " << "\e[m \n";
+
+	////get aspect ratio and make N-compatible corresponding heights and widths
+	//float aspect = width_in / height_in;
+	//float mu, theta;
+	//float pi=3.14159;
+	//unsigned N_plot = width_in*height_in;
+	//std::cout << "width  = " << width << "\n";
+	//std::cout << "height = " << height << "\n";
+//
+	////de-allocate old array, allocate on for new size
+	//cudaFree(d_space);
+	//cudaMalloc();
+//
+//
+	////	// init the starting points to be across the z=0 plane and pointing downwards or isotropically random, should produce the same results
+	//source_point * positions_local = new source_point[N_plot];
+	//float dx = (42.0-(-42.0))/width;
+	//float dy = (42.0-(-42.0))/height;
+//
+	//unsigned index;
+	//for(int j=0;j<height;j++){
+	//	for(int k=0;k<width;k++){
+	//		mu = 2.0*rand()-1.0;
+	//		theta = 2.0*pi*rand();
+	//		index = j * width + k;
+	//		positions_local[index].x = -42.0 + dx/2 + k*dx;
+	//		positions_local[index].y = -42.0 + dy/2 + j*dy;
+	//		positions_local[index].z = 0.0;
+	//		positions_local[index].xhat = sqrtf(1-mu*mu) * cosf( theta ); 
+	//		positions_local[index].yhat = sqrtf(1-mu*mu) * sinf( theta ); 
+	//		positions_local[index].zhat =       mu; 
+	//		positions_local[index].samp_dist = 50000.0; 
+	//	}
+	//}
+//
+	//// copy starting positions data to pointer
+	//(void*)positions_ptr,positions_local,width*height*sizeof(source_point),cudaMemcpyHostToDevice);
+	//
+	//// trace with whereami?
+	//context["trace_type"]->setUint(2);
+	//context->launch(0,width*height);
+	//
+	////copy to local buffer
+	//unsigned * image_local = new unsigned[width*height];
+	//cudaMemcpy(image_local,(void*)cellnum_ptr,width*height*sizeof(unsigned),cudaMemcpyDeviceToHost);
+//
+	//// make image
+	//png::image< png::rgb_pixel > image(height, width);
+	//float * colormap = new float[3];
+	//for (size_t y = 0; y < image.get_height(); ++y)
+	//{
+	//    for (size_t x = 0; x < image.get_width(); ++x)
+	//    {
+	//    	//mincell=0;
+	//    	//maxcell=3;
+	//    	make_color(colormap,image_local[y*width+x],mincell,maxcell);
+	//    	//printf("%u %u %6.3f %6.3f %6.3f\n",mincell,maxcell,colormap[0],colormap[1],colormap[2]);
+	//        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	//    }
+	//}
+//
+	//image.write(filename);
+//
+	//std::cout << "Done.  Written to " << filename << "\n";
+//
+	//delete image_local;
+	//delete colormap;
+	//delete positions_local;
+
+	//deallocated new array, reallocated old array
+
+
+}
 void whistory::create_quad_tree(){
 
 	std::cout << "\e[1;32m" << "Building quad tree for energy search... " << "\e[m \n";

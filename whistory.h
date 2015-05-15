@@ -440,6 +440,11 @@ public:
 	 * @param[in] level - dump type flag
 	 */
 	 void set_dump_level(unsigned level);
+	  /**
+	 * \brief produces png images of the geometry, named filename.[xy,xz,yz]
+	 * @param[in] type, color is based 'cell' or 'material'
+	 */
+	 void plot_geom(std::string type);
 };
 
 #endif
