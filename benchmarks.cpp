@@ -564,12 +564,12 @@ int main(int argc, char* argv[]){
 		//water 
 		type=0;
 		material=2;
-		mins[0]=-35.0;
-		mins[1]=-35.0;
-		mins[2]=-35.0;
-		maxs[0]= 35.0;
-		maxs[1]= 35.0;
-		maxs[2]= 35.0;
+		mins[0]=-45.0;
+		mins[1]=-45.0;
+		mins[2]=-45.0;
+		maxs[0]= 45.0;
+		maxs[1]= 45.0;
+		maxs[2]= 45.0;
 		origin[0]=0.0;
 		origin[1]=0.0;
 		origin[2]=0.0;
