@@ -57,7 +57,6 @@ void whistory::init(){
 	// init optix stuff 
 	optix_obj.N=Ndataset;
 	optix_obj.stack_size_multiplier=1;
-	optix_obj.set_image_type("cell");
 	optix_obj.init(problem_geom,compute_device,accel_type);
 	if(print_flag >= 1){
 		optix_obj.print();
@@ -1501,13 +1500,13 @@ void whistory::sample_fissile_points(){
 
 		if((float)current_index/(float)N > 1){
 			if(print_flag >= 2){
-				std::cout << "100.00 \% done     \n";
+				std::cout << "  100.00 \% done     \n";
 			}
 		} 
 	}
 
 	if(print_flag >= 2){
-		std::cout << "Copying to starting points...\n";
+		std::cout << "  Copying to starting points...\n";
 	}
 
 	cudaMemcpy(d_space,	d_fissile_points	,N*sizeof(source_point),	cudaMemcpyDeviceToDevice);
@@ -1516,7 +1515,7 @@ void whistory::sample_fissile_points(){
 	//cudaFree(d_fissile_points);
 
 	if(print_flag >= 2){
-		std::cout << "Done.\n";
+		std::cout << "  Done.\n";
 	}
 
 	//write starting positions to file
@@ -2254,11 +2253,13 @@ void whistory::plot_geom(std::string type_in){
 	unsigned minnum = problem_geom.get_minimum_cell();
 	unsigned maxnum = problem_geom.get_maximum_cell();
 	if (type_in.compare("cell")==0){
+		printf("  color set to \e[1;31mCELL\e[m\n");
 		type_array = d_cellnum;
 		minnum = problem_geom.get_minimum_cell();
 		maxnum = problem_geom.get_maximum_cell();
 	}
 	else if (type_in.compare("material")==0){
+		printf("  color set to \e[1;31mMATERIAL\e[m\n");
 		type_array = d_matnum;
 		minnum = problem_geom.get_minimum_material();
 		maxnum = problem_geom.get_maximum_material();
@@ -2280,7 +2281,7 @@ void whistory::plot_geom(std::string type_in){
 	// get aspect ratio and make N-compatible corresponding heights and widths
 	char this_filename[50];
 	float aspect = (xmax-xmin)/(ymax-ymin);
-	printf(" xy aspect ratio of outer cell: %6.4f\n",aspect);
+	printf("  xy aspect ratio of outer cell: %6.4f\n",aspect);
 	float resolution = 1024;
 	unsigned width_in  = resolution*aspect;
 	unsigned height_in = resolution;
@@ -2291,8 +2292,8 @@ void whistory::plot_geom(std::string type_in){
 		float aspect = width_in / height_in;
 		width  = sqrtf(N*aspect); 
 		height = sqrtf(N/aspect);
-		printf(" !resolution reduced by dataset size ->\n");
-		printf(" (height,width) (%u,%u) px\n",height,width);
+		printf("  !resolution reduced by dataset size ->");
+		printf("  (height,width) (%u,%u) px\n",height,width);
 	}else{
 		width = width_in;
 		height = height_in;

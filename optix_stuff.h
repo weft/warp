@@ -10,7 +10,6 @@ class optix_stuff{
 	optix::Context 	context; /**< OptiX context */
 	std::string accel_type; /**< acceleration type */ 
 	std::string traverse_type; /**< traverse type */
-	std::string image_type; /**< image type */
 	unsigned mincell; /**< minimum (usually innermost) cell */
 	unsigned maxcell; /**< maximum (usually outermost) cell */
 	unsigned outer_cell; /**< outermost cell */
@@ -132,16 +131,6 @@ public:
 	 */
 	void print();
 	/**
-	 * \brief traces and plots a geometry
-	 * \details gets the aspect ratio of the geometry, initializes starting points, 
-	 * copies starting positions to a pointer, traces the geometry, and generates 
-	 * an image. currently all commented out.
-	 * @param[in] width_in,height_in - width and height of geometry object
-	 * @param[in] type - type, doesn't seem to be used
-	 * @param[in] filename - filename of image created
-	 */ 
-	void trace_geometry(unsigned,unsigned,std::string,std::string);
-	/**
 	 * \brief function to test tracing
 	 * \details gets cell minimza and maxima, randomizes starting positions, 
 	 * copies starting positions to a pointer, traces a place to generate an image,
@@ -150,23 +139,18 @@ public:
 	 * the time it took do to the trace.
 	 * \returns time_out - time taken to do the trace
 	 */
-	float trace_test();
-	/**
-	 * \brief creates a color map
-	 * @param[in] color - color map
-	 * @param[in] x - used to check for a miss or normalize the color 
-	 * @param[in] min,max - values used to normalize the color  
-	 */
+	//float trace_test();
+	///**
+	// * \brief creates a color map
+	// * @param[in] color - color map
+	// * @param[in] x - used to check for a miss or normalize the color 
+	// * @param[in] min,max - values used to normalize the color  
+	// */
 	void make_color(float*,unsigned,unsigned,unsigned);
 	/**
 	 * \brief returns a random float
 	 */ 
 	float get_rand();
-	/**
-	 * \brief sets image type
-	 * @param[in] string_in - image type to be set
-	 */
-	void set_image_type(std::string);
 	/**
 	 * \brief returns the outermost cell
 	 * \returns outer_cell - number of outermost cell

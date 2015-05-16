@@ -441,13 +441,15 @@ public:
 	 */
 	 void set_dump_level(unsigned level);
 	 /**
-	 * \brief produces png images of the geometry, named filename.[xy,xz,yz]
+	 * \brief produces png images of the geometry, named filename-[xy,xz,yz].png
 	 * @param[in] type, color is based 'cell' or 'material'
 	 */
 	 void plot_geom(std::string type);
-	 /**
-	 * \brief maps numbers to a color range
-	 * @param[in] type, color is based 'cell' or 'material'
+	/**
+	 * \brief creates a color map
+	 * @param[in] color - color map
+	 * @param[in] x - used to check for a miss or normalize the color 
+	 * @param[in] min,max - values used to normalize the color  
 	 */
 	 void make_color(float* , unsigned , unsigned , unsigned );
 };
