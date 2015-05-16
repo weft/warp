@@ -40,6 +40,14 @@ public:
 	 */ 
 	unsigned get_maximum_cell();
 	/**
+	 * returns the smallest material number
+	 */
+	unsigned get_minimum_material();
+	/**
+	 * returns the largest material number
+	 */ 
+	unsigned get_maximum_material();
+	/**
 	 * returns the number of primitves in the geometry object
 	 */ 
 	unsigned get_primitive_count();

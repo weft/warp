@@ -2240,7 +2240,7 @@ void whistory::set_print_level(unsigned level){
 void whistory::set_dump_level(unsigned level){
 	dump_flag = level;
 }
-void whistory::plot_geom(std::string type){
+void whistory::plot_geom(std::string type_in){
 
 	if(is_initialized!=1){
 		printf("  ! geometry plotting must be done AFTER init, skipping.\n");
@@ -2249,6 +2249,25 @@ void whistory::plot_geom(std::string type){
 
 	printf("\e[1;32mPlotting Geometry... \e[m \n");
 
+	// type logic
+	unsigned* type_array;
+	unsigned minnum = problem_geom.get_minimum_cell();
+	unsigned maxnum = problem_geom.get_maximum_cell();
+	if (type_in.compare("cell")==0){
+		type_array = d_cellnum;
+		minnum = problem_geom.get_minimum_cell();
+		maxnum = problem_geom.get_maximum_cell();
+	}
+	else if (type_in.compare("material")==0){
+		type_array = d_matnum;
+		minnum = problem_geom.get_minimum_material();
+		maxnum = problem_geom.get_maximum_material();
+	}
+	else{
+		printf("  ! plot type '%s' unknown, skipping.\n",type_in.c_str());
+		return;
+	}
+
 	// get outer cell dims
 	float xmin = outer_cell_dims[0];
 	float ymin = outer_cell_dims[1];
@@ -2256,13 +2275,12 @@ void whistory::plot_geom(std::string type){
 	float xmax = outer_cell_dims[3];
 	float ymax = outer_cell_dims[4];
 	float zmax = outer_cell_dims[5];
-	unsigned mincell = problem_geom.get_minimum_cell();
-	unsigned maxcell = problem_geom.get_maximum_cell();
+	
 
 	// get aspect ratio and make N-compatible corresponding heights and widths
 	char this_filename[50];
 	float aspect = (xmax-xmin)/(ymax-ymin);
-	printf(" aspect %6.4f\n",aspect);
+	printf(" xy aspect ratio of outer cell: %6.4f\n",aspect);
 	float resolution = 1024;
 	unsigned width_in  = resolution*aspect;
 	unsigned height_in = resolution;
@@ -2281,12 +2299,16 @@ void whistory::plot_geom(std::string type){
 		printf(" (height,width) (%u,%u) px\n",height,width);
 	}
 	unsigned N_plot = width*height;
-
-	// init the starting points to be across the z=0 plane and pointing downwards or isotropically random, should produce the same result
 	source_point * positions_local = new source_point[N_plot];
 	unsigned index;
-	float dx = (xmax-xmin)/width;
-	float dy = (ymax-ymin)/height;
+	float dx, dy, dz;
+
+
+	//
+	// xy
+	//
+	dx = (xmax-xmin)/width;
+	dy = (ymax-ymin)/height;
 	for(int j=0;j<height;j++){
 		for(int k=0;k<width;k++){
 			mu = 2.0*rand()-1.0;
@@ -2310,7 +2332,7 @@ void whistory::plot_geom(std::string type){
 	
 	//copy to local buffer
 	unsigned * image_local = new unsigned[N_plot];
-	cudaMemcpy(image_local,d_cellnum,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
 
 	// make image
 	png::image< png::rgb_pixel > image(height, width);
@@ -2319,15 +2341,103 @@ void whistory::plot_geom(std::string type){
 	{
 	    for (size_t x = 0; x < image.get_width(); ++x)
 	    {
-	    	make_color(colormap,image_local[y*width+x],mincell,maxcell);
+	    	make_color(colormap,image_local[y*width+x],minnum,maxnum);
 	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
 	    }
 	}
 
-	sprintf(this_filename,"%sxy.png",filename.c_str());
+	sprintf(this_filename,"%s-xy.png",filename.c_str());
 	image.write(this_filename);
-	printf("  Done.  Written to %s.\n",this_filename);
+	printf("  Written to %s.\n",this_filename);
 
+	//
+	// xz
+	//
+	dx = (xmax-xmin)/width;
+	dz = (zmax-zmin)/height;
+	for(int j=0;j<height;j++){
+		for(int k=0;k<width;k++){
+			mu = 2.0*rand()-1.0;
+			theta = 2.0*pi*rand();
+			index = j * width + k;
+			positions_local[index].x = xmin + dx/2 + k*dx;
+			positions_local[index].y = 0.0;
+			positions_local[index].z = zmin + dz/2 + j*dz;
+			positions_local[index].xhat =  0.0;//sqrtf(1-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat =  0.0;//sqrtf(1-mu*mu) * sinf( theta ); 
+			positions_local[index].zhat = -1.0;//      mu; 
+			positions_local[index].surf_dist = 9999999999.9; 
+		}
+	}
+
+	// copy starting positions data to pointer
+	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
+	
+	// trace with whereami?
+	trace(2, N_plot);
+	
+	//copy to local buffer
+	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// make image
+	for (size_t y = 0; y < image.get_height(); ++y)
+	{
+	    for (size_t x = 0; x < image.get_width(); ++x)
+	    {
+	    	make_color(colormap,image_local[y*width+x],minnum,maxnum);
+	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	    }
+	}
+
+	sprintf(this_filename,"%s-xz.png",filename.c_str());
+	image.write(this_filename);
+	printf("  Written to %s.\n",this_filename);
+
+	//
+	// yz
+	//
+	dy = (ymax-ymin)/width;
+	dz = (zmax-zmin)/height;
+	for(int j=0;j<height;j++){
+		for(int k=0;k<width;k++){
+			mu = 2.0*rand()-1.0;
+			theta = 2.0*pi*rand();
+			index = j * width + k;
+			positions_local[index].x = 0.0;
+			positions_local[index].y = ymin + dy/2 + k*dy;
+			positions_local[index].z = zmin + dz/2 + j*dz;
+			positions_local[index].xhat =  0.0;//sqrtf(1-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat =  0.0;//sqrtf(1-mu*mu) * sinf( theta ); 
+			positions_local[index].zhat = -1.0;//      mu; 
+			positions_local[index].surf_dist = 9999999999.9; 
+		}
+	}
+
+	// copy starting positions data to pointer
+	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
+	
+	// trace with whereami?
+	trace(2, N_plot);
+	
+	//copy to local buffer
+	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// make image
+	for (size_t y = 0; y < image.get_height(); ++y)
+	{
+	    for (size_t x = 0; x < image.get_width(); ++x)
+	    {
+	    	make_color(colormap,image_local[y*width+x],minnum,maxnum);
+	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	    }
+	}
+
+	sprintf(this_filename,"%s-yz.png",filename.c_str());
+	image.write(this_filename);
+	printf("  Written to %s.\n",this_filename);
+
+
+	// clear
 	delete image_local;
 	delete colormap;
 	delete positions_local;
