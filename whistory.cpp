@@ -2249,9 +2249,15 @@ void whistory::plot_geom(std::string type_in){
 	printf("\e[1;32mPlotting Geometry... \e[m \n");
 
 	// type logic
+	char this_filename[50];
 	unsigned* type_array;
-	unsigned minnum = problem_geom.get_minimum_cell();
-	unsigned maxnum = problem_geom.get_maximum_cell();
+	unsigned width, height, width_in, height_in, index, N_plot;
+	float dx, dy, dz;
+	float aspect, mu, theta;
+	float resolution = 1024;
+	float pi = 3.14159;
+	source_point * positions_local = new source_point[N];
+	unsigned minnum, maxnum;
 	if (type_in.compare("cell")==0){
 		printf("  color set to \e[1;31mCELL\e[m\n");
 		type_array = d_cellnum;
@@ -2277,17 +2283,13 @@ void whistory::plot_geom(std::string type_in){
 	float ymax = outer_cell_dims[4];
 	float zmax = outer_cell_dims[5];
 	
-
-	// get aspect ratio and make N-compatible corresponding heights and widths
-	char this_filename[50];
-	float aspect = (xmax-xmin)/(ymax-ymin);
+	//
+	// xy
+	//
+	aspect = (xmax-xmin)/(ymax-ymin);
 	printf("  xy aspect ratio of outer cell: %6.4f\n",aspect);
-	float resolution = 1024;
-	unsigned width_in  = resolution*aspect;
-	unsigned height_in = resolution;
-	unsigned width, height;
-	float mu, theta;
-	float pi = 3.14159;
+	width_in  = resolution*aspect;
+	height_in = resolution;
 	if (width_in*height_in > N){
 		float aspect = width_in / height_in;
 		width  = sqrtf(N*aspect); 
@@ -2299,15 +2301,7 @@ void whistory::plot_geom(std::string type_in){
 		height = height_in;
 		printf(" (height,width) (%u,%u) px\n",height,width);
 	}
-	unsigned N_plot = width*height;
-	source_point * positions_local = new source_point[N_plot];
-	unsigned index;
-	float dx, dy, dz;
-
-
-	//
-	// xy
-	//
+	N_plot = width*height;
 	dx = (xmax-xmin)/width;
 	dy = (ymax-ymin)/height;
 	for(int j=0;j<height;j++){
@@ -2354,6 +2348,22 @@ void whistory::plot_geom(std::string type_in){
 	//
 	// xz
 	//
+	aspect = (xmax-xmin)/(zmax-zmin);
+	printf("  xz aspect ratio of outer cell: %6.4f\n",aspect);
+	width_in  = resolution*aspect;
+	height_in = resolution;
+	if (width_in*height_in > N){
+		float aspect = width_in / height_in;
+		width  = sqrtf(N*aspect); 
+		height = sqrtf(N/aspect);
+		printf("  !resolution reduced by dataset size ->");
+		printf("  (height,width) (%u,%u) px\n",height,width);
+	}else{
+		width = width_in;
+		height = height_in;
+		printf(" (height,width) (%u,%u) px\n",height,width);
+	}
+	N_plot = width*height;
 	dx = (xmax-xmin)/width;
 	dz = (zmax-zmin)/height;
 	for(int j=0;j<height;j++){
@@ -2397,6 +2407,22 @@ void whistory::plot_geom(std::string type_in){
 	//
 	// yz
 	//
+	aspect = (ymax-ymin)/(zmax-zmin);
+	printf("  yz aspect ratio of outer cell: %6.4f\n",aspect);
+	width_in  = resolution*aspect;
+	height_in = resolution;
+	if (width_in*height_in > N){
+		float aspect = width_in / height_in;
+		width  = sqrtf(N*aspect); 
+		height = sqrtf(N/aspect);
+		printf("  !resolution reduced by dataset size ->");
+		printf("  (height,width) (%u,%u) px\n",height,width);
+	}else{
+		width = width_in;
+		height = height_in;
+		printf(" (height,width) (%u,%u) px\n",height,width);
+	}
+	N_plot = width*height;
 	dy = (ymax-ymin)/width;
 	dz = (zmax-zmin)/height;
 	for(int j=0;j<height;j++){
