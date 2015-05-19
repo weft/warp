@@ -153,7 +153,7 @@ void whistory::init(){
 	copy_data_to_device();
 	is_initialized = 1;
 	if(print_flag >= 2){
-		printf("Done with init\n");
+		printf("\e[1;31mDone with init\e[m\n");
 	}
 }
 whistory::~whistory(){
@@ -2291,7 +2291,6 @@ void whistory::plot_geom(std::string type_in){
 	width_in  = resolution*aspect;
 	height_in = resolution;
 	if (width_in*height_in > N){
-		float aspect = width_in / height_in;
 		width  = sqrtf(N*aspect); 
 		height = sqrtf(N/aspect);
 		printf("  !resolution reduced by dataset size ->");
@@ -2330,7 +2329,7 @@ void whistory::plot_geom(std::string type_in){
 	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
 
 	// make image
-	png::image< png::rgb_pixel > image(height, width);
+	png::image< png::rgb_pixel > image(width, height);
 	float * colormap = new float[3];
 	for (size_t y = 0; y < image.get_height(); ++y)
 	{
@@ -2353,7 +2352,6 @@ void whistory::plot_geom(std::string type_in){
 	width_in  = resolution*aspect;
 	height_in = resolution;
 	if (width_in*height_in > N){
-		float aspect = width_in / height_in;
 		width  = sqrtf(N*aspect); 
 		height = sqrtf(N/aspect);
 		printf("  !resolution reduced by dataset size ->");
@@ -2391,6 +2389,7 @@ void whistory::plot_geom(std::string type_in){
 	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
 
 	// make image
+	image = png::image< png::rgb_pixel > (width, height);
 	for (size_t y = 0; y < image.get_height(); ++y)
 	{
 	    for (size_t x = 0; x < image.get_width(); ++x)
@@ -2412,7 +2411,6 @@ void whistory::plot_geom(std::string type_in){
 	width_in  = resolution*aspect;
 	height_in = resolution;
 	if (width_in*height_in > N){
-		float aspect = width_in / height_in;
 		width  = sqrtf(N*aspect); 
 		height = sqrtf(N/aspect);
 		printf("  !resolution reduced by dataset size ->");
@@ -2450,6 +2448,7 @@ void whistory::plot_geom(std::string type_in){
 	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
 
 	// make image
+	image = png::image< png::rgb_pixel > (width, height);
 	for (size_t y = 0; y < image.get_height(); ++y)
 	{
 	    for (size_t x = 0; x < image.get_width(); ++x)

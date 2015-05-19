@@ -748,7 +748,7 @@ int main(int argc, char* argv[]){
 	hist.set_tally_cell(tallycell);
 	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
-	hist.plot_geom("material");  // **MUST** be called after init.
+	hist.plot_geom("cell");  // **MUST** be called after init.
 	hist.run();
 	hist.write_tally(0);
 	//hist.write_xs_data("xsdata");
