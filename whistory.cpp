@@ -1704,8 +1704,8 @@ void whistory::run(){
 	keff_cycle = 0;
 
 	if(print_flag>=1){
-		std::cout << "\e[1;32m" << "--- Running in " << runtype << " source mode --- " << "\e[m \n";
-		std::cout << "\e[1;32m" << "--- Skipping "<< n_skip << " cycles, Running "<< n_cycles << " ACTIVE CYCLES, "<< N << " histories each--- " << "\e[m \n";
+		printf("\e[1;32m--- Running in\e[m \e[1;31m%s\e[m \e[1;32msource mode --- \e[m \n",runtype.c_str());
+		printf("\e[1;32m--- Skipping %u cycles, Running %u ACTIVE CYCLES, %u histories each--- \e[m \n",n_skip,n_cycles,N);
 	}
 
 	// make sure fissile_points file is cleared

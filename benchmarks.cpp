@@ -14,7 +14,7 @@ int main(int argc, char* argv[]){
 	// names
 	unsigned tallycell = 999;
 	unsigned N = 0;
-	std::string tallyname, filename;
+	std::string tallyname, filename, runtype;
 	std::string assemblyname  	= "assembly-lw";
 	std::string flibename   	= "flibe";
 	std::string fusionname    	= "fusion";
@@ -85,6 +85,7 @@ int main(int argc, char* argv[]){
 		tallyname = assemblyname;
 		tallyname.append(".tally");
 		bc = 1;
+		runtype = "criticality";
 	
 		// assembly geom
 		type=1;
@@ -160,6 +161,7 @@ int main(int argc, char* argv[]){
 		tallyname = flibename;
 		tallyname.append(".tally");
 		bc = 2;
+		runtype = "criticality";
 	
 		// flibe geom
 		type=3;
@@ -305,6 +307,7 @@ int main(int argc, char* argv[]){
 		tallyname = fusionname;
 		tallyname.append(".tally");
 		bc = 1;
+		runtype = "fixed";
 	
 		//fusion geom
 		type=3;
@@ -393,6 +396,7 @@ int main(int argc, char* argv[]){
 		tallyname = jezebelname;
 		tallyname.append(".tally");
 		bc = 1;
+		runtype = "criticality";
 	
 		//jezebel geom
 		type=3;
@@ -468,6 +472,7 @@ int main(int argc, char* argv[]){
 		tallyname = pincellname;
 		tallyname.append(".tally");
 		bc = 1;
+		runtype = "criticality";
 	
 		//pin cell
 		type=1;
@@ -545,6 +550,7 @@ int main(int argc, char* argv[]){
 		tallyname = testname;
 		tallyname.append(".tally");
 		bc = 1;
+		runtype = "fixed";
 
 		//fuel 
 		type=2;
@@ -662,6 +668,7 @@ int main(int argc, char* argv[]){
 		tallyname = sodiumpinname;
 		tallyname.append(".tally");
 		bc = 2;
+		runtype = "criticality";
 	
 		//pin cell
 		type=1;
@@ -744,7 +751,7 @@ int main(int argc, char* argv[]){
 	// converge fission source and run //
 	/////////////////////////////////////
 
-	hist.set_run_type("criticality");
+	hist.set_run_type(runtype);
 	hist.set_tally_cell(tallycell);
 	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
