@@ -2257,6 +2257,7 @@ void whistory::plot_geom(std::string type_in){
 	float resolution = 1024;
 	float pi = 3.14159;
 	source_point * positions_local = new source_point[N];
+	unsigned * image_local = new unsigned[N];
 	unsigned minnum, maxnum;
 	if (type_in.compare("cell")==0){
 		printf("  color set to \e[1;31mCELL\e[m\n");
@@ -2325,7 +2326,6 @@ void whistory::plot_geom(std::string type_in){
 	trace(2, N_plot);
 	
 	//copy to local buffer
-	unsigned * image_local = new unsigned[N_plot];
 	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
 
 	// make image

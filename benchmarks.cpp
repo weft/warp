@@ -477,12 +477,12 @@ int main(int argc, char* argv[]){
 		//pin cell
 		type=1;
 		material=1;
-		mins[0]=-2;
-		mins[1]=-2;
-		mins[2]=-20;
-		maxs[0]= 2; 
-		maxs[1]= 2; 
-		maxs[2]= 20;
+		mins[0]=-10;
+		mins[1]=-10;
+		mins[2]=-25;
+		maxs[0]= 10; 
+		maxs[1]= 10; 
+		maxs[2]= 25;
 		origin[0]=0.0;
 		origin[1]=0.0;
 		origin[2]=0.0;
