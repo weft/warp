@@ -18,6 +18,7 @@ RT_PROGRAM void intersect(int object_dex)
 {
   bool check_second = true;
 
+  float  sgn    = 0.0;
   float  radius = dims[object_dex].max[0];
   float3 loc    = make_float3(dims[object_dex].loc[0],dims[object_dex].loc[1],dims[object_dex].loc[2]);
   float3 xformed_origin = ray.origin - loc;       //direction does not need to be transformed since only translations are supported now, not rotations
@@ -32,25 +33,36 @@ RT_PROGRAM void intersect(int object_dex)
     float t0 = -b-sqrtf(disc);
     float t1 = -b+sqrtf(disc);
 
-      if( rtPotentialIntersection( t0 ) ) {
-          cellnum     = dims[object_dex].cellnum;
-          cellmat     = dims[object_dex].matnum;
-          cellfissile = dims[object_dex].is_fissile;
-          normal      = xformed_origin + (t0 * ray.direction) / radius;
-          normal      =  normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
-         if(rtReportIntersection(0))
-           check_second = false;
-      } 
-      if(check_second) {
-        if( rtPotentialIntersection( t1 ) ) {
-           cellnum     = dims[object_dex].cellnum;
-           cellmat     = dims[object_dex].matnum;
-           cellfissile = dims[object_dex].is_fissile;
-           normal      = xformed_origin + (t1 * ray.direction) / radius;
-           normal      =  normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
-          rtReportIntersection(0);
-        }
+    // compute sign, if true, points should be outside.  if product is positive, point lies on same side of two parallel planes
+    if ( t0*t1 > 0 ){
+      sgn = -1.0;   // switch sign of normal to inward
+    }
+    else{
+      sgn =  1.0;
+    }
+
+    if( rtPotentialIntersection( t0 ) ) {
+        cellnum     = dims[object_dex].cellnum;
+        cellmat     = dims[object_dex].matnum;
+        cellfissile = dims[object_dex].is_fissile;
+        normal      = (xformed_origin + (t0 * ray.direction) ) / radius;
+        //normal      =  sgn * normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
+       if(rtReportIntersection(0))
+         check_second = false;
+    } 
+
+    if(check_second) {
+      if( rtPotentialIntersection( t1 ) ) {
+         cellnum     = dims[object_dex].cellnum;
+         cellmat     = dims[object_dex].matnum;
+         cellfissile = dims[object_dex].is_fissile;
+         normal      = (xformed_origin + (t1 * ray.direction)) / radius;
+         //normal      = sgn * normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
+        rtReportIntersection(0);
       }
+    }
+  
+
   }
 
 

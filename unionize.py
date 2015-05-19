@@ -476,7 +476,7 @@ class cross_section_data:
 					nextpdf   = numpy.ascontiguousarray(scatterPDF[scatter_dex+ plusone],dtype=numpy.float32) 
 					nextmu    = numpy.ascontiguousarray(scatterMu[ scatter_dex+ plusone],dtype=numpy.float32)
 					intt 	  = scatterINTT[scatter_dex]
-					if intt is list:
+					if type(intt) is list:
 						intt = intt[0]  # just take first value of list in intt, might be wrong :/
 					#check to make sure the same lengths
 					assert vlen == mu.__len__()
@@ -484,25 +484,52 @@ class cross_section_data:
 					self.last_loaded = MTnum
 					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,mu,cdf,pdf,nextmu,nextcdf,nextpdf]
 				elif law == 61:
-					# more complicated, need to return a flattened matrix for each E_in
+					# more complicated, need to return a flattened matrix for each E_out, for both E and next E since they could both be sampled
 
+					# this E
 					outlen = rxn.energy_dist.energy_out[scatter_dex].__len__()
-					locs = [0]
+					this_len = 0
+					locs = [0,0]
 					flatarray = numpy.array([])
 					for i in range(0,outlen):
 						if i>0:
-							locs.append(this_len*3+1+locs[i-1])  # compute location pointer based on previous
+							locs.append(this_len*3+2+locs[i-1])  # compute location pointer based on previous
 						this_len  = rxn.energy_dist.a_dist_mu_out[scatter_dex][i].__len__()
+						intt 	  = scatterINTT[                  scatter_dex]
+						if type(intt) is list:
+							intt = intt[0]  # just take first value of list in intt, might be wrong :/
 						flatarray = numpy.append(flatarray,this_len)
+						flatarray = numpy.append(flatarray,intt)
 						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_mu_out[scatter_dex][i])
-						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_cdf[scatter_dex][i])
-						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_pdf[scatter_dex][i])
-
+						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_cdf[   scatter_dex][i])
+						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_pdf[   scatter_dex][i])
 					flatarray = numpy.append(numpy.array(locs),flatarray)
-					flatarray = numpy.ascontiguousarray(flatarray,dtype=numpy.float32)   # encoding ints as foats reduces maximum!
+					l = flatarray.__len__()
+					flatarray[0] = l
+
+					# next E
+					outlen = rxn.energy_dist.energy_out[scatter_dex+plusone].__len__()
+					this_len = 0
+					locs = [0]
+					flatarray2 = numpy.array([])
+					for i in range(0,outlen):
+						if i>0:
+							locs.append(this_len*3+2+locs[i-1])  # compute location pointer based on previous
+						this_len  = rxn.energy_dist.a_dist_mu_out[scatter_dex+plusone][i].__len__()
+						intt 	  = scatterINTT[                  scatter_dex+plusone]
+						if type(intt) is list:
+							intt = intt[0]  # just take first value of list in intt, might be wrong :/
+						flatarray2 = numpy.append(flatarray2,this_len)
+						flatarray2 = numpy.append(flatarray2,intt)
+						flatarray2 = numpy.append(flatarray2,rxn.energy_dist.a_dist_mu_out[scatter_dex+plusone][i])
+						flatarray2 = numpy.append(flatarray2,rxn.energy_dist.a_dist_cdf[   scatter_dex+plusone][i])
+						flatarray2 = numpy.append(flatarray2,rxn.energy_dist.a_dist_pdf[   scatter_dex+plusone][i])
+					flatarray2 = numpy.append(numpy.array(locs),flatarray2)
+					
+					flatarray_out = numpy.ascontiguousarray(numpy.append(flatarray,flatarray2),dtype=numpy.float32)   # encoding ints as foats reduces maximum!
 
 					self.last_loaded = MTnum    #  must encode into the same number of elements as other arrays
-					return [nextDex,this_E,next_E,0,0,0,0,flatarray,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+					return [nextDex,this_E,next_E,l,l,law,intt,flatarray_out,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 
 			else:  # return 0 if below the first energy]
 				next_E = scatterE[0]
@@ -552,7 +579,7 @@ class cross_section_data:
 			law        = rxn.energy_dist.law
 
 			#pack law data into vector
-			if law == 3 or law == 66:  
+			if law == 3:  
 			# level scattering
 				next_E = self.MT_E_grid[self.num_main_E-1]
 				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
@@ -590,7 +617,9 @@ class cross_section_data:
 					# construct vector
 					vlen 			= 2
 					nextvlen		= 2
-					intt 			= 0
+					intt 			= 1  # assuption
+					if hasattr(rxn.energy_dist,"intt"):
+						print "INTT in law ,",law," ---- ",rxn.energy_dist.intt
 					this_T   		= numpy.ascontiguousarray( numpy.array(  [T[data_dex],T[data_dex+ plusone]]           ), dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
 					this_U   		= numpy.ascontiguousarray( numpy.array(  [U,U]                                        ), dtype=numpy.float32)
 					this_Eedge		= numpy.ascontiguousarray( numpy.array(  [dataE[ data_dex], dataE[ data_dex+plusone]] ), dtype=numpy.float32)
@@ -652,6 +681,40 @@ class cross_section_data:
 				else:  # return 0 if below the first energy]
 					next_E = dataE[0]
 					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
+					return [nextDex,0,0,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+			elif law==66:
+				#N-body phase space distribution
+
+				# get data
+				if hasattr(rxn.energy_dist,"multiplicity"):
+					m_yield    = rxn.energy_dist.multiplicity
+				else:
+					m_yield 	= 0
+				dataE   = rxn.energy_dist.energy
+				intt    = 0
+
+				# check length
+				assert dataE.__len__() > 0
+
+				# find the index of the scattering table energy
+				if this_E >= dataE[0] and this_E <= dataE[-1]:
+					
+					#get energy of next bin		
+					next_E   = self.MT_E_grid[-1]
+					vlen     = 3.
+					nextvlen = 3.
+
+					# find main E grid indext of next energy
+					nextDex = self.MT_E_grid.__len__()
+
+					# data
+					Q 			= numpy.ascontiguousarray(numpy.array([rxn.Q,rxn.energy_dist.nbodies,rxn.energy_dist.massratio]),dtype=numpy.float32)
+										
+					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,Q,Q,Q,Q,Q,Q]
+				
+				else:  # return 0 if below the first energy]
+					next_E = dataE[0]
+					nextDex = (numpy.where( self.MT_E_grid >= next_E )[0][0]) 
 					return [nextDex,0,0,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 			else:
 				print "law ",law," not handled, writing nulls"

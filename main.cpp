@@ -301,21 +301,6 @@ int main(int argc, char* argv[]){
 	//geom.print_all();
 	geom.print_summary();
 
-	///////////////////////////////////
-	// INIT OptiX STUFF for plotting //
-	///////////////////////////////////
-
-	// trace geom if requested
-	// make new context that fits the reqested image size, trace, then destroy to free resources
-	//unsigned geom_width  = 1024; 
-	//unsigned geom_height = 1024;
-	//unsigned N_geom = geom_width*geom_height;
-	//optix_stuff geom_optix ( N_geom , 4 );
-	//geom_optix.init(geom,0,"Sbvh");
-	//geom_optix.trace_geometry(geom_width,geom_height,"geom.png");
-	//geom_optix.~optix_stuff();
-
-
 	/////////////////////////////////////////////////////////////////
 	// INIT CUDA and HISTORY STUFF and LOAD/UNIONIZE CROS SECTIONS //
 	/////////////////////////////////////////////////////////////////
@@ -335,6 +320,7 @@ int main(int argc, char* argv[]){
 	hist.set_tally_cell(tallycell);
 	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
+	hist.plot_geom("cell");  // **MUST** be called after init.
 	hist.run();
 	hist.write_tally(0);
 	//hist.write_xs_data("xsdata");

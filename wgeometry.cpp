@@ -213,6 +213,20 @@ unsigned wgeometry::get_maximum_cell(){
 	}
 	return maxcell;
 }
+unsigned wgeometry::get_minimum_material(){
+	unsigned minmat=-1;
+	for(unsigned j=0;j<n_primitives;j++){
+		if (primitives[j].material<minmat){minmat=primitives[j].material;}
+	}
+	return minmat;
+}
+unsigned wgeometry::get_maximum_material(){
+	unsigned maxmat=0;
+	for(unsigned j=0;j<n_primitives;j++){
+		if (primitives[j].material>maxmat){maxmat=primitives[j].material;}
+	}
+	return maxmat;
+}
 void wgeometry::add_material(unsigned matnum, unsigned is_fissile, unsigned num_topes, float density, std::vector<std::string> isotopes, std::vector<float> fractions){
 	
 	// get current material index

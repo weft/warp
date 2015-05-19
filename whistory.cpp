@@ -57,7 +57,6 @@ void whistory::init(){
 	// init optix stuff 
 	optix_obj.N=Ndataset;
 	optix_obj.stack_size_multiplier=1;
-	optix_obj.set_image_type("cell");
 	optix_obj.init(problem_geom,compute_device,accel_type);
 	if(print_flag >= 1){
 		optix_obj.print();
@@ -154,7 +153,7 @@ void whistory::init(){
 	copy_data_to_device();
 	is_initialized = 1;
 	if(print_flag >= 2){
-		printf("Done with init\n");
+		printf("\e[1;31mDone with init\e[m\n");
 	}
 }
 whistory::~whistory(){
@@ -897,7 +896,7 @@ void whistory::load_cross_sections(){
 	}
 
 	////////////////////////////////////
-	// do scattering stuff
+	// S&E DATA ARRAYS
 	////////////////////////////////////
 
     float * temp = new float [128];
@@ -934,7 +933,11 @@ void whistory::load_cross_sections(){
     unsigned 	next_pdfRows, next_pdfColumns, next_pdfBytes;
     unsigned 	nextDex;
 
-    //set total cross sections to NULL
+	////////////////////////////////////
+	// do scattering stuff
+	////////////////////////////////////
+
+	//set total cross sections to NULL
     for (int j=0 ; j<1*xs_length_numbers[0] ; j++){  //start after the total xs vectors
     		for (int k=0 ; k<MT_rows ; k++){
     			xs_data_scatter     [k*MT_columns + j] = 0;//NULL;
@@ -1011,7 +1014,7 @@ void whistory::load_cross_sections(){
 				memcpy(nuBuff, muBuff.buf , MT_rows*sizeof(float));
 			
 				//write the returned values into the array, byte-copy into 64bit pointer
-				for(k;k<MT_rows;k++){
+				for(;k<MT_rows;k++){
 					//std::cout << "copying nu value "<< nuBuff[k] <<" at energy "<< xs_data_main_E_grid[k]<< " MeV\n";
 					memcpy( &xs_data_scatter_host[ k*MT_columns + j ] , &nuBuff[k] , 1*sizeof(float) );
 					//memcpy( &nu_test , &xs_data_scatter_host[ k*MT_columns + j ], 1*sizeof(float) );
@@ -1026,110 +1029,110 @@ void whistory::load_cross_sections(){
 			else{
 				// get data buffer from numpy array
 				if(law!=61){
-				if (PyObject_CheckBuffer(mu_vector_obj) & PyObject_CheckBuffer(cdf_vector_obj) & PyObject_CheckBuffer(next_mu_vector_obj) & PyObject_CheckBuffer(next_cdf_vector_obj) ){
-					PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
-					PyObject_GetBuffer(     cdf_vector_obj,      &cdfBuff, PyBUF_ND);
-					PyObject_GetBuffer(     pdf_vector_obj,      &pdfBuff, PyBUF_ND);
-					PyObject_GetBuffer( next_mu_vector_obj,  &next_muBuff, PyBUF_ND);
-					PyObject_GetBuffer(next_cdf_vector_obj, &next_cdfBuff, PyBUF_ND);
-					PyObject_GetBuffer(next_pdf_vector_obj, &next_pdfBuff, PyBUF_ND);
+					if (PyObject_CheckBuffer(mu_vector_obj) & PyObject_CheckBuffer(cdf_vector_obj) & PyObject_CheckBuffer(next_mu_vector_obj) & PyObject_CheckBuffer(next_cdf_vector_obj) ){
+						PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
+						PyObject_GetBuffer(     cdf_vector_obj,      &cdfBuff, PyBUF_ND);
+						PyObject_GetBuffer(     pdf_vector_obj,      &pdfBuff, PyBUF_ND);
+						PyObject_GetBuffer( next_mu_vector_obj,  &next_muBuff, PyBUF_ND);
+						PyObject_GetBuffer(next_cdf_vector_obj, &next_cdfBuff, PyBUF_ND);
+						PyObject_GetBuffer(next_pdf_vector_obj, &next_pdfBuff, PyBUF_ND);
+						PyErr_Print();
+					}
+					else{
+						PyErr_Print();
+    				    fprintf(stderr, "Returned object does not support buffer interface\n");
+    				    return;
+					}
+		
+					// shape info
+					muRows     =  muBuff.shape[0];
+					muColumns  =  muBuff.shape[1];
+					muBytes    =  muBuff.len;
+					cdfRows    = cdfBuff.shape[0];
+					cdfColumns = cdfBuff.shape[1];
+					cdfBytes   = cdfBuff.len;
+					pdfRows    = pdfBuff.shape[0];
+					pdfColumns = pdfBuff.shape[1];
+					pdfBytes   = pdfBuff.len;
+					next_muRows     = next_muBuff.shape[0];
+					next_muColumns  = next_muBuff.shape[1];
+					next_muBytes    = next_muBuff.len;
+					next_cdfRows    = next_cdfBuff.shape[0];
+					next_cdfColumns = next_cdfBuff.shape[1];
+					next_cdfBytes   = next_cdfBuff.len;
+					next_pdfRows    = next_pdfBuff.shape[0];
+					next_pdfColumns = next_pdfBuff.shape[1];
+					next_pdfBytes   = next_pdfBuff.len;
+		
+					//make sure every is ok
+					assert(muRows==   cdfRows);
+					assert(muColumns==cdfColumns);
+					assert(muBytes==  cdfBytes);
+					assert(muRows==   pdfRows);
+					assert(muColumns==pdfColumns);
+					assert(muBytes==  pdfBytes);
+					assert(next_muRows==   next_cdfRows);
+					assert(next_muColumns==next_cdfColumns);
+					assert(next_muBytes==  next_cdfBytes);
+					assert(next_muRows==   next_pdfRows);
+					assert(next_muColumns==next_pdfColumns);
+					assert(next_muBytes==  next_pdfBytes);
+		
+					//allocate pointer, write into array
+					//for cuda too
+					array_elements = muRows+cdfRows+pdfRows+next_muRows+next_cdfRows+next_pdfRows+6;
+					this_pointer = new float [array_elements];
+					cudaMalloc(&cuda_pointer,array_elements*sizeof(float));
+					total_bytes_scatter += array_elements*sizeof(float);  // add to total count
+					xs_data_scatter     [k*MT_columns + j] = this_pointer;
+					xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
+		
+					//copy data from python buffer to pointer in array
+					memcpy(&this_pointer[0], 						&lastE,   	  		sizeof(float));
+					memcpy(&this_pointer[1], 						&nextE,   	  		sizeof(float));    // nextE   to first position
+					memcpy(&this_pointer[2], 						&muRows,   	  		sizeof(unsigned)); // len to third position
+					memcpy(&this_pointer[3], 						&next_muRows, 	  	sizeof(unsigned));
+					memcpy(&this_pointer[4],						&law,		  	  	sizeof(unsigned));
+					memcpy(&this_pointer[5],						&intt,		  	  	sizeof(unsigned));
+					memcpy(&this_pointer[6],						muBuff.buf,  	  	muRows*sizeof(float));     // mu  to len bytes after
+					memcpy(&this_pointer[6+   muRows],				cdfBuff.buf, 		cdfRows*sizeof(float));     // cdf to len bytes after that
+					memcpy(&this_pointer[6+ 2*muRows],				pdfBuff.buf, 		pdfRows*sizeof(float));
+					memcpy(&this_pointer[6+ 3*muRows],				next_muBuff.buf,	next_muRows*sizeof(float));
+					memcpy(&this_pointer[6+ 3*muRows+  next_muRows],next_cdfBuff.buf, 	next_cdfRows*sizeof(float));
+					memcpy(&this_pointer[6+ 3*muRows+2*next_muRows],next_pdfBuff.buf, 	next_pdfRows*sizeof(float));
 					PyErr_Print();
+	
+					cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
 				}
 				else{
+					// get flattened matrix for law 61
+					if (PyObject_CheckBuffer(mu_vector_obj)){
+						PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
+					}
+					else{
+						PyErr_Print();
+    				    fprintf(stderr, "Returned object does not support buffer interface\n");
+    				    return;
+					}
+	
+					//  get the buffers
+					muRows     =  muBuff.shape[0];
+					muColumns  =  muBuff.shape[1];
+					muBytes    =  muBuff.len;
+					//assert( muRows==1 | muColumns==1);  // make sure 1d
+	
+					this_pointer = new float [muBytes/sizeof(float)];
+					cudaMalloc(&cuda_pointer,muBytes);
+					total_bytes_scatter +=   muBytes;  // add to total count
+					xs_data_scatter     [k*MT_columns + j] = this_pointer;
+					xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
 					PyErr_Print();
-    			    fprintf(stderr, "Returned object does not support buffer interface\n");
-    			    return;
-				}
 	
-				// shape info
-				muRows     =  muBuff.shape[0];
-				muColumns  =  muBuff.shape[1];
-				muBytes    =  muBuff.len;
-				cdfRows    = cdfBuff.shape[0];
-				cdfColumns = cdfBuff.shape[1];
-				cdfBytes   = cdfBuff.len;
-				pdfRows    = pdfBuff.shape[0];
-				pdfColumns = pdfBuff.shape[1];
-				pdfBytes   = pdfBuff.len;
-				next_muRows     = next_muBuff.shape[0];
-				next_muColumns  = next_muBuff.shape[1];
-				next_muBytes    = next_muBuff.len;
-				next_cdfRows    = next_cdfBuff.shape[0];
-				next_cdfColumns = next_cdfBuff.shape[1];
-				next_cdfBytes   = next_cdfBuff.len;
-				next_pdfRows    = next_pdfBuff.shape[0];
-				next_pdfColumns = next_pdfBuff.shape[1];
-				next_pdfBytes   = next_pdfBuff.len;
+					// copy to cuda pointer and host pointer
+					memcpy(this_pointer,muBuff.buf,muBytes);
+					cudaMemcpy(cuda_pointer,this_pointer,muBytes,cudaMemcpyHostToDevice);
 	
-				//make sure every is ok
-				assert(muRows==   cdfRows);
-				assert(muColumns==cdfColumns);
-				assert(muBytes==  cdfBytes);
-				assert(muRows==   pdfRows);
-				assert(muColumns==pdfColumns);
-				assert(muBytes==  pdfBytes);
-				assert(next_muRows==   next_cdfRows);
-				assert(next_muColumns==next_cdfColumns);
-				assert(next_muBytes==  next_cdfBytes);
-				assert(next_muRows==   next_pdfRows);
-				assert(next_muColumns==next_pdfColumns);
-				assert(next_muBytes==  next_pdfBytes);
-	
-				//allocate pointer, write into array
-				//for cuda too
-				array_elements = muRows+cdfRows+pdfRows+next_muRows+next_cdfRows+next_pdfRows+6;
-				this_pointer = new float [array_elements];
-				cudaMalloc(&cuda_pointer,array_elements*sizeof(float));
-				total_bytes_scatter += array_elements*sizeof(float);  // add to total count
-				xs_data_scatter     [k*MT_columns + j] = this_pointer;
-				xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
-	
-				//copy data from python buffer to pointer in array
-				memcpy(&this_pointer[0], 						&lastE,   	  		sizeof(float));
-				memcpy(&this_pointer[1], 						&nextE,   	  		sizeof(float));    // nextE   to first position
-				memcpy(&this_pointer[2], 						&muRows,   	  		sizeof(unsigned)); // len to third position
-				memcpy(&this_pointer[3], 						&next_muRows, 	  	sizeof(unsigned));
-				memcpy(&this_pointer[4],						&law,		  	  	sizeof(unsigned));
-				memcpy(&this_pointer[5],						&intt,		  	  	sizeof(unsigned));
-				memcpy(&this_pointer[6],						muBuff.buf,  	  	muRows*sizeof(float));     // mu  to len bytes after
-				memcpy(&this_pointer[6+   muRows],				cdfBuff.buf, 		cdfRows*sizeof(float));     // cdf to len bytes after that
-				memcpy(&this_pointer[6+ 2*muRows],				pdfBuff.buf, 		pdfRows*sizeof(float));
-				memcpy(&this_pointer[6+ 3*muRows],				next_muBuff.buf,	next_muRows*sizeof(float));
-				memcpy(&this_pointer[6+ 3*muRows+  next_muRows],next_cdfBuff.buf, 	next_cdfRows*sizeof(float));
-				memcpy(&this_pointer[6+ 3*muRows+2*next_muRows],next_pdfBuff.buf, 	next_pdfRows*sizeof(float));
-				PyErr_Print();
-
-				cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
-			}
-			else{
-				// get flattened array
-				if (PyObject_CheckBuffer(mu_vector_obj)){
-					PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
-				}
-				else{
-					PyErr_Print();
-    			    fprintf(stderr, "Returned object does not support buffer interface\n");
-    			    return;
-				}
-
-				//  get the buffers
-				muRows     =  muBuff.shape[0];
-				muColumns  =  muBuff.shape[1];
-				muBytes    =  muBuff.len;
-				assert( muRows==1 | muColumns==1);  // make sure 1d
-
-				this_pointer = new float [muBytes/sizeof(float)];
-				cudaMalloc(&cuda_pointer,muBytes);
-				total_bytes_scatter +=   muBytes;  // add to total count
-				xs_data_scatter     [k*MT_columns + j] = this_pointer;
-				xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
-				PyErr_Print();
-
-				// copy to cuda pointer and host pointer
-				memcpy(this_pointer,muBuff.buf,muBytes);
-				cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
-
-			}
+				}	
 
 			}
 
@@ -1497,13 +1500,13 @@ void whistory::sample_fissile_points(){
 
 		if((float)current_index/(float)N > 1){
 			if(print_flag >= 2){
-				std::cout << "100.00 \% done     \n";
+				std::cout << "  100.00 \% done     \n";
 			}
 		} 
 	}
 
 	if(print_flag >= 2){
-		std::cout << "Copying to starting points...\n";
+		std::cout << "  Copying to starting points...\n";
 	}
 
 	cudaMemcpy(d_space,	d_fissile_points	,N*sizeof(source_point),	cudaMemcpyDeviceToDevice);
@@ -1512,7 +1515,7 @@ void whistory::sample_fissile_points(){
 	//cudaFree(d_fissile_points);
 
 	if(print_flag >= 2){
-		std::cout << "Done.\n";
+		std::cout << "  Done.\n";
 	}
 
 	//write starting positions to file
@@ -1701,8 +1704,8 @@ void whistory::run(){
 	keff_cycle = 0;
 
 	if(print_flag>=1){
-		std::cout << "\e[1;32m" << "--- Running in " << runtype << " source mode --- " << "\e[m \n";
-		std::cout << "\e[1;32m" << "--- Skipping "<< n_skip << " cycles, Running "<< n_cycles << " ACTIVE CYCLES, "<< N << " histories each--- " << "\e[m \n";
+		printf("\e[1;32m--- Running in\e[m \e[1;31m%s\e[m \e[1;32msource mode --- \e[m \n",runtype.c_str());
+		printf("\e[1;32m--- Skipping %u cycles, Running %u ACTIVE CYCLES, %u histories each--- \e[m \n",n_skip,n_cycles,N);
 	}
 
 	// make sure fissile_points file is cleared
@@ -1779,14 +1782,15 @@ void whistory::run(){
 				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn);
 			}
 
-			// run microscopic kernel to fi`nd reaction type
+			// run microscopic kernel to find reaction type
 			microscopic( NUM_THREADS, Nrun, n_isotopes, MT_columns, d_remap, d_isonum, d_index, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_xs_MT_numbers_total, d_xs_MT_numbers, d_xs_data_Q, d_rxn, d_Q, d_done);
 
 			// remap threads to still active data
 			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
 
 			// concurrent calls to do escatter/iscatter/abs/fission
-			cudaThreadSynchronize();cudaDeviceSynchronize();
+			cudaThreadSynchronize();
+			cudaDeviceSynchronize();
 			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
 			iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
 			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
@@ -1947,23 +1951,6 @@ void whistory::prep_secondaries(){
 	//cudaMemcpy(tmp4,d_yield,Ndataset*sizeof(unsigned),cudaMemcpyDeviceToHost);
 	//for(int k=0; k<Ndataset ; k++ ){printf("(tid,done,scanned,completed,yield) %u %u %u %u %u\n",k,tmp3[k],tmp1[k],tmp2[k],tmp4[k]);}
 
-}
-unsigned whistory::map_active(){
-
-	unsigned num_active=0;
-
-	// flip done flag
-	flip_done(NUM_THREADS, Ndataset, d_done);
-
-	// remap to active
-	res = cudppCompact( compactplan, d_active , (size_t*) d_num_active , d_remap , d_done , Ndataset);
-	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in compacting done values\n");exit(-1);}
-	cudaMemcpy(&num_active,d_num_active,1*sizeof(unsigned),cudaMemcpyDeviceToHost);
-
-	// flip done flag back	
-	flip_done(NUM_THREADS, Ndataset, d_done);
-
-	return num_active;
 }
 void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned* escatter_start, unsigned* iscatter_N, unsigned* iscatter_start, unsigned* cscatter_N, unsigned* cscatter_start, unsigned* fission_N, unsigned* fission_start){
 
@@ -2252,145 +2239,395 @@ void whistory::set_print_level(unsigned level){
 void whistory::set_dump_level(unsigned level){
 	dump_flag = level;
 }
+void whistory::plot_geom(std::string type_in){
+
+	if(is_initialized!=1){
+		printf("  ! geometry plotting must be done AFTER init, skipping.\n");
+		return;
+	}
+
+	printf("\e[1;32mPlotting Geometry... \e[m \n");
+
+	// type logic
+	char this_filename[50];
+	unsigned* type_array;
+	unsigned width, height, width_in, height_in, index, N_plot;
+	float dx, dy, dz;
+	float aspect, mu, theta;
+	float resolution = 1024;
+	float pi = 3.14159;
+	source_point * positions_local = new source_point[N];
+	unsigned * image_local = new unsigned[N];
+	unsigned minnum, maxnum;
+	if (type_in.compare("cell")==0){
+		printf("  color set to \e[1;31mCELL\e[m\n");
+		type_array = d_cellnum;
+		minnum = problem_geom.get_minimum_cell();
+		maxnum = problem_geom.get_maximum_cell();
+	}
+	else if (type_in.compare("material")==0){
+		printf("  color set to \e[1;31mMATERIAL\e[m\n");
+		type_array = d_matnum;
+		minnum = problem_geom.get_minimum_material();
+		maxnum = problem_geom.get_maximum_material();
+	}
+	else{
+		printf("  ! plot type '%s' unknown, skipping.\n",type_in.c_str());
+		return;
+	}
+
+	// get outer cell dims
+	float xmin = outer_cell_dims[0];
+	float ymin = outer_cell_dims[1];
+	float zmin = outer_cell_dims[2];
+	float xmax = outer_cell_dims[3];
+	float ymax = outer_cell_dims[4];
+	float zmax = outer_cell_dims[5];
+	
+	//
+	// xy
+	//
+	aspect = (xmax-xmin)/(ymax-ymin);
+	printf("  xy aspect ratio of outer cell: %6.4f\n",aspect);
+	width_in  = resolution*aspect;
+	height_in = resolution;
+	if (width_in*height_in > N){
+		width  = sqrtf(N*aspect); 
+		height = sqrtf(N/aspect);
+		printf("  !resolution reduced by dataset size ->");
+		printf("  (height,width) (%u,%u) px\n",height,width);
+	}else{
+		width = width_in;
+		height = height_in;
+		printf(" (height,width) (%u,%u) px\n",height,width);
+	}
+	N_plot = width*height;
+	dx = (xmax-xmin)/width;
+	dy = (ymax-ymin)/height;
+	for(int j=0;j<height;j++){
+		for(int k=0;k<width;k++){
+			mu = 2.0*rand()-1.0;
+			theta = 2.0*pi*rand();
+			index = j * width + k;
+			positions_local[index].x = xmin + dx/2 + k*dx;
+			positions_local[index].y = ymin + dy/2 + j*dy;
+			positions_local[index].z = 0.0;
+			positions_local[index].xhat =  0.0;//sqrtf(1-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat =  0.0;//sqrtf(1-mu*mu) * sinf( theta ); 
+			positions_local[index].zhat = -1.0;//      mu; 
+			positions_local[index].surf_dist = 9999999999.9; 
+		}
+	}
+
+	// copy starting positions data to pointer
+	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
+	
+	// trace with whereami?
+	trace(2, N_plot);
+	
+	//copy to local buffer
+	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// make image
+	png::image< png::rgb_pixel > image(width, height);
+	float * colormap = new float[3];
+	for (size_t y = 0; y < image.get_height(); ++y)
+	{
+	    for (size_t x = 0; x < image.get_width(); ++x)
+	    {
+	    	make_color(colormap,image_local[y*width+x],minnum,maxnum);
+	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	    }
+	}
+
+	sprintf(this_filename,"%s-xy.png",filename.c_str());
+	image.write(this_filename);
+	printf("  Written to %s.\n",this_filename);
+
+	//
+	// xz
+	//
+	aspect = (xmax-xmin)/(zmax-zmin);
+	printf("  xz aspect ratio of outer cell: %6.4f\n",aspect);
+	width_in  = resolution*aspect;
+	height_in = resolution;
+	if (width_in*height_in > N){
+		width  = sqrtf(N*aspect); 
+		height = sqrtf(N/aspect);
+		printf("  !resolution reduced by dataset size ->");
+		printf("  (height,width) (%u,%u) px\n",height,width);
+	}else{
+		width = width_in;
+		height = height_in;
+		printf(" (height,width) (%u,%u) px\n",height,width);
+	}
+	N_plot = width*height;
+	dx = (xmax-xmin)/width;
+	dz = (zmax-zmin)/height;
+	for(int j=0;j<height;j++){
+		for(int k=0;k<width;k++){
+			mu = 2.0*rand()-1.0;
+			theta = 2.0*pi*rand();
+			index = j * width + k;
+			positions_local[index].x = xmin + dx/2 + k*dx;
+			positions_local[index].y = 0.0;
+			positions_local[index].z = zmin + dz/2 + j*dz;
+			positions_local[index].xhat =  0.0;//sqrtf(1-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat =  0.0;//sqrtf(1-mu*mu) * sinf( theta ); 
+			positions_local[index].zhat = -1.0;//      mu; 
+			positions_local[index].surf_dist = 9999999999.9; 
+		}
+	}
+
+	// copy starting positions data to pointer
+	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
+	
+	// trace with whereami?
+	trace(2, N_plot);
+	
+	//copy to local buffer
+	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// make image
+	image = png::image< png::rgb_pixel > (width, height);
+	for (size_t y = 0; y < image.get_height(); ++y)
+	{
+	    for (size_t x = 0; x < image.get_width(); ++x)
+	    {
+	    	make_color(colormap,image_local[y*width+x],minnum,maxnum);
+	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	    }
+	}
+
+	sprintf(this_filename,"%s-xz.png",filename.c_str());
+	image.write(this_filename);
+	printf("  Written to %s.\n",this_filename);
+
+	//
+	// yz
+	//
+	aspect = (ymax-ymin)/(zmax-zmin);
+	printf("  yz aspect ratio of outer cell: %6.4f\n",aspect);
+	width_in  = resolution*aspect;
+	height_in = resolution;
+	if (width_in*height_in > N){
+		width  = sqrtf(N*aspect); 
+		height = sqrtf(N/aspect);
+		printf("  !resolution reduced by dataset size ->");
+		printf("  (height,width) (%u,%u) px\n",height,width);
+	}else{
+		width = width_in;
+		height = height_in;
+		printf(" (height,width) (%u,%u) px\n",height,width);
+	}
+	N_plot = width*height;
+	dy = (ymax-ymin)/width;
+	dz = (zmax-zmin)/height;
+	for(int j=0;j<height;j++){
+		for(int k=0;k<width;k++){
+			mu = 2.0*rand()-1.0;
+			theta = 2.0*pi*rand();
+			index = j * width + k;
+			positions_local[index].x = 0.0;
+			positions_local[index].y = ymin + dy/2 + k*dy;
+			positions_local[index].z = zmin + dz/2 + j*dz;
+			positions_local[index].xhat =  0.0;//sqrtf(1-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat =  0.0;//sqrtf(1-mu*mu) * sinf( theta ); 
+			positions_local[index].zhat = -1.0;//      mu; 
+			positions_local[index].surf_dist = 9999999999.9; 
+		}
+	}
+
+	// copy starting positions data to pointer
+	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
+	
+	// trace with whereami?
+	trace(2, N_plot);
+	
+	//copy to local buffer
+	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+
+	// make image
+	image = png::image< png::rgb_pixel > (width, height);
+	for (size_t y = 0; y < image.get_height(); ++y)
+	{
+	    for (size_t x = 0; x < image.get_width(); ++x)
+	    {
+	    	make_color(colormap,image_local[y*width+x],minnum,maxnum);
+	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	    }
+	}
+
+	sprintf(this_filename,"%s-yz.png",filename.c_str());
+	image.write(this_filename);
+	printf("  Written to %s.\n",this_filename);
+
+
+	// clear
+	delete image_local;
+	delete colormap;
+	delete positions_local;
+
+}
+void whistory::make_color(float* color, unsigned x, unsigned min, unsigned max){
+	// red linear blue linear green sin colormap
+	if (x==4294967295){ //miss value
+		color[0]=0.0;
+		color[1]=0.0;
+		color[2]=0.0;
+	}
+	else{
+		float normed_value = (float) (x-min+1)/(max+2-min);
+		color[0] = normed_value;              //red
+		color[1] = sin(normed_value*3.14159); //green
+		color[2] = 1.0-normed_value;          //blue
+	}
+	
+	//bring up to 256?
+	color[0]=color[0]*256;
+	color[1]=color[1]*256;
+	color[2]=color[2]*256;
+
+}
 void whistory::create_quad_tree(){
 
 	std::cout << "\e[1;32m" << "Building quad tree for energy search... " << "\e[m \n";
-
-	// node vectors
-	std::vector<qnode_host>   nodes;
-	std::vector<qnode_host>   nodes_next;
-
-	// node variables
-	qnode_host  this_qnode;
-	qnode*      cuda_qnode;
-
-	// build bottom-up from the unionized E vector
-	unsigned k, depth;
-	unsigned rows_by_four = MT_rows;
-	for(k=0; k < rows_by_four ; k = k+4){
-		this_qnode.node.values[0] = xs_data_main_E_grid[ k+0 ];
-		this_qnode.node.values[1] = xs_data_main_E_grid[ k+1 ];
-		this_qnode.node.values[2] = xs_data_main_E_grid[ k+2 ];
-		this_qnode.node.values[3] = xs_data_main_E_grid[ k+3 ];
-		this_qnode.node.leaves[0] = (qnode*) ((long unsigned)k + 0);  // recast grid index as the pointer for lowest nodes
-		this_qnode.node.leaves[1] = (qnode*) ((long unsigned)k + 1);
-		this_qnode.node.leaves[2] = (qnode*) ((long unsigned)k + 2);
-		this_qnode.node.leaves[3] = (qnode*) ((long unsigned)k + 3);
-		cudaMalloc(&cuda_qnode,sizeof(qnode));
-		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-		this_qnode.cuda_pointer = cuda_qnode;
-		nodes.push_back(this_qnode);
-	}
-	//do the last values
-	if(MT_rows%4){
-		unsigned n=0;
-		for(k=rows_by_four;k<MT_rows;k++){
-			this_qnode.node.values[n] = xs_data_main_E_grid[ k ];
-			this_qnode.node.leaves[n] = (qnode*) ((long unsigned)k); 
-			n++;
-		}
-		//repeat the last values
-		for(k=n;k<4;k++){
-			this_qnode.node.values[k] = this_qnode.node.values[n-1];
-			this_qnode.node.leaves[k] = this_qnode.node.leaves[n-1];
-		}
-		// device allocate and add to vector
-		cudaMalloc(&cuda_qnode,sizeof(qnode));
-		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-		this_qnode.cuda_pointer = cuda_qnode;
-		nodes.push_back(this_qnode);
-	}
-
-
-	//now build it up!  length will *always* need to be a multiple of 4.  this routine pads the end nodes with 
-	unsigned this_width = nodes.size();
-	unsigned lowest_length = this_width;
-	unsigned mod4 		= this_width % 4;
-	unsigned end_depth=  (logf(lowest_length)/logf(4))+1;
-	unsigned num_repeats = 1;
-	unsigned starting_index = 0;
-	float inf = 1e45;
-	//std::cout << "end_depth="<<end_depth<<"\n";
-	for(unsigned depth=0;depth<end_depth;depth++){
-		//for(unsigned copy_repeats=0;copy_repeats<num_repeats;copy_repeats++){
-		//	starting_index=copy_repeats*this_width;
-		//for(unsigned copy_iteration=0;copy_iteration<4;copy_iteration++){
-			for( k=starting_index;k<(starting_index+this_width-mod4);k=k+4){
-				//std::cout << "k=" << k << "\n";
-				this_qnode.node.values[0] = nodes[ k+0 ].node.values[0]; // can use 0 since values overlap
-				this_qnode.node.values[1] = nodes[ k+1 ].node.values[0];
-				this_qnode.node.values[2] = nodes[ k+2 ].node.values[0];
-				this_qnode.node.values[3] = nodes[ k+3 ].node.values[0];  
-				this_qnode.node.leaves[0] = nodes[ k+0 ].cuda_pointer;  // set pointers as the cuda pointer of the children
-				this_qnode.node.leaves[1] = nodes[ k+1 ].cuda_pointer;
-				this_qnode.node.leaves[2] = nodes[ k+2 ].cuda_pointer;
-				this_qnode.node.leaves[3] = nodes[ k+3 ].cuda_pointer;
-				cudaMalloc(&cuda_qnode,sizeof(qnode));
-				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-				this_qnode.cuda_pointer = cuda_qnode;
-				nodes_next.push_back(this_qnode);
-			}
-			if(mod4){
-				//std::cout << "adding padded node at " << nodes_next.size()-1 << "\n";
-				unsigned n=0;
-				for( k=(starting_index+this_width-mod4) ; k<(starting_index+this_width) ; k++){
-					//std::cout <<"n="<<n << " k="<<k<<"\n";
-					this_qnode.node.values[n] = nodes[ k ].node.values[0];
-					this_qnode.node.leaves[n] = nodes[ k ].cuda_pointer;
-					n++;
-				}
-				for( n;n<4;n++){
-					//std::cout <<"n="<<n << " k="<<k<<"\n";
-					this_qnode.node.values[n] = inf;
-					this_qnode.node.leaves[n] = NULL;
-				}
-				cudaMalloc(&cuda_qnode,sizeof(qnode));
-				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-				this_qnode.cuda_pointer = cuda_qnode;
-				nodes_next.push_back(this_qnode);
-			}
-		//}
-	//}
-		if(mod4){
-			this_width=(this_width)/4+1;
-		}
-		else{
-			this_width=this_width/4;
-		}
-		mod4=this_width%4;
-		nodes=nodes_next;
-		nodes_next.clear();
-		num_repeats=num_repeats*4;
-		//std::cout << "--------------------------------------\n";
-		//for(int g=0;g<nodes.size();g++){ //node vector check
-		//	std::cout << "node " << g << " values " << nodes[g].node.values[0] << " " << nodes[g].node.values[1] << " "<< nodes[g].node.values[2] << " "<< nodes[g].node.values[3] << " "<< nodes[g].node.values[4] << " " <<"\n";
-		//	std::cout << "node " << g << " leaves " << nodes[g].node.leaves[0] << " " << nodes[g].node.leaves[1] << " "<< nodes[g].node.leaves[2] << " "<< nodes[g].node.leaves[3] << " " <<"\n";
-		//}
-	}
-
-
-	// copy size to object vars
-	qnodes_depth = end_depth;
-	qnodes_width = nodes.size();
-
-	//copy root nodes vector to object variable
-	//qnodes = new qnode[qnodes_width];
-	//for(k=0;k<qnodes_width;k++){   //only need to copy heads, they have pointers to the rest in them
-	//		qnodes[k].values[0] = nodes[k].node.values[0];
-	//		qnodes[k].values[1] = nodes[k].node.values[1];
-	//		qnodes[k].values[2] = nodes[k].node.values[2];
-	//		qnodes[k].values[3] = nodes[k].node.values[3];
-	//		qnodes[k].values[4] = nodes[k].node.values[4];
-	//		qnodes[k].leaves[0] = nodes[k].node.leaves[0];
-	//		qnodes[k].leaves[1] = nodes[k].node.leaves[1];
-	//		qnodes[k].leaves[2] = nodes[k].node.leaves[2];
-	//		qnodes[k].leaves[3] = nodes[k].node.leaves[3];
-	//}
-
-	// make and copy device data
-	cudaMalloc(	&d_qnodes_root,				sizeof(qnode)	);
-	cudaMemcpy(	 d_qnodes_root,	&nodes[0].node,		sizeof(qnode),	cudaMemcpyHostToDevice); 
-
-	std::cout << "  Complete.  Depth of tree is "<< qnodes_depth << ", width is "<< qnodes_width <<".\n";
+//
+//	// node vectors
+//	std::vector<qnode_host>   nodes;
+//	std::vector<qnode_host>   nodes_next;
+//
+//	// node variables
+//	qnode_host  this_qnode;
+//	qnode*      cuda_qnode;
+//
+//	// build bottom-up from the unionized E vector
+//	unsigned k, depth;
+//	unsigned rows_by_four = MT_rows;
+//	for(k=0; k < rows_by_four ; k = k+4){
+//		this_qnode.node.values[0] = xs_data_main_E_grid[ k+0 ];
+//		this_qnode.node.values[1] = xs_data_main_E_grid[ k+1 ];
+//		this_qnode.node.values[2] = xs_data_main_E_grid[ k+2 ];
+//		this_qnode.node.values[3] = xs_data_main_E_grid[ k+3 ];
+//		this_qnode.node.leaves[0] = (qnode*) ((long unsigned)k + 0);  // recast grid index as the pointer for lowest nodes
+//		this_qnode.node.leaves[1] = (qnode*) ((long unsigned)k + 1);
+//		this_qnode.node.leaves[2] = (qnode*) ((long unsigned)k + 2);
+//		this_qnode.node.leaves[3] = (qnode*) ((long unsigned)k + 3);
+//		cudaMalloc(&cuda_qnode,sizeof(qnode));
+//		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
+//		this_qnode.cuda_pointer = cuda_qnode;
+//		nodes.push_back(this_qnode);
+//	}
+//	//do the last values
+//	if(MT_rows%4){
+//		unsigned n=0;
+//		for(k=rows_by_four;k<MT_rows;k++){
+//			this_qnode.node.values[n] = xs_data_main_E_grid[ k ];
+//			this_qnode.node.leaves[n] = (qnode*) ((long unsigned)k); 
+//			n++;
+//		}
+//		//repeat the last values
+//		for(k=n;k<4;k++){
+//			this_qnode.node.values[k] = this_qnode.node.values[n-1];
+//			this_qnode.node.leaves[k] = this_qnode.node.leaves[n-1];
+//		}
+//		// device allocate and add to vector
+//		cudaMalloc(&cuda_qnode,sizeof(qnode));
+//		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
+//		this_qnode.cuda_pointer = cuda_qnode;
+//		nodes.push_back(this_qnode);
+//	}
+//
+//
+//	//now build it up!  length will *always* need to be a multiple of 4.  this routine pads the end nodes with 
+//	unsigned this_width = nodes.size();
+//	unsigned lowest_length = this_width;
+//	unsigned mod4 		= this_width % 4;
+//	unsigned end_depth=  (logf(lowest_length)/logf(4))+1;
+//	unsigned num_repeats = 1;
+//	unsigned starting_index = 0;
+//	float inf = 1e45;
+//	//std::cout << "end_depth="<<end_depth<<"\n";
+//	for(unsigned depth=0;depth<end_depth;depth++){
+//		//for(unsigned copy_repeats=0;copy_repeats<num_repeats;copy_repeats++){
+//		//	starting_index=copy_repeats*this_width;
+//		//for(unsigned copy_iteration=0;copy_iteration<4;copy_iteration++){
+//			for( k=starting_index;k<(starting_index+this_width-mod4);k=k+4){
+//				//std::cout << "k=" << k << "\n";
+//				this_qnode.node.values[0] = nodes[ k+0 ].node.values[0]; // can use 0 since values overlap
+//				this_qnode.node.values[1] = nodes[ k+1 ].node.values[0];
+//				this_qnode.node.values[2] = nodes[ k+2 ].node.values[0];
+//				this_qnode.node.values[3] = nodes[ k+3 ].node.values[0];  
+//				this_qnode.node.leaves[0] = nodes[ k+0 ].cuda_pointer;  // set pointers as the cuda pointer of the children
+//				this_qnode.node.leaves[1] = nodes[ k+1 ].cuda_pointer;
+//				this_qnode.node.leaves[2] = nodes[ k+2 ].cuda_pointer;
+//				this_qnode.node.leaves[3] = nodes[ k+3 ].cuda_pointer;
+//				cudaMalloc(&cuda_qnode,sizeof(qnode));
+//				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
+//				this_qnode.cuda_pointer = cuda_qnode;
+//				nodes_next.push_back(this_qnode);
+//			}
+//			if(mod4){
+//				//std::cout << "adding padded node at " << nodes_next.size()-1 << "\n";
+//				unsigned n=0;
+//				for( k=(starting_index+this_width-mod4) ; k<(starting_index+this_width) ; k++){
+//					//std::cout <<"n="<<n << " k="<<k<<"\n";
+//					this_qnode.node.values[n] = nodes[ k ].node.values[0];
+//					this_qnode.node.leaves[n] = nodes[ k ].cuda_pointer;
+//					n++;
+//				}
+//				for( n;n<4;n++){
+//					//std::cout <<"n="<<n << " k="<<k<<"\n";
+//					this_qnode.node.values[n] = inf;
+//					this_qnode.node.leaves[n] = NULL;
+//				}
+//				cudaMalloc(&cuda_qnode,sizeof(qnode));
+//				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
+//				this_qnode.cuda_pointer = cuda_qnode;
+//				nodes_next.push_back(this_qnode);
+//			}
+//		//}
+//	//}
+//		if(mod4){
+//			this_width=(this_width)/4+1;
+//		}
+//		else{
+//			this_width=this_width/4;
+//		}
+//		mod4=this_width%4;
+//		nodes=nodes_next;
+//		nodes_next.clear();
+//		num_repeats=num_repeats*4;
+//		//std::cout << "--------------------------------------\n";
+//		//for(int g=0;g<nodes.size();g++){ //node vector check
+//		//	std::cout << "node " << g << " values " << nodes[g].node.values[0] << " " << nodes[g].node.values[1] << " "<< nodes[g].node.values[2] << " "<< nodes[g].node.values[3] << " "<< nodes[g].node.values[4] << " " <<"\n";
+//		//	std::cout << "node " << g << " leaves " << nodes[g].node.leaves[0] << " " << nodes[g].node.leaves[1] << " "<< nodes[g].node.leaves[2] << " "<< nodes[g].node.leaves[3] << " " <<"\n";
+//		//}
+//	}
+//
+//
+//	// copy size to object vars
+//	qnodes_depth = end_depth;
+//	qnodes_width = nodes.size();
+//
+//	//copy root nodes vector to object variable
+//	//qnodes = new qnode[qnodes_width];
+//	//for(k=0;k<qnodes_width;k++){   //only need to copy heads, they have pointers to the rest in them
+//	//		qnodes[k].values[0] = nodes[k].node.values[0];
+//	//		qnodes[k].values[1] = nodes[k].node.values[1];
+//	//		qnodes[k].values[2] = nodes[k].node.values[2];
+//	//		qnodes[k].values[3] = nodes[k].node.values[3];
+//	//		qnodes[k].values[4] = nodes[k].node.values[4];
+//	//		qnodes[k].leaves[0] = nodes[k].node.leaves[0];
+//	//		qnodes[k].leaves[1] = nodes[k].node.leaves[1];
+//	//		qnodes[k].leaves[2] = nodes[k].node.leaves[2];
+//	//		qnodes[k].leaves[3] = nodes[k].node.leaves[3];
+//	//}
+//
+//	// make and copy device data
+//	cudaMalloc(	&d_qnodes_root,				sizeof(qnode)	);
+//	cudaMemcpy(	 d_qnodes_root,	&nodes[0].node,		sizeof(qnode),	cudaMemcpyHostToDevice); 
+//
+//	std::cout << "  Complete.  Depth of tree is "<< qnodes_depth << ", width is "<< qnodes_width <<".\n";
 
 }

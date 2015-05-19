@@ -14,7 +14,7 @@ int main(int argc, char* argv[]){
 	// names
 	unsigned tallycell = 999;
 	unsigned N = 0;
-	std::string tallyname, filename;
+	std::string tallyname, filename, runtype;
 	std::string assemblyname  	= "assembly-lw";
 	std::string flibename   	= "flibe";
 	std::string fusionname    	= "fusion";
@@ -22,6 +22,7 @@ int main(int argc, char* argv[]){
 	std::string jezebelname  	= "jezebel";
 	std::string pincellname  	= "pincell";
 	std::string sodiumpinname  	= "sodiumpin";
+	std::string testname 	 	= "test";
 
 
 	// check
@@ -34,6 +35,7 @@ int main(int argc, char* argv[]){
 		printf("%s, ",jezebelname.c_str());
 		printf("%s, ",pincellname.c_str());
 		printf("%s, ",sodiumpinname.c_str());
+		printf("%s, ",testname.c_str());
 		printf("and a number of particles to run!\n");
 		exit(0);
 	}
@@ -83,6 +85,7 @@ int main(int argc, char* argv[]){
 		tallyname = assemblyname;
 		tallyname.append(".tally");
 		bc = 1;
+		runtype = "criticality";
 	
 		// assembly geom
 		type=1;
@@ -158,6 +161,7 @@ int main(int argc, char* argv[]){
 		tallyname = flibename;
 		tallyname.append(".tally");
 		bc = 2;
+		runtype = "criticality";
 	
 		// flibe geom
 		type=3;
@@ -303,6 +307,7 @@ int main(int argc, char* argv[]){
 		tallyname = fusionname;
 		tallyname.append(".tally");
 		bc = 1;
+		runtype = "fixed";
 	
 		//fusion geom
 		type=3;
@@ -391,6 +396,7 @@ int main(int argc, char* argv[]){
 		tallyname = jezebelname;
 		tallyname.append(".tally");
 		bc = 1;
+		runtype = "criticality";
 	
 		//jezebel geom
 		type=3;
@@ -466,16 +472,17 @@ int main(int argc, char* argv[]){
 		tallyname = pincellname;
 		tallyname.append(".tally");
 		bc = 1;
+		runtype = "criticality";
 	
 		//pin cell
 		type=1;
 		material=1;
-		mins[0]=-2;
-		mins[1]=-2;
-		mins[2]=-20;
-		maxs[0]= 2; 
-		maxs[1]= 2; 
-		maxs[2]= 20;
+		mins[0]=-10;
+		mins[1]=-10;
+		mins[2]=-25;
+		maxs[0]= 10; 
+		maxs[1]= 10; 
+		maxs[2]= 25;
 		origin[0]=0.0;
 		origin[1]=0.0;
 		origin[2]=0.0;
@@ -511,6 +518,70 @@ int main(int argc, char* argv[]){
 		origin[2]=0.0;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
 		geom.add_transform(prim_id,999,0,0,0,0,0);
+	}
+	else if(testname.compare(argv[1])==0){
+		// pincell mats
+		n_topes = 4;
+		std::vector<std::string> topes (n_topes);
+		std::vector<float>    fracs_fuel  (n_topes);
+		std::vector<float>    fracs_water  (n_topes);
+		topes[0] = "92235.03c";
+		topes[1] = "40090.03c";
+		topes[2] = "8016.03c";
+		topes[3] = "1002.03c";
+		fracs_fuel[0] = 0.1;  
+		fracs_fuel[1] = 0.9;
+		fracs_fuel[2] = 0.0;  
+		fracs_fuel[3] = 0.0;
+		fracs_water[0] = 0.0;  
+		fracs_water[1] = 0.0;
+		fracs_water[2] = 1.0;  
+		fracs_water[3] = 2.0;
+	
+		float    dens_fuel = 10.97;
+		float 	 dens_water = 1;
+
+		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
+		geom.add_material(2,0,n_topes,dens_water, topes,fracs_water);
+		
+		// run stuff
+		tallycell = 1;
+		filename  = testname;
+		tallyname = testname;
+		tallyname.append(".tally");
+		bc = 1;
+		runtype = "fixed";
+
+		//fuel 
+		type=2;
+		material=1;
+		mins[0]=-25.0;
+		mins[1]=-25.0;
+		mins[2]=-25.0;
+		maxs[0]= 25.0;
+		maxs[1]= 25.0;
+		maxs[2]= 25.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,1,0,0,0,0,0);
+
+		//water 
+		type=0;
+		material=2;
+		mins[0]=-45.0;
+		mins[1]=-45.0;
+		mins[2]=-45.0;
+		maxs[0]= 45.0;
+		maxs[1]= 45.0;
+		maxs[2]= 45.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,999,0,0,0,0,0);
+
 	}
 	else if(sodiumpinname.compare(argv[1])==0){
 		// sodium pincell mats
@@ -597,6 +668,7 @@ int main(int argc, char* argv[]){
 		tallyname = sodiumpinname;
 		tallyname.append(".tally");
 		bc = 2;
+		runtype = "criticality";
 	
 		//pin cell
 		type=1;
@@ -664,21 +736,6 @@ int main(int argc, char* argv[]){
 	//geom.print_all();
 	geom.print_summary();
 
-	///////////////////////////////////
-	// INIT OptiX STUFF for plotting //
-	///////////////////////////////////
-
-	// trace geom if requested
-	// make new context that fits the reqested image size, trace, then destroy to free resources
-	//unsigned geom_width  = 1024; 
-	//unsigned geom_height = 1024;
-	//unsigned N_geom = geom_width*geom_height;
-	//optix_stuff geom_optix ( N_geom , 4 );
-	//geom_optix.init(geom,0,"Sbvh");
-	//geom_optix.trace_geometry(geom_width,geom_height,"geom.png");
-	//geom_optix.~optix_stuff();
-
-
 	/////////////////////////////////////////////////////////////////
 	// INIT CUDA and HISTORY STUFF and LOAD/UNIONIZE CROS SECTIONS //
 	/////////////////////////////////////////////////////////////////
@@ -694,10 +751,11 @@ int main(int argc, char* argv[]){
 	// converge fission source and run //
 	/////////////////////////////////////
 
-	hist.set_run_type("criticality");
+	hist.set_run_type(runtype);
 	hist.set_tally_cell(tallycell);
 	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
+	hist.plot_geom("cell");  // **MUST** be called after init.
 	hist.run();
 	hist.write_tally(0);
 	//hist.write_xs_data("xsdata");

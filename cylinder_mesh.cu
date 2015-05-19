@@ -11,7 +11,7 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(unsigned,  cellnum,     attribute cell_num, );
 rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
-rtDeclareVariable(float3, normal, attribute normal, );
+rtDeclareVariable(float3,    normal,      attribute normal,   );
 
 RT_PROGRAM void intersect(int object_dex)
 {

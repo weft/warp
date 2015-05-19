@@ -92,7 +92,10 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	//printf("norm %6.4E %6.4E %6.4E\n",norm[0],norm[1],norm[2]);
 	//printf("% 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E %u\n",x,y,z,xhat,yhat,zhat,surf_dist,samp_dist,enforce_BC);
 	diff = surf_dist - samp_dist;
+	//printf("b(%u,:)=[%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z);
+	//printf("a(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
 	if( diff < 0.0 ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
+		//printf("a(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
 		//printf("a(%u,1:9)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z,x+(surf_dist * xhat),y+(surf_dist * yhat),z+(surf_dist * zhat),norm[0],norm[1],norm[2]);
 		// enforce BC
 		if (enforce_BC == 1){  // black BC

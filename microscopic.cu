@@ -101,7 +101,10 @@ __global__ void microscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_c
 	// write results out
 	//if( this_rxn >= 811 & this_rxn<850 & this_rxn!=818 ){printf("microscopic sampled tid %u rxn %d energy %6.4E\n",tid,this_rxn,this_E);}
 	//printf("%u\n",this_rxn);
-	if(this_rxn==4){printf("MT=4!!!\n");}
+	if(this_rxn == 3 | this_rxn==4 | this_rxn ==5 | this_rxn ==10 | this_rxn ==27){
+		printf("MT=%u!!!, changing to 1102...\n",this_rxn);
+		this_rxn = 1102;
+	}
 	//if(this_rxn==56){printf("MT=56 at E %10.8E\n",this_E);}
 	rxn[tid_in] = this_rxn;
 	Q[tid] 	 = this_Q;

@@ -12,7 +12,6 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, unsigned* re
 	//remap to active
 	int tid=remap[starting_index + tid_in];
 	unsigned this_rxn = rxn[starting_index + tid_in];
-	//if(done[tid]){return;}
 
 	// print and return if wrong
 	if (this_rxn < 811 | this_rxn > 845){printf("fission kernel accessing wrong reaction @ remapped dex %u sorted dex %u rxn %u\n",tid,starting_index + tid_in, this_rxn);return;} 
@@ -23,43 +22,49 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, unsigned* re
 	float 		nu 			= 0.0;
 	unsigned	rn 			= rn_bank[ tid ];
 
-	//only do reactions with secondary neutrons
-	//if (rxn[tid] == 18 | rxn[tid] == 16 | rxn[tid] == 17 | rxn[tid] == 37 | rxn[tid] == 24 | rxn[tid] == 41){}
-	//else {return;} 
+	// determine integer yields
+	if (this_rxn == 818 | this_rxn == 819 | this_rxn == 820 | this_rxn == 821){
 
-	//printf("in fission\n");
-
-	if (this_rxn == 818){
 		// load nu from arrays
 		unsigned 	this_dex 	= index[tid];
 	
-		//load nu value, since e search has alrady been done!
+		//load nu value, since e search has alrady been done, nu should be where the scatter array is (fission is always isotropic)
 		memcpy(&nu, &scatterdat[this_dex], sizeof(float));
+		if (nu==0.0){
+			nu=2.8;
+			printf("something is wrong with fission yields, nu = %6.4E, guessing %4.2f\n",0.0,nu); 
+		}
+
+		// get integer part
 		inu = (unsigned) nu;
-		if (inu==0){printf("something is wrong with fission yields, nu = %6.4E\n",nu);}
-	
+		
+		// sample floor or ceil based on fractional part
 		if((float)inu+get_rand(&rn) <= nu){
 			this_yield = inu+1;
 		}
 		else{
 			this_yield = inu;
 		}
-		//printf("nu %6.4E inu %u rn1 %6.4E yield %u\n",nu,inu,rn1,this_yield);
+
 	}
-	else if(this_rxn == 816 | this_rxn==824 | this_rxn == 841){
-		this_yield = 2;
-	}
-	else if(this_rxn == 817){
+	else if(this_rxn == 817 | this_rxn == 825 | this_rxn == 842){
 		this_yield = 3;  
+	}
+	else if(this_rxn == 816 | this_rxn==824 | this_rxn == 811 | this_rxn == 824 | this_rxn == 829 | this_rxn == 830 | this_rxn == 841){
+		this_yield = 2;  
+	}
+	else{
+		this_yield = 1;
 	}
 
 	// write output and terminate history
 	yield[tid] = this_yield;
-	done[tid]  = 1;    // pop will re-activate this data slot on fixed-source runs
-	rxn[starting_index + tid_in] = this_rxn+100;  //mark as done by putting it in the 900 block
+	done[tid]  = 1;    // pop will re-activate this data slot on fixed-source runs (should be obsolete with active remapping, might need for fixed source?  I don't remember...)
+ 	rxn[starting_index + tid_in] = this_rxn+100;  //mark as done by putting it in the 900 block
 	
-	if (this_rxn == 818){
-		rn_bank[tid] = rn;  //rn was used for fission sampling
+	// write rn back if it was used for fission sampling
+	if (this_rxn == 818 | this_rxn == 819 | this_rxn == 820 | this_rxn == 821){
+		rn_bank[tid] = rn;  
 	}  
 
 }

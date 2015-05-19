@@ -75,9 +75,6 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	// set geom type  0=primitive instancing, 1=transform instancing, 2=transform instancing with common primitives
 	GEOM_FLAG = 0;
 
-	//set image type
-	image_type = "cell";
-
   	//int computeCaps[2];
   	//if (RTresult code = rtDeviceGetAttribute(deviceId, RT_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY, sizeof(computeCaps), &computeCaps))
   	//	throw Exception::makeException(code, 0);
@@ -591,53 +588,66 @@ void optix_stuff::make_geom_prim(wgeometry problem_geom){
 	}
 
 }
-void optix_stuff::trace_geometry(unsigned width_in,unsigned height_in,std::string type,std::string filename){
-
-//	std::cout << "\e[1;32m" << "Plotting Geometry... " << "\e[m \n";
+//float optix_stuff::trace_test(){
 //
-//	using namespace optix;
-//
-//	//get aspect ratio and make N-compatible corresponding heights and widths
-//	float aspect = width_in / height_in;
 //	float mu, theta;
 //	float pi=3.14159;
-//	unsigned width  = sqrtf(N*aspect); 
-//	unsigned height = sqrtf(N/aspect);
-//	std::cout << "width  = " << width << "\n";
-//	std::cout << "height = " << height << "\n";
 //
-//	// init the starting points to be across the z=0 plane and pointing downwards or isotropically random, should produce the same results
 //	//FILE* positionsfile = fopen("positionsfile","w");
-//	source_point * positions_local = new source_point[width*height];
-//	float dx = (42.0-(-42.0))/width;
-//	float dy = (42.0-(-42.0))/height;
+//	source_point * positions_local = new source_point[N];
 //	unsigned index;
+//	float x_min = outer_cell_dims[0];
+//	float y_min = outer_cell_dims[1];
+//	float z_min = outer_cell_dims[2];
+//	float x_max = outer_cell_dims[3];
+//	float y_max = outer_cell_dims[4];
+//	float z_max = outer_cell_dims[5];
+//
+//	//y_min = y_max = 0.0;
+//
+//	// make distribution random now
+//	int height = (int) sqrtf(N);
+//	int width  = (int) sqrtf(N);
+//	printf("image w/h %dx%d\n",width,height);
+//	float dx = (x_max-x_min)/width;
+//	float dy = (x_max-x_min)/height;
+//	float dz = (z_max-z_min)/height;
 //	for(int j=0;j<height;j++){
 //		for(int k=0;k<width;k++){
-//			mu = 2.0*rand()-1.0;
-//			theta = 2.0*pi*rand();
+//			mu = 2.0*get_rand()-1.0;
+//			theta = 2.0*pi*get_rand();
 //			index = j * width + k;
-//			positions_local[index].x = -42.0 + dx/2 + k*dx;
-//			positions_local[index].y = -42.0 + dy/2 + j*dy;
-//			positions_local[index].z = 0.0;
-//			positions_local[index].xhat = sqrtf(1-mu*mu) * cosf( theta ); //0.0;
-//			positions_local[index].yhat = sqrtf(1-mu*mu) * sinf( theta ); //0.0;
-//			positions_local[index].zhat =       mu; //-1.0;
-//			positions_local[index].samp_dist = 50000.0; 
+//			positions_local[index].x = x_min + dx/2 + k*dx;
+//			positions_local[index].y = y_min + dy/2 + j*dy;
+//			positions_local[index].z = 0.0;//z_min + dz/2 + j*dz;
+//			positions_local[index].xhat = 	sqrtf(1-mu*mu) * cosf( theta ); 
+//			positions_local[index].yhat = 	sqrtf(1-mu*mu) * sinf( theta ); 
+//			positions_local[index].zhat = 	mu; 
+//			positions_local[index].surf_dist = 50000.0; 
+//			//printf("%6.4E %6.4E %6.4E %6.4E %6.4E %6.4E\n",positions_local[index].x,positions_local[index].y,positions_local[index].z,positions_local[index].xhat,positions_local[index].yhat,positions_local[index].zhat);
 //		}
 //	}
-//	//fclose(positionsfile);
+//	for(index;index<N;index++){  //these are the end bits that don't fit into a square
+//			positions_local[index].x = 0.0;
+//			positions_local[index].y = 0.0;
+//			positions_local[index].z = 0.0;
+//			positions_local[index].xhat = 0.0;
+//			positions_local[index].yhat = 0.0;
+//			positions_local[index].zhat =-1.0;
+//			positions_local[index].surf_dist = 50000.0; 
+//	}
 //
 //	// copy starting positions data to pointer
-//	cudaMemcpy((void*)positions_ptr,positions_local,width*height*sizeof(source_point),cudaMemcpyHostToDevice);
+//	copy_to_device((void*)positions_ptr,positions_local,N*sizeof(source_point));
 //	
-//	// trace with whereami?
-//	context["trace_type"]->setUint(2);
-//	context->launch(0,width*height);
-//	
+//	// trace with with plane to generate image
+//	std::cout << "\e[1;32m" << "Tracing to image to build accel struct and to prove whereami..." << "\e[m \n";
+//	trace(2);
+//
 //	//copy to local buffer
 //	unsigned * image_local = new unsigned[width*height];
-//	cudaMemcpy(image_local,(void*)cellnum_ptr,width*height*sizeof(unsigned),cudaMemcpyDeviceToHost);
+//	if(image_type.compare("cell")==0){			copy_from_device(image_local,(void*)cellnum_ptr,width*height*sizeof(unsigned));}
+//	else if (image_type.compare("material")==0){	copy_from_device(image_local,(void*)matnum_ptr,width*height*sizeof(unsigned));}
 //
 //	// make image
 //	png::image< png::rgb_pixel > image(height, width);
@@ -646,129 +656,44 @@ void optix_stuff::trace_geometry(unsigned width_in,unsigned height_in,std::strin
 //	{
 //	    for (size_t x = 0; x < image.get_width(); ++x)
 //	    {
-//	    	//mincell=0;
-//	    	//maxcell=3;
-//	    	make_color(colormap,image_local[y*width+x],mincell,maxcell);
-//	    	//printf("%u %u %6.3f %6.3f %6.3f\n",mincell,maxcell,colormap[0],colormap[1],colormap[2]);
+//	    	if(image_type.compare("cell")==0){			make_color(colormap,image_local[y*width+x],mincell,maxcell);}
+//	    	else if (image_type.compare("material")==0){	make_color(colormap,image_local[y*width+x],0  ,n_materials);}
 //	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
 //	    }
 //	}
 //
-//	image.write(filename);
+//	image.write("geom_test.png");
 //
-//	std::cout << "Done.  Written to " << filename << "\n";
+//	// make distribution random now
+//	for(index=0;index<N;index++){
+//			mu 				 = 2.0*get_rand()-1.0;
+//			theta				 = 2.0*pi*get_rand();
+//			positions_local[index].surf_dist =  500000;   
+//			positions_local[index].x         =     0.9 * ( ( x_max - x_min ) * get_rand() + x_min );  
+//			positions_local[index].y         =     0.9 * ( ( y_max - y_min ) * get_rand() + y_min );  
+//			positions_local[index].z         =     0.9 * ( ( z_max - z_min ) * get_rand() + z_min ); 
+//			positions_local[index].xhat      =     sqrtf(1-mu*mu) * cosf( theta );
+//			positions_local[index].yhat      =     sqrtf(1-mu*mu) * sinf( theta );
+//			positions_local[index].zhat      =     mu;
+//			//printf("%6.4E %6.4E %6.4E %6.4E %6.4E %6.4E\n",positions_local[index].x,positions_local[index].y,positions_local[index].z,positions_local[index].xhat,positions_local[index].yhat,positions_local[index].zhat);
+//	}
 //
-//	delete image_local;
-//	delete colormap;
-//	delete positions_local;
+//	// copy starting positions data to pointer
+//	copy_to_device((void*)positions_ptr,positions_local,N*sizeof(source_point));
 //
-}
-float optix_stuff::trace_test(){
-
-	float mu, theta;
-	float pi=3.14159;
-
-	//FILE* positionsfile = fopen("positionsfile","w");
-	source_point * positions_local = new source_point[N];
-	unsigned index;
-	float x_min = outer_cell_dims[0];
-	float y_min = outer_cell_dims[1];
-	float z_min = outer_cell_dims[2];
-	float x_max = outer_cell_dims[3];
-	float y_max = outer_cell_dims[4];
-	float z_max = outer_cell_dims[5];
-
-	//y_min = y_max = 0.0;
-
-	// make distribution random now
-	int height = (int) sqrtf(N);
-	int width  = (int) sqrtf(N);
-	printf("image w/h %dx%d\n",width,height);
-	float dx = (x_max-x_min)/width;
-	float dy = (x_max-x_min)/height;
-	float dz = (z_max-z_min)/height;
-	for(int j=0;j<height;j++){
-		for(int k=0;k<width;k++){
-			mu = 2.0*get_rand()-1.0;
-			theta = 2.0*pi*get_rand();
-			index = j * width + k;
-			positions_local[index].x = x_min + dx/2 + k*dx;
-			positions_local[index].y = y_min + dy/2 + j*dy;
-			positions_local[index].z = 0.0;//z_min + dz/2 + j*dz;
-			positions_local[index].xhat = 	sqrtf(1-mu*mu) * cosf( theta ); 
-			positions_local[index].yhat = 	sqrtf(1-mu*mu) * sinf( theta ); 
-			positions_local[index].zhat = 	mu; 
-			positions_local[index].surf_dist = 50000.0; 
-			//printf("%6.4E %6.4E %6.4E %6.4E %6.4E %6.4E\n",positions_local[index].x,positions_local[index].y,positions_local[index].z,positions_local[index].xhat,positions_local[index].yhat,positions_local[index].zhat);
-		}
-	}
-	for(index;index<N;index++){  //these are the end bits that don't fit into a square
-			positions_local[index].x = 0.0;
-			positions_local[index].y = 0.0;
-			positions_local[index].z = 0.0;
-			positions_local[index].xhat = 0.0;
-			positions_local[index].yhat = 0.0;
-			positions_local[index].zhat =-1.0;
-			positions_local[index].surf_dist = 50000.0; 
-	}
-
-	// copy starting positions data to pointer
-	copy_to_device((void*)positions_ptr,positions_local,N*sizeof(source_point));
-	
-	// trace with with plane to generate image
-	std::cout << "\e[1;32m" << "Tracing to image to build accel struct and to prove whereami..." << "\e[m \n";
-	trace(2);
-
-	//copy to local buffer
-	unsigned * image_local = new unsigned[width*height];
-	if(image_type.compare("cell")==0){			copy_from_device(image_local,(void*)cellnum_ptr,width*height*sizeof(unsigned));}
-	else if (image_type.compare("material")==0){	copy_from_device(image_local,(void*)matnum_ptr,width*height*sizeof(unsigned));}
-
-	// make image
-	png::image< png::rgb_pixel > image(height, width);
-	float * colormap = new float[3];
-	for (size_t y = 0; y < image.get_height(); ++y)
-	{
-	    for (size_t x = 0; x < image.get_width(); ++x)
-	    {
-	    	if(image_type.compare("cell")==0){			make_color(colormap,image_local[y*width+x],mincell,maxcell);}
-	    	else if (image_type.compare("material")==0){	make_color(colormap,image_local[y*width+x],0  ,n_materials);}
-	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
-	    }
-	}
-
-	image.write("geom_test.png");
-
-	// make distribution random now
-	for(index=0;index<N;index++){
-			mu 				 = 2.0*get_rand()-1.0;
-			theta				 = 2.0*pi*get_rand();
-			positions_local[index].surf_dist =  500000;   
-			positions_local[index].x         =     0.9 * ( ( x_max - x_min ) * get_rand() + x_min );  
-			positions_local[index].y         =     0.9 * ( ( y_max - y_min ) * get_rand() + y_min );  
-			positions_local[index].z         =     0.9 * ( ( z_max - z_min ) * get_rand() + z_min ); 
-			positions_local[index].xhat      =     sqrtf(1-mu*mu) * cosf( theta );
-			positions_local[index].yhat      =     sqrtf(1-mu*mu) * sinf( theta );
-			positions_local[index].zhat      =     mu;
-			//printf("%6.4E %6.4E %6.4E %6.4E %6.4E %6.4E\n",positions_local[index].x,positions_local[index].y,positions_local[index].z,positions_local[index].xhat,positions_local[index].yhat,positions_local[index].zhat);
-	}
-
-	// copy starting positions data to pointer
-	copy_to_device((void*)positions_ptr,positions_local,N*sizeof(source_point));
-
-	//trace and time
-	std::cout << "\e[1;32m" << "Timing trace " << N << " particles... " ;
-	float time_out = ((float)clock())/((float)CLOCKS_PER_SEC);
-	trace(2);
-	time_out = ((float)clock())/((float)CLOCKS_PER_SEC) - time_out; 
-	std::cout << "\e[1;32m" << " done in " << time_out << " seconds \e[m \n";
-
-	// print out intersection points
-
-
-	return time_out;
-
-}
+//	//trace and time
+//	std::cout << "\e[1;32m" << "Timing trace " << N << " particles... " ;
+//	float time_out = ((float)clock())/((float)CLOCKS_PER_SEC);
+//	trace(2);
+//	time_out = ((float)clock())/((float)CLOCKS_PER_SEC) - time_out; 
+//	std::cout << "\e[1;32m" << " done in " << time_out << " seconds \e[m \n";
+//
+//	// print out intersection points
+//
+//
+//	return time_out;
+//
+//}
 void optix_stuff::print(){
 	std::string instancing;
 	if(GEOM_FLAG==1){instancing="transform";}
@@ -780,7 +705,6 @@ void optix_stuff::print(){
 	std::cout << "\e[1;32m" << "--- OptiX SUMMARY ---" << "\e[m \n";
 	printf(      "  Using device %u: \e[1;31m%s\e[m\n",enabled_ids[0],enabled_name.c_str());	
 	std::cout << "  Using \e[1;31m"<< instancing <<"\e[m-based instancing\n";
-	std::cout << "  Image type set to \e[1;31m"<< image_type <<"\e[m\n";	
 	std::cout << "  Device set to "<<compute_device<<"\n";
 	std::cout << "  Acceleration set to "<<accel_type<<"/"<<traverse_type<<"\n";
 	std::cout << "  stack  size = " << context->getStackSize() << " bytes\n";
@@ -809,17 +733,6 @@ void optix_stuff::make_color(float* color, unsigned x, unsigned min, unsigned ma
 float optix_stuff::get_rand(){
 
 	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-
-}
-void optix_stuff::set_image_type(std::string string_in){
-
-	if(string_in.compare("material") & string_in.compare("cell") ){
-		std::cout << "\"" << string_in << "\" is not a valid option for image type, must be \"cell\" or \"material\"\n";
-	}
-	else{
-		//std::cout << "Image type set to \"" << string_in << "\"\n";
-		image_type = string_in;
-	}
 
 }
 unsigned optix_stuff::get_outer_cell(){
