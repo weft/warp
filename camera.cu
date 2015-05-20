@@ -32,11 +32,7 @@ RT_PROGRAM void camera()
 	}
 
 	// declare important stuff
-<<<<<<< HEAD
 	int                 sense = 0;
-=======
-	int                 sense;
->>>>>>> 3118af2c2a4c1900ecdbcb4a58f9cbf9a12d48e7
 	float               epsilon=5.0e-4; 	
 	intersection_point  payload;
 	
