@@ -27,7 +27,8 @@ RT_PROGRAM void closest_hit()
 	payload.y=int_dist*ray.direction.y+ray.origin.y;
 	payload.z=int_dist*ray.direction.z+ray.origin.z;
 	payload.surf_dist = int_dist;
-	//rtPrintf("closest normal %6.4E %6.4E %6.4E\n",normal.x,normal.y,normal.z);
+	
+	//write normals
 	payload.norm[0] = normal.x;
 	payload.norm[1] = normal.y;
 	payload.norm[2] = normal.z;

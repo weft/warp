@@ -32,7 +32,11 @@ RT_PROGRAM void camera()
 	}
 
 	// declare important stuff
+<<<<<<< HEAD
 	int                 sense = 0;
+=======
+	int                 sense;
+>>>>>>> 3118af2c2a4c1900ecdbcb4a58f9cbf9a12d48e7
 	float               epsilon=5.0e-4; 	
 	intersection_point  payload;
 	
@@ -66,6 +70,7 @@ RT_PROGRAM void camera()
 	}
 
 	// find entering cell otherwise, trace will write, use downward z 
+	ray_direction  = make_float3(0.0,0.0,-1.0);
 	while(sense>=0 && payload.cell != outer_cell){
 		ray_origin = make_float3(payload.x,payload.y,payload.z);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
@@ -73,7 +78,7 @@ RT_PROGRAM void camera()
 		sense += payload.sense;
 	}
 
-	// write cell and material numbers
+	// write cell/material numbers to buffer
 	if(trace_type == 2){ //write material to buffer normally, write surface distance
 		matnum_buffer[launch_index] 				= payload.mat;
 		cellnum_buffer[launch_index] 				= payload.cell;
