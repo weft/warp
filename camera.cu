@@ -32,7 +32,7 @@ RT_PROGRAM void camera()
 	}
 
 	// declare important stuff
-	//int                 cnt;
+	int                 sense;
 	float               epsilon=5.0e-4; 	
 	intersection_point  payload;
 	
@@ -47,6 +47,7 @@ RT_PROGRAM void camera()
 
 	// first trace to find closest hit, set norm/distance, set bc flag
 	rtTrace(top_object, ray, payload);
+	sense = payload.sense;
 	//rtPrintf("sense %d mat %u cell %u\n",payload.sense,payload.mat, payload.cell);
 	//rtPrintf("did first trace, type %u\n",trace_type);
 	if(trace_type==2){
@@ -66,13 +67,11 @@ RT_PROGRAM void camera()
 
 	// find entering cell otherwise, trace will write, use downward z 
 	ray_direction  = make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
-	ray_origin     = make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
-	ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
-	rtTrace(top_object, ray, payload); 
-	while(payload.sense>0){
+	while(sense>0){
 		ray_origin = make_float3(payload.x,payload.y,payload.z);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);
+		sense += payload.sense;
 	}
 
 	if(trace_type == 2){ //write material to buffer normally, write surface distance

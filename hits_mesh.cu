@@ -33,8 +33,7 @@ RT_PROGRAM void closest_hit()
 	payload.norm[2] = normal.z;
 
 	// update sense
-	payload.sense += sense;
-	rtPrintf("payload.sense %d sense=%d\n",payload.sense, sense);
+	payload.sense = sense;
 
 	//update mat, cell, fiss
 	payload.mat  = cellmat;
