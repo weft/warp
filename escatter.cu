@@ -9,7 +9,7 @@ inline __device__ void sample_therm(unsigned* rn, float* muout, float* vt, const
 
 	// adapted from OpenMC's sample_target_velocity subroutine in src/physics.F90
 
-	float k 	= 8.617332478e-11; //MeV/k
+	//float k 	= 8.617332478e-11; //MeV/k
 	float pi 	= 3.14159265359 ;
 	float mu,c,beta_vn,beta_vt,beta_vt_sq,r1,r2,alpha,accept_prob;
 	unsigned n;

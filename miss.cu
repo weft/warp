@@ -31,8 +31,8 @@ RT_PROGRAM void miss()
 	payload.sense 				=  -9;
 	rxn_buffer[launch_index_in]	=  997; //miss code, same as leak basically
 	payload.surf_dist 			=  -1.0;
-	payload.cell 	=  4294967295;
-	payload.mat  	=  4294967295;
+	payload.cell 	=  2147483647;
+	payload.mat  	=  2147483647;
 	payload.fiss 	=  0;
 
 	if(trace_type==2){

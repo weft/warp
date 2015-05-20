@@ -32,13 +32,16 @@ RT_PROGRAM void camera()
 	}
 
 	// declare important stuff
-	//int                 cnt;
+	int                 sense = 0;
 	float               epsilon=5.0e-4; 	
 	intersection_point  payload;
 	
 	// init payload flags
-	payload.sense=0;
-	payload.cell = 999999;
+	payload.sense = 0;
+	payload.cell  = 999999;
+	payload.mat   = 999999;
+	payload.cell  = 999999;
+	payload.fiss  = 0;
 	
 	// init ray
 	float3 ray_direction  = make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
@@ -47,34 +50,30 @@ RT_PROGRAM void camera()
 
 	// first trace to find closest hit, set norm/distance, set bc flag
 	rtTrace(top_object, ray, payload);
-	//rtPrintf("sense %d mat %u cell %u\n",payload.sense,payload.mat, payload.cell);
-	//rtPrintf("did first trace, type %u\n",trace_type);
+	sense = payload.sense;
 	if(trace_type==2){
 		positions_buffer[launch_index].surf_dist = payload.surf_dist; 
-		positions_buffer[launch_index].norm[0] = payload.norm[0];
-		positions_buffer[launch_index].norm[1] = payload.norm[1];
-		positions_buffer[launch_index].norm[2] = payload.norm[2];
+		positions_buffer[launch_index].norm[0]   = payload.norm[0];
+		positions_buffer[launch_index].norm[1]   = payload.norm[1];
+		positions_buffer[launch_index].norm[2]   = payload.norm[2];
+		// write bc flag if first hit is outer cell
 		if(payload.cell == outer_cell){
-			positions_buffer[launch_index].enforce_BC=boundary_condition;
-			//rtPrintf("should enforce BC\n");
+			positions_buffer[launch_index].enforce_BC = boundary_condition;
 		}
 		else{
-			positions_buffer[launch_index].enforce_BC=0;
-			//rtPrintf("DO NOT enforce BC\n");
+			positions_buffer[launch_index].enforce_BC = 0;
 		}
 	}
 
 	// find entering cell otherwise, trace will write, use downward z 
-	ray_direction  = make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
-	ray_origin     = make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
-	ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
-	rtTrace(top_object, ray, payload); 
-	while(payload.sense>0){
+	while(sense>=0 && payload.cell != outer_cell){
 		ray_origin = make_float3(payload.x,payload.y,payload.z);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);
+		sense += payload.sense;
 	}
 
+	// write cell and material numbers
 	if(trace_type == 2){ //write material to buffer normally, write surface distance
 		matnum_buffer[launch_index] 				= payload.mat;
 		cellnum_buffer[launch_index] 				= payload.cell;
