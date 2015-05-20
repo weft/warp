@@ -67,13 +67,14 @@ RT_PROGRAM void camera()
 
 	// find entering cell otherwise, trace will write, use downward z 
 	ray_direction  = make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
-	while(sense>0){
+	while(sense>=0){
 		ray_origin = make_float3(payload.x,payload.y,payload.z);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);
 		sense += payload.sense;
 	}
 
+	// write cell/material numbers to buffer
 	if(trace_type == 2){ //write material to buffer normally, write surface distance
 		matnum_buffer[launch_index] 				= payload.mat;
 		cellnum_buffer[launch_index] 				= payload.cell;
