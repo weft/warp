@@ -11,6 +11,7 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(unsigned,  cellnum,     attribute cell_num, );
 rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
+rtDeclareVariable(unsigned,  sense      , attribute cell_sense, );
 rtDeclareVariable(float3,    normal,      attribute normal,   );
 
 static __device__ bool accept_z(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
@@ -100,13 +101,13 @@ RT_PROGRAM void intersect(int object_dex)
   float3 loc  = make_float3(dims[object_dex].loc[0],dims[object_dex].loc[1],dims[object_dex].loc[2]);
   float3 xformed_origin = ray.origin - loc;
 
-  float   tmin, tmax, t0, t1, ndD, sense, sgn;
+  float   tmin, tmax, t0, t1, ndD, this_sense, sgn;
   float3  norm_max, norm_min;
 
   //init
   tmin       =  9999999999999999999.0;
   tmax       = -9999999999999999999.0;
-  sense      = -1.0;
+  this_sense = -1.0;
   norm_max.x = 0.0;
   norm_max.y = 0.0;
   norm_max.z = 0.0;
@@ -135,8 +136,8 @@ RT_PROGRAM void intersect(int object_dex)
   if (ndD!=0.0){
     t0 = dot(  z_hat , ( p1 - xformed_origin ) ) / ndD;
     t1 = dot(  z_hat , ( p4 - xformed_origin ) ) / ndD;
-    if (sense < 0.0){
-      sense = t0*t1;
+    if (this_sense < 0.0){
+      this_sense = t0*t1;
     }
     if(t0>0.0 && accept_z(xformed_origin+t0*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
       tmin = fminf(t0,tmin);
@@ -165,8 +166,8 @@ RT_PROGRAM void intersect(int object_dex)
   if (ndD!=0.0){
     t0 = dot(  y_hat , ( p2 - xformed_origin ) ) / ndD;
     t1 = dot(  y_hat , ( p3 - xformed_origin ) ) / ndD;
-    if (sense < 0.0){
-      sense = t0*t1;
+    if (this_sense < 0.0){
+      this_sense = t0*t1;
     }
     if(t0>0.0 && accept_y(xformed_origin+t0*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
       tmin = fminf(t0,tmin);
@@ -195,8 +196,8 @@ RT_PROGRAM void intersect(int object_dex)
   if (ndD!=0.0){
     t0 = dot(  l_hat , ( p2 - xformed_origin ) ) / ndD;
     t1 = dot(  l_hat , ( p1 - xformed_origin ) ) / ndD;
-    if (sense < 0.0){
-      sense = t0*t1;
+    if (this_sense < 0.0){
+      this_sense = t0*t1;
     }
     if(t0>0.0 && accept_line(xformed_origin+t0*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
       tmin = fminf(t0,tmin);
@@ -225,8 +226,8 @@ RT_PROGRAM void intersect(int object_dex)
   if (ndD!=0.0){
     t0 = dot(  r_hat , ( p1 - xformed_origin ) ) / ndD;
     t1 = dot(  r_hat , ( p3 - xformed_origin ) ) / ndD;
-    if (sense < 0.0){
-      sense = t0*t1;
+    if (this_sense < 0.0){
+      this_sense = t0*t1;
     }
     if(t0>0.0 && accept_line(xformed_origin+t0*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
       tmin = fminf(t0,tmin);
@@ -251,7 +252,7 @@ RT_PROGRAM void intersect(int object_dex)
   }
 
   // if a single sense is positive, point lies on same side of two parallel planes and it is outside the hexagon
-  if ( sense < 0.0){
+  if ( this_sense < 0.0){
     sgn =  1.0;   
   }
   else{
@@ -266,6 +267,7 @@ RT_PROGRAM void intersect(int object_dex)
         cellmat     = dims[object_dex].matnum;
         cellfissile = dims[object_dex].is_fissile;
         normal      = sgn*norm_min;
+        sense       = int(-sgn);
        if(rtReportIntersection(0))
          check_second = false;
     } 
@@ -275,6 +277,7 @@ RT_PROGRAM void intersect(int object_dex)
          cellmat     = dims[object_dex].matnum;
          cellfissile = dims[object_dex].is_fissile;
          normal      = sgn*norm_max;
+         sense       = int(-sgn);
         rtReportIntersection(0);
       }
     }

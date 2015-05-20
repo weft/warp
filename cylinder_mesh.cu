@@ -11,11 +11,12 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(unsigned,  cellnum,     attribute cell_num, );
 rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
+rtDeclareVariable(unsigned,  sense      , attribute cell_sense, );
 rtDeclareVariable(float3,    normal,      attribute normal,   );
 
 RT_PROGRAM void intersect(int object_dex)
 {
-	float t1, t2, sdisc;
+	float t1, t2, sdisc, sgn;
 	float3 this_norm1, this_norm2, int1, int2;
 
 	float3 loc  = make_float3(dims[object_dex].loc[0],dims[object_dex].loc[1],dims[object_dex].loc[2]);
@@ -32,6 +33,7 @@ RT_PROGRAM void intersect(int object_dex)
 
 	bool report = false;
 	bool check_second = true;
+	sgn = 1.0;
 
 	if (disc > 0.0f){  // the line intersects the circle
 
@@ -97,15 +99,15 @@ RT_PROGRAM void intersect(int object_dex)
 
 	}
 
-	//rtPrintf("norm1 %6.4E %6.4E %6.4E norm2 %6.4E %6.4E %6.4E\n",this_norm1.x,this_norm1.y,this_norm1.z,this_norm2.x,this_norm2.y,this_norm2.z);
-	//rtPrintf("zmin %6.4E zmax %6.4E t1 %6.4E t2 %6.4E z1 %6.4E z2 %6.4E report %u\n",zmin,zmax,t1,t2,z1,z2,report);
-	//if (t1 < 0.0 ){
-	//	this_norm1 = -this_norm1;
-	//}
-	//if (t2 < 0.0 ){
-	//	this_norm2 = -this_norm2;
-	//}
+	// sense
+	if (t1 < 0.0 ){
+		sgn = 1.0;
+	}
+	if (t2 < 0.0 ){
+		sgn = -1.0;
+	}
 
+	// report
 	if (report){
 		if(t1>0){
 			if (rtPotentialIntersection(t1) ) {
@@ -114,6 +116,7 @@ RT_PROGRAM void intersect(int object_dex)
 				cellfissile = dims[object_dex].is_fissile;
 				normal 		= this_norm1;
 				normal      =  normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
+				sense       = int(-sgn);
 				if(rtReportIntersection(0)){
 					check_second=false;
 				}
@@ -126,6 +129,7 @@ RT_PROGRAM void intersect(int object_dex)
 				cellfissile = dims[object_dex].is_fissile;
 				normal 		= this_norm2;
 				normal      =  normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
+				sense       = int(-sgn);
 				rtReportIntersection(0);
 			}
 		}

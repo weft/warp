@@ -158,6 +158,22 @@ int main(int argc, char* argv[]){
 		//godiva geom
 		type=3;
 		material=1;
+		mins[0]= -1.1;
+		mins[1]= -1.1;
+		mins[2]= -1.1;
+		maxs[0]=  1.1;
+		maxs[1]=  1.1;
+		maxs[2]=  1.1;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,1,0,0,0,0,0);
+
+
+		//godiva geom
+		type=3;
+		material=1;
 		mins[0]= -5.1;
 		mins[1]= -5.1;
 		mins[2]= -5.1;
@@ -321,6 +337,7 @@ int main(int argc, char* argv[]){
 	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
 	hist.plot_geom("cell");  // **MUST** be called after init.
+	return 0;
 	hist.run();
 	hist.write_tally(0);
 	//hist.write_xs_data("xsdata");

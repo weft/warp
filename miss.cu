@@ -28,13 +28,12 @@ RT_PROGRAM void miss()
 		//rtPrintt("Geom miss due to epsilon written as leak.");
 	}
 	
-	payload.cont 				=  0;
+	payload.sense 				=  -9;
 	rxn_buffer[launch_index_in]	=  997; //miss code, same as leak basically
-	payload.cell_first 			=  4294967295;
 	payload.surf_dist 			=  -1.0;
-	payload.hitbuff[0].cell 	=  4294967295;
-	payload.hitbuff[0].mat  	=  0;
-	payload.hitbuff[0].fiss 	=  0;
+	payload.cell 	=  4294967295;
+	payload.mat  	=  4294967295;
+	payload.fiss 	=  0;
 
 	if(trace_type==2){
 		done_buffer[launch_index]	=  1;
