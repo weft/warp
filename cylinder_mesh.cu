@@ -33,7 +33,7 @@ RT_PROGRAM void intersect(int object_dex)
 
 	bool report = false;
 	bool check_second = true;
-	sgn = 1.0;
+	sgn = -1.0;
 
 	if (disc > 0.0f){  // the line intersects the circle
 
@@ -100,11 +100,8 @@ RT_PROGRAM void intersect(int object_dex)
 	}
 
 	// sense
-	if (t1 < 0.0 ){
+	if (t1*t2 < 0.0 ){
 		sgn = 1.0;
-	}
-	if (t2 < 0.0 ){
-		sgn = -1.0;
 	}
 
 	// report

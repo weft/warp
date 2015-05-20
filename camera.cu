@@ -38,6 +38,7 @@ RT_PROGRAM void camera()
 	
 	// init payload flags
 	payload.sense=0;
+	payload.cell = 999999;
 	
 	// init ray
 	float3 ray_direction  = make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
@@ -71,8 +72,9 @@ RT_PROGRAM void camera()
 	while(payload.sense>0){
 		ray_origin = make_float3(payload.x,payload.y,payload.z);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
-		rtTrace(top_object, ray, payload);      
+		rtTrace(top_object, ray, payload);
 	}
+
 	if(trace_type == 2){ //write material to buffer normally, write surface distance
 		matnum_buffer[launch_index] 				= payload.mat;
 		cellnum_buffer[launch_index] 				= payload.cell;
