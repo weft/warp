@@ -1811,7 +1811,7 @@ void whistory::run(){
 				pop_secondaries( NUM_THREADS, Ndataset, RNUM_PER_THREAD, d_completed, d_scanned, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy);
 				//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
 			}
-			printf("CUDA ERROR8, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR8, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			//std::cout << "press enter to continue...\n";
 			//std::cin.ignore();
