@@ -2248,6 +2248,8 @@ void whistory::plot_geom(std::string type_in){
 
 	printf("\e[1;32mPlotting Geometry... \e[m \n");
 
+	srand (time(NULL));
+
 	// type logic
 	char this_filename[50];
 	unsigned* type_array;
@@ -2304,16 +2306,19 @@ void whistory::plot_geom(std::string type_in){
 	N_plot = width*height;
 	dx = (xmax-xmin)/width;
 	dy = (ymax-ymin)/height;
+	float r1, r2;
 	for(int j=0;j<height;j++){
 		for(int k=0;k<width;k++){
-			mu = 2.0*rand()-1.0;
-			theta = 2.0*pi*rand();
+			r1 = (rand()/RAND_MAX);
+			r2 = (rand()/RAND_MAX);
+			mu = 2.0*r1-1.0;
+			theta = 2.0*pi*r2;
 			index = j * width + k;
 			positions_local[index].x = xmin + dx/2 + k*dx;
 			positions_local[index].y = ymin + dy/2 + j*dy;
 			positions_local[index].z = 0.0;
-			positions_local[index].xhat =  0.0;//sqrtf(1-mu*mu) * cosf( theta ); 
-			positions_local[index].yhat =  0.0;//sqrtf(1-mu*mu) * sinf( theta ); 
+			positions_local[index].xhat =  0.0;//sqrtf(1.0-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat =  0.0;//sqrtf(1.0-mu*mu) * sinf( theta ); 
 			positions_local[index].zhat = -1.0;//      mu; 
 			positions_local[index].surf_dist = 9999999999.9; 
 		}
@@ -2336,7 +2341,7 @@ void whistory::plot_geom(std::string type_in){
 	    for (size_t x = 0; x < image.get_width(); ++x)
 	    {
 	    	make_color(colormap,image_local[y*width+x],minnum,maxnum);
-	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	        image[image.get_height()-1-y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
 	    }
 	}
 
@@ -2366,14 +2371,16 @@ void whistory::plot_geom(std::string type_in){
 	dz = (zmax-zmin)/height;
 	for(int j=0;j<height;j++){
 		for(int k=0;k<width;k++){
-			mu = 2.0*rand()-1.0;
-			theta = 2.0*pi*rand();
+			r1 = (rand()/RAND_MAX);
+			r2 = (rand()/RAND_MAX);
+			mu = 2.0*r1-1.0;
+			theta = 2.0*pi*r2;
 			index = j * width + k;
 			positions_local[index].x = xmin + dx/2 + k*dx;
 			positions_local[index].y = 0.0;
 			positions_local[index].z = zmin + dz/2 + j*dz;
-			positions_local[index].xhat =  0.0;//sqrtf(1-mu*mu) * cosf( theta ); 
-			positions_local[index].yhat =  0.0;//sqrtf(1-mu*mu) * sinf( theta ); 
+			positions_local[index].xhat =  0.0;//sqrtf(1.0-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat =  0.0;//sqrtf(1.0-mu*mu) * sinf( theta ); 
 			positions_local[index].zhat = -1.0;//      mu; 
 			positions_local[index].surf_dist = 9999999999.9; 
 		}
@@ -2395,7 +2402,7 @@ void whistory::plot_geom(std::string type_in){
 	    for (size_t x = 0; x < image.get_width(); ++x)
 	    {
 	    	make_color(colormap,image_local[y*width+x],minnum,maxnum);
-	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	        image[image.get_height()-1-y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
 	    }
 	}
 
@@ -2425,14 +2432,16 @@ void whistory::plot_geom(std::string type_in){
 	dz = (zmax-zmin)/height;
 	for(int j=0;j<height;j++){
 		for(int k=0;k<width;k++){
-			mu = 2.0*rand()-1.0;
-			theta = 2.0*pi*rand();
+			r1 = (rand()/RAND_MAX);
+			r2 = (rand()/RAND_MAX);
+			mu = 2.0*r1-1.0;
+			theta = 2.0*pi*r2;
 			index = j * width + k;
 			positions_local[index].x = 0.0;
 			positions_local[index].y = ymin + dy/2 + k*dy;
 			positions_local[index].z = zmin + dz/2 + j*dz;
-			positions_local[index].xhat =  0.0;//sqrtf(1-mu*mu) * cosf( theta ); 
-			positions_local[index].yhat =  0.0;//sqrtf(1-mu*mu) * sinf( theta ); 
+			positions_local[index].xhat =  0.0;//sqrtf(1.0-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat =  0.0;//sqrtf(1.0-mu*mu) * sinf( theta ); 
 			positions_local[index].zhat = -1.0;//      mu; 
 			positions_local[index].surf_dist = 9999999999.9; 
 		}
@@ -2454,7 +2463,7 @@ void whistory::plot_geom(std::string type_in){
 	    for (size_t x = 0; x < image.get_width(); ++x)
 	    {
 	    	make_color(colormap,image_local[y*width+x],minnum,maxnum);
-	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	        image[image.get_height()-1-y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
 	    }
 	}
 

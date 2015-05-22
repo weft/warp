@@ -36,7 +36,7 @@ RT_PROGRAM void intersect(int object_dex)
 
     // compute sign, if true, points should be outside.  if product is positive, point lies on same side of two parallel planes
     if ( t0*t1 > 0 ){
-      sgn = -1.0;   // switch sign of normal to inward
+      sgn = -1.0;   // switch sign of normal to inward, since point is outside of sphere
     }
     else{
       sgn =  1.0;

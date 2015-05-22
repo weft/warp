@@ -39,9 +39,9 @@ RT_PROGRAM void intersect(int object_dex)
   float tmax  = fminf( far );
   float sgn   = 0;
 
-    // compute sign, if true, points should be outside.  if product is positive, point lies on same side of two parallel planes
+    // compute sign, if true, points should be outside.  if one product is positive, point lies on same side of two parallel planes, meaning it must be outside the box
   if ( (t0.x*t1.x > 0) | (t0.y*t1.y > 0) | (t0.z*t1.z > 0) ){
-    sgn = -1.0;   // switch sign of normal to inward
+    sgn = -1.0;   // switch sign of normal to inward, since point is outside!
   }
   else{
     sgn =  1.0;

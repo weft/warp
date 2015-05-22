@@ -99,9 +99,9 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		//printf("a(%u,1:9)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z,x+(surf_dist * xhat),y+(surf_dist * yhat),z+(surf_dist * zhat),norm[0],norm[1],norm[2]);
 		// enforce BC
 		if (enforce_BC == 1){  // black BC
-			x += (surf_dist * xhat  +  1.2 * epsilon * norm[0]);
-			y += (surf_dist * yhat  +  1.2 * epsilon * norm[1]);
-			z += (surf_dist * zhat  +  1.2 * epsilon * norm[2]);
+			x += (surf_dist * xhat + 4.0*epsilon*xhat);// +  1.2 * epsilon * norm[0]);
+			y += (surf_dist * yhat + 4.0*epsilon*yhat);// +  1.2 * epsilon * norm[1]);
+			z += (surf_dist * zhat + 4.0*epsilon*zhat);// +  1.2 * epsilon * norm[2]);
 			isdone = 1;
 			this_rxn  = 999;
 			tope=999999997;  // make leaking a different isotope than resampling
@@ -127,19 +127,27 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			tope=999999996;  // make reflection a different isotope 
 		}
 		else{
-			x += (surf_dist * xhat  +  1.2 * epsilon * norm[0]);
-			y += (surf_dist * yhat  +  1.2 * epsilon * norm[1]);
-			z += (surf_dist * zhat  +  1.2 * epsilon * norm[2]);
+			x += (surf_dist * xhat + epsilon*xhat);//+  1.2 * epsilon * norm[0]);
+			y += (surf_dist * yhat + epsilon*yhat);//+  1.2 * epsilon * norm[1]);
+			z += (surf_dist * zhat + epsilon*zhat);//+  1.2 * epsilon * norm[2]);
 			this_rxn = 800;
 			isdone = 0;
 			tope=999999998;  // make resampling a different isotope than mis-sampling
 		}
 	}
 	else{  //move to sampled distance, null reaction
-		x += samp_dist * xhat;
-		y += samp_dist * yhat;
-		z += samp_dist * zhat;
-		this_rxn = 0;
+		if (diff < epsilon){
+			x += (samp_dist-epsilon) * xhat;
+			y += (samp_dist-epsilon) * yhat;
+			z += (samp_dist-epsilon) * zhat;
+			this_rxn = 0;
+		}
+		else{
+			x += samp_dist * xhat;
+			y += samp_dist * yhat;
+			z += samp_dist * zhat;
+			this_rxn = 0;
+		}
 	}
 
 	//if(this_rxn==800){printf("resmapled tid %u xyz % 6.4E % 6.4E % 6.4E\n",tid,x,y,z);}

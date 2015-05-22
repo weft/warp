@@ -46,10 +46,10 @@ RT_PROGRAM void intersect(int object_dex)
 		int1 = ray.direction * t1 + xformed_origin;
 		int2 = ray.direction * t2 + xformed_origin;
 
-		float this_norm1_mag = sqrtf( int1.x*int1.x + int1.y*int1.y );
-		float this_norm2_mag = sqrtf( int2.x*int2.x + int2.y*int2.y );
-        this_norm1 = make_float3( -int1.x/this_norm1_mag , -int1.y/this_norm1_mag , 0 );
-		this_norm2 = make_float3(  int2.x/this_norm2_mag ,  int2.y/this_norm2_mag , 0 );
+		//float this_norm1_mag = sqrtf( int1.x*int1.x + int1.y*int1.y );
+		//float this_norm2_mag = sqrtf( int2.x*int2.x + int2.y*int2.y );
+        this_norm1 = make_float3(  int1.x/radius ,  int1.y/radius , 0 );
+		this_norm2 = make_float3(  int2.x/radius ,  int2.y/radius , 0 );
 
 		//rtPrintf("zmin %6.4E zmax %6.4E t1 %6.4E t2 %6.4E z1 %6.4E z2 %6.4E report %u\n",zmin,zmax,t1,t2,z1,z2,report);
 
@@ -82,25 +82,18 @@ RT_PROGRAM void intersect(int object_dex)
 
 		report = true;
 
-		t1 = fminf((zmax - xformed_origin.z) / ray.direction.z , (zmin - xformed_origin.z) / ray.direction.z);
-		t2 = fmaxf((zmax - xformed_origin.z) / ray.direction.z , (zmin - xformed_origin.z) / ray.direction.z);
+		t1 = (zmax - xformed_origin.z) / ray.direction.z;
+		t2 = (zmin - xformed_origin.z) / ray.direction.z;
 		
 		int1 = ray.direction * t1 + xformed_origin;
 		int2 = ray.direction * t2 + xformed_origin;	
 
-		if(int1.z == zmin){
-			this_norm1 = make_float3(0,0,1);
-			this_norm2 = make_float3(0,0,-1);
-		}
-		else{
-			this_norm1 = make_float3(0,0,-1);
-			this_norm2 = make_float3(0,0,1);
-		}
-
+		this_norm1 = make_float3(0,0,-1);
+		this_norm2 = make_float3(0,0,1);
 	}
 
 	// sense
-	if (t1*t2 < 0.0 ){
+	if (t1*t2 < 0.0 ){ // neg means inside
 		sgn = 1.0;
 	}
 
@@ -112,7 +105,6 @@ RT_PROGRAM void intersect(int object_dex)
 				cellmat     = dims[object_dex].matnum;
 				cellfissile = dims[object_dex].is_fissile;
 				normal 		= this_norm1;
-				normal      =  normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
 				sense       = int(-sgn);
 				if(rtReportIntersection(0)){
 					check_second=false;
@@ -125,7 +117,6 @@ RT_PROGRAM void intersect(int object_dex)
 				cellmat     = dims[object_dex].matnum;
 				cellfissile = dims[object_dex].is_fissile;
 				normal 		= this_norm2;
-				normal      =  normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
 				sense       = int(-sgn);
 				rtReportIntersection(0);
 			}

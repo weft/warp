@@ -172,7 +172,7 @@ int main(int argc, char* argv[]){
 
 		//godiva geom
 		type=3;
-		material=12
+		material=1;
 		mins[0]= -2.1;
 		mins[1]= -2.1;
 		mins[2]= -2.1;
@@ -214,6 +214,21 @@ int main(int argc, char* argv[]){
 		origin[2]=0.0;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
 		geom.add_transform(prim_id,400,0,0,0,0,0);
+
+		//godiva geom
+		type=0;
+		material=1;
+		mins[0]= -0.1;
+		mins[1]= -0.1;
+		mins[2]= -0.1;
+		maxs[0]=  0.4;
+		maxs[1]=  0.1;
+		maxs[2]=  0.1;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,500,0,0,4.5,0,0);
 
 
 		//godiva geom

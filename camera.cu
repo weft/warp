@@ -51,6 +51,7 @@ RT_PROGRAM void camera()
 	// first trace to find closest hit, set norm/distance, set bc flag
 	rtTrace(top_object, ray, payload);
 	sense = payload.sense;
+	//if(launch_index_in==98427){rtPrintf("sense %d playload.sense %d playload.cell %u xyz %6.4f %6.4f %6.4f\n",sense,payload.sense,payload.cell,payload.x,payload.y,payload.z);}
 	if(trace_type==2){
 		positions_buffer[launch_index].surf_dist = payload.surf_dist; 
 		positions_buffer[launch_index].norm[0]   = payload.norm[0];
@@ -66,13 +67,14 @@ RT_PROGRAM void camera()
 	}
 
 	// find entering cell otherwise, trace will write, use downward z 
-	ray_direction  = make_float3(0.0,0.0,-1.0);
-	while(sense>=0 && payload.cell != outer_cell){
-		ray_origin = make_float3(payload.x,payload.y,payload.z);
+	while( (sense>=0) ){
+		ray_origin = make_float3(payload.x+epsilon*ray_direction.x,payload.y+epsilon*ray_direction.y,payload.z+epsilon*ray_direction.z);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);
-		sense += payload.sense;
+		sense = sense + payload.sense;
+		//if(launch_index_in==98427){rtPrintf("sense %d \n",sense);}
 	}
+	//if(payload.cell == outer_cell){rtPrintf("outer cell sense %d\n",sense);}
 
 	// write cell/material numbers to buffer
 	if(trace_type == 2){ //write material to buffer normally, write surface distance
