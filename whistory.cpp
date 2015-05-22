@@ -2317,9 +2317,9 @@ void whistory::plot_geom(std::string type_in){
 			positions_local[index].x = xmin + dx/2 + k*dx;
 			positions_local[index].y = ymin + dy/2 + j*dy;
 			positions_local[index].z = 0.0;
-			positions_local[index].xhat =  0.0;//sqrtf(1.0-mu*mu) * cosf( theta ); 
-			positions_local[index].yhat =  0.0;//sqrtf(1.0-mu*mu) * sinf( theta ); 
-			positions_local[index].zhat = -1.0;//      mu; 
+			positions_local[index].xhat = sqrtf(1.0-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat = sqrtf(1.0-mu*mu) * sinf( theta ); 
+			positions_local[index].zhat =       mu; 
 			positions_local[index].surf_dist = 9999999999.9; 
 		}
 	}
@@ -2379,9 +2379,9 @@ void whistory::plot_geom(std::string type_in){
 			positions_local[index].x = xmin + dx/2 + k*dx;
 			positions_local[index].y = 0.0;
 			positions_local[index].z = zmin + dz/2 + j*dz;
-			positions_local[index].xhat =  0.0;//sqrtf(1.0-mu*mu) * cosf( theta ); 
-			positions_local[index].yhat =  0.0;//sqrtf(1.0-mu*mu) * sinf( theta ); 
-			positions_local[index].zhat = -1.0;//      mu; 
+			positions_local[index].xhat = sqrtf(1.0-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat = sqrtf(1.0-mu*mu) * sinf( theta ); 
+			positions_local[index].zhat =       mu; 
 			positions_local[index].surf_dist = 9999999999.9; 
 		}
 	}
@@ -2440,9 +2440,9 @@ void whistory::plot_geom(std::string type_in){
 			positions_local[index].x = 0.0;
 			positions_local[index].y = ymin + dy/2 + k*dy;
 			positions_local[index].z = zmin + dz/2 + j*dz;
-			positions_local[index].xhat =  0.0;//sqrtf(1.0-mu*mu) * cosf( theta ); 
-			positions_local[index].yhat =  0.0;//sqrtf(1.0-mu*mu) * sinf( theta ); 
-			positions_local[index].zhat = -1.0;//      mu; 
+			positions_local[index].xhat = sqrtf(1.0-mu*mu) * cosf( theta ); 
+			positions_local[index].yhat = sqrtf(1.0-mu*mu) * sinf( theta ); 
+			positions_local[index].zhat =       mu; 
 			positions_local[index].surf_dist = 9999999999.9; 
 		}
 	}
