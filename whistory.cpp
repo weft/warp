@@ -1769,30 +1769,30 @@ void whistory::run(){
 			
 			// find what material we are in and nearest surface distance
 			trace(2, Nrun);
-			printf("CUDA ERROR1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			//find the main E grid index
 			//find_E_grid_index_quad( NUM_THREADS, N,  qnodes_depth,  qnodes_width, d_active, d_qnodes_root, d_E, d_index, d_done);
 			find_E_grid_index( NUM_THREADS, Nrun, xs_length_numbers[1],  d_remap, d_xs_data_main_E_grid, d_E, d_index, d_rxn);
-			printf("CUDA ERROR2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
 			macroscopic( NUM_THREADS, Nrun,  n_isotopes, n_materials, MT_columns, outer_cell, d_remap, d_space, d_isonum, d_cellnum, d_index, d_matnum, d_rxn, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_number_density_matrix, d_done);
-			printf("CUDA ERROR3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			// run tally kernel to compute spectra
 			if(converged){
 				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn);
 			}
-			printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			// run microscopic kernel to find reaction type
 			microscopic( NUM_THREADS, Nrun, n_isotopes, MT_columns, d_remap, d_isonum, d_index, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_xs_MT_numbers_total, d_xs_MT_numbers, d_xs_data_Q, d_rxn, d_Q, d_done);
-			printf("CUDA ERROR5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR5, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			// remap threads to still active data
 			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
-			printf("CUDA ERROR6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			// concurrent calls to do escatter/iscatter/abs/fission
 			cudaThreadSynchronize();
@@ -1802,7 +1802,7 @@ void whistory::run(){
 			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
 			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  
 			cudaDeviceSynchronize();
-			printf("CUDA ERROR7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+			//printf("CUDA ERROR7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 
 			if(RUN_FLAG==0){  //fixed source
 				// pop secondaries back in
@@ -2022,7 +2022,7 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 		*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N;
 	}
 
-	printf("N=%u\n",*num_active);
+	//printf("N=%u\n",*num_active);
 
 	// debug
 	//if(*num_active!=edges[8]-1){
