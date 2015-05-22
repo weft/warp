@@ -33,7 +33,7 @@ RT_PROGRAM void camera()
 
 	// declare important stuff
 	int                 sense = 0;
-	float               epsilon=5.0e-4; 	
+	float               epsilon=1.0e-4; 	
 	intersection_point  payload;
 	
 	// init payload flags
@@ -50,7 +50,6 @@ RT_PROGRAM void camera()
 
 	// first trace to find closest hit, set norm/distance, set bc flag
 	rtTrace(top_object, ray, payload);
-	sense = payload.sense;
 	//if(launch_index_in==98427){rtPrintf("sense %d playload.sense %d playload.cell %u xyz %6.4f %6.4f %6.4f\n",sense,payload.sense,payload.cell,payload.x,payload.y,payload.z);}
 	if(trace_type==2){
 		positions_buffer[launch_index].surf_dist = payload.surf_dist; 
@@ -66,8 +65,11 @@ RT_PROGRAM void camera()
 		}
 	}
 
-	// find entering cell otherwise, trace will write, use downward z 
-	while( (sense>=0) ){
+	// then find entering cell, use downward z to make problems with high x-y density faster
+	ray_direction = make_float3(0,0,-1);
+	rtTrace(top_object, ray, payload);
+	sense = payload.sense;
+	while( (sense>=0) & (outer_cell!=payload.cell)){
 		ray_origin = make_float3(payload.x+epsilon*ray_direction.x,payload.y+epsilon*ray_direction.y,payload.z+epsilon*ray_direction.z);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);

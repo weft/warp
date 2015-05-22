@@ -22,7 +22,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float 		cum_prob 		= 0.0;
 	float 		diff			= 0.0;
 	unsigned 	tope 			= 999999999;
-	float 		epsilon 		= 5.0e-4;
+	float 		epsilon 		= 1.0e-4;
 	unsigned 	isdone 			= 0;
 	float 		dotp 			= 0.0;
 
@@ -135,11 +135,11 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			tope=999999998;  // make resampling a different isotope than mis-sampling
 		}
 	}
-	else{  //move to sampled distance, null reaction
-		if (diff < epsilon){
-			x += (samp_dist-epsilon) * xhat;
-			y += (samp_dist-epsilon) * yhat;
-			z += (samp_dist-epsilon) * zhat;
+	else{  //move to sampled distance (adjust if within epsilon of boundary), null reaction
+		if (diff <= epsilon){
+			x += (samp_dist - 1.1*epsilon) * xhat;
+			y += (samp_dist - 1.1*epsilon) * yhat;
+			z += (samp_dist - 1.1*epsilon) * zhat;
 			this_rxn = 0;
 		}
 		else{
