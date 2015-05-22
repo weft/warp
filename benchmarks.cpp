@@ -477,12 +477,12 @@ int main(int argc, char* argv[]){
 		//pin cell
 		type=1;
 		material=1;
-		mins[0]=-10;
-		mins[1]=-10;
-		mins[2]=-25;
-		maxs[0]= 10; 
-		maxs[1]= 10; 
-		maxs[2]= 25;
+		mins[0]=-2;
+		mins[1]=-2;
+		mins[2]=-20;
+		maxs[0]= 2; 
+		maxs[1]= 2; 
+		maxs[2]= 20;
 		origin[0]=0.0;
 		origin[1]=0.0;
 		origin[2]=0.0;
@@ -553,19 +553,34 @@ int main(int argc, char* argv[]){
 		runtype = "fixed";
 
 		//fuel 
-		type=2;
+		type=1;
 		material=1;
-		mins[0]=-25.0;
-		mins[1]=-25.0;
+		mins[0]=-2.0;
+		mins[1]=-2.0;
 		mins[2]=-25.0;
-		maxs[0]= 25.0;
-		maxs[1]= 25.0;
+		maxs[0]= 2.0;
+		maxs[1]= 2.0;
 		maxs[2]= 25.0;
 		origin[0]=0.0;
 		origin[1]=0.0;
 		origin[2]=0.0;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
 		geom.add_transform(prim_id,1,0,0,0,0,0);
+
+		//clad 
+		type=1;
+		material=1;
+		mins[0]=-3.0;
+		mins[1]=-3.0;
+		mins[2]=-26.0;
+		maxs[0]= 3.0;
+		maxs[1]= 3.0;
+		maxs[2]= 26.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,400,0,0,0,0,0);
 
 		//water 
 		type=0;
@@ -756,7 +771,6 @@ int main(int argc, char* argv[]){
 	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
 	hist.plot_geom("cell");  // **MUST** be called after init.
-	return 0;
 	hist.run();
 	hist.write_tally(0);
 	//hist.write_xs_data("xsdata");

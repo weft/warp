@@ -94,7 +94,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	diff = surf_dist - samp_dist;
 	//printf("b(%u,:)=[%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z);
 	//printf("a(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
-	if( diff < 0.0 ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
+	if( diff < epsilon ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
 		//printf("a(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
 		//printf("a(%u,1:9)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z,x+(surf_dist * xhat),y+(surf_dist * yhat),z+(surf_dist * zhat),norm[0],norm[1],norm[2]);
 		// enforce BC
@@ -126,28 +126,20 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			isdone = 0;
 			tope=999999996;  // make reflection a different isotope 
 		}
-		else{
-			x += (surf_dist * xhat + epsilon*xhat);//+  1.2 * epsilon * norm[0]);
-			y += (surf_dist * yhat + epsilon*yhat);//+  1.2 * epsilon * norm[1]);
-			z += (surf_dist * zhat + epsilon*zhat);//+  1.2 * epsilon * norm[2]);
+		else{ // push through surface, set resample
+			x += (surf_dist * xhat + 1.2*epsilon*xhat);//+  1.2 * epsilon * norm[0]);
+			y += (surf_dist * yhat + 1.2*epsilon*yhat);//+  1.2 * epsilon * norm[1]);
+			z += (surf_dist * zhat + 1.2*epsilon*zhat);//+  1.2 * epsilon * norm[2]);
 			this_rxn = 800;
 			isdone = 0;
 			tope=999999998;  // make resampling a different isotope than mis-sampling
 		}
 	}
 	else{  //move to sampled distance (adjust if within epsilon of boundary), null reaction
-		if (diff <= epsilon){
-			x += (samp_dist - 1.1*epsilon) * xhat;
-			y += (samp_dist - 1.1*epsilon) * yhat;
-			z += (samp_dist - 1.1*epsilon) * zhat;
-			this_rxn = 0;
-		}
-		else{
 			x += samp_dist * xhat;
 			y += samp_dist * yhat;
 			z += samp_dist * zhat;
 			this_rxn = 0;
-		}
 	}
 
 	//if(this_rxn==800){printf("resmapled tid %u xyz % 6.4E % 6.4E % 6.4E\n",tid,x,y,z);}
