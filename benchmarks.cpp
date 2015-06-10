@@ -502,7 +502,7 @@ int main(int argc, char* argv[]){
 		origin[1]=0.0;
 		origin[2]=0.0;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.add_transform(prim_id,2,0,0,0,0,0);
+		geom.add_transform(prim_id,200,0,0,0,0,0);
 
 		//water 
 		type=0;
