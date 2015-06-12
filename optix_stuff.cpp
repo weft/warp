@@ -420,12 +420,12 @@ void optix_stuff::make_geom_xform_common(wgeometry problem_geom){
 		material -> setClosestHitProgram( 0, closest_hit_program );
 
 		//set program variables for this instance
-    		this_geom_min = this_geom["mins"];
-    		this_geom_max = this_geom["maxs"];
-    		this_geom_min -> set3fv( problem_geom.primitives[j].min );
-    		this_geom_max -> set3fv( problem_geom.primitives[j].max );
+    	this_geom_min = this_geom["mins"];
+    	this_geom_max = this_geom["maxs"];
+    	this_geom_min -> set3fv( problem_geom.primitives[j].min );
+    	this_geom_max -> set3fv( problem_geom.primitives[j].max );
 
-    		//create instances
+    	//create instances
 		ginst = context -> createGeometryInstance();
 		ginst -> setGeometry( this_geom );
 		ginst -> setMaterialCount( 1u );

@@ -11,6 +11,7 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(unsigned,  cellnum,     attribute cell_num, );
 rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
+rtDeclareVariable(unsigned,  sense      , attribute cell_sense, );
 rtDeclareVariable(float3, normal, attribute normal, );
 
 
@@ -35,7 +36,7 @@ RT_PROGRAM void intersect(int object_dex)
 
     // compute sign, if true, points should be outside.  if product is positive, point lies on same side of two parallel planes
     if ( t0*t1 > 0 ){
-      sgn = -1.0;   // switch sign of normal to inward
+      sgn = -1.0;   // switch sign of normal to inward, since point is outside of sphere
     }
     else{
       sgn =  1.0;
@@ -46,7 +47,7 @@ RT_PROGRAM void intersect(int object_dex)
         cellmat     = dims[object_dex].matnum;
         cellfissile = dims[object_dex].is_fissile;
         normal      = (xformed_origin + (t0 * ray.direction) ) / radius;
-        //normal      =  sgn * normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
+        sense       = int(-sgn);
        if(rtReportIntersection(0))
          check_second = false;
     } 
@@ -57,7 +58,7 @@ RT_PROGRAM void intersect(int object_dex)
          cellmat     = dims[object_dex].matnum;
          cellfissile = dims[object_dex].is_fissile;
          normal      = (xformed_origin + (t1 * ray.direction)) / radius;
-         //normal      = sgn * normal / sqrtf(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
+         sense       = int(-sgn);
         rtReportIntersection(0);
       }
     }

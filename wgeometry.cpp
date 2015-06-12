@@ -194,6 +194,7 @@ unsigned wgeometry::get_outer_cell_type(){
 			}
 		}
 	}
+	return 4294967295;
 }
 unsigned wgeometry::get_minimum_cell(){
 	unsigned mincell=-1;
@@ -310,7 +311,7 @@ int wgeometry::check(){
 	notfound = 1;
 	for (unsigned k=0;k<n_primitives;k++){
 		for (unsigned j=0;j<primitives[k].n_transforms;j++){	
-			if(primitives[k].transforms[j].cellnum==outer_cell & notfound){
+			if((primitives[k].transforms[j].cellnum==outer_cell) & notfound){
 				notfound=0;
 			}
 		}
@@ -358,6 +359,8 @@ unsigned wgeometry::get_outer_cell_dims(float * input_array){
 			}
 		}
 	}
+
+	return 4294967295;
 
 }
 unsigned wgeometry::get_material_count(){
@@ -539,11 +542,11 @@ void wgeometry::make_hex_array(unsigned index, int n, float x, float y, float ph
 void wgeometry::delete_transform(unsigned index, unsigned element){
 
 	if(index>=primitives.size()){
-		printf("Maximum primitive index = %d.  Nothing done.\n",primitives.size()-1);
+		printf("Maximum primitive index = %lu.  Nothing done.\n",primitives.size()-1);
 		return;
 	}
 	else if(element>=primitives[index].transforms.size()){
-		printf("Primitve %d, maximum transform index = %d.  Nothing done.\n",index,primitives[index].transforms.size()-1);
+		printf("Primitve %u, maximum transform index = %lu.  Nothing done.\n",index,primitives[index].transforms.size()-1);
 		return;
 	}
 	primitives[index].transforms.erase(primitives[index].transforms.begin()+element,primitives[index].transforms.begin()+element+1);
@@ -555,7 +558,7 @@ void wgeometry::delete_transform(unsigned index, unsigned element){
 void wgeometry::delete_primitive(unsigned index){
 
 	if(index>=primitives.size()){
-		printf("Maximum primitive index = %d\n.  Nothing done.\n",primitives.size()-1);
+		printf("Maximum primitive index = %lu\n.  Nothing done.\n",primitives.size()-1);
 		return;
 	}
 	primitives[index].~primitive();

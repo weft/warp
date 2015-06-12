@@ -71,18 +71,6 @@ struct qnode_host{
 };
 
 /**
- * \struct hit_buffer datadef.h
- * \brief contains information for the hit buffer
- * \details structure that contains cell number, material number, and fissile flag for the hit 
- * buffer.
- */
-struct hit_buffer {
-    int     cell; /**< cell number */
-    int     mat;  /**< material number */
-    int     fiss; /**< fissile flag */
-};
-
-/**
  * \struct intersection_point datadef.h
  * \brief contains information pertinent to an intersection point
  * \details 3D cartesian coordinates of intersection point, distance to nearest surface, first cell 
@@ -93,11 +81,11 @@ struct intersection_point {
     float       y; /**< y-coordinate */
     float       z; /**< z-coordinate */
     float       surf_dist;  /**< distance to nearest surface */
-    int         cell_first; /**< number of first cell to potentially enter */
-    int         cont;       /**< continuity flag */
-    hit_buffer  hitbuff[10]; /**< hit buffer array */
-    unsigned    buff_index;  /**< index in hit buffer array */
-    float       norm[3];
+    int         cell; /**< cell number */
+    int         mat;  /**< material number */
+    int         fiss; /**< fissile flag */
+    float       norm[3];    /**< most recent normal */
+    int         sense;   /**< most recent cell sense */
 };
 
 /**
