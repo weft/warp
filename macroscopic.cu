@@ -48,21 +48,24 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float macro_t_total = 0.0;
 	float e0 = main_E_grid[dex];
 	float e1 = main_E_grid[dex+1];
-	float t0,t1,number_desity;
+	float t0,t1,number_density;
 
 	//__syncthreads();
 
 	//if(dex>500){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
+	if(this_mat<0 | this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
+	if(n_isotopes<0 | n_isotopes>9){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
+	if(n_columns<0 | n_columns>){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
 
 	// compute the total macroscopic cross section for this material
 	for(int k=0; k<n_isotopes; k++){
-		number_desity = material_matrix[n_isotopes*this_mat+k];
-		if(number_desity > 0.0){
+		number_density = material_matrix[n_isotopes*this_mat+k];
+		if(number_density > 0.0){
 			//lienarly interpolate
 			//printf("val % 6.4E\n",s_material_matrix[n_isotopes*this_mat + k]);
 			t0 = xs_data_MT[n_columns* dex    + k];     //dex is the row number
 			t1 = xs_data_MT[n_columns*(dex+1) + k];
-			macro_t_total += ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_desity;    //interpolated micro times number density
+			macro_t_total += ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density;    //interpolated micro times number density
 			//printf("mat %u - density of tope %u = %6.3E\n",this_mat,k,material_matrix[n_isotopes*this_mat+k]);
 		}
 	}
@@ -75,12 +78,12 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 
 	// determine the isotope which the reaction occurs
 	for(int k=0; k<n_isotopes; k++){
-		number_desity = material_matrix[n_isotopes*this_mat+k];
-		if(number_desity > 0.0){
+		number_density = material_matrix[n_isotopes*this_mat+k];
+		if(number_density > 0.0){
 			//lienarly interpolate
 			t0 = xs_data_MT[n_columns* dex    + k];     
 			t1 = xs_data_MT[n_columns*(dex+1) + k];
-			cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_desity ) / macro_t_total;
+			cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density ) / macro_t_total;
 			if( k==n_isotopes-1 & cum_prob<1.0){cum_prob=1.0;}  //sometimes roundoff makes this a problem
 			if( rn1 <= cum_prob){
 				// reactions happen in isotope k
