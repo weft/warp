@@ -53,16 +53,17 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	//__syncthreads();
 
 	//if(dex>500){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
-	if(this_mat<0 | this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
-	if(n_isotopes<0 | n_isotopes>9){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
-	if(n_columns<0 | n_columns>){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
+	//if(this_mat<0 | this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
+	//if(n_isotopes<0 | n_isotopes>9){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
+	//if(n_columns<0 | n_columns>376){printf("N_COLUMNS INVALID, n_columns = %u\n",n_columns);}
+	//if(tid_in >= 370899 & tid_in <=370901){printf("this_mat %u n_isotopes %u n_columns %u dex %u\n", this_mat, n_isotopes, n_columns, dex);}
 
 	// compute the total macroscopic cross section for this material
 	for(int k=0; k<n_isotopes; k++){
 		number_density = material_matrix[n_isotopes*this_mat+k];
 		if(number_density > 0.0){
 			//lienarly interpolate
-			//printf("val % 6.4E\n",s_material_matrix[n_isotopes*this_mat + k]);
+			//printf("val % 6.4E\n",material_matrix[n_isotopes*this_mat + k]);
 			t0 = xs_data_MT[n_columns* dex    + k];     //dex is the row number
 			t1 = xs_data_MT[n_columns*(dex+1) + k];
 			macro_t_total += ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density;    //interpolated micro times number density
@@ -93,7 +94,26 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		}
 	}
 	if(tope == 999999999){ 
-		printf("macro - ISOTOPE NOT SAMPLED CORRECTLY! tope=%u E=%10.8E dex=%u mat=%u rn=%u cum_prob=%12.10E s_mm=%12.10E\n",tope, this_E, dex, this_mat, rn, cum_prob,material_matrix[n_isotopes*this_mat + tope]);
+		printf("macro - ISOTOPE NOT SAMPLED CORRECTLY!  Resampling with scaled probability... tid %u \n",tid);
+		rn1 = rn1 * cum_prob;
+		for(int k=0; k<n_isotopes; k++){
+               		number_density = material_matrix[n_isotopes*this_mat+k];
+                	if(number_density > 0.0){
+                	        //lienarly interpolate
+                	        t0 = xs_data_MT[n_columns* dex    + k];
+                	        t1 = xs_data_MT[n_columns*(dex+1) + k];
+                	        cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density ) / macro_t_total;
+                	        if( k==n_isotopes-1 & cum_prob<1.0){cum_prob=1.0;}  //sometimes roundoff makes this a problem
+                	        if( rn1 <= cum_prob){
+                	                // reactions happen in isotope k
+                	                tope = k;
+                	                break;
+                	        }
+                	}
+        	}
+	}
+	if(tope == 999999999){
+                printf("macro - ISOTOPE  NOT SAMPLED CORRECTLY AFTER RESAMPLING WITH SCALED PROBABILITY! tid=%u \n",tid);
 	}
 
 	// do surf/samp compare
