@@ -28,7 +28,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 
 	// load from arrays
 	unsigned 	this_mat 		= matnum[tid];
-	unsigned 	dex 			= index[tid];   
+	unsigned 	dex 			= index[tid];  
 	unsigned 	rn 				= rn_bank[tid];
 	//unsigned 	cell 			= cellnum[tid];
 	float 		this_E  		= E[tid];
@@ -41,15 +41,18 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float		surf_dist 		= space[tid].surf_dist;
 	unsigned 	enforce_BC 		= space[tid].enforce_BC;  
 	memcpy(norm,space[tid].norm,3*sizeof(float));
-	
-
+//	norm[0]=0;
+//	norm[1]=0;
+//	norm[2]=0;
 
 	float macro_t_total = 0.0;
 	float e0 = main_E_grid[dex];
 	float e1 = main_E_grid[dex+1];
 	float t0,t1,number_desity;
 
-	__syncthreads();
+	//__syncthreads();
+
+	//if(dex>500){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
 
 	// compute the total macroscopic cross section for this material
 	for(int k=0; k<n_isotopes; k++){
@@ -63,6 +66,8 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			//printf("mat %u - density of tope %u = %6.3E\n",this_mat,k,material_matrix[n_isotopes*this_mat+k]);
 		}
 	}
+
+	//if(N==1228932){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
 
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;

@@ -38,7 +38,6 @@ __global__ void microscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_c
 	float 		this_Q 			= 0.0;
 	unsigned 	k 				= 0;
 	
-	//printf("tid %u dex %u topes %u rxn %u this_tope %u\n",tid,dex,n_isotopes,this_rxn,this_tope);
 
 	if (this_tope == 0){  //first isotope
 		tope_beginning = n_isotopes + 0;
@@ -49,7 +48,6 @@ __global__ void microscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_c
 		tope_ending    = n_isotopes + xs_MT_numbers_total[this_tope]-1;
 	}
 
-	//printf("tope,begin,end = %u %u %u\n",this_tope,tope_beginning,tope_ending);
 
 	float xs_total = 0.0;
 	float e0 = main_E_grid[dex];
@@ -97,8 +95,6 @@ __global__ void microscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_c
 		}
 	}
 
-
-	// write results out
 	//if( this_rxn >= 811 & this_rxn<850 & this_rxn!=818 ){printf("microscopic sampled tid %u rxn %d energy %6.4E\n",tid,this_rxn,this_E);}
 	//printf("%u\n",this_rxn);
 	if(this_rxn == 3 | this_rxn==4 | this_rxn ==5 | this_rxn ==10 | this_rxn ==27){

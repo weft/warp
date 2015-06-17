@@ -424,7 +424,7 @@ int main(int argc, char* argv[]){
 		topes[0] = "92235.03c";
 		topes[1] = "92238.03c";
 		topes[2] =  "8016.03c" ;
-		topes[3] =  "1002.03c" ;
+		topes[3] =  "1001.03c" ;
 		topes[4] = "40090.03c";
  		topes[5] = "40091.03c";
  		topes[6] = "40092.03c";
@@ -507,11 +507,11 @@ int main(int argc, char* argv[]){
 		//water 
 		type=0;
 		material=2;
-		mins[0]=-5.0;
-		mins[1]=-5.0;
+		mins[0]=-50.0;
+		mins[1]=-50.0;
 		mins[2]=-25.0;
-		maxs[0]= 5.0;
-		maxs[1]= 5.0;
+		maxs[0]= 50.0;
+		maxs[1]= 50.0;
 		maxs[2]= 25.0;
 		origin[0]=0.0;
 		origin[1]=0.0;
@@ -757,7 +757,7 @@ int main(int argc, char* argv[]){
 
 	whistory hist ( N , geom );
 	hist.set_print_level(2);
-	hist.set_device(0);
+	hist.set_device(1);
 	hist.init();
 	hist.print_xs_data();
 	hist.print_materials_table();

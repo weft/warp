@@ -104,8 +104,8 @@ __global__ void pop_secondaries_kernel(unsigned N, unsigned RNUM_PER_THREAD, uns
 	if (sampled_E >= Emax){sampled_E = Emax * 0.9;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
 	if (sampled_E <= Emin){sampled_E = Emin * 1.1;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
 
-	// sync before writes
-	__syncthreads();
+	// sync before writes, NOT GOOD AFTER RETURN STATEMENT
+	//__syncthreads();
 
 	// set self data
 	E    [ tid ] 		= sampled_E;
@@ -191,7 +191,7 @@ __global__ void pop_secondaries_kernel(unsigned N, unsigned RNUM_PER_THREAD, uns
 
 
 		// sync before writes
-		__syncthreads();
+		//__syncthreads();
 
 		// set data
 		E    [ data_dex ] 				= sampled_E;

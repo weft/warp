@@ -40,13 +40,13 @@ __global__ void find_E_grid_index_kernel(unsigned N, unsigned N_energies , unsig
 
 		// edge checks... fix later???
 		if(dex<0){
-			//printf("binary search error! dex=%d, (ptr,N_energies,value) %p %d % 10.8f\n",dex,main_E_grid,N_energies,value);
+			printf("binary search error! dex=%d, (ptr,N_energies,value) %p %d % 10.8f\n",dex,main_E_grid,N_energies,value);
 			//for(k=0;k<N_energies;k++){printf("%10.8E\n",main_E_grid[k]);}
 			dex=0;
 			//donesearching=1;
 		}
 		if(dex>=N_energies){
-			//printf("binary search error! dex=%d, (ptr,N_energies,value) %p %d % 10.8f\n",dex,main_E_grid,N_energies,value);
+			printf("binary search error! dex=%d, (ptr,N_energies,value) %p %d % 10.8f\n",dex,main_E_grid,N_energies,value);
 			//for(k=0;k<N_energies;k++){printf("%10.8E\n",main_E_grid[k]);}
 			dex=N_energies-1;
 			//donesearching=1;

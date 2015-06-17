@@ -412,7 +412,7 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 		if (sampled_E <= Emin){sampled_E = Emin * 1.01;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
 
 		// sync before writes
-		__syncthreads();
+		//__syncthreads();
 
 		// set data
 		//printf("(xyz) %6.4E %6.4E %6.4E (dir) %6.4E %6.4E %6.4E E %6.4E\n",this_space.x,this_space.y,this_space.z,this_space.xhat,this_space.yhat,this_space.zhat,sampled_E);
@@ -447,12 +447,12 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 	unsigned 		this_rxn 	= rxn    [tid];
 	float 			this_E 		= E      [tid]; 
 
-	__syncthreads();
+	//__syncthreads();
 
 	float*	 		this_Sarray = scatterdata[dex];
 	float*			this_Earray = energydata [dex];
 
-	__syncthreads();
+	//__syncthreads();
 
 	// check data array pointers
 	if(this_Earray == 0x0){
