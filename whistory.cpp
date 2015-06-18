@@ -46,7 +46,7 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	// device data stuff
 	N = Nin;
 	// 2 should be more than enough for criticality, might not be for fixed
-	Ndataset = Nin * 5;
+	Ndataset = Nin * 2;
 	n_qnodes = 0;
 	reduced_yields_total = 0;
 	accel_type = "Sbvh";
