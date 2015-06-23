@@ -1,5 +1,6 @@
 #ifndef WHISTORY_H
 #define WHISTORY_H
+
 /**
  * \class whistory whistory.h
  * \brief whistory class

@@ -85,7 +85,7 @@ __global__ void sample_fission_spectra_kernel(unsigned N, unsigned RNUM_PER_THRE
 	if (sampled_E <= Emin){sampled_E = Emin * 1.1;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
 
 	// sync before writes
-	__syncthreads();
+	//__syncthreads();
 
 	// set self data
 	E    [ tid ] 		= sampled_E;

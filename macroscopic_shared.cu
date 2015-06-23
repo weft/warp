@@ -48,7 +48,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float e1 = main_E_grid[dex+1];
 	float t0,t1;
 
-	__syncthreads();
+	//__syncthreads();
 
 	// compute the total macroscopic cross section for this material
 	for(int k=0; k<n_isotopes; k++){

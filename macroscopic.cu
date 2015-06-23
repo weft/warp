@@ -28,7 +28,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 
 	// load from arrays
 	unsigned 	this_mat 		= matnum[tid];
-	unsigned 	dex 			= index[tid];   
+	unsigned 	dex 			= index[tid];  
 	unsigned 	rn 				= rn_bank[tid];
 	//unsigned 	cell 			= cellnum[tid];
 	float 		this_E  		= E[tid];
@@ -41,28 +41,37 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float		surf_dist 		= space[tid].surf_dist;
 	unsigned 	enforce_BC 		= space[tid].enforce_BC;  
 	memcpy(norm,space[tid].norm,3*sizeof(float));
-	
-
+//	norm[0]=0;
+//	norm[1]=0;
+//	norm[2]=0;
 
 	float macro_t_total = 0.0;
 	float e0 = main_E_grid[dex];
 	float e1 = main_E_grid[dex+1];
-	float t0,t1,number_desity;
+	float t0,t1,number_density;
 
-	__syncthreads();
+	//__syncthreads();
+
+	//if(dex>500){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
+	//if(this_mat<0 | this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
+	//if(n_isotopes<0 | n_isotopes>9){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
+	//if(n_columns<0 | n_columns>376){printf("N_COLUMNS INVALID, n_columns = %u\n",n_columns);}
+	//if(tid_in >= 370899 & tid_in <=370901){printf("this_mat %u n_isotopes %u n_columns %u dex %u\n", this_mat, n_isotopes, n_columns, dex);}
 
 	// compute the total macroscopic cross section for this material
 	for(int k=0; k<n_isotopes; k++){
-		number_desity = material_matrix[n_isotopes*this_mat+k];
-		if(number_desity > 0.0){
+		number_density = material_matrix[n_isotopes*this_mat+k];
+		if(number_density > 0.0){
 			//lienarly interpolate
-			//printf("val % 6.4E\n",s_material_matrix[n_isotopes*this_mat + k]);
+			//printf("val % 6.4E\n",material_matrix[n_isotopes*this_mat + k]);
 			t0 = xs_data_MT[n_columns* dex    + k];     //dex is the row number
 			t1 = xs_data_MT[n_columns*(dex+1) + k];
-			macro_t_total += ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_desity;    //interpolated micro times number density
+			macro_t_total += ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density;    //interpolated micro times number density
 			//printf("mat %u - density of tope %u = %6.3E\n",this_mat,k,material_matrix[n_isotopes*this_mat+k]);
 		}
 	}
+
+	//if(N==1228932){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
 
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;
@@ -70,12 +79,12 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 
 	// determine the isotope which the reaction occurs
 	for(int k=0; k<n_isotopes; k++){
-		number_desity = material_matrix[n_isotopes*this_mat+k];
-		if(number_desity > 0.0){
+		number_density = material_matrix[n_isotopes*this_mat+k];
+		if(number_density > 0.0){
 			//lienarly interpolate
 			t0 = xs_data_MT[n_columns* dex    + k];     
 			t1 = xs_data_MT[n_columns*(dex+1) + k];
-			cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_desity ) / macro_t_total;
+			cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density ) / macro_t_total;
 			if( k==n_isotopes-1 & cum_prob<1.0){cum_prob=1.0;}  //sometimes roundoff makes this a problem
 			if( rn1 <= cum_prob){
 				// reactions happen in isotope k
@@ -85,7 +94,26 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		}
 	}
 	if(tope == 999999999){ 
-		printf("macro - ISOTOPE NOT SAMPLED CORRECTLY! tope=%u E=%10.8E dex=%u mat=%u rn=%u cum_prob=%12.10E s_mm=%12.10E\n",tope, this_E, dex, this_mat, rn, cum_prob,material_matrix[n_isotopes*this_mat + tope]);
+		printf("macro - ISOTOPE NOT SAMPLED CORRECTLY!  Resampling with scaled probability... tid %u \n",tid);
+		rn1 = rn1 * cum_prob;
+		for(int k=0; k<n_isotopes; k++){
+               		number_density = material_matrix[n_isotopes*this_mat+k];
+                	if(number_density > 0.0){
+                	        //lienarly interpolate
+                	        t0 = xs_data_MT[n_columns* dex    + k];
+                	        t1 = xs_data_MT[n_columns*(dex+1) + k];
+                	        cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density ) / macro_t_total;
+                	        if( k==n_isotopes-1 & cum_prob<1.0){cum_prob=1.0;}  //sometimes roundoff makes this a problem
+                	        if( rn1 <= cum_prob){
+                	                // reactions happen in isotope k
+                	                tope = k;
+                	                break;
+                	        }
+                	}
+        	}
+	}
+	if(tope == 999999999){
+                printf("macro - ISOTOPE  NOT SAMPLED CORRECTLY AFTER RESAMPLING WITH SCALED PROBABILITY! tid=%u \n",tid);
 	}
 
 	// do surf/samp compare
@@ -94,7 +122,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	diff = surf_dist - samp_dist;
 	//printf("b(%u,:)=[%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z);
 	//printf("a(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
-	if( diff < epsilon ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
+	if( diff < 0.0 ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
 		//printf("a(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
 		//printf("a(%u,1:9)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z,x+(surf_dist * xhat),y+(surf_dist * yhat),z+(surf_dist * zhat),norm[0],norm[1],norm[2]);
 		// enforce BC
@@ -127,9 +155,9 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			tope=999999996;  // make reflection a different isotope 
 		}
 		else{ // push through surface, set resample
-			x += (surf_dist * xhat + 1.2*epsilon*xhat);//+  1.2 * epsilon * norm[0]);
-			y += (surf_dist * yhat + 1.2*epsilon*yhat);//+  1.2 * epsilon * norm[1]);
-			z += (surf_dist * zhat + 1.2*epsilon*zhat);//+  1.2 * epsilon * norm[2]);
+			x += (surf_dist * xhat + 1.5 * epsilon * xhat);
+			y += (surf_dist * yhat + 1.5 * epsilon * yhat);
+			z += (surf_dist * zhat + 1.5 * epsilon * zhat);
 			this_rxn = 800;
 			isdone = 0;
 			tope=999999998;  // make resampling a different isotope than mis-sampling

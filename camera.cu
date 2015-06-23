@@ -65,8 +65,18 @@ RT_PROGRAM void camera()
 		}
 	}
 
-	// then find entering cell, use downward z to make problems with high x-y density faster
+	// re-init sense, payload, ray
+	sense = 0;
+	payload.sense = 0;
+	payload.cell  = 999999;
+	payload.mat   = 999999;
+	payload.cell  = 999999;
+	payload.fiss  = 0;
 	ray_direction = make_float3(0,0,-1);
+	ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
+	
+
+	// then find entering cell, use downward z to make problems with high x-y density faster
 	rtTrace(top_object, ray, payload);
 	sense = payload.sense;
 	while( (sense>=0) & (outer_cell!=payload.cell)){

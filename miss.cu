@@ -17,12 +17,18 @@ RT_PROGRAM void miss()
 {
 	unsigned launch_index;
 	
+	// remap if transport
 	if(trace_type==2){
 		launch_index=remap_buffer[launch_index_in];
 	}
 	else{
 		launch_index = launch_index_in;
 	}
+
+	// some logic
+	//if(rxn_buffer[launch_index]>=900){
+	//	
+	//}
 	if(trace_type!=3){
 		rtPrintf("!!!MISS!!! rxn = %u outer_cell = %d launch_index = %d remapped index %u trace %d (x,y,z-source)= % 10.9E % 10.9E % 10.9E (x,y,z,dist)= % 6.4E % 6.4E % 6.4E %6.4E \n",rxn_buffer[launch_index], outer_cell, launch_index_in, launch_index, trace_type,positions_buffer[launch_index].x,positions_buffer[launch_index].y,positions_buffer[launch_index].z, payload.x,payload.y,payload.z,payload.surf_dist);
 		//rtPrintt("Geom miss due to epsilon written as leak.");

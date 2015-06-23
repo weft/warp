@@ -12,9 +12,10 @@ int main(int argc, char* argv[]){
 	print_banner();
 
 	// names
-	unsigned tallycell = 999;
+	unsigned tallycell = 999, outer_cell=999;
 	unsigned N = 0;
 	std::string tallyname, filename, runtype;
+	std::string homfuelname		= "homfuel";
 	std::string assemblyname  	= "assembly-lw";
 	std::string flibename   	= "flibe";
 	std::string fusionname    	= "fusion";
@@ -58,36 +59,66 @@ int main(int argc, char* argv[]){
 
 	if(assemblyname.compare(argv[1])==0){
 		//assembly mats
-		n_topes    = 4;
-		std::vector<std::string> 	topes      (n_topes);
-		std::vector<float> 			fracs_fuel (n_topes);
-		std::vector<float> 			fracs_water(n_topes);
+		n_topes = 9;
+		std::vector<std::string> topes (n_topes);
+		std::vector<float>    fracs_fuel  (n_topes);
+		std::vector<float>    fracs_water (n_topes);
+		std::vector<float>    fracs_clad  (n_topes);
 		topes[0] = "92235.03c";
 		topes[1] = "92238.03c";
-		topes[2] =  "8016.03c";
-		topes[3] =  "1001.03c";
+		topes[2] =  "8016.03c" ;
+		topes[3] =  "1001.03c" ;
+		topes[4] = "40090.03c";
+ 		topes[5] = "40091.03c";
+ 		topes[6] = "40092.03c";
+ 		topes[7] = "40094.03c";
+ 		topes[8] = "40096.03c";
 		fracs_fuel[0] = 0.1;  
 		fracs_fuel[1] = 0.9;   
 		fracs_fuel[2] = 2;   
 		fracs_fuel[3] = 0;
-		fracs_water[0] = 0;  
-		fracs_water[1] = 0;   
+		fracs_fuel[4] = 0;
+		fracs_fuel[5] = 0;
+		fracs_fuel[6] = 0;  
+		fracs_fuel[7] = 0;
+		fracs_fuel[8] = 0;
+	  	fracs_water[0] = 0; 
+		fracs_water[1] = 0; 
 		fracs_water[2] = 1;   
 		fracs_water[3] = 2;
-		float    dens_fuel = 15;
-		float 	 dens_water = 3;
+		fracs_water[4] = 0;
+		fracs_water[5] = 0;
+		fracs_water[6] = 0;  
+		fracs_water[7] = 0;
+		fracs_water[8] = 0;
+	    fracs_clad[0] = 0; 
+		fracs_clad[1] = 0; 
+		fracs_clad[2] = 0;   
+		fracs_clad[3] = 0;
+		fracs_clad[4] = 0.5145;
+		fracs_clad[5] = 0.1122;
+		fracs_clad[6] = 0.1715;  
+		fracs_clad[7] = 0.1738;
+		fracs_clad[8] = 0.0280;
+	   
+	
+		float    dens_fuel = 15.00;
+		float 	 dens_water = 1.00;
+		float 	 dens_clad = 6.52;
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
 		geom.add_material(2,0,n_topes,dens_water,topes,fracs_water);
+		geom.add_material(3,0,n_topes,dens_clad,topes,fracs_clad);
 
 		// run stuff
 		tallycell = 316;   //center pin
+		outer_cell = 3000;
 		filename  = assemblyname;
 		tallyname = assemblyname;
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "criticality";
 	
-		// assembly geom
+		// assembly geom, fuel
 		type=1;
 		material=1;
 		mins[0]=-1.0;
@@ -100,8 +131,24 @@ int main(int argc, char* argv[]){
 		origin[1]=0.0;
 		origin[2]=0.0;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.make_hex_array(prim_id,15,0.0,0.0,1.164,1); 
+		geom.make_hex_array(prim_id,15,0.0,0.0,1.3,1); 
 
+		// assembly geom, clad
+		type=1;
+		material=3;
+		mins[0]=-1.2;
+		mins[1]=-1.2;
+		mins[2]=-20.2;
+		maxs[0]= 1.2;
+		maxs[1]= 1.2;
+		maxs[2]= 20.2;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.make_hex_array(prim_id,15,0.0,0.0,1.3*2.0/2.4,1000); 
+
+		// water 
 		type=0;
 		material=2;
 		mins[0]=-48;
@@ -111,7 +158,7 @@ int main(int argc, char* argv[]){
 		maxs[1]=48;
 		maxs[2]=48;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.add_transform(prim_id,999,0,0,0,0,0);
+		geom.add_transform(prim_id,outer_cell,0,0,0,0,0);
 		//geom.print_all();
 		//geom.update();
 		//geom.print_summary();
@@ -448,7 +495,7 @@ int main(int argc, char* argv[]){
 		fracs_water[6] = 0;  
 		fracs_water[7] = 0;
 		fracs_water[8] = 0;
-	    fracs_clad[0] = 0; 
+		fracs_clad[0] = 0; 
 		fracs_clad[1] = 0; 
 		fracs_clad[2] = 0;   
 		fracs_clad[3] = 0;
@@ -507,11 +554,61 @@ int main(int argc, char* argv[]){
 		//water 
 		type=0;
 		material=2;
-		mins[0]=-5.0;
-		mins[1]=-5.0;
+		mins[0]=-50.0;
+		mins[1]=-50.0;
 		mins[2]=-25.0;
-		maxs[0]= 5.0;
-		maxs[1]= 5.0;
+		maxs[0]= 50.0;
+		maxs[1]= 50.0;
+		maxs[2]= 25.0;
+		origin[0]=0.0;
+		origin[1]=0.0;
+		origin[2]=0.0;
+		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+		geom.add_transform(prim_id,999,0,0,0,0,0);
+	}
+	else if(homfuelname.compare(argv[1])==0){
+		// homfuel mats
+		n_topes = 9;
+		std::vector<std::string> topes (n_topes);
+		std::vector<float>    fracs_fuel  (n_topes);
+		topes[0] = "92235.03c";
+		topes[1] = "92238.03c";
+		topes[2] =  "8016.03c" ;
+		topes[3] =  "1002.03c" ;
+		topes[4] = "40090.03c";
+ 		topes[5] = "40091.03c";
+ 		topes[6] = "40092.03c";
+ 		topes[7] = "40094.03c";
+ 		topes[8] = "40096.03c";
+		fracs_fuel[0] = 0.1;  
+		fracs_fuel[1] = 0.9;   
+		fracs_fuel[2] = 3;   
+		fracs_fuel[3] = 2;
+		fracs_fuel[4] = 0.5145;
+		fracs_fuel[5] = 0.1122;
+		fracs_fuel[6] = 0.1715;  
+		fracs_fuel[7] = 0.1738;
+		fracs_fuel[8] = 0.0280;
+	   
+		float    dens_fuel = 5.50;
+		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
+		
+		// run stuff
+		tallycell = 999;
+		filename  = homfuelname;
+		tallyname = homfuelname;
+		tallyname.append(".tally");
+		bc = 1;
+		runtype = "criticality";
+	
+		//water 
+		type=0;
+		material=1;
+		mins[0]=-50.0;
+		mins[1]=-50.0;
+		mins[2]=-25.0;
+		maxs[0]= 50.0;
+		maxs[1]= 50.0;
 		maxs[2]= 25.0;
 		origin[0]=0.0;
 		origin[1]=0.0;
@@ -733,6 +830,7 @@ int main(int argc, char* argv[]){
 	}
 	else{
 		printf("MUST ENTER A *VALID* RUN TYPE : ");
+		printf("%s, ",homfuelname.c_str());
 		printf("%s, ",assemblyname.c_str());
 		printf("%s, ",flibename.c_str());
 		printf("%s, ",fusionname.c_str());
@@ -745,7 +843,7 @@ int main(int argc, char* argv[]){
 	}
 
 	// finalize geom
-	geom.set_outer_cell(999,bc);  // cell, BC  1=black, 2=specular
+	geom.set_outer_cell(outer_cell,bc);  // cell, BC  1=black, 2=specular
 	geom.update();
 	if(geom.check()){std::cout << "geometry failed check!\n"; return 1;}
 	//geom.print_all();
@@ -756,7 +854,7 @@ int main(int argc, char* argv[]){
 	/////////////////////////////////////////////////////////////////
 
 	whistory hist ( N , geom );
-	hist.set_print_level(2);
+	hist.set_print_level(3);
 	hist.set_device(0);
 	hist.init();
 	hist.print_xs_data();
