@@ -18,7 +18,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	if(run_mode){ // regular transport
 		tid=remap[starting_index + tid_in];
 		this_rxn = rxn[starting_index + tid_in];
-		//if (this_rxn != 91 ){printf("cscatter kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;}  //print and return if not continuum scatter
+		if (this_rxn != 91){printf("cscatter kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;}  //print and return if not continuum scatter
 	}
 	else{  // pop mode, return if not multiplicity reaction
 		tid=tid_in;

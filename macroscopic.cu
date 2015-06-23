@@ -122,7 +122,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	diff = surf_dist - samp_dist;
 	//printf("b(%u,:)=[%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z);
 	//printf("a(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
-	if( diff < epsilon ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
+	if( diff < 0.0 ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
 		//printf("a(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
 		//printf("a(%u,1:9)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z,x+(surf_dist * xhat),y+(surf_dist * yhat),z+(surf_dist * zhat),norm[0],norm[1],norm[2]);
 		// enforce BC
@@ -155,9 +155,9 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			tope=999999996;  // make reflection a different isotope 
 		}
 		else{ // push through surface, set resample
-			x += (surf_dist * xhat + 1.2*epsilon*xhat);//+  1.2 * epsilon * norm[0]);
-			y += (surf_dist * yhat + 1.2*epsilon*yhat);//+  1.2 * epsilon * norm[1]);
-			z += (surf_dist * zhat + 1.2*epsilon*zhat);//+  1.2 * epsilon * norm[2]);
+			x += (surf_dist * xhat + 1.5 * epsilon * xhat);
+			y += (surf_dist * yhat + 1.5 * epsilon * yhat);
+			z += (surf_dist * zhat + 1.5 * epsilon * zhat);
 			this_rxn = 800;
 			isdone = 0;
 			tope=999999998;  // make resampling a different isotope than mis-sampling
