@@ -35,7 +35,7 @@ RT_PROGRAM void intersect(int object_dex)
     float t1 = -b+sqrtf(disc);
 
     // if neg, neutron is inside of sphere
-    if ( t0*t1 < 0 ){
+    if ( t0*t1 < 0.0 ){
       sgn = -1.0;   
     }
     else{
@@ -46,7 +46,7 @@ RT_PROGRAM void intersect(int object_dex)
         cellnum     = dims[object_dex].cellnum;
         cellmat     = dims[object_dex].matnum;
         cellfissile = dims[object_dex].is_fissile;
-        normal      = sgn*(xformed_origin + (t0 * ray.direction) ) / radius;
+        normal      = sgn * (xformed_origin + (t0 * ray.direction) ) / radius;
         sense       = int(sgn);
        if(rtReportIntersection(0))
          check_second = false;
@@ -57,7 +57,7 @@ RT_PROGRAM void intersect(int object_dex)
          cellnum     = dims[object_dex].cellnum;
          cellmat     = dims[object_dex].matnum;
          cellfissile = dims[object_dex].is_fissile;
-         normal      = sgn*(xformed_origin + (t1 * ray.direction)) / radius;
+         normal      = sgn * (xformed_origin + (t1 * ray.direction)) / radius;
          sense       = int(sgn);
         rtReportIntersection(0);
       }
