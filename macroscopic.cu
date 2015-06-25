@@ -48,7 +48,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float macro_t_total = 0.0;
 	float e0 = main_E_grid[dex];
 	float e1 = main_E_grid[dex+1];
-	float t0,t1,number_density;
+	float t0,t1,number_density,surf_minimum;
 
 	//__syncthreads();
 
@@ -117,32 +117,25 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	}
 
 	// do surf/samp compare
-	//printf("norm %6.4E %6.4E %6.4E\n",norm[0],norm[1],norm[2]);
-	//printf("% 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E %u\n",x,y,z,xhat,yhat,zhat,surf_dist,samp_dist,enforce_BC);
 	diff = surf_dist - samp_dist;
-	//printf("b(%u,:)=[%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z);
-	//printf("a(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
-	if( diff < 0.0 ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
-		//printf("a(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
-		//printf("a(%u,1:9)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid+1,x,y,z,x+(surf_dist * xhat),y+(surf_dist * yhat),z+(surf_dist * zhat),norm[0],norm[1],norm[2]);
+	dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
+	if (dotp > 0.0){printf("norms(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid_in+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);}
+	surf_minimum = -epsilon / dotp;
+	if( diff < surf_minimum ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
 		// enforce BC
 		if (enforce_BC == 1){  // black BC
-			x += (surf_dist * xhat + 4.0*epsilon*xhat);// +  1.2 * epsilon * norm[0]);
-			y += (surf_dist * yhat + 4.0*epsilon*yhat);// +  1.2 * epsilon * norm[1]);
-			z += (surf_dist * zhat + 4.0*epsilon*zhat);// +  1.2 * epsilon * norm[2]);
+			x += (surf_dist + 2.1*surf_minimum) * xhat;
+			y += (surf_dist + 2.1*surf_minimum) * yhat;
+			z += (surf_dist + 2.1*surf_minimum) * zhat;
 			isdone = 1;
 			this_rxn  = 999;
 			tope=999999997;  // make leaking a different isotope than resampling
-			//printf("leaked tid %u xyz % 6.4E % 6.4E % 6.4E dir % 6.4E % 6.4E % 6.4E\n",tid,x,y,z,xhat,yhat,zhat);
 		}
 		else if(enforce_BC == 2){  // specular reflection BC
-			x += (surf_dist * xhat - 1.2 * epsilon * norm[0]);
-			y += (surf_dist * yhat - 1.2 * epsilon * norm[1]);
-			z += (surf_dist * zhat - 1.2 * epsilon * norm[2]);
-			dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
-			//printf("specular\n");
+			x += (surf_dist - 1.2*surf_minimum) * xhat;
+			y += (surf_dist - 1.2*surf_minimum) * yhat;
+			z += (surf_dist - 1.2*surf_minimum) * zhat;
 			if(dotp>1.0 | dotp<-1.0){printf("dotp %6.4E , dir [%6.4E %6.4E %6.4E], norm [%6.4E %6.4E %6.4E]\n",dotp,xhat,yhat,zhat,norm[0],norm[1],norm[2]);}
-			//printf("dotp %6.4E ,position [%6.4E %6.4E %6.4E], dir [%6.4E %6.4E %6.4E], norm [%6.4E %6.4E %6.4E]\n",x,y,z,xhat,yhat,zhat,norm[0],norm[1],norm[2]);
 			xhat = -2.0*dotp*norm[0]-xhat;  // norm points out!  need to flip sign
 			yhat = -2.0*dotp*norm[1]-yhat;  // norm points out!  need to flip sign
 			zhat = -2.0*dotp*norm[2]-zhat;  // norm points out!  need to flip sign
@@ -155,9 +148,9 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			tope=999999996;  // make reflection a different isotope 
 		}
 		else{ // push through surface, set resample
-			x += (surf_dist * xhat + 1.5 * epsilon * xhat);
-			y += (surf_dist * yhat + 1.5 * epsilon * yhat);
-			z += (surf_dist * zhat + 1.5 * epsilon * zhat);
+			x += (surf_dist + 1.2*surf_minimum) * xhat;
+			y += (surf_dist + 1.2*surf_minimum) * yhat;
+			z += (surf_dist + 1.2*surf_minimum) * zhat;
 			this_rxn = 800;
 			isdone = 0;
 			tope=999999998;  // make resampling a different isotope than mis-sampling
@@ -170,14 +163,13 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			this_rxn = 0;
 	}
 
-	//if(this_rxn==800){printf("resmapled tid %u xyz % 6.4E % 6.4E % 6.4E\n",tid,x,y,z);}
 	//write outputs
 	space[tid].x 			= x;
 	space[tid].y			= y;
 	space[tid].z			= z;
 	space[tid].macro_t 		= macro_t_total;
 	if(enforce_BC==2){
-		space[tid].xhat = xhat;
+		space[tid].xhat = xhat;  // write reflected directions for specular BC
 		space[tid].yhat = yhat;
 		space[tid].zhat = zhat;
 	}

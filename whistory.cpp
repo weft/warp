@@ -1496,7 +1496,7 @@ void whistory::sample_fissile_points(){
 		// set uniformly random positions on GPU
 		set_positions_rand ( NUM_THREADS, N , outer_cell_type, d_space , d_rn_bank, outer_cell_dims);
 		
-		//run OptiX to get cell number, set as a hash run for fissile, writes 1/0 to matnum, trace_type=4
+		//run OptiX to get cell number, set as a hash run for fissile, writes 1/0 to matnum
 		trace(3, N);
 
 		// compact
@@ -1871,8 +1871,6 @@ void whistory::run(){
 			fprintf(statsfile,"---- iteration %u done ----\n",iteration);
 		}
 
-		//write_histories(2);
-		//printf("CUDA ERROR7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 		//std::cout << "press enter to continue...\n";
 		//std::cin.ignore();
 

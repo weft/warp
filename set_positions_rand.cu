@@ -17,7 +17,6 @@ __global__ void set_positions_rand_kernel(unsigned N , unsigned outer_cell_type,
 
 	// set surface distance very far
 	positions_ptr[tid].surf_dist =     500000; 
-	
 
 	// set directions isotropic
 	positions_ptr[tid].xhat      =     sqrtf(1.0-mu*mu) * cosf( theta );
