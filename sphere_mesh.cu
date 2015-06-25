@@ -34,9 +34,9 @@ RT_PROGRAM void intersect(int object_dex)
     float t0 = -b-sqrtf(disc);
     float t1 = -b+sqrtf(disc);
 
-    // compute sign, if true, points should be outside.  if product is positive, point lies on same side of two parallel planes
-    if ( t0*t1 > 0 ){
-      sgn = -1.0;   // switch sign of normal to inward, since point is outside of sphere
+    // if neg, neutron is inside of sphere
+    if ( t0*t1 < 0 ){
+      sgn = -1.0;   
     }
     else{
       sgn =  1.0;
@@ -46,8 +46,8 @@ RT_PROGRAM void intersect(int object_dex)
         cellnum     = dims[object_dex].cellnum;
         cellmat     = dims[object_dex].matnum;
         cellfissile = dims[object_dex].is_fissile;
-        normal      = (xformed_origin + (t0 * ray.direction) ) / radius;
-        sense       = int(-sgn);
+        normal      = sgn*(xformed_origin + (t0 * ray.direction) ) / radius;
+        sense       = int(sgn);
        if(rtReportIntersection(0))
          check_second = false;
     } 
@@ -57,8 +57,8 @@ RT_PROGRAM void intersect(int object_dex)
          cellnum     = dims[object_dex].cellnum;
          cellmat     = dims[object_dex].matnum;
          cellfissile = dims[object_dex].is_fissile;
-         normal      = (xformed_origin + (t1 * ray.direction)) / radius;
-         sense       = int(-sgn);
+         normal      = sgn*(xformed_origin + (t1 * ray.direction)) / radius;
+         sense       = int(sgn);
         rtReportIntersection(0);
       }
     }

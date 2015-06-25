@@ -101,14 +101,13 @@ RT_PROGRAM void camera()
 	}
 
 	// write cell/material numbers to buffer
-	if(trace_type == 2){ //write material to buffer normally, write surface distance
-		matnum_buffer[launch_index] 				= payload.mat;
-		cellnum_buffer[launch_index] 				= payload.cell;
-	}
-	else if(trace_type == 3){  //write fissile flag if fissile query
+	cellnum_buffer[launch_index] 				= payload.cell;
+	if(trace_type == 3){  //write fissile flag if fissile query
 		matnum_buffer[launch_index] 				= payload.fiss;
-		cellnum_buffer[launch_index] 				= payload.cell;
 		rxn_buffer[launch_index_in] 				= 818;
+	}
+	else{ //otherwise write material to buffer 
+		matnum_buffer[launch_index] 				= payload.mat;
 	}
 
 }

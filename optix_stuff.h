@@ -116,12 +116,13 @@ public:
 	 * \brief creates a trace
 	 * \details sets the trace type, then launches the trace on the compute device 
 	 * with n_active histories.
-	 * @param[in] trace_type - trace type for OptiX context
+	 * @param[in] trace_type - trace type for OptiX context, 2=transport (finds nearest surface, normal, writes cell number and material number), 3=fissile query(writes fissile flag into material number, writes cell number), 4=geometry plot(same as 2, but misses are squelched, no normals/intersection distances reported)
 	 * @param[in] n_active - number of active histories
 	 */ 
 	void trace(unsigned, unsigned);
 	/**
-	 * \brief sets trace type in the OptiX context
+	 * \brief sets trace type in the OptiX context, 
+	 * \details sets trace type, 2=transport (finds nearest surface, normal, writes cell number and material number), 3=fissile query(writes fissile flag into material number, writes cell number), 4=geometry plot(same as 2, but misses are squelched, no normals/intersection distances reported)
 	 */ 
 	void set_trace_type(unsigned);
 	/**

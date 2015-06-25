@@ -42,14 +42,6 @@ RT_PROGRAM void intersect(int object_dex)
 		sdisc = sqrt(disc);
 		t1 = (-b-sdisc)/(2.0*a);
 		t2 = (-b+sdisc)/(2.0*a);
-		
-		// sense
-		if (t1*t2 < 0.0 ){ // neg means inside
-			sgn = -1.0;
-		}
-		else{
-			sgn =  1.0;
-		}
 
 		// intersection points
 		int1 = ray.direction * t1 + xformed_origin;
@@ -63,7 +55,7 @@ RT_PROGRAM void intersect(int object_dex)
 		if( ((int1.z > zmax) & (int2.z > zmax)) | ((int1.z < zmin) & (int2.z < zmin)) ){  
 			report=false;
 		}
-		else{   // t1 always first 
+		else{   // t1 always smaller 
 
 			if (int1.z > zmax ){  //  top intersection z1
 				t1 = (zmax - xformed_origin.z) / ray.direction.z;
@@ -104,14 +96,23 @@ RT_PROGRAM void intersect(int object_dex)
 		int1 = ray.direction * t1 + xformed_origin;
 		int2 = ray.direction * t2 + xformed_origin;	
 
-		this_norm1 = make_float3(0,0,-1);
-		this_norm2 = make_float3(0,0,1);
+		// bottom always -1, top always +1, sense used to flip if point is inside
+		this_norm1 = make_float3(0,0,1);
+		this_norm2 = make_float3(0,0,-1);
+	}
+
+	// sense
+	if (t1*t2 < 0.0 ){ // neg means inside
+		sgn = -1.0;
+	}
+	else{
+		sgn =  1.0;
 	}
 
 	// report
 	if (report){
 		if(t1>0){
-			if (rtPotentialIntersection(t1) ) {
+			if (rtPotentialIntersection(t1)) {
 				cellnum     = dims[object_dex].cellnum;
 				cellmat     = dims[object_dex].matnum;
 				cellfissile = dims[object_dex].is_fissile;
@@ -123,7 +124,7 @@ RT_PROGRAM void intersect(int object_dex)
 			}
 		}
 		if(check_second & t2>0){
-			if (rtPotentialIntersection(t2) ) {
+			if (rtPotentialIntersection(t2)) {
 				cellnum     = dims[object_dex].cellnum;
 				cellmat     = dims[object_dex].matnum;
 				cellfissile = dims[object_dex].is_fissile;

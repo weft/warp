@@ -37,9 +37,9 @@ __global__ void set_positions_rand_kernel(unsigned N , unsigned outer_cell_type,
 		positions_ptr[tid].z         =     0.9 * ( ( z_max - z_min ) * rn3 + z_min ); 
 	}
 	else if(outer_cell_type==2){  // hex
-		positions_ptr[tid].x         =     0.9 * ( ( x_max - x_min ) * rn1 + x_min );  
-		positions_ptr[tid].y         =     0.9 * ( ( y_max - y_min ) * rn2 + y_min );  
-		positions_ptr[tid].z         =     0.9 * ( ( z_max - z_min ) * rn3 + z_min ); 
+		positions_ptr[tid].x         =     1.4 * ( ( x_max - x_min ) * rn1 + x_min );  
+		positions_ptr[tid].y         =     1.4 * ( ( y_max - y_min ) * rn2 + y_min );  
+		positions_ptr[tid].z         =     1.4 * ( ( z_max - z_min ) * rn3 + z_min ); 
 	}
 	else if(outer_cell_type==3){  // sphere
 		float t = 6.28318530718 * rn1;

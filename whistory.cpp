@@ -2300,12 +2300,12 @@ void whistory::plot_geom(std::string type_in){
 	}
 
 	// get outer cell dims
-	float xmin = outer_cell_dims[0];
-	float ymin = outer_cell_dims[1];
-	float zmin = outer_cell_dims[2];
-	float xmax = outer_cell_dims[3];
-	float ymax = outer_cell_dims[4];
-	float zmax = outer_cell_dims[5];
+	float xmin = outer_cell_dims[0] * 1.41421356;
+	float ymin = outer_cell_dims[1] * 1.41421356;
+	float zmin = outer_cell_dims[2] * 1.41421356;
+	float xmax = outer_cell_dims[3] * 1.41421356;
+	float ymax = outer_cell_dims[4] * 1.41421356;
+	float zmax = outer_cell_dims[5] * 1.41421356;
 	
 	//
 	// xy
@@ -2349,7 +2349,7 @@ void whistory::plot_geom(std::string type_in){
 	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
 	
 	// trace with whereami?
-	trace(2, N_plot);
+	trace(4, N_plot);
 	
 	//copy to local buffer
 	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
@@ -2411,7 +2411,7 @@ void whistory::plot_geom(std::string type_in){
 	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
 	
 	// trace with whereami?
-	trace(2, N_plot);
+	trace(4, N_plot);
 	
 	//copy to local buffer
 	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
@@ -2472,7 +2472,7 @@ void whistory::plot_geom(std::string type_in){
 	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
 	
 	// trace with whereami?
-	trace(2, N_plot);
+	trace(4, N_plot);
 	
 	//copy to local buffer
 	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);

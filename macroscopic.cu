@@ -116,11 +116,18 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
                 printf("macro - ISOTOPE  NOT SAMPLED CORRECTLY AFTER RESAMPLING WITH SCALED PROBABILITY! tid=%u \n",tid);
 	}
 
-	// do surf/samp compare
+	// do surf/samp compare, calculate epsilon projection onto neutron trajectory
 	diff = surf_dist - samp_dist;
 	dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
-	if (dotp > 0.0){printf("norms(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid_in+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);}
-	surf_minimum = -epsilon / dotp;
+	surf_minimum = -epsilon / dotp;   // dotp *should* never be zero since optix won't report parallel lines
+
+	// complain if the dot product is positive.  normal should always be in the reflective sense
+	if (dotp > 0.0 | dotp < -1.0){
+		//printf("norms(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid_in+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
+		printf("!!! (surface normal) dot (neutron direction) is positive or < -1!   dotp = %10.8E\n",dotp);
+	}
+	
+	// surface logic
 	if( diff < surf_minimum ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
 		// enforce BC
 		if (enforce_BC == 1){  // black BC
@@ -132,22 +139,25 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			tope=999999997;  // make leaking a different isotope than resampling
 		}
 		else if(enforce_BC == 2){  // specular reflection BC
+			// move epsilon off of surface
 			x += (surf_dist - 1.2*surf_minimum) * xhat;
 			y += (surf_dist - 1.2*surf_minimum) * yhat;
 			z += (surf_dist - 1.2*surf_minimum) * zhat;
-			if(dotp>1.0 | dotp<-1.0){printf("dotp %6.4E , dir [%6.4E %6.4E %6.4E], norm [%6.4E %6.4E %6.4E]\n",dotp,xhat,yhat,zhat,norm[0],norm[1],norm[2]);}
-			xhat = -2.0*dotp*norm[0]-xhat;  // norm points out!  need to flip sign
-			yhat = -2.0*dotp*norm[1]-yhat;  // norm points out!  need to flip sign
-			zhat = -2.0*dotp*norm[2]-zhat;  // norm points out!  need to flip sign
-			float mag  = sqrtf(xhat*xhat + yhat*yhat + zhat*zhat);
+			// calculate reflection
+			xhat = 2.0*dotp*norm[0]-xhat; 
+			yhat = 2.0*dotp*norm[1]-yhat; 
+			zhat = 2.0*dotp*norm[2]-zhat; 
+			// ensure normalization
+			float mag  = sqrtf(xhat*xhat + yhat*yhat + zhat*zhat);  
 			xhat = xhat / mag;
 			yhat = yhat / mag;
 			zhat = zhat / mag;
+			// write status numbers
 			this_rxn = 800;
 			isdone = 0;
 			tope=999999996;  // make reflection a different isotope 
 		}
-		else{ // push through surface, set resample
+		else{ // if not outer cell, push through surface, set resample
 			x += (surf_dist + 1.2*surf_minimum) * xhat;
 			y += (surf_dist + 1.2*surf_minimum) * yhat;
 			z += (surf_dist + 1.2*surf_minimum) * zhat;

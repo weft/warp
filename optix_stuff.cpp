@@ -173,7 +173,7 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	//set boundary condition for outer cell
 	context["boundary_condition"]->setUint(boundary_condition);
 
-	//set trace type, 1=transport (writes intersection point and next cell), 2=fission (writes origin and current cell)
+	//set trace type, 2=transport (finds nearest surface, normal, writes cell number and material number), 3=fissile query(writes fissile flag into material number, writes cell number), 4=geometry plot(same as 2, but misses are squelched, no normals/intersection distances reported)
 	context["trace_type"]->setUint(1);
 
 	//set outer cell adn get its dimensions
