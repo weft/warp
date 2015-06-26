@@ -1873,6 +1873,7 @@ void whistory::run(){
 
 		//std::cout << "press enter to continue...\n";
 		//std::cin.ignore();
+		//exit(0);
 
 		// set convergence flag
 		if( iteration_total == n_skip-1){ 
