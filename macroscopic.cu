@@ -121,7 +121,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
 	surf_minimum = -epsilon / dotp;   // dotp *should* never be zero since optix won't report parallel lines
 
-	// complain if the dot product is positive.  normal should always be in the reflective sense
+	// complain if the dot product is positive.  normal should always be in the reflective sense, and normal should always be negative then.
 	if (dotp > 0.0 | dotp < -1.0){
 		//printf("norms(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid_in+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
 		printf("!!! (surface normal) dot (neutron direction) is positive or < -1!   dotp = %10.8E\n",dotp);

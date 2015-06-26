@@ -13,27 +13,25 @@ rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
 rtDeclareVariable(unsigned,  sense      , attribute cell_sense, );
 rtDeclareVariable(float3,    normal,      attribute normal,   );
+rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
+
 
 static __device__ bool accept_z(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
 
-  float x = fabsf(pnt.x);
-  float y = fabsf(pnt.y);
+  // z plane in accepted if within the hex region
+  float x = abs(pnt.x);
+  float y = abs(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
 
-  if(x <= x1){
+  if ( x > x2){
 
-    if (y <= a){
-      return true;
-    }
-    else{
-      return false;
-    }
+    return false;
 
   }
-  else if(x <= x2){
+  else if( x > x1){
 
-    if (y <= line){
+    if(y<=line){
       return true;
     }
     else{
@@ -42,51 +40,126 @@ static __device__ bool accept_z(float3 pnt, float a, float x1, float x2, float z
 
   }
   else{
-    return false;
+    
+    if(y<=a){
+      return true;
+    }
+    else{
+      return false;
+    }
+
   }
 
 }
+
 
 static __device__ bool accept_y(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
+  
+  if ( pnt.z < zmin | pnt.z > zmax){
 
-  float x = fabsf(pnt.x);
-  float z =       pnt.z; 
+    return false;
 
-  if(z <= zmax && z >= zmin){
-
-    if(x <= x1){
-      return true;
+  }
+  else{
+    
+    if (pnt.x <= x1 & pnt.x >= -x1){
+      //if(y<=a & y>= -a){
+        return true;
+      //}
+      //else{
+      // return false;
+      //}
     }
     else{
       return false;
     }
 
-  }
-  else{
-    return false;
   }
 
 }
 
-static __device__ bool accept_line(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
+static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
+  
+  if ( pnt.z < zmin | pnt.z > zmax){
 
-  float x = fabsf(pnt.x);
-  float z =       pnt.z;
+    return false;
 
-  if(z <= zmax && z >= zmin){
-
-    if(x >= x1 && x <= x2){
-      return true;
+  }
+  else{
+    
+    if ( pnt.x>x1 & pnt.x<=x2 ){
+      if(pnt.y<=0.0){
+        return true;
+      }
+      else{
+        return false;
+      }
+    }
+    else if ( pnt.x<-x1 & pnt.x>=-x2 ){
+      if(pnt.y>=0.0){
+        return true;
+      }
+      else{
+        return false;
+      }
     }
     else{
       return false;
     }
-    
+
+  }
+
+}
+
+static __device__ bool accept_r(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
+{
+  
+  if ( pnt.z < zmin | pnt.z > zmax){
+
+    return false;
+
   }
   else{
-    return false;
+    
+    if ( pnt.x>x1 & pnt.x<=x2 ){
+      if(pnt.y>=0.0){
+        return true;
+      }
+      else{
+        return false;
+      }
+    }
+    else if ( pnt.x<-x1 & pnt.x>=-x2 ){
+      if(pnt.y<=0.0){
+        return true;
+      }
+      else{
+        return false;
+      }
+    }
+    else{
+      return false;
+    }
+
+  }
+
+}
+
+
+
+static __device__ float get_t(float3 hat, float3 dir, float3 diff_points){
+
+  float ndD;
+
+  ndD = dot(hat,dir);
+
+  if (ndD!=0.0){
+    return dot(hat,diff_points) / ndD;
+  }
+  else{
+    return 1e34;   // something big just to put it out of range
   }
 
 }
@@ -95,189 +168,118 @@ static __device__ bool accept_line(float3 pnt, float a, float x1, float x2, floa
 RT_PROGRAM void intersect(int object_dex)
 {
 
-  // max.x is apothem
+  // maxs.x is apothem
   float3 mins = make_float3(dims[object_dex].min[0],dims[object_dex].min[1],dims[object_dex].min[2]);
   float3 maxs = make_float3(dims[object_dex].max[0],dims[object_dex].max[1],dims[object_dex].max[2]);
   float3 loc  = make_float3(dims[object_dex].loc[0],dims[object_dex].loc[1],dims[object_dex].loc[2]);
   float3 xformed_origin = ray.origin - loc;
 
-  float   tmin, tmax, t0, t1, ndD, this_sense, sgn;
-  float3  norm_max, norm_min;
-
-  //init
-  tmin       =  9999999999999999999.0;
-  tmax       = -9999999999999999999.0;
-  this_sense = -1.0;
-  norm_max.x = 0.0;
-  norm_max.y = 0.0;
-  norm_max.z = 0.0;
-  norm_min.x = 0.0;
-  norm_min.y = 0.0;
-  norm_min.z = 0.0;
+  // init
+  float   t0=1e34, t1=1e34, sgn=1.0, this_t;
+  float3  this_int, norm0, norm1, norms[8], pts[8];
+  bool report=true, check_second=true, accept;
 
   // box/line region delimiters
   float x1 = maxs.x/sqrtf(3.0);
   float x2 = 2.0*x1;
   
   // normal vectors
-  float3 z_hat = make_float3( 0.0            , 0.0     , 1.0 );
-  float3 y_hat = make_float3( 0.0            , 1.0     , 0.0 );
-  float3 r_hat = make_float3( sqrtf(3.0)/2.0 , 1.0/2.0 , 0.0 );
-  float3 l_hat = make_float3(-sqrtf(3.0)/2.0 , 1.0/2.0 , 0.0 );
+  norms[0] = make_float3( 0.0            , 0.0     , 1.0 );  //  z
+  norms[1] = make_float3( 0.0            , 0.0     ,-1.0 );  // -z
+  norms[2] = make_float3( 0.0            , 1.0     , 0.0 );  //  y
+  norms[3] = make_float3( 0.0            ,-1.0     , 0.0 );  // -y
+  norms[4] = make_float3( sqrtf(3.0)/2.0 , 1.0/2.0 , 0.0 );  //  r
+  norms[5] = make_float3(-sqrtf(3.0)/2.0 ,-1.0/2.0 , 0.0 );  // -r
+  norms[6] = make_float3(-sqrtf(3.0)/2.0 , 1.0/2.0 , 0.0 );  //  l
+  norms[7] = make_float3( sqrtf(3.0)/2.0 ,-1.0/2.0 , 0.0 );  // -l
 
-  // points that define all planes
-  float3 p4 = make_float3(  x2,  0.0         , mins.z );
-  float3 p1 = make_float3(  x2,  0.0         , maxs.z );
-  float3 p2 = make_float3( -x1,  maxs.x      , maxs.z );
-  float3 p3 = make_float3( -x1, -maxs.x      , maxs.z );
+  // points that define positions of all planes
+  pts[0] = make_float3(  x2,  0.0         , maxs.z );   // 4
+  pts[1] = make_float3(  x2,  0.0         , mins.z );   // 1
+  pts[2] = make_float3( -x1,  maxs.x      , maxs.z );   // 2
+  pts[3] = make_float3( -x1, -maxs.x      , maxs.z );   // 3
+  pts[4] = make_float3(  x2,  0.0         , maxs.z );   // 1
+  pts[5] = make_float3( -x1, -maxs.x      , maxs.z );   // 3
+  pts[6] = make_float3( -x1,  maxs.x      , maxs.z );   // 2
+  pts[7] = make_float3(  x2,  0.0         , maxs.z );   // 1
 
-  // z plane intersections
-  ndD=dot(z_hat,ray.direction);
-  if (ndD!=0.0){
-    t0 = dot(  z_hat , ( p1 - xformed_origin ) ) / ndD;
-    t1 = dot(  z_hat , ( p4 - xformed_origin ) ) / ndD;
-    if (this_sense < 0.0){
-      this_sense = t0*t1;
+  int k=0;
+  for (int i=0; i<8; i++) {
+    // calculate intersection t value
+    this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
+    // calculate intersection point from t value
+    this_int = ray.direction * this_t + xformed_origin;
+    // keep smallest two values, rejecting those who are not in the acceptable space
+    accept = false;
+    if(i<2){
+      accept = accept_z(this_int, maxs.x, x1, x2, mins.z, maxs.z);
     }
-    if(t0>0.0 && accept_z(xformed_origin+t0*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
-      tmin = fminf(t0,tmin);
-      tmax = fmaxf(t0,tmax);
-      if (tmin == t0){
-        norm_min = z_hat;
-      }
-      if (tmax == t0){
-        norm_max = z_hat;
-      }
+    else if(i<4){
+      accept = accept_y(this_int, maxs.x, x1, x2, mins.z, maxs.z);
     }
-    if(t1>0.0 && accept_z(xformed_origin+t1*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
-      tmin = fminf(t1,tmin);
-      tmax = fmaxf(t1,tmax);
-      if (tmin == t1){
-        norm_min = -z_hat;
+    else if(i<6){
+      accept = accept_r(this_int, maxs.x, x1, x2, mins.z, maxs.z);
+    }
+    else{
+      accept = accept_l(this_int, maxs.x, x1, x2, mins.z, maxs.z);
+    }
+    if( accept ){   // (int, apothem, x1, x2, zmin, zmax)
+      k++;
+      if(this_t<t0){
+        t1 = t0;
+        norm1 = norm0;
+        t0 = this_t;
+        norm0 = norms[i];
       }
-      if (tmax == t1){
-        norm_max = -z_hat;
+      else if(this_t<t1){
+        t1 = this_t;
+        norm1 = norms[i];
       }
     }
   }
 
-  // y line intersections
-  ndD=dot(y_hat,ray.direction);
-  if (ndD!=0.0){
-    t0 = dot(  y_hat , ( p2 - xformed_origin ) ) / ndD;
-    t1 = dot(  y_hat , ( p3 - xformed_origin ) ) / ndD;
-    if (this_sense < 0.0){
-      this_sense = t0*t1;
-    }
-    if(t0>0.0 && accept_y(xformed_origin+t0*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
-      tmin = fminf(t0,tmin);
-      tmax = fmaxf(t0,tmax);
-      if (tmin == t0){
-        norm_min = y_hat;
-      }
-      if (tmax == t0){
-        norm_max = y_hat;
-      }
-    }
-    if(t1>0.0 && accept_y(xformed_origin+t1*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
-      tmin = fminf(t1,tmin);
-      tmax = fmaxf(t1,tmax);
-      if (tmin == t1){
-        norm_min = -y_hat;
-      }
-      if (tmax == t1){
-        norm_max = -y_hat;
-      }
-    }
+  // corner miss check
+  if(k==0){
+    report = false;
+    //rtPrintf("corner miss\n");
   }
-
-  // left line intersections
-  ndD=dot(l_hat,ray.direction);
-  if (ndD!=0.0){
-    t0 = dot(  l_hat , ( p2 - xformed_origin ) ) / ndD;
-    t1 = dot(  l_hat , ( p1 - xformed_origin ) ) / ndD;
-    if (this_sense < 0.0){
-      this_sense = t0*t1;
-    }
-    if(t0>0.0 && accept_line(xformed_origin+t0*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
-      tmin = fminf(t0,tmin);
-      tmax = fmaxf(t0,tmax);
-      if (tmin == t0){
-        norm_min = l_hat;
-      }
-      if (tmax == t0){
-        norm_max = l_hat;
-      }
-    }
-    if(t1>0.0 && accept_line(xformed_origin+t1*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
-      tmin = fminf(t1,tmin);
-      tmax = fmaxf(t1,tmax);
-      if (tmin == t1){
-        norm_min = -l_hat;
-      }
-      if (tmax == t1){
-        norm_max = -l_hat;
-      }
-    }
-  }
-
-  // right line intersections
-  ndD=dot(r_hat,ray.direction);
-  if (ndD!=0.0){
-    t0 = dot(  r_hat , ( p1 - xformed_origin ) ) / ndD;
-    t1 = dot(  r_hat , ( p3 - xformed_origin ) ) / ndD;
-    if (this_sense < 0.0){
-      this_sense = t0*t1;
-    }
-    if(t0>0.0 && accept_line(xformed_origin+t0*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
-      tmin = fminf(t0,tmin);
-      tmax = fmaxf(t0,tmax);
-      if (tmin == t0){
-        norm_min = r_hat;
-      }
-      if (tmax == t0){
-        norm_max = r_hat;
-      }
-    }
-    if(t1>0.0 && accept_line(xformed_origin+t1*ray.direction,maxs.x,x1,x2,mins.z,maxs.z)){
-      tmin = fminf(t1,tmin);
-      tmax = fmaxf(t1,tmax);
-      if (tmin == t1){
-        norm_min = -r_hat;
-      }
-      if (tmax == t1){
-        norm_max = -r_hat;
-      }
-    }
-  }
-
-  // if a single sense is positive, point lies on same side of two parallel planes and it is outside the hexagon
-  if ( this_sense < 0.0){
-    sgn =  1.0;   
+  else if(k==1 | k>2){
+    rtPrintf("!!! Number of accepted t-values in hex=%d, which != 2 or 0\n",k);
+    this_int = ray.direction * t0 + xformed_origin;
+    //rtPrintf("a(%u,:)=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];\n",launch_index_in,xformed_origin.x,xformed_origin.y,xformed_origin.z,this_int.x,this_int.y,this_int.z);
+    //report = false;
   }
   else{
-    sgn = -1.0;   // switch sign of normal to inward
+    report = true;
+    check_second = true;
+  }
+
+  // sense
+  if (t0*t1 < 0.0 ){ // neg means inside
+    sgn = -1.0;
+  }
+  else{
+    sgn =  1.0;
   }
 
   // report intersection
-  if(tmin <= tmax) {
-    bool check_second = true;
-    if( rtPotentialIntersection( tmin ) ) {
+  if(report) {
+    if( rtPotentialIntersection( t0 ) ) {
         cellnum     = dims[object_dex].cellnum;
         cellmat     = dims[object_dex].matnum;
         cellfissile = dims[object_dex].is_fissile;
-        normal      = sgn*norm_min;
-        sense       = int(-sgn);
+        normal      = sgn*norm0;
+        sense       = int(sgn);
        if(rtReportIntersection(0))
          check_second = false;
-    } 
+    }
     if(check_second) {
-      if( rtPotentialIntersection( tmax ) ) {
+      if( rtPotentialIntersection( t1 ) ) {
          cellnum     = dims[object_dex].cellnum;
          cellmat     = dims[object_dex].matnum;
          cellfissile = dims[object_dex].is_fissile;
-         normal      = sgn*norm_max;
-         sense       = int(-sgn);
+         normal      = sgn*norm1;
+         sense       = int(sgn);
         rtReportIntersection(0);
       }
     }

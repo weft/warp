@@ -232,7 +232,7 @@ int main(int argc, char* argv[]){
 
 
 		//godiva geom
-		type=3;
+		type=2;
 		material=1;
 		mins[0]= -5.1;
 		mins[1]= -5.1;
