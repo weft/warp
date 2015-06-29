@@ -48,7 +48,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float macro_t_total = 0.0;
 	float e0 = main_E_grid[dex];
 	float e1 = main_E_grid[dex+1];
-	float t0,t1,number_density,surf_minimum;
+	float t0,t1,number_density,surf_minimum, xhat_new, yhat_new, zhat_new;
 
 	//__syncthreads();
 
@@ -120,6 +120,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	diff = surf_dist - samp_dist;
 	dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
 	surf_minimum = -epsilon / dotp;   // dotp *should* never be zero since optix won't report parallel lines
+	if (surf_minimum>surf_dist){surf_minimum = surf_dist;}
 
 	// complain if the dot product is positive.  normal should always be in the reflective sense, and normal should always be negative then.
 	if (dotp > 0.0 | dotp < -1.0){
@@ -140,19 +141,21 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		}
 		else if(enforce_BC == 2){  // specular reflection BC
 			// move epsilon off of surface
-			x += (surf_dist - 1.2*surf_minimum) * xhat;
-			y += (surf_dist - 1.2*surf_minimum) * yhat;
-			z += (surf_dist - 1.2*surf_minimum) * zhat;
+			x += ((surf_dist-1.2*surf_minimum) * xhat);
+			y += ((surf_dist-1.2*surf_minimum) * yhat);
+			z += ((surf_dist-1.2*surf_minimum) * zhat);
 			// calculate reflection
-			xhat = 2.0*dotp*norm[0]-xhat; 
-			yhat = 2.0*dotp*norm[1]-yhat; 
-			zhat = 2.0*dotp*norm[2]-zhat; 
+			xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
+			yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
+			zhat_new = -(2.0 * dotp * norm[2]) + zhat; 
 			// ensure normalization
-			float mag  = sqrtf(xhat*xhat + yhat*yhat + zhat*zhat);  
-			xhat = xhat / mag;
-			yhat = yhat / mag;
-			zhat = zhat / mag;
-			// write status numbers
+			float mag_new  = sqrtf(xhat_new*xhat_new + yhat_new*yhat_new + zhat_new*zhat_new);
+			if (mag_new > 1.0){
+				xhat_new = xhat_new / mag_new;
+				yhat_new = yhat_new / mag_new;
+				zhat_new = zhat_new / mag_new;
+			}
+			// flags
 			this_rxn = 800;
 			isdone = 0;
 			tope=999999996;  // make reflection a different isotope 
@@ -179,9 +182,9 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	space[tid].z			= z;
 	space[tid].macro_t 		= macro_t_total;
 	if(enforce_BC==2){
-		space[tid].xhat = xhat;  // write reflected directions for specular BC
-		space[tid].yhat = yhat;
-		space[tid].zhat = zhat;
+		space[tid].xhat = xhat_new;  // write reflected directions for specular BC
+		space[tid].yhat = yhat_new;
+		space[tid].zhat = zhat_new;
 	}
 	rxn[tid_in] 			= this_rxn;  // rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
 	isonum[tid] 			= tope;

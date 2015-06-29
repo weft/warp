@@ -38,6 +38,8 @@ RT_PROGRAM void camera()
 	optix::Ray ray;
 	intersection_point  payload;
 
+	//rtPrintf("ray %u rxn %u xyz-hat % 10.8E % 10.8E % 10.8E\n",launch_index,rxn_buffer[launch_index_in],positions_buffer[launch_index].xhat,positions_buffer[launch_index].yhat,positions_buffer[launch_index].zhat);
+
 	// find nearest surface if and BC if type 2 
 	if(trace_type==2){
 		// init payload flags
