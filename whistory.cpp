@@ -2025,7 +2025,7 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 
 	// debug
 	//if(*num_active!=edges[8]-1){
-	if(print_flag>=3){
+	if(print_flag>=4){
 		//print
 		printf("num_active %u , edges[8] %u\n",*num_active,edges[8]-1);
 		printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
