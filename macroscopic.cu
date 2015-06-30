@@ -57,9 +57,11 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	//if(n_isotopes<0 | n_isotopes>9){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
 	//if(n_columns<0 | n_columns>376){printf("N_COLUMNS INVALID, n_columns = %u\n",n_columns);}
 	//if(tid_in >= 370899 & tid_in <=370901){printf("this_mat %u n_isotopes %u n_columns %u dex %u\n", this_mat, n_isotopes, n_columns, dex);}
+	//if(tid_in >= 4635554 | tid_in <= 4635557){printf("n_isotopes %u this_mat %u\n",n_isotopes,this_mat);}
 
 	// compute the total macroscopic cross section for this material
 	for(int k=0; k<n_isotopes; k++){
+		//printf("index %u\n", (n_isotopes*this_mat+k));
 		number_density = material_matrix[n_isotopes*this_mat+k];
 		if(number_density > 0.0){
 			//lienarly interpolate
@@ -76,11 +78,12 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;
 	float rn1 = get_rand(&rn);
-
+	int flag = 0;
 	// determine the isotope which the reaction occurs
 	for(int k=0; k<n_isotopes; k++){
 		number_density = material_matrix[n_isotopes*this_mat+k];
 		if(number_density > 0.0){
+			flag=1;
 			//lienarly interpolate
 			t0 = xs_data_MT[n_columns* dex    + k];     
 			t1 = xs_data_MT[n_columns*(dex+1) + k];
@@ -94,7 +97,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		}
 	}
 	if(tope == 999999999){ 
-		printf("macro - ISOTOPE NOT SAMPLED CORRECTLY!  Resampling with scaled probability... tid %u \n",tid);
+		printf("macro - ISOTOPE NOT SAMPLED CORRECTLY!  Resampling with scaled probability... tid %u rn1 %10.8E cum_prob %10.8E flag %d this_mat %u rxn %u\n",tid,rn1,cum_prob,flag,this_mat,this_rxn);
 		rn1 = rn1 * cum_prob;
 		for(int k=0; k<n_isotopes; k++){
                		number_density = material_matrix[n_isotopes*this_mat+k];
@@ -113,7 +116,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
         	}
 	}
 	if(tope == 999999999){
-                printf("macro - ISOTOPE  NOT SAMPLED CORRECTLY AFTER RESAMPLING WITH SCALED PROBABILITY! tid=%u \n",tid);
+                printf("macro - ISOTOPE  NOT SAMPLED CORRECTLY AFTER RESAMPLING WITH SCALED PROBABILITY! tid=%u rn1 %10.8E cum_prob %10.8E\n",tid,rn1,cum_prob);
 	}
 
 	// do surf/samp compare, calculate epsilon projection onto neutron trajectory

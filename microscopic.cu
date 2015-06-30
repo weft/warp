@@ -48,7 +48,6 @@ __global__ void microscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_c
 		tope_ending    = n_isotopes + xs_MT_numbers_total[this_tope]-1;
 	}
 
-
 	float xs_total = 0.0;
 	float e0 = main_E_grid[dex];
 	float e1 = main_E_grid[dex+1];
