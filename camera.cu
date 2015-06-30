@@ -25,7 +25,8 @@ RT_PROGRAM void camera()
 	unsigned launch_index;
 	if(trace_type==2){
 		launch_index=remap_buffer[launch_index_in];
-		if(rxn_buffer[launch_index_in]>900){return;}
+		if(rxn_buffer[launch_index_in]>801){return;}
+		//if(rxn_buffer[launch_index_in]==801){rtPrintf("Reflection!\n");}
 	}
 	else{
 		launch_index = launch_index_in;
@@ -110,6 +111,7 @@ RT_PROGRAM void camera()
 	}
 	else{ //otherwise write material to buffer 
 		matnum_buffer[launch_index] 				= payload.mat;
+		rxn_buffer[launch_index_in] 				= 0;
 	}
 
 }

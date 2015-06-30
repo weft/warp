@@ -13,7 +13,7 @@ __global__ void tally_spec_kernel(unsigned N, unsigned Ntally, unsigned tally_ce
 
 	// return if not cell or for some reason marked as done
 	if (cellnum[tid]!=tally_cell){return;}
-	if (this_rxn>=900 | this_rxn==800){return;}
+	if (this_rxn>=900 | this_rxn==800 | this_rxn==801){return;}
 
 	//int k;
 	float 		my_E   			= E[tid];

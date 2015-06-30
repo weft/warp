@@ -149,14 +149,15 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
 			zhat_new = -(2.0 * dotp * norm[2]) + zhat; 
 			// ensure normalization
-			float mag_new  = sqrtf(xhat_new*xhat_new + yhat_new*yhat_new + zhat_new*zhat_new);
-			if (mag_new > 1.0){
-				xhat_new = xhat_new / mag_new;
-				yhat_new = yhat_new / mag_new;
-				zhat_new = zhat_new / mag_new;
-			}
+			//float mag_new  = sqrtf(xhat_new*xhat_new + yhat_new*yhat_new + zhat_new*zhat_new);
+			//if (mag_new != 1.0){
+			//	printf("mag_new % 10.8E\n",mag_new)
+			//	xhat_new = xhat_new / mag_new;
+			//	yhat_new = yhat_new / mag_new;
+			//	zhat_new = zhat_new / mag_new;
+			//}
 			// flags
-			this_rxn = 800;
+			this_rxn = 801;  // reflection is 801 
 			isdone = 0;
 			tope=999999996;  // make reflection a different isotope 
 		}

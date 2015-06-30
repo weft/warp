@@ -1761,38 +1761,24 @@ void whistory::run(){
 		edges[9]  = 0;
 		edges[10] = 0;
 
-		//printf("CUDA ERROR2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
-		//print_data(stream[0], NUM_THREADS, N, d_space, d_E, d_cellnum, d_matnum, d_isonum, d_rxn, d_done, d_yield);
-
+		// process batch
 		while(Nrun>0){
-			//printf("CUDA ERROR, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
-
-			//if(RUN_FLAG==0){
-			//	Nrun=Ndataset;
-			//}
-			//else if(RUN_FLAG==1){
-			//	Nrun=N;
-			//}
 
 			//record stats
 			if(dump_flag >= 2){
 				fprintf(statsfile,"%u %10.8E\n",Nrun,get_time());
 			}
-
-			if(print_flag>=3){printf("TOP OF CYCLE, Nrun = %u\n",Nrun);}
+			if(print_flag>=3){printf("TOP OF CYCLE, Nrun = %u\n",Nrun);
+			}
 	
 			// find what material we are in and nearest surface distance
 			trace(2, Nrun);
 			check_cuda(cudaPeekAtLastError());
 
 			//find the main E grid index
-			//find_E_grid_index_quad( NUM_THREADS, N,  qnodes_depth,  qnodes_width, d_active, d_qnodes_root, d_E, d_index, d_done);
 			find_E_grid_index( NUM_THREADS, Nrun, xs_length_numbers[1],  d_remap, d_xs_data_main_E_grid, d_E, d_index, d_rxn);
 			check_cuda(cudaPeekAtLastError());
 
-
-			//write_to_file(d_isonum, d_rxn, N,"isonum_rxn","w");
-                        //write_to_file(d_index, d_matnum, N,"dex_matnum","w");
 			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
 			macroscopic( NUM_THREADS, Nrun,  n_isotopes, n_materials, MT_columns, outer_cell, d_remap, d_space, d_isonum, d_cellnum, d_index, d_matnum, d_rxn, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_number_density_matrix, d_done);
 			check_cuda(cudaPeekAtLastError());
@@ -1811,7 +1797,7 @@ void whistory::run(){
 			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
 			check_cuda(cudaPeekAtLastError());
 
-			// concurrent calls to do escatter/iscatter/abs/fission
+			// concurrent calls to do escatter/iscatter/cscatter/fission
 			cudaThreadSynchronize();
 			cudaDeviceSynchronize();
 			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
@@ -2039,15 +2025,17 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 
 	// debug
 	//if(*num_active!=edges[8]-1){
-	//	//print
-	//	printf("num_active %u , edges[8] %u\n",*num_active,edges[8]-1);
-	//	printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
-	//	printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
-	//	//dump
-	//	write_to_file(d_remap, d_rxn, N,"remap","w");
-	//	//exit
-	//	assert(*num_active==edges[8]-1);
-	//}
+	if(print_flag>=3){
+		//print
+		printf("num_active %u , edges[8] %u\n",*num_active,edges[8]-1);
+		printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
+		printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
+		if(dump_flag>=2){//dump
+			write_to_file(d_remap, d_rxn, N,"remap","w");
+		}
+		//exit
+		assert(*num_active==edges[8]-1);
+	}
 
 	// ensure order
 	assert(*num_active<=edges[8]-1);

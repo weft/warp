@@ -95,6 +95,9 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	float 		mu0,mu1,cdf0,cdf1,arg;
 	//float 		v_rel,E_rel;
 
+	// ensure normalization
+	hats_old = hats_old / hats_old.norm2();
+
 	// make target isotropic
 	mu  = (2.0*get_rand(&rn)) - 1.0;
 	phi = 2.0*pi*get_rand(&rn);
@@ -197,6 +200,7 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	if ( E_new <= E_cutoff | E_new > E_max ){
 		isdone=1;
 		this_rxn = 998;  // ecutoff code
+		printf("i CUTOFF, E = %10.8E\n",E_new);
 	}
 
 	//printf("%u isatter hat length % 10.8E\n",tid,sqrtf(hats_new.x*hats_new.x+hats_new.y*hats_new.y+hats_new.z*hats_new.z));

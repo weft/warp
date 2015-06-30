@@ -39,7 +39,7 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 		else if( rxn1 == 91 ){
 			edges[4] = 1;
 		} 
-		else if( rxn1 == 800 ){
+		else if( rxn1 == 800 | rxn1 == 801 ){
 			edges[6] = 1;
 		}
 		else if( rxn1 >= 811 && rxn1 <=845 ){
@@ -62,7 +62,7 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 				edges[1] = tid+1;
 				edges[4] = tid+2;
 			}
-			else if( rxn2 == 800 ){
+			else if( rxn2 == 800 | rxn2==801 ){
 				edges[1] = tid+1;
 				edges[6] = tid+2;
 			}
@@ -82,7 +82,7 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 				edges[3] = tid+1;
 				edges[4] = tid+2;
 			}
-			else if( rxn2 == 800 ){
+			else if( rxn2 == 800 | rxn2==801 ){
 				edges[3] = tid+1;
 				edges[6] = tid+2;
 			}
@@ -98,7 +98,7 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 
 		// 91 edge
 		if( rxn1 == 91 ){
-			if( rxn2 == 800 ){
+			if( rxn2 == 800 | rxn2==801 ){
 				edges[5] = tid+1;
 				edges[6] = tid+2;
 			}
@@ -113,7 +113,7 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 		}
 
 		// 800 edge
-		if( rxn1 == 800 ){
+		if( rxn1 == 800 | rxn1==801 ){
 			if( rxn2 >=811 && rxn2 <= 845 ){
 				edges[7] = tid+1;
 				edges[8] = tid+2;
@@ -144,7 +144,7 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 		else if( rxn1 == 91 ){
 			edges[5] = N;
 		} 
-		else if( rxn1 == 800 ){
+		else if( rxn1 == 800 | rxn1==801 ){
 			edges[7] = N;
 		}
 		else if( rxn1 >= 811 && rxn1 <=845 ){

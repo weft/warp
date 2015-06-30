@@ -59,6 +59,9 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target;
 	float 		cdf0,e0,A,R,pdf0,rn1,rn2,cdf1,pdf1,e1;
 
+	// ensure normalization
+	hats_old = hats_old / hats_old.norm2();
+
 	// make speed vectors, assume high enough energy to approximate target as stationary
 	v_n_lf = hats_old    * speed_n;
 	v_t_lf = hats_target * 0.0;
@@ -429,6 +432,7 @@ __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting
 	if ( E_new <= E_cutoff | E_new > E_max ){
 		isdone=1;
 		this_rxn = 998;  // ecutoff code
+		printf("c CUTOFF, E = %10.8E\n",E_new);
 	}
 	
 	//if(this_rxn==91){printf("%u % 6.4E %6.4E %6.4E %6.4E %u %u\n",this_rxn,mu,sampled_E,this_E,E_new, vlen, next_vlen);}
