@@ -785,8 +785,8 @@ int main(int argc, char* argv[]){
 		//pin cell
 		type=1;
 		material=1;
-		mins[0]=-1.2;
-		mins[1]=-1.2;
+		mins[0]=-1.0;
+		mins[1]=-1.0;
 		mins[2]=-20;
 		maxs[0]= 1.2; 
 		maxs[1]= 1.2; 
@@ -800,11 +800,11 @@ int main(int argc, char* argv[]){
 		//clad
 		type=1;
 		material=3;
-		mins[0]=-1.8;
-		mins[1]=-1.8;
+		mins[0]=-1.2;
+		mins[1]=-1.2;
 		mins[2]=-20.2;
-		maxs[0]= 1.8; 
-		maxs[1]= 1.8; 
+		maxs[0]= 1.2; 
+		maxs[1]= 1.2; 
 		maxs[2]= 20.2;
 		origin[0]=0.0;
 		origin[1]=0.0;
