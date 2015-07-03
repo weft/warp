@@ -22,7 +22,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float 		cum_prob 		= 0.0;
 	float 		diff			= 0.0;
 	unsigned 	tope 			= 999999999;
-	float 		epsilon 		= 1.0e-4;
+	float 		epsilon 		= 2.0e-5;
 	unsigned 	isdone 			= 0;
 	float 		dotp 			= 0.0;
 
@@ -144,30 +144,22 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		}
 		else if(enforce_BC == 2){  // specular reflection BC
 			// move epsilon off of surface
-			x += ((surf_dist-1.2*surf_minimum) * xhat);
-			y += ((surf_dist-1.2*surf_minimum) * yhat);
-			z += ((surf_dist-1.2*surf_minimum) * zhat);
+			x += surf_dist * xhat   +   1.1*epsilon*norm[0];
+			y += surf_dist * yhat   +   1.1*epsilon*norm[1];
+			z += surf_dist * zhat   +   1.1*epsilon*norm[2];
 			// calculate reflection
 			xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
 			yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
 			zhat_new = -(2.0 * dotp * norm[2]) + zhat; 
-			// ensure normalization
-			//float mag_new  = sqrtf(xhat_new*xhat_new + yhat_new*yhat_new + zhat_new*zhat_new);
-			//if (mag_new != 1.0){
-			//	printf("mag_new % 10.8E\n",mag_new)
-			//	xhat_new = xhat_new / mag_new;
-			//	yhat_new = yhat_new / mag_new;
-			//	zhat_new = zhat_new / mag_new;
-			//}
 			// flags
 			this_rxn = 801;  // reflection is 801 
 			isdone = 0;
 			tope=999999996;  // make reflection a different isotope 
 		}
 		else{ // if not outer cell, push through surface, set resample
-			x += (surf_dist + 1.2*surf_minimum) * xhat;
-			y += (surf_dist + 1.2*surf_minimum) * yhat;
-			z += (surf_dist + 1.2*surf_minimum) * zhat;
+			x += surf_dist * xhat   -   1.1*epsilon*norm[0];
+			y += surf_dist * yhat   -   1.1*epsilon*norm[1];
+			z += surf_dist * zhat   -   1.1*epsilon*norm[2];
 			this_rxn = 800;
 			isdone = 0;
 			tope=999999998;  // make resampling a different isotope than mis-sampling
