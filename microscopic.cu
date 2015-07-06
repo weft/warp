@@ -43,6 +43,9 @@ __global__ void microscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_c
 		tope_beginning = n_isotopes + 0;
 		tope_ending    = n_isotopes + xs_MT_numbers_total[0]-1;
 	}
+	else if(this_tope>=n_isotopes){
+		printf("micro - ISOTOPE NUMBER FROM MACRO > NUMBER OF ISOTOPES!  n_isotopes %u tope %u\n",n_isotopes,this_tope);
+	}
 	else{  //interior space
 		tope_beginning = n_isotopes + xs_MT_numbers_total[this_tope-1];
 		tope_ending    = n_isotopes + xs_MT_numbers_total[this_tope]-1;

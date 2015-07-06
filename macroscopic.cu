@@ -50,12 +50,17 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float e1 = main_E_grid[dex+1];
 	float t0,t1,number_density,surf_minimum, xhat_new, yhat_new, zhat_new;
 
-	//__syncthreads();
+	if(this_mat>=n_materials){
+		printf("MACRO - this_mat %u > n_materials %u!!!!!\n",this_mat,n_materials);
+        	rxn[tid_in]                     = 1001;  
+        	isonum[tid]                     = 0;
+		return;
+	}
 
-	//if(dex>500){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
-	//if(this_mat<0 | this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
-	//if(n_isotopes<0 | n_isotopes>9){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
-	//if(n_columns<0 | n_columns>376){printf("N_COLUMNS INVALID, n_columns = %u\n",n_columns);}
+	if(dex>178889){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
+	if(this_mat<0 | this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
+	if(n_isotopes<0 | n_isotopes>15){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
+	if(n_columns<0 | n_columns>394){printf("N_COLUMNS INVALID, n_columns = %u\n",n_columns);}
 	//if(tid_in >= 370899 & tid_in <=370901){printf("this_mat %u n_isotopes %u n_columns %u dex %u\n", this_mat, n_isotopes, n_columns, dex);}
 	//if(tid_in >= 4635554 | tid_in <= 4635557){printf("n_isotopes %u this_mat %u\n",n_isotopes,this_mat);}
 
@@ -144,9 +149,9 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		}
 		else if(enforce_BC == 2){  // specular reflection BC
 			// move epsilon off of surface
-			x += ((surf_dist-1.2*surf_minimum) * xhat);
-			y += ((surf_dist-1.2*surf_minimum) * yhat);
-			z += ((surf_dist-1.2*surf_minimum) * zhat);
+			x += ((surf_dist*xhat) + 1.2*epsilon*norm[0]);
+			y += ((surf_dist*yhat) + 1.2*epsilon*norm[1]);
+			z += ((surf_dist*zhat) + 1.2*epsilon*norm[2]);
 			// calculate reflection
 			xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
 			yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
@@ -165,9 +170,9 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			tope=999999996;  // make reflection a different isotope 
 		}
 		else{ // if not outer cell, push through surface, set resample
-			x += (surf_dist + 1.2*surf_minimum) * xhat;
-			y += (surf_dist + 1.2*surf_minimum) * yhat;
-			z += (surf_dist + 1.2*surf_minimum) * zhat;
+			x += (surf_dist*xhat - 1.2*epsilon*norm[0]);
+			y += (surf_dist*yhat - 1.2*epsilon*norm[1]);
+			z += (surf_dist*zhat - 1.2*epsilon*norm[2]);
 			this_rxn = 800;
 			isdone = 0;
 			tope=999999998;  // make resampling a different isotope than mis-sampling
@@ -193,7 +198,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	rxn[tid_in] 			= this_rxn;  // rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
 	isonum[tid] 			= tope;
 	rn_bank[tid] 			= rn;
-	done[tid] 				= isdone;
+	done[tid] 			= isdone;
 
 
 }

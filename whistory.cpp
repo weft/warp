@@ -1774,28 +1774,34 @@ void whistory::run(){
 			// find what material we are in and nearest surface distance
 			trace(2, Nrun);
 			check_cuda(cudaPeekAtLastError());
+			//printf("trace done\n");
 
 			//find the main E grid index
 			find_E_grid_index( NUM_THREADS, Nrun, xs_length_numbers[1],  d_remap, d_xs_data_main_E_grid, d_E, d_index, d_rxn);
 			check_cuda(cudaPeekAtLastError());
+			//printf("grid search done\n");
 
 			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
 			macroscopic( NUM_THREADS, Nrun,  n_isotopes, n_materials, MT_columns, outer_cell, d_remap, d_space, d_isonum, d_cellnum, d_index, d_matnum, d_rxn, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_number_density_matrix, d_done);
 			check_cuda(cudaPeekAtLastError());
+			//printf("MACRO done\n");
 
 			// run tally kernel to compute spectra
 			if(converged){
 				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn);
 			}
 			check_cuda(cudaPeekAtLastError());
+			//printf("tally score done\n");
 
 			// run microscopic kernel to find reaction type
 			microscopic( NUM_THREADS, Nrun, n_isotopes, MT_columns, d_remap, d_isonum, d_index, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_xs_MT_numbers_total, d_xs_MT_numbers, d_xs_data_Q, d_rxn, d_Q, d_done);
 			check_cuda(cudaPeekAtLastError());
+			//printf("micro done\n");
 
 			// remap threads to still active data
 			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
 			check_cuda(cudaPeekAtLastError());
+			//printf("remap done\n");
 
 			// concurrent calls to do escatter/iscatter/cscatter/fission
 			cudaThreadSynchronize();
@@ -1806,6 +1812,7 @@ void whistory::run(){
 			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  
 			cudaDeviceSynchronize();
 			check_cuda(cudaPeekAtLastError());
+			//printf("reactions done\n");
 
 			if(RUN_FLAG==0){  //fixed source
 				// pop secondaries back in
@@ -1815,6 +1822,7 @@ void whistory::run(){
 				//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
 			}
 			check_cuda(cudaPeekAtLastError());
+			//printf("accumulate/pop done\n");
 
 			//std::cout << "press enter to continue...\n";
 			//std::cin.ignore();

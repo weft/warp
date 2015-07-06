@@ -9,7 +9,7 @@ __global__ void find_E_grid_index_kernel(unsigned N, unsigned N_energies , unsig
 
 	// return if terminated
 	unsigned this_rxn=rxn[tid_in];
-	if (this_rxn>=900){return;}
+	if (this_rxn>801){return;}
 
 	//remap
 	int tid=remap[tid_in];
@@ -17,46 +17,35 @@ __global__ void find_E_grid_index_kernel(unsigned N, unsigned N_energies , unsig
 	// load data
 	float value = E[tid];
 	unsigned donesearching = 0;
-	unsigned cnt  = 1;
+	unsigned cnt  = 0;
 	unsigned powtwo = 2;
-	//unsigned olddex=index[tid];
 	int dex  = (N_energies-1) / 2;  //N_energiesgth starts at 1, duh
 
-	//printf("%p %d %10.4E\n",main_E_grid,dex,value);
-	//int k;
 
-	while(!donesearching){
+	for(cnt=0;cnt<=30;cnt++){
 		powtwo = powtwo * 2;
 		if      ( 	main_E_grid[dex]   <= value && 
-					main_E_grid[dex+1] >  value ) { donesearching = 1; }
-		else if ( 	main_E_grid[dex]   >  value ) { dex  = dex - ((N_energies / powtwo) + 1) ; cnt++; }  // +1's are to do a ceiling instead of a floor on integer division
-		else if ( 	main_E_grid[dex]   <  value ) { dex  = dex + ((N_energies / powtwo) + 1) ; cnt++; }
+				main_E_grid[dex+1] >  value ) { donesearching=1; break; }
+		else if ( 	main_E_grid[dex]   >  value ) { dex  = dex - ((N_energies / powtwo) + 1) ;}  // +1's are to do a ceiling instead of a floor on integer division
+		else if ( 	main_E_grid[dex]   <  value ) { dex  = dex + ((N_energies / powtwo) + 1) ;}
 
-		if(cnt>30){
-			donesearching=1;
+		if(cnt==30){
 			printf("binary search iteration overflow! %p %d % 10.8f tid=%u\n",main_E_grid,N_energies,value,tid);
 			dex=0;
 		}
 
 		// edge checks... fix later???
 		if(dex<0){
-			//printf("binary search error! dex=%d, (ptr,N_energies,value) %p %d % 10.8f\n",dex,main_E_grid,N_energies,value);
-			//for(k=0;k<N_energies;k++){printf("%10.8E\n",main_E_grid[k]);}
 			dex=0;
-			//donesearching=1;
 		}
 		if(dex>=N_energies){
-			//printf("binary search error! dex=%d, (ptr,N_energies,value) %p %d % 10.8f\n",dex,main_E_grid,N_energies,value);
-			//for(k=0;k<N_energies;k++){printf("%10.8E\n",main_E_grid[k]);}
 			dex=N_energies-1;
-			//donesearching=1;
 		}
 	}
 
 
 	//write output index
 	index[tid]=dex;
-	//if(olddex!=dex){printf("E_i %6.4E E %6.4E E_i+1 %6.4E, dex %u quaddex %u\n",main_E_grid[dex],value,main_E_grid[dex+1],dex,olddex);}
 
 }
 

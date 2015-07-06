@@ -40,8 +40,9 @@ void tally_spec(unsigned NUM_THREADS,  unsigned N, unsigned Ntally, unsigned tal
 	
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
+	cudaDeviceSynchronize();
 	tally_spec_kernel <<< blks, NUM_THREADS >>> ( N, Ntally, tally_cell, remap, space, E, tally_score, tally_square, tally_count, done, cellnum, rxn);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 
 }
 
