@@ -22,7 +22,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float 		cum_prob 		= 0.0;
 	float 		diff			= 0.0;
 	unsigned 	tope 			= 999999999;
-	float 		epsilon 		= 1.0e-4;
+	float 		epsilon 		= 2.0e-5;
 	unsigned 	isdone 			= 0;
 	float 		dotp 			= 0.0;
 
@@ -156,14 +156,6 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
 			yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
 			zhat_new = -(2.0 * dotp * norm[2]) + zhat; 
-			// ensure normalization
-			//float mag_new  = sqrtf(xhat_new*xhat_new + yhat_new*yhat_new + zhat_new*zhat_new);
-			//if (mag_new != 1.0){
-			//	printf("mag_new % 10.8E\n",mag_new)
-			//	xhat_new = xhat_new / mag_new;
-			//	yhat_new = yhat_new / mag_new;
-			//	zhat_new = zhat_new / mag_new;
-			//}
 			// flags
 			this_rxn = 801;  // reflection is 801 
 			isdone = 0;
