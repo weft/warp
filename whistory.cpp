@@ -2317,7 +2317,7 @@ void whistory::write_fission_points(){
 	    for ( x = 0; x < res_x; ++x)
 	    {
 	    	hot2(colormap,fiss_img[y*res_x+x],minnum,maxnum);
-	        image[image.get_height()-1-y][x] = png::rgb_pixel_16(colormap[0],colormap[1],colormap[2]);
+	        image[image.get_height()-1-y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
 	    }
 	}
 
