@@ -2316,8 +2316,8 @@ void whistory::write_fission_points(){
 	{
 	    for ( x = 0; x < res_x; ++x)
 	    {
-	    	make_color(colormap,fiss_img[y*res_x+x],minnum,maxnum);
-	        image[image.get_height()-1-y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	    	hot2(colormap,fiss_img[y*res_x+x],minnum,maxnum);
+	        image[image.get_height()-1-y][x] = png::rgb_pixel_16(colormap[0],colormap[1],colormap[2]);
 	    }
 	}
 
@@ -2590,6 +2590,52 @@ void whistory::make_color(float* color, unsigned x, unsigned min, unsigned max){
 	color[0]=color[0]*256;
 	color[1]=color[1]*256;
 	color[2]=color[2]*256;
+
+}
+void whistory::hot2(float* color, unsigned val, unsigned min, unsigned max){
+
+	float val_norm = (float) (val-min)/(max-min);
+	if(val_norm>1.0){
+		printf("val_norm>1\n");
+	}
+
+	if( val_norm < 0.025){
+		color[0]=0.3*val_norm/0.025;
+		color[1]=0.0;
+		color[2]=0.0;
+	}
+	else if(val_norm < 0.3 & val_norm >= 0.025){
+		color[0]= (0.7/0.275)*(val_norm-0.025) + 0.3;
+		color[1]=0.0;
+		color[2]=0.0;
+	}
+	else if(val_norm < 0.7 & val_norm >= 0.3){
+		color[0]=1.0;
+		color[1]=1.0/(0.4)*(val_norm-0.3) + 0.0;
+		color[2]=0.0;
+	}
+	else {
+		color[0]=1.0;
+		color[1]=1.0;
+		color[2]=1.0/(0.3)*(val_norm-0.7) + 0.0;
+	}
+
+	if(color[0]>1){
+		printf("red=%6.4E!  val_norm = %6.4E\n",color[0],val_norm);
+	}
+	if(color[1]>1){
+		printf("green>%6.4E  val_norm = %6.4E!\n",color[1],val_norm);
+	}
+	if(color[2]>1){
+		printf("blue>%6.4E  val_norm = %6.4E!\n",color[2],val_norm);
+	}
+
+	float total_norm = sqrtf(color[0]*color[0]+color[1]*color[1]+color[2]*color[2]);
+
+	//bring up to 256?
+	color[0] = color[0]*256/total_norm;
+	color[1] = color[1]*256/total_norm;
+	color[2] = color[2]*256/total_norm;
 
 }
 void whistory::create_quad_tree(){

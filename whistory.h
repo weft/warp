@@ -449,11 +449,18 @@ public:
 	 void plot_geom(std::string type);
 	/**
 	 * \brief creates a color map
-	 * @param[in] color - color map
-	 * @param[in] x - used to check for a miss or normalize the color 
+	 * @param[in] color - rgb colors, float[3]
+	 * @param[in] x - value 
 	 * @param[in] min,max - values used to normalize the color  
 	 */
 	 void make_color(float* , unsigned , unsigned , unsigned );
+	 /**
+	 * \brief creates a hot2 color map
+	 * @param[in] color - rgb colors, float[3]
+	 * @param[in] x - value 
+	 * @param[in] min,max - values used to normalize the color  
+	 */
+	 void hot2(float* , unsigned , unsigned , unsigned );
 	 /**
 	 * \brief bins and accumulates fission points to grid
 	 * @param[in] d_space - device space points
