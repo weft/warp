@@ -16,7 +16,7 @@ __global__ void find_E_grid_index_kernel(unsigned N, unsigned N_energies , unsig
 
 	// load data
 	float value = E[tid];
-	unsigned donesearching = 0;
+	//unsigned donesearching = 0;
 	unsigned cnt  = 0;
 	unsigned powtwo = 2;
 	int dex  = (N_energies-1) / 2;  //N_energiesgth starts at 1, duh
@@ -25,7 +25,7 @@ __global__ void find_E_grid_index_kernel(unsigned N, unsigned N_energies , unsig
 	for(cnt=0;cnt<=30;cnt++){
 		powtwo = powtwo * 2;
 		if      ( 	main_E_grid[dex]   <= value && 
-				main_E_grid[dex+1] >  value ) { donesearching=1; break; }
+				main_E_grid[dex+1] >  value ) { break; }
 		else if ( 	main_E_grid[dex]   >  value ) { dex  = dex - ((N_energies / powtwo) + 1) ;}  // +1's are to do a ceiling instead of a floor on integer division
 		else if ( 	main_E_grid[dex]   <  value ) { dex  = dex + ((N_energies / powtwo) + 1) ;}
 

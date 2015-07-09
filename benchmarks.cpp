@@ -855,6 +855,7 @@ int main(int argc, char* argv[]){
 
 	whistory hist ( N , geom );
 	hist.set_print_level(3);
+	hist.set_dump_level(3);
 	hist.set_device(0);
 	hist.init();
 	hist.print_xs_data();

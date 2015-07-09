@@ -144,6 +144,8 @@ void whistory::init(){
 	remap 			= new unsigned 		[Ndataset];
 	zeros 			= new unsigned 		[Ndataset];
 	ones 			= new unsigned 		[Ndataset];
+	// fission points array
+	fiss_img  =  new long unsigned [300*300];
 	// init counters to 0
 	total_bytes_scatter = 0;
 	total_bytes_energy  = 0;
@@ -1724,12 +1726,12 @@ void whistory::run(){
 	}
 
 	// make sure fissile_points file is cleared
-	if(dump_flag>=3){          // level 3 includes fissile points
-		fiss_name=filename;
-		fiss_name.append(".fission_points");
-		FILE* ffile = fopen(fiss_name.c_str(),"w");
-		fclose(ffile);
-	}
+	//if(dump_flag>=3){          // level 3 includes fissile points
+	//	fiss_name=filename;
+	//	fiss_name.append(".fission_points.png");
+	//	FILE* ffile = fopen(fiss_name.c_str(),"w");
+	//	fclose(ffile);
+	//}
 
 	// open file for run stats
 	if(dump_flag>=2){         // level 2 includes stats files
@@ -1743,7 +1745,8 @@ void whistory::run(){
 		//write source positions to file if converged
 		if(converged){
 			if(dump_flag>=3){
-				write_to_file(d_space,d_E,N,fiss_name,"a+");
+				//write_to_file(d_space,d_E,N,fiss_name,"a+");
+				bin_fission_points(d_space,N);
 			}
 		}
 
@@ -1899,6 +1902,10 @@ void whistory::run(){
 	if(dump_flag>=2){
 		fclose(statsfile);
 	}
+	if(dump_flag>=3){
+		write_fission_points();
+	}
+
 }
 void whistory::write_results(float runtime, float keff, std::string opentype){
 
@@ -2256,6 +2263,75 @@ void whistory::set_print_level(unsigned level){
 }
 void whistory::set_dump_level(unsigned level){
 	dump_flag = level;
+}
+void whistory::bin_fission_points( source_point * d_space, unsigned N){
+
+	// init
+	unsigned res_x = 300;
+	unsigned res_y = 300;
+	unsigned dex_x, dex_y;
+	float width_x = 1.41421356*( outer_cell_dims[3] - outer_cell_dims[0]);
+	float width_y = 1.41421356*( outer_cell_dims[4] - outer_cell_dims[1]);
+	float x_min   = 1.41421356 * outer_cell_dims[0];
+	float y_min   = 1.41421356 * outer_cell_dims[1];
+
+	// copy from device
+	source_point * positions_local = new source_point[N];
+	cudaMemcpy(positions_local,d_space,N*sizeof(source_point),cudaMemcpyDeviceToHost);
+
+	// bin to grid
+	for(unsigned i=0; i<N; i++){
+		dex_x = unsigned(  ( positions_local[i].x - x_min )*res_x/width_x  );
+		dex_y = unsigned(  ( positions_local[i].y - y_min )*res_y/width_y  );
+		fiss_img[ dex_y*res_x + dex_x ] += 1; 
+	}
+
+	// free
+	delete positions_local;
+
+}
+void whistory::write_fission_points(){
+
+	unsigned res_x = 300;
+	unsigned res_y = 300;
+	size_t x, y;
+	unsigned minnum = 0; 
+	unsigned maxnum = 0;
+	float * colormap = new float[3];
+	png::image< png::rgb_pixel > image(res_x, res_y);
+
+	// find maximum
+	for ( y = 0; y < res_y; ++y)
+	{
+	    for ( x = 0; x < res_x; ++x)
+	    {
+	    	if(fiss_img[y*res_x+x] >= maxnum){
+	    		maxnum = fiss_img[y*res_x+x];
+	    	}
+	    }
+	}
+
+	// make image via colormap
+	for ( y = 0; y < res_y; ++y)
+	{
+	    for ( x = 0; x < res_x; ++x)
+	    {
+	    	make_color(colormap,fiss_img[y*res_x+x],minnum,maxnum);
+	        image[image.get_height()-1-y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	    }
+	}
+
+	// write
+	std::string fiss_name=filename;
+	fiss_name.append(".fission_points.png");
+	image.write(fiss_name.c_str());
+	printf("  Fission point image written to %s.\n",fiss_name.c_str());
+
+
+	// clear
+	delete fiss_img;
+	delete colormap;
+
 }
 void whistory::plot_geom(std::string type_in){
 
