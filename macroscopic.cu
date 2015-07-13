@@ -22,7 +22,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float 		cum_prob 		= 0.0;
 	float 		diff			= 0.0;
 	unsigned 	tope 			= 999999999;
-	float 		epsilon 		= 1.0e-4;
+	float 		epsilon 		= 2.0e-5;
 	unsigned 	isdone 			= 0;
 	float 		dotp 			= 0.0;
 
@@ -48,18 +48,25 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float macro_t_total = 0.0;
 	float e0 = main_E_grid[dex];
 	float e1 = main_E_grid[dex+1];
-	float t0,t1,number_density,surf_minimum;
+	float t0,t1,number_density,surf_minimum, xhat_new, yhat_new, zhat_new;
 
-	//__syncthreads();
+	if(this_mat>=n_materials){
+		printf("MACRO - this_mat %u > n_materials %u!!!!!\n",this_mat,n_materials);
+        	rxn[tid_in]                     = 1001;  
+        	isonum[tid]                     = 0;
+		return;
+	}
 
-	//if(dex>500){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
-	//if(this_mat<0 | this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
-	//if(n_isotopes<0 | n_isotopes>9){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
-	//if(n_columns<0 | n_columns>376){printf("N_COLUMNS INVALID, n_columns = %u\n",n_columns);}
+	if(dex>178889){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
+	if(this_mat<0 | this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
+	if(n_isotopes<0 | n_isotopes>15){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
+	if(n_columns<0 | n_columns>394){printf("N_COLUMNS INVALID, n_columns = %u\n",n_columns);}
 	//if(tid_in >= 370899 & tid_in <=370901){printf("this_mat %u n_isotopes %u n_columns %u dex %u\n", this_mat, n_isotopes, n_columns, dex);}
+	//if(tid_in >= 4635554 | tid_in <= 4635557){printf("n_isotopes %u this_mat %u\n",n_isotopes,this_mat);}
 
 	// compute the total macroscopic cross section for this material
 	for(int k=0; k<n_isotopes; k++){
+		//printf("index %u\n", (n_isotopes*this_mat+k));
 		number_density = material_matrix[n_isotopes*this_mat+k];
 		if(number_density > 0.0){
 			//lienarly interpolate
@@ -76,11 +83,12 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;
 	float rn1 = get_rand(&rn);
-
+	int flag = 0;
 	// determine the isotope which the reaction occurs
 	for(int k=0; k<n_isotopes; k++){
 		number_density = material_matrix[n_isotopes*this_mat+k];
 		if(number_density > 0.0){
+			flag=1;
 			//lienarly interpolate
 			t0 = xs_data_MT[n_columns* dex    + k];     
 			t1 = xs_data_MT[n_columns*(dex+1) + k];
@@ -94,7 +102,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		}
 	}
 	if(tope == 999999999){ 
-		printf("macro - ISOTOPE NOT SAMPLED CORRECTLY!  Resampling with scaled probability... tid %u \n",tid);
+		printf("macro - ISOTOPE NOT SAMPLED CORRECTLY!  Resampling with scaled probability... tid %u rn1 %10.8E cum_prob %10.8E flag %d this_mat %u rxn %u\n",tid,rn1,cum_prob,flag,this_mat,this_rxn);
 		rn1 = rn1 * cum_prob;
 		for(int k=0; k<n_isotopes; k++){
                		number_density = material_matrix[n_isotopes*this_mat+k];
@@ -113,13 +121,14 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
         	}
 	}
 	if(tope == 999999999){
-                printf("macro - ISOTOPE  NOT SAMPLED CORRECTLY AFTER RESAMPLING WITH SCALED PROBABILITY! tid=%u \n",tid);
+                printf("macro - ISOTOPE  NOT SAMPLED CORRECTLY AFTER RESAMPLING WITH SCALED PROBABILITY! tid=%u rn1 %10.8E cum_prob %10.8E\n",tid,rn1,cum_prob);
 	}
 
 	// do surf/samp compare, calculate epsilon projection onto neutron trajectory
 	diff = surf_dist - samp_dist;
 	dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
 	surf_minimum = -epsilon / dotp;   // dotp *should* never be zero since optix won't report parallel lines
+	if (surf_minimum>surf_dist){surf_minimum = surf_dist;}
 
 	// complain if the dot product is positive.  normal should always be in the reflective sense, and normal should always be negative then.
 	if (dotp > 0.0 | dotp < -1.0){
@@ -140,27 +149,22 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		}
 		else if(enforce_BC == 2){  // specular reflection BC
 			// move epsilon off of surface
-			x += (surf_dist - 1.2*surf_minimum) * xhat;
-			y += (surf_dist - 1.2*surf_minimum) * yhat;
-			z += (surf_dist - 1.2*surf_minimum) * zhat;
+			x += ((surf_dist*xhat) + 1.2*epsilon*norm[0]);
+			y += ((surf_dist*yhat) + 1.2*epsilon*norm[1]);
+			z += ((surf_dist*zhat) + 1.2*epsilon*norm[2]);
 			// calculate reflection
-			xhat = 2.0*dotp*norm[0]-xhat; 
-			yhat = 2.0*dotp*norm[1]-yhat; 
-			zhat = 2.0*dotp*norm[2]-zhat; 
-			// ensure normalization
-			float mag  = sqrtf(xhat*xhat + yhat*yhat + zhat*zhat);  
-			xhat = xhat / mag;
-			yhat = yhat / mag;
-			zhat = zhat / mag;
-			// write status numbers
-			this_rxn = 800;
+			xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
+			yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
+			zhat_new = -(2.0 * dotp * norm[2]) + zhat; 
+			// flags
+			this_rxn = 801;  // reflection is 801 
 			isdone = 0;
 			tope=999999996;  // make reflection a different isotope 
 		}
 		else{ // if not outer cell, push through surface, set resample
-			x += (surf_dist + 1.2*surf_minimum) * xhat;
-			y += (surf_dist + 1.2*surf_minimum) * yhat;
-			z += (surf_dist + 1.2*surf_minimum) * zhat;
+			x += (surf_dist*xhat - 1.2*epsilon*norm[0]);
+			y += (surf_dist*yhat - 1.2*epsilon*norm[1]);
+			z += (surf_dist*zhat - 1.2*epsilon*norm[2]);
 			this_rxn = 800;
 			isdone = 0;
 			tope=999999998;  // make resampling a different isotope than mis-sampling
@@ -179,14 +183,14 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	space[tid].z			= z;
 	space[tid].macro_t 		= macro_t_total;
 	if(enforce_BC==2){
-		space[tid].xhat = xhat;  // write reflected directions for specular BC
-		space[tid].yhat = yhat;
-		space[tid].zhat = zhat;
+		space[tid].xhat = xhat_new;  // write reflected directions for specular BC
+		space[tid].yhat = yhat_new;
+		space[tid].zhat = zhat_new;
 	}
 	rxn[tid_in] 			= this_rxn;  // rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
 	isonum[tid] 			= tope;
 	rn_bank[tid] 			= rn;
-	done[tid] 				= isdone;
+	done[tid] 			= isdone;
 
 
 }

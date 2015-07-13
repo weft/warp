@@ -5,7 +5,7 @@
 #include "LCRNG.cuh"
 #include "binary_search.h"
 
-__device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned position, unsigned this_tope, unsigned this_awr, float this_E, source_point this_space, float* this_Earray, float* this_Sarray, source_point* space_out, float* E_out){
+__device__ void process_secondaries(unsigned this_yield, unsigned* rn, unsigned position, unsigned this_tope, unsigned this_awr, float this_E, source_point this_space, float* this_Earray, float* this_Sarray, source_point* space_out, float* E_out){
 
 	// internal data
 	unsigned 	k, n, offset, vlen, next_vlen, law, data_dex, intt;
@@ -405,7 +405,6 @@ __device__ void process_fission(unsigned this_yield, unsigned* rn, unsigned posi
 		x = sqrtf(1.0-(mu*mu))*cosf(phi);
 		y = sqrtf(1.0-(mu*mu))*sinf(phi);
 		z = mu;
-		//printf("% 6.4E % 6.4E % 6.4E\n",x,y,z);
 	
 		//check limits
 		if (sampled_E >= Emax){sampled_E = Emax * 0.99;}//printf("enforcing limits in pop data_dex=%u, sampled_E = %6.4E\n",data_dex,sampled_E);}
@@ -462,7 +461,7 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 
 	// sample laws
 	if(this_rxn>=916 & this_rxn<=945 ){
-		     process_fission(this_yield, &rn, position, this_tope, awr_list[this_tope], this_E, this_space, this_Earray, this_Sarray,  space_out, E_out);
+		     process_secondaries(this_yield, &rn, position, this_tope, awr_list[this_tope], this_E, this_space, this_Earray, this_Sarray,  space_out, E_out);
 	}
 	else{
 		printf("tid %u REACTION %u HAS NONZERO YIELD IN SOURCE POP!\n",tid,this_rxn);

@@ -91,9 +91,12 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	float 		speed_target     	=   sqrtf(2.0*E_target/(this_awr*m_n));
 	float  		speed_n          	=   sqrtf(2.0*this_E/m_n);
 	float 		E_new				=   0.0;
-	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target,  rotation_hat;
-	float 		mu0,mu1,cdf0,cdf1;
+	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target, rotation_hat;
+	float 		mu0,mu1,cdf0,cdf1,arg;
 	//float 		v_rel,E_rel;
+
+	// ensure normalization
+	hats_old = hats_old / hats_old.norm2();
 
 	// make target isotropic
 	mu  = (2.0*get_rand(&rn)) - 1.0;
@@ -178,9 +181,14 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	// pre rotation directions
 	hats_old = v_n_cm / v_n_cm.norm2();
 	hats_old = hats_old.rotate(mu, get_rand(&rn));
-	v_n_cm = hats_old * sqrtf(v_n_cm.dot(v_n_cm) + 2.0*this_awr*this_Q/((this_awr+1.0)*m_n) );
-	//printf("this_Q=%6.4E\n",this_Q);
-	
+
+	// check arg to make sure not negative
+	arg = v_n_cm.dot(v_n_cm) + 2.0*this_awr*this_Q/((this_awr+1.0)*m_n);
+	if(arg < 0.0) { 
+		arg=0.0;
+	}
+	v_n_cm = hats_old * sqrtf( arg );
+
 	// transform back to L
 	v_n_lf = v_n_cm + v_cm;
 	hats_new = v_n_lf / v_n_lf.norm2();
@@ -192,6 +200,7 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	if ( E_new <= E_cutoff | E_new > E_max ){
 		isdone=1;
 		this_rxn = 998;  // ecutoff code
+		printf("i CUTOFF, E = %10.8E\n",E_new);
 	}
 
 	//printf("%u isatter hat length % 10.8E\n",tid,sqrtf(hats_new.x*hats_new.x+hats_new.y*hats_new.y+hats_new.z*hats_new.z));

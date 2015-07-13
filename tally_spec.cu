@@ -13,7 +13,7 @@ __global__ void tally_spec_kernel(unsigned N, unsigned Ntally, unsigned tally_ce
 
 	// return if not cell or for some reason marked as done
 	if (cellnum[tid]!=tally_cell){return;}
-	if (this_rxn>=900 | this_rxn==800){return;}
+	if (this_rxn>=900 | this_rxn==800 | this_rxn==801){return;}
 
 	//int k;
 	float 		my_E   			= E[tid];
@@ -40,8 +40,9 @@ void tally_spec(unsigned NUM_THREADS,  unsigned N, unsigned Ntally, unsigned tal
 	
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
+	cudaDeviceSynchronize();
 	tally_spec_kernel <<< blks, NUM_THREADS >>> ( N, Ntally, tally_cell, remap, space, E, tally_score, tally_square, tally_count, done, cellnum, rxn);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 
 }
 

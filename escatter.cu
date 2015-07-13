@@ -91,6 +91,9 @@ __global__ void escatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	hats_target.y = sqrtf(1.0-(mu*mu))*sinf(phi); 
 	hats_target.z = mu;
 
+	// ensure normalization
+	hats_old = hats_old / hats_old.norm2();
+
 	//sample therm dist if low E
 	//if(this_E <= 600*kb*temp ){
 	sample_therm(&rn,&mu,&speed_target,temp,this_E,this_awr);
@@ -170,6 +173,7 @@ __global__ void escatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	if ( E_new <= E_cutoff | E_new > E_max ){
 		isdone=1;
 		this_rxn = 998;  // ecutoff code
+		printf("e CUTOFF, E = %10.8E\n",E_new);
 	}
 
 	// write results

@@ -144,6 +144,8 @@ void whistory::init(){
 	remap 			= new unsigned 		[Ndataset];
 	zeros 			= new unsigned 		[Ndataset];
 	ones 			= new unsigned 		[Ndataset];
+	// fission points array
+	fiss_img  =  new long unsigned [300*300];
 	// init counters to 0
 	total_bytes_scatter = 0;
 	total_bytes_energy  = 0;
@@ -1724,12 +1726,12 @@ void whistory::run(){
 	}
 
 	// make sure fissile_points file is cleared
-	if(dump_flag>=3){          // level 3 includes fissile points
-		fiss_name=filename;
-		fiss_name.append(".fission_points");
-		FILE* ffile = fopen(fiss_name.c_str(),"w");
-		fclose(ffile);
-	}
+	//if(dump_flag>=3){          // level 3 includes fissile points
+	//	fiss_name=filename;
+	//	fiss_name.append(".fission_points.png");
+	//	FILE* ffile = fopen(fiss_name.c_str(),"w");
+	//	fclose(ffile);
+	//}
 
 	// open file for run stats
 	if(dump_flag>=2){         // level 2 includes stats files
@@ -1743,7 +1745,8 @@ void whistory::run(){
 		//write source positions to file if converged
 		if(converged){
 			if(dump_flag>=3){
-				write_to_file(d_space,d_E,N,fiss_name,"a+");
+				//write_to_file(d_space,d_E,N,fiss_name,"a+");
+				bin_fission_points(d_space,N);
 			}
 		}
 
@@ -1761,57 +1764,49 @@ void whistory::run(){
 		edges[9]  = 0;
 		edges[10] = 0;
 
-		//printf("CUDA ERROR2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
-		//print_data(stream[0], NUM_THREADS, N, d_space, d_E, d_cellnum, d_matnum, d_isonum, d_rxn, d_done, d_yield);
-
+		// process batch
 		while(Nrun>0){
-			//printf("CUDA ERROR, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
-
-			//if(RUN_FLAG==0){
-			//	Nrun=Ndataset;
-			//}
-			//else if(RUN_FLAG==1){
-			//	Nrun=N;
-			//}
 
 			//record stats
 			if(dump_flag >= 2){
 				fprintf(statsfile,"%u %10.8E\n",Nrun,get_time());
 			}
-
-			if(print_flag>=3){printf("TOP OF CYCLE, Nrun = %u\n",Nrun);}
+			if(print_flag>=3){printf("TOP OF CYCLE, Nrun = %u\n",Nrun);
+			}
 	
 			// find what material we are in and nearest surface distance
 			trace(2, Nrun);
 			check_cuda(cudaPeekAtLastError());
+			//printf("trace done\n");
 
 			//find the main E grid index
-			//find_E_grid_index_quad( NUM_THREADS, N,  qnodes_depth,  qnodes_width, d_active, d_qnodes_root, d_E, d_index, d_done);
 			find_E_grid_index( NUM_THREADS, Nrun, xs_length_numbers[1],  d_remap, d_xs_data_main_E_grid, d_E, d_index, d_rxn);
 			check_cuda(cudaPeekAtLastError());
+			//printf("grid search done\n");
 
-
-			//write_to_file(d_isonum, d_rxn, N,"isonum_rxn","w");
-                        //write_to_file(d_index, d_matnum, N,"dex_matnum","w");
 			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
 			macroscopic( NUM_THREADS, Nrun,  n_isotopes, n_materials, MT_columns, outer_cell, d_remap, d_space, d_isonum, d_cellnum, d_index, d_matnum, d_rxn, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_number_density_matrix, d_done);
 			check_cuda(cudaPeekAtLastError());
+			//printf("MACRO done\n");
 
 			// run tally kernel to compute spectra
 			if(converged){
 				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn);
 			}
 			check_cuda(cudaPeekAtLastError());
+			//printf("tally score done\n");
 
 			// run microscopic kernel to find reaction type
 			microscopic( NUM_THREADS, Nrun, n_isotopes, MT_columns, d_remap, d_isonum, d_index, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_xs_MT_numbers_total, d_xs_MT_numbers, d_xs_data_Q, d_rxn, d_Q, d_done);
 			check_cuda(cudaPeekAtLastError());
+			//printf("micro done\n");
 
 			// remap threads to still active data
 			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
 			check_cuda(cudaPeekAtLastError());
+			//printf("remap done\n");
 
-			// concurrent calls to do escatter/iscatter/abs/fission
+			// concurrent calls to do escatter/iscatter/cscatter/fission
 			cudaThreadSynchronize();
 			cudaDeviceSynchronize();
 			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
@@ -1820,6 +1815,7 @@ void whistory::run(){
 			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  
 			cudaDeviceSynchronize();
 			check_cuda(cudaPeekAtLastError());
+			//printf("reactions done\n");
 
 			if(RUN_FLAG==0){  //fixed source
 				// pop secondaries back in
@@ -1829,6 +1825,7 @@ void whistory::run(){
 				//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
 			}
 			check_cuda(cudaPeekAtLastError());
+			//printf("accumulate/pop done\n");
 
 			//std::cout << "press enter to continue...\n";
 			//std::cin.ignore();
@@ -1905,6 +1902,10 @@ void whistory::run(){
 	if(dump_flag>=2){
 		fclose(statsfile);
 	}
+	if(dump_flag>=3){
+		write_fission_points();
+	}
+
 }
 void whistory::write_results(float runtime, float keff, std::string opentype){
 
@@ -2039,15 +2040,17 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 
 	// debug
 	//if(*num_active!=edges[8]-1){
-	//	//print
-	//	printf("num_active %u , edges[8] %u\n",*num_active,edges[8]-1);
-	//	printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
-	//	printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
-	//	//dump
-	//	write_to_file(d_remap, d_rxn, N,"remap","w");
-	//	//exit
-	//	assert(*num_active==edges[8]-1);
-	//}
+	if(print_flag>=4){
+		//print
+		printf("num_active %u , edges[8] %u\n",*num_active,edges[8]-1);
+		printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
+		printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
+		if(dump_flag>=2){//dump
+			write_to_file(d_remap, d_rxn, N,"remap","w");
+		}
+		//exit
+		assert(*num_active==edges[8]-1);
+	}
 
 	// ensure order
 	assert(*num_active<=edges[8]-1);
@@ -2260,6 +2263,75 @@ void whistory::set_print_level(unsigned level){
 }
 void whistory::set_dump_level(unsigned level){
 	dump_flag = level;
+}
+void whistory::bin_fission_points( source_point * d_space, unsigned N){
+
+	// init
+	unsigned res_x = 300;
+	unsigned res_y = 300;
+	unsigned dex_x, dex_y;
+	float width_x = 1.41421356*( outer_cell_dims[3] - outer_cell_dims[0]);
+	float width_y = 1.41421356*( outer_cell_dims[4] - outer_cell_dims[1]);
+	float x_min   = 1.41421356 * outer_cell_dims[0];
+	float y_min   = 1.41421356 * outer_cell_dims[1];
+
+	// copy from device
+	source_point * positions_local = new source_point[N];
+	cudaMemcpy(positions_local,d_space,N*sizeof(source_point),cudaMemcpyDeviceToHost);
+
+	// bin to grid
+	for(unsigned i=0; i<N; i++){
+		dex_x = unsigned(  ( positions_local[i].x - x_min )*res_x/width_x  );
+		dex_y = unsigned(  ( positions_local[i].y - y_min )*res_y/width_y  );
+		fiss_img[ dex_y*res_x + dex_x ] += 1; 
+	}
+
+	// free
+	delete positions_local;
+
+}
+void whistory::write_fission_points(){
+
+	unsigned res_x = 300;
+	unsigned res_y = 300;
+	size_t x, y;
+	unsigned minnum = 0; 
+	unsigned maxnum = 0;
+	float * colormap = new float[3];
+	png::image< png::rgb_pixel > image(res_x, res_y);
+
+	// find maximum
+	for ( y = 0; y < res_y; ++y)
+	{
+	    for ( x = 0; x < res_x; ++x)
+	    {
+	    	if(fiss_img[y*res_x+x] >= maxnum){
+	    		maxnum = fiss_img[y*res_x+x];
+	    	}
+	    }
+	}
+
+	// make image via colormap
+	for ( y = 0; y < res_y; ++y)
+	{
+	    for ( x = 0; x < res_x; ++x)
+	    {
+	    	make_color(colormap,fiss_img[y*res_x+x],minnum,maxnum);
+	        image[image.get_height()-1-y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
+	    }
+	}
+
+	// write
+	std::string fiss_name=filename;
+	fiss_name.append(".fission_points.png");
+	image.write(fiss_name.c_str());
+	printf("  Fission point image written to %s.\n",fiss_name.c_str());
+
+
+	// clear
+	delete fiss_img;
+	delete colormap;
+
 }
 void whistory::plot_geom(std::string type_in){
 

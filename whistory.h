@@ -158,6 +158,7 @@ class whistory {
 	unsigned 		MT_columns; /**< MT number columns */
 	//geom parameters
 	float 		outer_cell_dims [6]; /**< outer cell minima and maxima */
+	long unsigned*   fiss_img;  /**< fissile image accumulation */
 	// private transport functions 
 	/**
 	 * \brief initializes the random number generator
@@ -453,6 +454,16 @@ public:
 	 * @param[in] min,max - values used to normalize the color  
 	 */
 	 void make_color(float* , unsigned , unsigned , unsigned );
+	 /**
+	 * \brief bins and accumulates fission points to grid
+	 * @param[in] d_space - device space points
+	 * @param[in] N - dataset size 
+	 */
+	 void bin_fission_points( source_point * , unsigned );
+	 /**
+	 * \brief writes binned fission point image to a .png
+	 */
+	 void write_fission_points();
 };
 
 #endif

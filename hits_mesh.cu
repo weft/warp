@@ -36,5 +36,4 @@ RT_PROGRAM void closest_hit()
 	payload.cell = cellnum;
 	payload.fiss = cellfissile;
 
-
 }
