@@ -9,7 +9,7 @@ __global__ void find_E_grid_index_kernel(unsigned N, unsigned N_energies , unsig
 
 	// return if terminated
 	unsigned this_rxn=rxn[tid_in];
-	if (this_rxn>801){return;}
+	if (this_rxn>=900){return;}
 
 	//remap
 	int tid=remap[tid_in];

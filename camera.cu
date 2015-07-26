@@ -25,7 +25,7 @@ RT_PROGRAM void camera()
 	unsigned launch_index;
 	if(trace_type==2){
 		launch_index=remap_buffer[launch_index_in];
-		if(rxn_buffer[launch_index_in]>801){return;}
+		if(rxn_buffer[launch_index_in]>=900){return;}
 	}
 	else{
 		launch_index = launch_index_in;
@@ -78,22 +78,22 @@ RT_PROGRAM void camera()
 	}
 
 	// re-init sense, payload, ray
-	sense 			= 0;
-	payload.sense 		= 0;
-	payload.mat   		= 999999;
-	payload.cell  		= 999999;
-	payload.fiss  		= 0;
-	payload.x 		= 0.0;
-	payload.y 		= 0.0;
-	payload.z 		= 0.0; 
-	payload.surf_dist 	= 50000;  
-	payload.norm[0]   	= 0.0; 
-	payload.norm[1]   	= 0.0; 
-	payload.norm[2]   	= 0.0;    
-	payload.sense     	= 0.0;   
+	sense				= 0;
+	payload.sense		= 0;
+	payload.mat			= 999999;
+	payload.cell		= 999999;
+	payload.fiss		= 0;
+	payload.x			= 0.0;
+	payload.y			= 0.0;
+	payload.z			= 0.0; 
+	payload.surf_dist	= 50000;  
+	payload.norm[0]		= 0.0; 
+	payload.norm[1]		= 0.0; 
+	payload.norm[2]		= 0.0;    
+	payload.sense		= 0.0;   
 	ray_direction		= make_float3(0,0,-1);
-	ray_origin     		= make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
-	ray 			= optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
+	ray_origin			= make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
+	ray					= optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 	
 	// then find entering cell, use downward z to make problems with high x-y density faster
 	rtTrace(top_object, ray, payload);
@@ -109,7 +109,7 @@ RT_PROGRAM void camera()
 	cellnum_buffer[launch_index]	 				= payload.cell;
 	if(trace_type == 3){  //write fissile flag if fissile query
 		matnum_buffer[launch_index] 				= payload.fiss;
-		rxn_buffer[launch_index_in] 				= 818;  // force to be fission rxn for fissile query
+		rxn_buffer[launch_index_in] 				= 0;
 	}
 	else{ //otherwise write material to buffer 
 		matnum_buffer[launch_index] 				= payload.mat;

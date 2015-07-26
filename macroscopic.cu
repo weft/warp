@@ -11,7 +11,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 
 	// return if terminated
 	unsigned this_rxn=rxn[tid_in];
-	if (this_rxn>900){return;}
+	if (this_rxn>=900){return;}
 
 	//remap
 	int tid=remap[tid_in];
@@ -57,10 +57,12 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		return;
 	}
 
-	if(dex>178889){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
-	if(this_mat<0 | this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
-	if(n_isotopes<0 | n_isotopes>15){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
-	if(n_columns<0 | n_columns>394){printf("N_COLUMNS INVALID, n_columns = %u\n",n_columns);}
+	if (this_rxn>801)printf("multiplicity %u entered macro at E %10.8E\n",this_rxn,this_E);
+
+	//if(dex>178889){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
+	//if(this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
+	//if(n_isotopes>15){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
+	//if(n_columns>394){printf("N_COLUMNS INVALID, n_columns = %u\n",n_columns);}
 	//if(tid_in >= 370899 & tid_in <=370901){printf("this_mat %u n_isotopes %u n_columns %u dex %u\n", this_mat, n_isotopes, n_columns, dex);}
 	//if(tid_in >= 4635554 | tid_in <= 4635557){printf("n_isotopes %u this_mat %u\n",n_isotopes,this_mat);}
 
