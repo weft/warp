@@ -150,7 +150,7 @@ void whistory::init(){
 	fones 			= new float  		[Ndataset];
 	weight	   		= new float  		[Ndataset];
 	// fission points array
-	fiss_img  =  new long unsigned [300*300];
+	fiss_img  =  new long unsigned [300*300]; for(int i=0;i<300*300;i++){fiss_img[i]=0;}
 	// init counters to 0
 	total_bytes_scatter = 0;
 	total_bytes_energy  = 0;
@@ -1918,7 +1918,7 @@ void whistory::write_results(float runtime, float keff, std::string opentype){
 	std::string resname = filename;
 	resname.append(".results");
 	FILE* f  = fopen(resname.c_str(),opentype.c_str());
-	fprintf(f,"runtime = % 6.4E m    k_eff = % 6.4E     \ncycles total %u skipped %u scored %u \n %u source neutrons per cycle\n",runtime/60.0,keff,n_skip+n_cycles,n_skip,n_cycles,N);
+	fprintf(f,"runtime = % 10.8E m    k_eff = % 10.8E   rel. err. = % 10.8E     \ncycles total %u skipped %u scored %u \n %u source neutrons per cycle\n",runtime/60.0,keff,keff_err,n_skip+n_cycles,n_skip,n_cycles,N);
 	fclose(f);
 
 }
@@ -2296,8 +2296,8 @@ void whistory::write_fission_points(){
 	unsigned res_x = 300;
 	unsigned res_y = 300;
 	size_t x, y;
-	unsigned minnum = 0; 
-	unsigned maxnum = 0;
+	long unsigned minnum = 0; 
+	long unsigned maxnum = 0;
 	float * colormap = new float[3];
 	png::image< png::rgb_pixel > image(res_x, res_y);
 
@@ -2593,11 +2593,11 @@ void whistory::make_color(float* color, unsigned x, unsigned min, unsigned max){
 	color[2]=color[2]*256;
 
 }
-void whistory::hot2(float* color, unsigned val, unsigned min, unsigned max){
+void whistory::hot2(float* color, long unsigned val, long unsigned min, long unsigned max){
 
 	float val_norm = (float) (val-min)/(max-min);
 	if(val_norm>1.0){
-		printf("val_norm>1\n");
+		printf("val_norm>1, min %u max %u val %u\n",min,max,val);
 	}
 
 	if( val_norm < 0.025){

@@ -471,7 +471,7 @@ public:
 	 * @param[in] x - value 
 	 * @param[in] min,max - values used to normalize the color  
 	 */
-	 void hot2(float* , unsigned , unsigned , unsigned );
+	 void hot2(float* , long unsigned , long unsigned , long unsigned );
 	 /**
 	 * \brief creates a binary colormap, black iff 0
 	 * @param[in] color - rgb colors, float[3]

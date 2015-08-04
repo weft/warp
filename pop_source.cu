@@ -13,7 +13,7 @@ __device__ void process_secondaries(unsigned this_yield, unsigned* rn, unsigned 
 	float 		cdf0, cdf1, e0, e1, m, pdf0, pdf1, arg,x,y,z,A, R;
 	const float pi 		= 3.14159265359;
 	const float Emin 	= 1e-11;
-	const float Emax 	= 200.0;
+	const float Emax 	= 20.0;
 
 	//read in values
 	offset = 6;
