@@ -92,14 +92,18 @@ class whistory {
 	unsigned *      rxn; /**< reaction */
 	unsigned *      done; /**< done flag */
 	unsigned *      yield; /**< yield */
+	float * 		weight; /**< neutron weight */
 	//unsigned * 	material_list; /**< material list */
 	//unsigned * 	isotope_list; /**< isotope list */
 	float *  	number_density_matrix; /**< isotope number density matrix */
 	unsigned 	reduced_yields; /**< reduced yields */
+	float    	reduced_weight; /**< reduced weight */
 	unsigned * 	remap; /**< remap */
 	unsigned * 	zeros; /**< zeros */
 	unsigned * 	ones; /**< ones */
+	float * 	fones; /**< float ones */
     long unsigned   reduced_yields_total;   /**< long unsigned for accumulating yield numbers accurately on the host */
+    double          reduced_weight_total;   /**< double for accumulating weight numbers accurately on the host */
 	qnode * 	qnodes; /**< quaternary nodes */
 	// device data
 	source_point *  d_space; /**< device spatial source point */
@@ -127,10 +131,12 @@ class whistory {
 	unsigned *      d_rxn_remap; /**< device reaction remap */
 	unsigned *      d_done; /**< device done flag */
 	unsigned *      d_yield; /**< device yield */
+	float *      d_weight; /**< device neutron weight */
 	unsigned * 	d_material_list; /**< device material list */
 	unsigned * 	d_isotope_list; /**< device isotope list */
 	float *  	d_number_density_matrix; /**< device isotope number density matrix */
 	unsigned * 	d_reduced_yields; /**< device reduced yields */
+	float * 	d_reduced_weight; /**< device reduced weight */
 	unsigned * 	d_reduced_done; /**< device reduced done flags */
 	float * 	d_fissile_energy; /**< device fissile energy */
 	source_point * 	d_fissile_points; /**< device fissile points */
@@ -244,6 +250,11 @@ class whistory {
 	 * \returns total
 	 */
 	unsigned reduce_yield();
+    /**
+	 * \brief reduces weight values
+	 * \returns total
+	 */
+    float reduce_weight();
     /**
      * \brief accumulates yields into host side values
      * @param[in] iteration - the active iteration number (starts at 0)
@@ -449,11 +460,25 @@ public:
 	 void plot_geom(std::string type);
 	/**
 	 * \brief creates a color map
-	 * @param[in] color - color map
-	 * @param[in] x - used to check for a miss or normalize the color 
+	 * @param[in] color - rgb colors, float[3]
+	 * @param[in] x - value 
 	 * @param[in] min,max - values used to normalize the color  
 	 */
 	 void make_color(float* , unsigned , unsigned , unsigned );
+	 /**
+	 * \brief creates a hot2 color map
+	 * @param[in] color - rgb colors, float[3]
+	 * @param[in] x - value 
+	 * @param[in] min,max - values used to normalize the color  
+	 */
+	 void hot2(float* , long unsigned , long unsigned , long unsigned );
+	 /**
+	 * \brief creates a binary colormap, black iff 0
+	 * @param[in] color - rgb colors, float[3]
+	 * @param[in] x - value 
+	 * @param[in] min,max - values used to normalize the color; unused, only present to keep arguments the same as other colormaps 
+	 */
+	 void nonzero(float* , unsigned , unsigned , unsigned );
 	 /**
 	 * \brief bins and accumulates fission points to grid
 	 * @param[in] d_space - device space points

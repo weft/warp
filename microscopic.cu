@@ -10,7 +10,7 @@ __global__ void microscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_c
 	if (tid_in >= N){return;}
 
 	unsigned 	this_rxn 		= rxn[tid_in];
-	if 		(this_rxn>=800){
+	if 		(this_rxn>=900 | this_rxn==800 | this_rxn == 801){
 		return;  //return if flagged to resample or leaked (leak can be in here since set by macro and remap hasn't been done)
 	} 
 	else if (this_rxn==0){

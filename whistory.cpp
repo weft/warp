@@ -49,6 +49,7 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	Ndataset = Nin * 3;
 	n_qnodes = 0;
 	reduced_yields_total = 0;
+	reduced_weight_total = 0;
 	accel_type = "Sbvh";
 	// default device to 0
 	compute_device = 0;
@@ -103,11 +104,13 @@ void whistory::init(){
 	cudaMalloc( &d_rn_bank  		, Ndataset*RNUM_PER_THREAD*sizeof(float) );
 	cudaMalloc( &d_isonum   		, Ndataset*sizeof(unsigned) );
 	cudaMalloc( &d_yield			, Ndataset*sizeof(unsigned) );
+	cudaMalloc( &d_weight			, Ndataset*sizeof(float) );
 	cudaMalloc( &d_index			, Ndataset*sizeof(unsigned) );
 	cudaMalloc( &d_tally_score  		, n_tally*sizeof(float));
 	cudaMalloc( &d_tally_square  		, n_tally*sizeof(float));
 	cudaMalloc( &d_tally_count  		, n_tally*sizeof(unsigned));
 	cudaMalloc( &d_reduced_yields 		, 1*sizeof(unsigned));
+	cudaMalloc( &d_reduced_weight 		, 1*sizeof(float));
 	cudaMalloc( &d_reduced_done 		, 1*sizeof(unsigned));
 	cudaMalloc( &d_valid_result		, Ndataset*sizeof(unsigned));
 	cudaMalloc( &d_valid_N			, 1*sizeof(unsigned));
@@ -144,8 +147,10 @@ void whistory::init(){
 	remap 			= new unsigned 		[Ndataset];
 	zeros 			= new unsigned 		[Ndataset];
 	ones 			= new unsigned 		[Ndataset];
+	fones 			= new float  		[Ndataset];
+	weight	   		= new float  		[Ndataset];
 	// fission points array
-	fiss_img  =  new long unsigned [300*300];
+	fiss_img  =  new long unsigned [300*300]; for(int i=0;i<300*300;i++){fiss_img[i]=0;}
 	// init counters to 0
 	total_bytes_scatter = 0;
 	total_bytes_energy  = 0;
@@ -243,6 +248,7 @@ void whistory::init_host(){
 		remap[k]		= k;
 		zeros[k]		= 0;
 		ones[k]			= 1;
+		fones[k]		= 1.0;
 		space[k].x 		= 0.0;
 		space[k].y 		= 0.0;
 		space[k].z 		= 0.0;
@@ -263,11 +269,13 @@ void whistory::init_host(){
 		done[k]			= 0;
 		isonum[k]		= 0;
 		yield[k]		= 0;
+		weight[k]		= 1;
 	}
 	for(int k=N;k<Ndataset;k++){
 		remap[k]		= k;
 		zeros[k]		= 0;
 		ones[k]			= 1;
+		fones[k]		= 1.0;
 		space[k].x 		= 0.0;
 		space[k].y 		= 0.0;
 		space[k].z 		= 0.0;
@@ -288,6 +296,7 @@ void whistory::init_host(){
 		done[k]			= 1;
 		isonum[k]		= 0;
 		yield[k]		= 0;
+		weight[k]		= 0;
 	}
 	for(int k=0;k<n_tally;k++){
 		tally_score_total[k]=0.0;
@@ -376,10 +385,6 @@ unsigned whistory::reduce_yield(){
 
 	unsigned reduced_yields;
 
-	//printf("reducing yield for %u elements\n",N);
-	//cudaMemcpy(yield,d_yield,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-	//for(unsigned k=0;k<N;k++){printf("yield[%u]=%u\n",k,yield[k]);}
-
 	res = cudppReduce(reduplan_int, d_reduced_yields, d_yield, N);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing yield values\n");exit(-1);}
 	cudaMemcpy(&reduced_yields, d_reduced_yields, 1*sizeof(unsigned), cudaMemcpyDeviceToHost);
@@ -387,17 +392,30 @@ unsigned whistory::reduce_yield(){
 	return reduced_yields;
 
 }
+float whistory::reduce_weight(){
+
+	float reduced_weight;
+
+	res = cudppReduce(reduplan_float, d_reduced_weight, d_weight, N);
+	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing weight values\n");exit(-1);}
+	cudaMemcpy(&reduced_weight, d_reduced_weight, 1*sizeof(float), cudaMemcpyDeviceToHost);
+
+	return reduced_weight;
+
+}
 void whistory::accumulate_keff(unsigned converged, unsigned iteration, double* keff, float* keff_cycle){
 
 	float this_count, this_square, this_mean, keff_err2;
 
 	long unsigned reduced_yields = reduce_yield();
+	double        reduced_weight  = reduce_weight();
 
-	*keff_cycle = reduced_yields / ( (float) N );
+	*keff_cycle = reduced_yields / reduced_weight;
 
 	if(converged){
 		reduced_yields_total += reduced_yields;
-		*keff       = reduced_yields_total / ( (double) (iteration + 1) * N ) ;
+		reduced_weight_total += reduced_weight;
+		*keff       = reduced_yields_total / reduced_weight_total;
 		keff_sum   += *keff_cycle; 
 		keff2_sum  += (*keff_cycle)*(*keff_cycle);
 		this_count  = iteration + 1; 
@@ -467,6 +485,7 @@ void whistory::copy_data_to_device(){
 	cudaMemcpy( d_space,		space,		Ndataset*sizeof(source_point),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_E,			E,			Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_Q,    		Q,			Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_weight,    	weight,		Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_done,			done,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_cellnum,		cellnum,	Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
 	cudaMemcpy( d_matnum,		matnum,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
@@ -1528,7 +1547,7 @@ void whistory::sample_fissile_points(){
 
 	cudaMemcpy(d_space,	d_fissile_points	,N*sizeof(source_point),	cudaMemcpyDeviceToDevice);
 	cudaMemcpy(d_E,    	d_fissile_energy	,N*sizeof(float),		cudaMemcpyDeviceToDevice);
-	cudaMemcpy(d_rxn,  	rxn 			,N*sizeof(unsigned),		cudaMemcpyHostToDevice);
+	cudaMemcpy(d_rxn,  	rxn 			    ,N*sizeof(unsigned),		cudaMemcpyHostToDevice);
 	//cudaFree(d_fissile_points);
 
 	if(print_flag >= 2){
@@ -1614,30 +1633,23 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 void whistory::reset_cycle(float keff_cycle){
 
 	// re-base the yield so keff is 1
-	//printf("CUDA ERROR4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	rebase_yield( NUM_THREADS, N,  keff_cycle, d_rn_bank, d_yield);
-
-	//reduce to check, unecessary in real runs
-	//float keff_new = reduce_yield();
-	//std::cout << "real keff "<< keff_cycle <<", artificially rebased keff " << keff_new <<"\n";
+	check_cuda(cudaPeekAtLastError());
 
 	// prefix sum scan (non-inclusive) yields to see where to write
-	//printf("CUDA ERROR4.1, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	res = cudppScan( scanplan_int, d_scanned,  d_yield,  Ndataset );
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
+	check_cuda(cudaPeekAtLastError());
 
 	// swap the key/values to sort the rxn vector by tid to align the rest of data with the right reactions, done so 18 doesn't have to be assumed.  Sorting is necessary for prefix sum to work (order-dependent)
-	//printf("CUDA ERROR4.2, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	res = cudppRadixSort(radixplan, d_remap, d_rxn, N);  
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
-
-	//write_histories(0);
+	check_cuda(cudaPeekAtLastError());
 
 	//pop them in!  should be the right size now due to keff rebasing  
-	//printf("CUDA ERROR4.3, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
-	pop_source( NUM_THREADS, N, d_isonum, d_remap, d_scanned, d_remap, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy, d_xs_data_scatter, d_fissile_points, d_fissile_energy, d_awr_list);
-	//printf("CUDA ERROR4.4, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
- 
+	pop_source( NUM_THREADS, N,  d_remap, d_isonum, d_scanned, d_yield, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy, d_xs_data_scatter, d_fissile_points, d_fissile_energy, d_awr_list, d_weight);
+	check_cuda(cudaPeekAtLastError());
+
  	// rest run arrays
 	cudaMemcpy( d_space,	d_fissile_points,	N*sizeof(source_point),	cudaMemcpyDeviceToDevice );
 	cudaMemcpy( d_E,		d_fissile_energy,	N*sizeof(unsigned),		cudaMemcpyDeviceToDevice );
@@ -1649,14 +1661,16 @@ void whistory::reset_cycle(float keff_cycle){
 	cudaMemcpy( d_rxn,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_remap,	remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
 	cudaMemcpy( d_index,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
+	cudaMemcpy( d_weight,	fones,				N*sizeof(float),		cudaMemcpyHostToDevice );
+	check_cuda(cudaPeekAtLastError());
 
-	//printf("CUDA ERROR4.6, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
 	// update RNG seeds
 	update_RNG();
-	//printf("CUDA ERROR4.7, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+	check_cuda(cudaPeekAtLastError());
+
 	// sync, these H2D and D2D copies aren't strictly synchronous
 	cudaDeviceSynchronize();
-	//printf("CUDA ERROR4.8, %s\n",cudaGetErrorString(cudaPeekAtLastError()));
+	check_cuda(cudaPeekAtLastError());
 
 }
 void whistory::reset_fixed(){
@@ -1777,45 +1791,38 @@ void whistory::run(){
 			// find what material we are in and nearest surface distance
 			trace(2, Nrun);
 			check_cuda(cudaPeekAtLastError());
-			//printf("trace done\n");
 
 			//find the main E grid index
 			find_E_grid_index( NUM_THREADS, Nrun, xs_length_numbers[1],  d_remap, d_xs_data_main_E_grid, d_E, d_index, d_rxn);
 			check_cuda(cudaPeekAtLastError());
-			//printf("grid search done\n");
 
 			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
 			macroscopic( NUM_THREADS, Nrun,  n_isotopes, n_materials, MT_columns, outer_cell, d_remap, d_space, d_isonum, d_cellnum, d_index, d_matnum, d_rxn, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_number_density_matrix, d_done);
 			check_cuda(cudaPeekAtLastError());
-			//printf("MACRO done\n");
 
 			// run tally kernel to compute spectra
 			if(converged){
-				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn);
+				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn, d_weight);
 			}
 			check_cuda(cudaPeekAtLastError());
-			//printf("tally score done\n");
 
 			// run microscopic kernel to find reaction type
 			microscopic( NUM_THREADS, Nrun, n_isotopes, MT_columns, d_remap, d_isonum, d_index, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_xs_MT_numbers_total, d_xs_MT_numbers, d_xs_data_Q, d_rxn, d_Q, d_done);
 			check_cuda(cudaPeekAtLastError());
-			//printf("micro done\n");
 
 			// remap threads to still active data
 			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
 			check_cuda(cudaPeekAtLastError());
-			//printf("remap done\n");
 
 			// concurrent calls to do escatter/iscatter/cscatter/fission
 			cudaThreadSynchronize();
 			cudaDeviceSynchronize();
-			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
-			iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
-			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
-			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start,   d_remap,  d_rxn ,  d_index, d_yield , d_rn_bank, d_done, d_xs_data_scatter);  
+			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start, d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
+			iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start, d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
+			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start, d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
+			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_yield, d_weight, d_xs_data_scatter, d_xs_data_energy);  
 			cudaDeviceSynchronize();
 			check_cuda(cudaPeekAtLastError());
-			//printf("reactions done\n");
 
 			if(RUN_FLAG==0){  //fixed source
 				// pop secondaries back in
@@ -1825,7 +1832,6 @@ void whistory::run(){
 				//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
 			}
 			check_cuda(cudaPeekAtLastError());
-			//printf("accumulate/pop done\n");
 
 			//std::cout << "press enter to continue...\n";
 			//std::cin.ignore();
@@ -1912,7 +1918,7 @@ void whistory::write_results(float runtime, float keff, std::string opentype){
 	std::string resname = filename;
 	resname.append(".results");
 	FILE* f  = fopen(resname.c_str(),opentype.c_str());
-	fprintf(f,"runtime = % 6.4E m    k_eff = % 6.4E     \ncycles total %u skipped %u scored %u \n %u source neutrons per cycle\n",runtime/60.0,keff,n_skip+n_cycles,n_skip,n_cycles,N);
+	fprintf(f,"runtime = % 10.8E m    k_eff = % 10.8E   rel. err. = % 10.8E     \ncycles total %u skipped %u scored %u \n %u source neutrons per cycle\n",runtime/60.0,keff,keff_err,n_skip+n_cycles,n_skip,n_cycles,N);
 	fclose(f);
 
 }
@@ -1940,7 +1946,7 @@ void whistory::write_tally(unsigned tallynum){
 			tally_err = sqrtf(tally_err_sq);}
 		else{					
 			tally_err = 0.0;}
-		fprintf(tfile,"%10.8E %10.8E %lu\n", this_mean/this_count, tally_err, tally_count_total[k]);
+		fprintf(tfile,"%10.8E %10.8E %lu\n", this_mean/reduced_weight_total, tally_err, tally_count_total[k]);
 	}
 	fclose(tfile);
 
@@ -2031,32 +2037,27 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	}
 
 	//calculate total active, [10] is the starting index of >=811, so if==1, means that we are done!
-	if(edges[8]==1){*num_active=0;}
-	else           {
-		*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N;
-	}
-
-	//printf("N=%u\n",*num_active);
+	*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N + *fission_N;   // fission includes multiplicity, have to reprocess
 
 	// debug
-	//if(*num_active!=edges[8]-1){
 	if(print_flag>=4){
 		//print
-		printf("num_active %u , edges[8] %u\n",*num_active,edges[8]-1);
+		printf("num_active %u , edges[9] %u\n",*num_active,edges[9]);
 		printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
 		printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
 		if(dump_flag>=2){//dump
 			write_to_file(d_remap, d_rxn, N,"remap","w");
 		}
-		//exit
-		assert(*num_active==edges[8]-1);
 	}
 
 	// ensure order
-	assert(*num_active<=edges[8]-1);
 	if(*iscatter_N>0){ assert(*iscatter_start >= *escatter_start);}
 	if(*cscatter_N>0){ assert(*cscatter_start >= *iscatter_start);}
 	if(resamp_N>0){    assert(   resamp_start >= *cscatter_start);}
+	if(*fission_N>0){  assert( *fission_start >=    resamp_start);}
+
+	// assert totals
+
 
 	// rezero edge vector (mapped, so is reflected on GPU)
 	edges[0]  = 0; 
@@ -2295,8 +2296,8 @@ void whistory::write_fission_points(){
 	unsigned res_x = 300;
 	unsigned res_y = 300;
 	size_t x, y;
-	unsigned minnum = 0; 
-	unsigned maxnum = 0;
+	long unsigned minnum = 0; 
+	long unsigned maxnum = 0;
 	float * colormap = new float[3];
 	png::image< png::rgb_pixel > image(res_x, res_y);
 
@@ -2316,7 +2317,7 @@ void whistory::write_fission_points(){
 	{
 	    for ( x = 0; x < res_x; ++x)
 	    {
-	    	make_color(colormap,fiss_img[y*res_x+x],minnum,maxnum);
+	    	hot2(colormap,fiss_img[y*res_x+x],minnum,maxnum);
 	        image[image.get_height()-1-y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
 	    }
 	}
@@ -2590,6 +2591,74 @@ void whistory::make_color(float* color, unsigned x, unsigned min, unsigned max){
 	color[0]=color[0]*256;
 	color[1]=color[1]*256;
 	color[2]=color[2]*256;
+
+}
+void whistory::hot2(float* color, long unsigned val, long unsigned min, long unsigned max){
+
+	float val_norm = (float) (val-min)/(max-min);
+	if(val_norm>1.0){
+		printf("val_norm>1, min %u max %u val %u\n",min,max,val);
+	}
+
+	if( val_norm < 0.025){
+		color[0]=0.3*val_norm/0.025;
+		color[1]=0.0;
+		color[2]=0.0;
+	}
+	else if(val_norm < 0.3 & val_norm >= 0.025){
+		color[0]= (0.7/0.275)*(val_norm-0.025) + 0.3;
+		color[1]=0.0;
+		color[2]=0.0;
+	}
+	else if(val_norm < 0.7 & val_norm >= 0.3){
+		color[0]=1.0;
+		color[1]=1.0/(0.4)*(val_norm-0.3) + 0.0;
+		color[2]=0.0;
+	}
+	else {
+		color[0]=1.0;
+		color[1]=1.0;
+		color[2]=1.0/(0.3)*(val_norm-0.7) + 0.0;
+	}
+
+	if(color[0]>1){
+		printf("red=%6.4E!  val_norm = %6.4E\n",color[0],val_norm);
+	}
+	if(color[1]>1){
+		printf("green>%6.4E  val_norm = %6.4E!\n",color[1],val_norm);
+	}
+	if(color[2]>1){
+		printf("blue>%6.4E  val_norm = %6.4E!\n",color[2],val_norm);
+	}
+
+	float total_norm = sqrtf(color[0]*color[0]+color[1]*color[1]+color[2]*color[2]);
+
+	//bring up to 256?
+	color[0] = color[0]*256/total_norm;
+	color[1] = color[1]*256/total_norm;
+	color[2] = color[2]*256/total_norm;
+
+}
+void whistory::nonzero(float* color, unsigned val, unsigned min, unsigned max){
+
+	// white if not zero
+	if( val > 0 ){
+		//printf("nonzero\n");
+		color[0]=0.57735026918963;
+		color[1]=0.57735026918963;
+		color[2]=0.57735026918963;
+	}
+	else{
+		//printf("ZERO\n");
+		color[0]=0.0;
+		color[1]=0.0;
+		color[2]=0.0;
+	}
+
+	//bring up to 256?
+	color[0] = color[0]*256;
+	color[1] = color[1]*256;
+	color[2] = color[2]*256;
 
 }
 void whistory::create_quad_tree(){

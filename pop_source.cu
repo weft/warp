@@ -366,7 +366,7 @@ __device__ void process_secondaries(unsigned this_yield, unsigned* rn, unsigned 
 			// get tabulated temperature
 			float Q 		= this_Earray[ offset     ];
 			float nbodies 	= this_Earray[ offset + 1 ];
-			if (nbodies>3) {printf("nobodies in law 66  is greater than 3!!!\n");}
+			if (nbodies>3) {printf("nbodies in law 66  is greater than 3!!!\n");}
 			float A 		= this_Earray[ offset + 2 ];
 			float Emax 		= (this_yield-1.0)/this_yield * (A/(A+1)*this_E + Q); 
 			float rn1       = get_rand(rn);
@@ -428,7 +428,7 @@ __device__ void process_secondaries(unsigned this_yield, unsigned* rn, unsigned 
 	}
 
 }
-__global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* completed, unsigned* scanned, unsigned* remap, unsigned* yield, unsigned* done, unsigned* index, unsigned* rxn, source_point* space, float* E , unsigned* rn_bank, float**  energydata, float**  scatterdata, source_point* space_out, float* E_out, float * awr_list){
+__global__ void pop_source_kernel(unsigned N, unsigned* remap, unsigned* isonum, unsigned* scanned, unsigned* yield, unsigned* index, unsigned* rxn, source_point* space, float* E , unsigned* rn_bank, float**  energydata, float**  scatterdata, source_point* space_out, float* E_out, float * awr_list, float* weight){
 
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid >= N){return;}
@@ -445,13 +445,8 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 	unsigned 		rn 			= rn_bank[tid];
 	unsigned 		this_rxn 	= rxn    [tid];
 	float 			this_E 		= E      [tid]; 
-
-	//__syncthreads();
-
 	float*	 		this_Sarray = scatterdata[dex];
 	float*			this_Earray = energydata [dex];
-
-	//__syncthreads();
 
 	// check data array pointers
 	if(this_Earray == 0x0){
@@ -461,7 +456,7 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 
 	// sample laws
 	if(this_rxn>=916 & this_rxn<=945 ){
-		     process_secondaries(this_yield, &rn, position, this_tope, awr_list[this_tope], this_E, this_space, this_Earray, this_Sarray,  space_out, E_out);
+		    process_secondaries(this_yield, &rn, position, this_tope, awr_list[this_tope], this_E, this_space, this_Earray, this_Sarray,  space_out, E_out);
 	}
 	else{
 		printf("tid %u REACTION %u HAS NONZERO YIELD IN SOURCE POP!\n",tid,this_rxn);
@@ -473,11 +468,11 @@ __global__ void pop_source_kernel(unsigned N, unsigned* isonum, unsigned* comple
 
 }
 
-void pop_source( unsigned NUM_THREADS,  unsigned N, unsigned* isonum, unsigned* d_completed, unsigned* d_scanned, unsigned* d_remap, unsigned* d_yield, unsigned* d_done, unsigned* d_index, unsigned* d_rxn, source_point* d_space, float* d_E , unsigned* d_rn_bank, float ** energydata, float** scatterdata, source_point* space_out, float* E_out, float * awr_list){
+void pop_source( unsigned NUM_THREADS,  unsigned N, unsigned* d_remap, unsigned* d_isonum, unsigned* d_scanned, unsigned* d_yield, unsigned* d_index, unsigned* d_rxn, source_point* d_space, float* d_E , unsigned* d_rn_bank, float ** energydata, float** scatterdata, source_point* space_out, float* E_out, float * awr_list, float* weight){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	pop_source_kernel <<< blks, NUM_THREADS >>> ( N, isonum, d_completed, d_scanned, d_remap, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank, energydata, scatterdata, space_out, E_out, awr_list);
+	pop_source_kernel <<< blks, NUM_THREADS >>> ( N, d_remap, d_isonum, d_scanned, d_yield, d_index, d_rxn, d_space, d_E , d_rn_bank, energydata, scatterdata, space_out, E_out, awr_list, weight);
 	cudaThreadSynchronize();
 
 }
