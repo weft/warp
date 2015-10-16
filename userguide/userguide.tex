@@ -7,6 +7,15 @@
 \documentclass[twoside,a4paper]{refart}
 \usepackage{makeidx}
 \usepackage{ifthen}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=blue,
+    urlcolor=black
+}
 % ifthen wird vom Bild von N.Beebe gebraucht!
 
 \def\bs{\char'134 } % backslash in \tt font.
@@ -17,7 +26,7 @@
 \title{WARP User's Guide}
 \author{Ryan M. Bergmann \thanks{ryanmbergmann@gmail.com} \\
 Kelly L. Rowland \thanks{krowland@berkeley.edu}\\
-v 1.0,  May 2015}
+v 1.0,  Oct 2015}
 
 \date{}
 \emergencystretch1em  %
@@ -40,11 +49,18 @@ v 1.0,  May 2015}
 %
 %\end{abstract}
 
+\includegraphics[width=\linewidth]{graphics/warp-vec.eps}
+
+\vspace*{\fill} % this vertically centers the next paragraph
+
 This user's guide is meant to introduce a user to the way in which WARP executes and how it's top-level functionality can be used to solve neutron transport problems.  For more detailed information about the algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous energy
 Monte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuclear Engineering (doi:10.1016/j.anucene.2014.10.039).
 
-\tableofcontents
+\vfill
 
+
+\newpage
+\tableofcontents
 \newpage
 
 
@@ -54,7 +70,13 @@ Monte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuc
 
 WARP, which XXXXXXXX, is a C\texttt{++} library that contains a set of classes and data structures that allow Monte Carlo neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and execute efficiently on GPUs.  Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the way.  WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many pieces of data concurrently instead of executing many tasks concurrently.
 
-FIGURE OF THE DATA PARALLELISM UNDER THE TRANSPORT LOOP
+
+\begin{figure}[!htb]
+   \centering
+   \includegraphics*[width=35mm]{graphics/foils.eps}
+   \caption{Gold foil array used in the measurements.}
+   \label{foils}
+\end{figure}
 
 \section{Compiling WARP}
 
@@ -68,7 +90,7 @@ WARP has the following dependencies:
 	\item{PyNE}
 	\item{SWIG}
 	\item{GoogleTest}
-	\item{Nuclear cross section data}
+	\item{ACE-formatted Nuclear cross section data}
 \end{itemize}
 
 WARP is compiled with CMake.
