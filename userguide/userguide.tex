@@ -82,55 +82,37 @@ Typical CPU codes track a single neutron life, from cradle to grave, marking its
 \section{Dependencies of WARP}
 
 WARP has the following dependencies:
-\begin{itemize}
-	\item{C\texttt{++} compiler}
-	\item{CMake ($>=$ 2.8.10)}
-	\item{NVIDIA CUDA ($>=$ 5.0)}
-	\item{NVIDIA OptiX ($>= 3.0.1$)}
-	\item{CUDPP ($>=$ 2.1)}
-	\item{PyNE}
-	\item{SWIG}
-	\item{GoogleTest}
-	\item{ACE-formatted Nuclear cross section data}
-\end{itemize}
-
-What each item is used for in WARP...
 
 \begin{description}
 
-\item[Line spacing]\index{line spacing}
-        The spacing between two lines should be larger than the spacing 
-        between two words to guide the eyes of the reader.
+\item[C\texttt{++} compiler]\index{C\texttt{++} compiler}
+	what about it?  Where can I get it?
 
-\item[Line length]\index{line length}
-        The length of a line -- or when using multicolumn layout of a 
-        column -- should be about 60 characters. When lines get longer they 
-        are more difficult to read and it is easier to go to the wrong line 
-        after finishing the current one. Increasing the linespacing may help a 
-        little.
-        When lines get to short it is difficult to set them justified, and you 
-        will get lots of hyphenated words.
+
+\item[CMake]\index{CMake}$\ge$ 2.8.10 \\
+	what about it?  Where can I get it?
+
         
-\item[Page layout]\index{page layout}
-        Normal text pages should look the same throughout the document. 
-        Figures, tables and special pages like the index need not appear in 
-        the same layout but should take as much space as needed.
-        
-\item[Margin notes]\index{margin notes}
-        Margin notes are often more suitable than footnotes because they 
-        appear right next to the text they refer to. Special margin notes are 
-        the ``attention sign'' or the ``dangerous bend'' that guide the user 
-        to important parts of the text.
-        
-\item[Headings and Footings]\index{headings}\index{footings}
-        Headings and footings should make it easier for the reader to orient
-        himself in the document. If you expect readers to copy single pages
-        from the document they should contain information about the paper as
-        a whole, just in case you need more information or want to cite the
-        whole paper.
-        
-        If you expect the document to change often (like software manuals),
-        each page should contain a version information or at least a date.
+\item[NVIDIA CUDA]\index{NVIDIA CUDA}$\ge$ 5.0 \\
+	what about it?  Where can I get it?
+
+\item[NVIDIA OptiX]\index{NVIDIA OptiX}$\ge$ 3.0.1 \\
+	what about it?  Where can I get it?
+
+\item[CUDPP]\index{CUDPP}$\ge$ 2.1 \\
+	what about it?  Where can I get it?
+
+\item[PyNE]\index{PyNE}$\ge$ ? \\
+	what about it?  Where can I get it?
+
+\item[SWIG]\index{SWIG}$\ge$ ? \\
+	what about it?  Where can I get it?
+
+\item[GoogleTest]\index{GoogleTest}$\ge$ ? \\
+	what about it?  Where can I get it?
+
+\item[ACE-formatted Nuclear cross section data]\index{ACE-formatted Nuclear cross section data}$\ge$ ? \\
+	what about it?  Where can I get it?
         
 \end{description}
 
@@ -145,24 +127,14 @@ WARP is compiled with CMake.
 
 \section{The Library Interface}
 
-WARP has two interfaces available for use -- one in C\texttt{++} directly and one in Python.  The Python interface is a wrapper for the C\texttt{++} library, and basically gives access to identical methods.  For a complete list and detailed descriptions of all the library classes, methods, and data structures, please refer to the ``WARP_API_Reference.pdf'' which has been qutomatically generated from the source code with Doxygen and is included here.
+WARP has two interfaces available for use -- one in C\texttt{++} directly and one in Python.  The Python interface is a wrapper for the C\texttt{++} library, and basically gives access to identical methods.  For a complete list and detailed descriptions of all the library classes, methods, and data structures, please refer to the ``WARP\_API\_Reference.pdf'' which has been qutomatically generated from the source code with Doxygen and is included here.
 
 \subsection{C\texttt{++}}
 
 If using the C\texttt{++} interface, the user simply needs to compile WARP and specify which geometry
-input to use at runtime. The syntax for running WARP is
+input to use at runtime. The syntax for compiling a WARP program are...
 
-\begin{verbatim}
-./warp <geometry> <histories>
-\end{verbatim}
 
-where the four current geometry input options are ``godiva", ``homfuel", ``pincell", and ``assembly". If 
-a different string is used or no string is specified, an error message is displayed, instructing the 
-user to specify an appropriate condition. The last argument is the number of neutron histories to run in 
-each cycle.
-
-Program specifications are done in the ``main.cpp" file. After the instantiation of a geometry object, 
-datapath ending in ``*.xsdir" must be designated as follows:
 
 \begin{verbatim}
 geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
@@ -246,6 +218,26 @@ Example syntax for setting up the history and cycle information is shown below. 
 	hist.run();
 	hist.write_tally(0);
 \end{verbatim}
+
+Once the main function has been writen, it can be compiled and linked to the WARP shared library...
+
+\begin{verbatim}
+compile and link
+\end{verbatim}
+
+Which then creates an executable named ``warp'' in this case.  It takes two arguments here, a case name and the number of neutrons per batch.  This can be changed to a user's needs in any way one would normally write a C\texttt{++} program.  For example, the number of active and skipped cycles, an output file name, or the verbosity level could be passed in from the command line, etc.
+
+\begin{verbatim}
+./warp <geometry> <histories>
+\end{verbatim}
+
+where the four current geometry input options are ``godiva", ``homfuel", ``pincell", and ``assembly". If 
+a different string is used or no string is specified, an error message is displayed, instructing the 
+user to specify an appropriate condition. The last argument is the number of neutron histories to run in 
+each cycle.
+
+Program specifications are done in the ``main.cpp" file. After the instantiation of a geometry object, 
+datapath ending in ``*.xsdir" must be designated as follows:
 
 \subsection{Python}
 
