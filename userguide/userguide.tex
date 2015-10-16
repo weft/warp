@@ -68,17 +68,18 @@ Monte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuc
 
 \section{An Introduction to WARP}
 
-WARP, which XXXXXXXX, is a C\texttt{++} library that contains a set of classes and data structures that allow Monte Carlo neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and execute efficiently on GPUs.  Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the way.  WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many pieces of data concurrently instead of executing many tasks concurrently.
+WARP is a C\texttt{++} library that contains a set of classes and data structures that allow Monte Carlo neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and execute efficiently on a single GPU.
+
+Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the way.  WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many pieces of data concurrently instead of executing many tasks concurrently.
 
 
-\begin{figure}[!htb]
-   \centering
-   \includegraphics*[width=35mm]{graphics/foils.eps}
-   \caption{Gold foil array used in the measurements.}
-   \label{foils}
+\begin{figure}[h!] 
+  \centering
+    \includegraphics[width=\textwidth]{graphics/datavtask.pdf}
+     \caption{Data-parallel neutron trasport loop vs. a task-parallel transport loop for transporting N neutrons in parallel.  \label{datavtask} }
 \end{figure}
 
-\section{Compiling WARP}
+\section{Dependencies of WARP}
 
 WARP has the following dependencies:
 \begin{itemize}
@@ -93,17 +94,58 @@ WARP has the following dependencies:
 	\item{ACE-formatted Nuclear cross section data}
 \end{itemize}
 
+What each item is used for in WARP...
+
+\begin{description}
+
+\item[Line spacing]\index{line spacing}
+        The spacing between two lines should be larger than the spacing 
+        between two words to guide the eyes of the reader.
+
+\item[Line length]\index{line length}
+        The length of a line -- or when using multicolumn layout of a 
+        column -- should be about 60 characters. When lines get longer they 
+        are more difficult to read and it is easier to go to the wrong line 
+        after finishing the current one. Increasing the linespacing may help a 
+        little.
+        When lines get to short it is difficult to set them justified, and you 
+        will get lots of hyphenated words.
+        
+\item[Page layout]\index{page layout}
+        Normal text pages should look the same throughout the document. 
+        Figures, tables and special pages like the index need not appear in 
+        the same layout but should take as much space as needed.
+        
+\item[Margin notes]\index{margin notes}
+        Margin notes are often more suitable than footnotes because they 
+        appear right next to the text they refer to. Special margin notes are 
+        the ``attention sign'' or the ``dangerous bend'' that guide the user 
+        to important parts of the text.
+        
+\item[Headings and Footings]\index{headings}\index{footings}
+        Headings and footings should make it easier for the reader to orient
+        himself in the document. If you expect readers to copy single pages
+        from the document they should contain information about the paper as
+        a whole, just in case you need more information or want to cite the
+        whole paper.
+        
+        If you expect the document to change often (like software manuals),
+        each page should contain a version information or at least a date.
+        
+\end{description}
+
+\section{Building WARP}
+
 WARP is compiled with CMake.
 
 \begin{verbatim}
-   \documentclass[11pt,twoside,a4paper]{article}
-   \usepackage{mysty} %<- This calls the package "mysty"
+   how to use cmake to build warp
 \end{verbatim}
 
 
 \section{The Library Interface}
 
-WARP has two interfaces available for use, one in C\texttt{++} and the other in Python.
+WARP has two interfaces available for use -- one in C\texttt{++} directly and one in Python.  The Python interface is a wrapper for the C\texttt{++} library, and basically gives access to identical methods.  For a complete list and detailed descriptions of all the library classes, methods, and data structures, please refer to the ``WARP_API_Reference.pdf'' which has been qutomatically generated from the source code with Doxygen and is included here.
 
 \subsection{C\texttt{++}}
 
@@ -285,65 +327,7 @@ hist.run()
 hist.write_tally(0)
 \end{verbatim}
 
-\begin{description}
 
-\item[Line spacing]\index{line spacing}
-        The spacing between two lines should be larger than the spacing 
-        between two words to guide the eyes of the reader.
-
-\item[Line length]\index{line length}
-        The length of a line -- or when using multicolumn layout of a 
-        column -- should be about 60 characters. When lines get longer they 
-        are more difficult to read and it is easier to go to the wrong line 
-        after finishing the current one. Increasing the linespacing may help a 
-        little.
-        When lines get to short it is difficult to set them justified, and you 
-        will get lots of hyphenated words.
-        
-\item[Page layout]\index{page layout}
-        Normal text pages should look the same throughout the document. 
-        Figures, tables and special pages like the index need not appear in 
-        the same layout but should take as much space as needed.
-        
-\item[Margin notes]\index{margin notes}
-        Margin notes are often more suitable than footnotes because they 
-        appear right next to the text they refer to. Special margin notes are 
-        the ``attention sign'' or the ``dangerous bend'' that guide the user 
-        to important parts of the text.
-        
-\item[Headings and Footings]\index{headings}\index{footings}
-        Headings and footings should make it easier for the reader to orient
-        himself in the document. If you expect readers to copy single pages
-        from the document they should contain information about the paper as
-        a whole, just in case you need more information or want to cite the
-        whole paper.
-        
-        If you expect the document to change often (like software manuals),
-        each page should contain a version information or at least a date.
-        
-\end{description}
-
-\section{The Art of Layout-Design}
-\label{design}
-\index{layout design}
-
-\subsection{Common Rules}
-\label{design}
-\index{rules}
-
-
-
-\subsection{Special note for technical descriptions}
-
-
-
-%%%%%%%%%% %%%%%%%%%%%%%% %%%%%%%%%%%% %%%%%%%%%%%% %%%%%%%% %%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%\input content
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \printindex
 
