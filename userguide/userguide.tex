@@ -26,7 +26,7 @@
 \title{WARP User's Guide}
 \author{Ryan M. Bergmann \thanks{ryanmbergmann@gmail.com} \\
 Kelly L. Rowland \thanks{krowland@berkeley.edu}\\
-v 1.0,  Oct 2015}
+v 1.0,  Nov 2015}
 
 \date{}
 \emergencystretch1em  %
@@ -86,8 +86,12 @@ WARP has the following dependencies:
 \begin{description}
 
 \item[C\texttt{++} compiler]\index{C\texttt{++} compiler}
-	what about it?  Where can I get it?
+Compilers are programs that convert source code written in a given programming language (C\texttt{++}, in 
+this case) into machine language that is used by a computer's processor.
 
+One commonly used C\texttt{++} compiler is \texttt{gcc}, which can be downloaded at 
+\url{https://gcc.gnu.org/releases.html}. Installation instructions can be found at 
+\url{https://gcc.gnu.org/install/}.
 
 \item[CMake]\index{CMake}$\ge$ 2.8.10 \\
 CMake is ``an extensible, open-source system that manages the build process in an operating system and in
@@ -99,26 +103,56 @@ Instructions for installing CMake on various operating systems can be found at
 \url{https://cmake.org/install/}.
   
 \item[NVIDIA CUDA]\index{NVIDIA CUDA}$\ge$ 5.0 \\
-	what about it?  Where can I get it?
+CUDA (``Compute Unified Device Architecture") is a parallel computing platform and programming model 
+invented by NVIDIA to utilize the power of the GPU. \textbf{Your computer must include a CUDA-enabled 
+GPU in order to install and use CUDA.}
+
+The latest version of CUDA can be downloaded here: \url{https://developer.nvidia.com/cuda-downloads}.
+
+Documentation for the CUDA Toolkit can be found at \url{http://docs.nvidia.com/cuda/index.html}.
 
 \item[NVIDIA OptiX]\index{NVIDIA OptiX}$\ge$ 3.0.1 \\
-	what about it?  Where can I get it?
+OptiX is a software development kit developed by NVIDIA for ray tracing performance on GPUs; it provides a
+framework for accessing the GPU's ray tracing capabilities.
+
+Instructions for and information about downloading OptiX are here: \url{https://developer.nvidia.com/download}.
 
 \item[CUDPP]\index{CUDPP}$\ge$ 2.1 \\
-	what about it?  Where can I get it?
+CUDPP (``CUDA Data Parallel Primitives") is a library of data-parallel algorithm primitives such as 
+parallel sort, can, and reduction.
 
-\item[PyNE]\index{PyNE}$\ge$ ? \\
-	what about it?  Where can I get it?
+CUDPP can be downloaded at \url{http://cudpp.github.io/} with documentation available at 
+\url{http://cudpp.github.io/cudpp/2.2/}.
 
-\item[SWIG]\index{SWIG}$\ge$ ? \\
-	what about it?  Where can I get it?
+\item[PyNE]\index{PyNE}$\ge$ 0.4 \\
+PyNE (``Python for Nuclear Engineering") is an open-source toolkit for calculations related to nuclear
+engineering.
 
-\item[GoogleTest]\index{GoogleTest}$\ge$ ? \\
-	what about it?  Where can I get it?
+Installation instructions and options can be found at \url{http://pyne.io/install/index.html}.
 
-\item[ACE-formatted Nuclear cross section data]\index{ACE-formatted Nuclear cross section data}$\ge$ ? \\
-	what about it?  Where can I get it?
-        
+\item[SWIG]\index{SWIG}$\ge$ 1.3.40 \\
+SWIG is an interface compiler that connects programs written in C/C\texttt{++} with scripting languages
+like Python; it is used for the WARP Python interface.
+
+SWIG can be downloaded at \url{http://www.swig.org/download.html}.
+
+\item[Google Test]\index{GoogleTest}$\ge$ 1.7.0 \\
+Google Test is a framework for writing C\texttt{++} tests on a variety of platforms. The WARP test suite
+is built on Google Test.
+
+Google Test can be downloaded here: \url{https://code.google.com/p/googletest/downloads/list}.
+
+Documentation can be found at \url{https://code.google.com/p/googletest/wiki/Documentation}.
+
+\item[ACE formatted nuclear cross section data]\index{ACE formatted nuclear cross section data}
+$\ge$ ENDF/B-VII.1 \\
+ACE (``a compact ENDF") formatted data is nuclear cross section data is tabulated such that it is read in 
+by many Monte Carlo codes; the data includes cross sections as well as angular and energy distributions 
+used in neutron scattering and fission.
+
+ACE formatted files can be downloaded at \url{http://www.nndc.bnl.gov/endf/b7.1/acefiles.html} and are 
+also included with installations of the MCNP and Serpent softwares.
+ 
 \end{description}
 
 \section{Building WARP}
