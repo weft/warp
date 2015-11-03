@@ -53,8 +53,11 @@ v 1.0,  Nov 2015}
 
 \vspace*{\fill} % this vertically centers the next paragraph
 
-This user's guide is meant to introduce a user to the way in which WARP executes and how it's top-level functionality can be used to solve neutron transport problems.  For more detailed information about the algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous energy
-Monte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuclear Engineering (doi:10.1016/j.anucene.2014.10.039).
+This user's guide is meant to introduce a user to the way in which WARP executes and how its top-level 
+functionality can be used to solve neutron transport problems.  For more detailed information about the 
+algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous 
+energy Monte Carlo neutron transport in general 3D geometries on GPUs'' in Annals of Nuclear Engineering 
+(doi:10.1016/j.anucene.2014.10.039).
 
 \vfill
 
@@ -68,9 +71,14 @@ Monte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuc
 
 \section{An Introduction to WARP}
 
-WARP is a C\texttt{++} library that contains a set of classes and data structures that allow Monte Carlo neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and execute efficiently on a single GPU.
+WARP is a C\texttt{++} library that contains a set of classes and data structures that allow Monte Carlo 
+neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and
+execute efficiently on a single GPU.
 
-Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the way.  WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many pieces of data concurrently instead of executing many tasks concurrently.
+Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the 
+way. WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably
+large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many 
+pieces of data concurrently instead of executing many tasks concurrently.
 
 
 \begin{figure}[h!] 
@@ -166,14 +174,16 @@ WARP is compiled with CMake.
 
 \section{The Library Interface}
 
-WARP has two interfaces available for use -- one in C\texttt{++} directly and one in Python.  The Python interface is a wrapper for the C\texttt{++} library, and basically gives access to identical methods.  For a complete list and detailed descriptions of all the library classes, methods, and data structures, please refer to the ``WARP\_API\_Reference.pdf'' which has been qutomatically generated from the source code with Doxygen and is included here.
+WARP has two interfaces available for use -- one in C\texttt{++} directly and one in Python.  The Python 
+interface is a wrapper for the C\texttt{++} library, and basically gives access to identical methods.  For
+a complete list and detailed descriptions of all the library classes, methods, and data structures, please
+refer to the ``WARP\_API\_Reference.pdf'' which has been automatically generated from the source code with
+Doxygen and is included here.
 
 \subsection{C\texttt{++}}
 
 If using the C\texttt{++} interface, the user simply needs to compile WARP and specify which geometry
 input to use at runtime. The syntax for compiling a WARP program are...
-
-
 
 \begin{verbatim}
 geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
@@ -187,7 +197,7 @@ material and its information are ``added" to the geometry object.
 Information for tallying (the cell number in which to tally and the filename to which the tally data is written) is then defined.
 
 Lastly, the geometry parameters are specified. The primitive type (cube, cylinder, hexagonal prism, or sphere) is noted and the number of the material with which the primitive will be filled is defined. The 
-``mins", ``maxs", and ``origin" vectors are filled with the primitive's Cartesian minima, maxima, and origin, repsectively (in units of centimeters). The primitive is then added to the geometry object and a corresponding transform is also added to the geometry object. The outer cell is set and the boundary
+``mins", ``maxs", and ``origin" vectors are filled with the primitive's Cartesian minima, maxima, and origin, respectively (in units of centimeters). The primitive is then added to the geometry object and a corresponding transform is also added to the geometry object. The outer cell is set and the boundary
 condition (``1" for vacuum or ``2" for reflecting) is written.
 
 An example of geometry and material specification for a bare plutonium sphere is shown below.
@@ -228,9 +238,10 @@ An example of geometry and material specification for a bare plutonium sphere is
 		geom.update();
 \end{verbatim}
 
-Finally, after the geometry and material input have been updated and checked by the code, parameters for how many neutron cycles to run are specified. A history object is instantiated with the number of
+Finally, after the geometry and material input have been updated and checked by the code, parameters for 
+how many neutron cycles to run are specified. A history object is instantiated with the number of
 histories per cycle to run and the geometry object in which to run then. Then, a ``print level" and 
-device (GPU) number are designated. The history is then initalized.
+device (GPU) number are designated. The history is then initialized.
 
 The user must specify whether to run in ``fixed-source" or ``criticality" mode, and the tally cell number
 is sent to the history object. The code runs for a certain number of inactive cycles and then a number of
@@ -264,7 +275,10 @@ Once the main function has been writen, it can be compiled and linked to the WAR
 compile and link
 \end{verbatim}
 
-Which then creates an executable named ``warp'' in this case.  It takes two arguments here, a case name and the number of neutrons per batch.  This can be changed to a user's needs in any way one would normally write a C\texttt{++} program.  For example, the number of active and skipped cycles, an output file name, or the verbosity level could be passed in from the command line, etc.
+Which then creates an executable named ``warp'' in this case.  It takes two arguments here, a case name 
+and the number of neutrons per batch.  This can be changed to a user's needs in any way one would normally
+write a C\texttt{++} program.  For example, the number of active and skipped cycles, an output file name, 
+or the verbosity level could be passed in from the command line, etc.
 
 \begin{verbatim}
 ./warp <geometry> <histories>
@@ -357,8 +371,6 @@ hist.set_filename(filename)
 hist.run()
 hist.write_tally(0)
 \end{verbatim}
-
-
 
 \printindex
 
