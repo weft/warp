@@ -188,8 +188,20 @@ Doxygen and is included here.
 
 \subsection{C\texttt{++}}
 
-If using the C\texttt{++} interface, the user simply needs to compile WARP and specify which geometry
-input to use at runtime. The syntax for compiling a WARP program are...
+If using the C\texttt{++} interface, the user simply needs to compile WARP (as instructed above) and 
+specify which geometry input to use at runtime. The syntax for running WARP with the C\texttt{++} 
+interface is
+
+\begin{verbatim}
+./warp <geometry> <histories>
+\end{verbatim}
+
+where ``warp" is the executable that was built with CMake and the current geometry options are ``godiva",
+``homfuel", ``pincell", and ``assembly". In addition to these, the user can construct new geometry
+configurations and then recompile WARP to run these new configurations using the C\texttt{++} interface. 
+
+Program specifications are done in the ``main.cpp" file. After the instantiation of a geometry object, 
+datapath ending in ``*.xsdir" must be designated as follows:
 
 \begin{verbatim}
 geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
@@ -275,39 +287,19 @@ Example syntax for setting up the history and cycle information is shown below. 
 	hist.write_tally(0);
 \end{verbatim}
 
-Once the main function has been writen, it can be compiled and linked to the WARP shared library...
-
-\begin{verbatim}
-compile and link
-\end{verbatim}
-
-Which then creates an executable named ``warp'' in this case.  It takes two arguments here, a case name 
-and the number of neutrons per batch.  This can be changed to a user's needs in any way one would normally
-write a C\texttt{++} program.  For example, the number of active and skipped cycles, an output file name, 
-or the verbosity level could be passed in from the command line, etc.
-
-\begin{verbatim}
-./warp <geometry> <histories>
-\end{verbatim}
-
-where the four current geometry input options are ``godiva", ``homfuel", ``pincell", and ``assembly". If 
-a different string is used or no string is specified, an error message is displayed, instructing the 
-user to specify an appropriate condition. The last argument is the number of neutron histories to run in 
-each cycle.
-
-Program specifications are done in the ``main.cpp" file. After the instantiation of a geometry object, 
-datapath ending in ``*.xsdir" must be designated as follows:
-
 \subsection{Python}
 
 The Python interface is very similar to the C\texttt{++} interface; the syntax differs only slightly.
-Additionally, if the Python interface is used, the user is not restricted to the pre-programmed 
-geometry and material configurations.
+Additionally, if the Python interface is used, it is easier for the user to use geometry and material 
+configurations other than the pre-programmed ones listed above.
 
 An example Python run file is shown below. The geometry and material configuration is the same as the
 bare plutonium sphere example discussed above in the C\texttt{++} interface. Similarly, the code is set
 to run in ``criticality" mode with 20 inactive and 40 active cycles of 100,000 neutron histories each.
 The tally information will be written into a file called ``godiva.tally".
+
+The code should be contained within a single Python file located in the build directory. It is run with
+the command \texttt{python filename.py}, where the file name is selected by the user.
 
 \begin{verbatim}
 #! /usr/bin/env python
