@@ -165,12 +165,18 @@ also included with installations of the MCNP and Serpent softwares.
 
 \section{Building WARP}
 
-WARP is compiled with CMake.
+WARP is compiled with CMake. To build WARP, follow these steps:
 
-\begin{verbatim}
-   how to use cmake to build warp
-\end{verbatim}
-
+\begin{enumerate}
+\item{Create an empty directory outside of the WARP source code folder and navigate into that directory.}
+\item{In the terminal, enter \texttt{ccmake /path/to/warp}, where the path is the absolute or relative 
+path to the WARP source code directory.}
+\item{Configure the code and set \texttt{OptiX\_ROOT\_DIR} and \texttt{CUDPP\_ROOT\_DIR} as applicable
+and necessary for your system.}
+\item{Configure again after setting the above directories, and then generate code.}
+\item{In the terminal, enter the command \texttt{make}. This will build the WARP executables and test 
+suite.}
+\end{enumerate}
 
 \section{The Library Interface}
 
