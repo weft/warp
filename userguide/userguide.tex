@@ -26,7 +26,7 @@
 \title{WARP User's Guide}
 \author{Ryan M. Bergmann \thanks{ryanmbergmann@gmail.com} \\
 Kelly L. Rowland \thanks{krowland@berkeley.edu}\\
-v 1.0,  Oct 2015}
+v 1.0,  Nov 2015}
 
 \date{}
 \emergencystretch1em  %
@@ -53,8 +53,11 @@ v 1.0,  Oct 2015}
 
 \vspace*{\fill} % this vertically centers the next paragraph
 
-This user's guide is meant to introduce a user to the way in which WARP executes and how it's top-level functionality can be used to solve neutron transport problems.  For more detailed information about the algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous energy
-Monte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuclear Engineering (doi:10.1016/j.anucene.2014.10.039).
+This user's guide is meant to introduce a user to the way in which WARP executes and how its top-level 
+functionality can be used to solve neutron transport problems.  For more detailed information about the 
+algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous 
+energy Monte Carlo neutron transport in general 3D geometries on GPUs'' in Annals of Nuclear Engineering 
+(doi:10.1016/j.anucene.2014.10.039).
 
 \vfill
 
@@ -68,9 +71,14 @@ Monte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuc
 
 \section{An Introduction to WARP}
 
-WARP is a C\texttt{++} library that contains a set of classes and data structures that allow Monte Carlo neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and execute efficiently on a single GPU.
+WARP is a C\texttt{++} library that contains a set of classes and data structures that allow Monte Carlo 
+neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and
+execute efficiently on a single GPU.
 
-Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the way.  WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many pieces of data concurrently instead of executing many tasks concurrently.
+Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the 
+way. WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably
+large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many 
+pieces of data concurrently instead of executing many tasks concurrently.
 
 
 \begin{figure}[h!] 
@@ -86,55 +94,114 @@ WARP has the following dependencies:
 \begin{description}
 
 \item[C\texttt{++} compiler]\index{C\texttt{++} compiler}
-	what about it?  Where can I get it?
+Compilers are programs that convert source code written in a given programming language (C\texttt{++}, in 
+this case) into machine language that is used by a computer's processor.
 
+One commonly used C\texttt{++} compiler is \texttt{gcc}, which can be downloaded at 
+\url{https://gcc.gnu.org/releases.html}. Installation instructions can be found at 
+\url{https://gcc.gnu.org/install/}.
 
 \item[CMake]\index{CMake}$\ge$ 2.8.10 \\
-	what about it?  Where can I get it?
+CMake is ``an extensible, open-source system that manages the build process in an operating system and in
+a compiler-independent manner."
 
-        
+CMake is free and can be downloaded here: \url{https://cmake.org/download/}.
+
+Instructions for installing CMake on various operating systems can be found at 
+\url{https://cmake.org/install/}.
+  
 \item[NVIDIA CUDA]\index{NVIDIA CUDA}$\ge$ 5.0 \\
-	what about it?  Where can I get it?
+CUDA (``Compute Unified Device Architecture") is a parallel computing platform and programming model 
+invented by NVIDIA to utilize the power of the GPU. \textbf{Your computer must include a CUDA-enabled 
+GPU in order to install and use CUDA.}
+
+The latest version of CUDA can be downloaded here: \url{https://developer.nvidia.com/cuda-downloads}.
+
+Documentation for the CUDA Toolkit can be found at \url{http://docs.nvidia.com/cuda/index.html}.
 
 \item[NVIDIA OptiX]\index{NVIDIA OptiX}$\ge$ 3.0.1 \\
-	what about it?  Where can I get it?
+OptiX is a software development kit developed by NVIDIA for ray tracing performance on GPUs; it provides a
+framework for accessing the GPU's ray tracing capabilities.
+
+Instructions for and information about downloading OptiX are here: \url{https://developer.nvidia.com/download}.
 
 \item[CUDPP]\index{CUDPP}$\ge$ 2.1 \\
-	what about it?  Where can I get it?
+CUDPP (``CUDA Data Parallel Primitives") is a library of data-parallel algorithm primitives such as 
+parallel sort, can, and reduction.
 
-\item[PyNE]\index{PyNE}$\ge$ ? \\
-	what about it?  Where can I get it?
+CUDPP can be downloaded at \url{http://cudpp.github.io/} with documentation available at 
+\url{http://cudpp.github.io/cudpp/2.2/}.
 
-\item[SWIG]\index{SWIG}$\ge$ ? \\
-	what about it?  Where can I get it?
+\item[PyNE]\index{PyNE}$\ge$ 0.4 \\
+PyNE (``Python for Nuclear Engineering") is an open-source toolkit for calculations related to nuclear
+engineering.
 
-\item[GoogleTest]\index{GoogleTest}$\ge$ ? \\
-	what about it?  Where can I get it?
+Installation instructions and options can be found at \url{http://pyne.io/install/index.html}.
 
-\item[ACE-formatted Nuclear cross section data]\index{ACE-formatted Nuclear cross section data}$\ge$ ? \\
-	what about it?  Where can I get it?
-        
+\item[SWIG]\index{SWIG}$\ge$ 1.3.40 \\
+SWIG is an interface compiler that connects programs written in C/C\texttt{++} with scripting languages
+like Python; it is used for the WARP Python interface.
+
+SWIG can be downloaded at \url{http://www.swig.org/download.html}.
+
+\item[Google Test]\index{GoogleTest}$\ge$ 1.7.0 \\
+Google Test is a framework for writing C\texttt{++} tests on a variety of platforms. The WARP test suite
+is built on Google Test.
+
+Google Test can be downloaded here: \url{https://code.google.com/p/googletest/downloads/list}.
+
+Documentation can be found at \url{https://code.google.com/p/googletest/wiki/Documentation}.
+
+\item[ACE formatted nuclear cross section data]\index{ACE formatted nuclear cross section data}
+$\ge$ ENDF/B-VII.1 \\
+ACE (``a compact ENDF") formatted data is nuclear cross section data is tabulated such that it is read in 
+by many Monte Carlo codes; the data includes cross sections as well as angular and energy distributions 
+used in neutron scattering and fission.
+
+ACE formatted files can be downloaded at \url{http://www.nndc.bnl.gov/endf/b7.1/acefiles.html} and are 
+also included with installations of the MCNP and Serpent softwares.
+ 
 \end{description}
 
 \section{Building WARP}
 
-WARP is compiled with CMake.
+WARP is compiled with CMake. To build WARP, follow these steps:
 
-\begin{verbatim}
-   how to use cmake to build warp
-\end{verbatim}
-
+\begin{enumerate}
+\item{Create an empty directory outside of the WARP source code folder and navigate into that directory.}
+\item{In the terminal, enter \texttt{ccmake /path/to/warp}, where the path is the absolute or relative 
+path to the WARP source code directory.}
+\item{Configure the code and set \texttt{OptiX\_ROOT\_DIR} and \texttt{CUDPP\_ROOT\_DIR} as applicable
+and necessary for your system.}
+\item{Configure again after setting the above directories, and then generate code.}
+\item{In the terminal, enter the command \texttt{make}. This will build the WARP executables and test 
+suite.}
+\end{enumerate}
 
 \section{The Library Interface}
 
-WARP has two interfaces available for use -- one in C\texttt{++} directly and one in Python.  The Python interface is a wrapper for the C\texttt{++} library, and basically gives access to identical methods.  For a complete list and detailed descriptions of all the library classes, methods, and data structures, please refer to the ``WARP\_API\_Reference.pdf'' which has been qutomatically generated from the source code with Doxygen and is included here.
+WARP has two interfaces available for use -- one in C\texttt{++} directly and one in Python.  The Python 
+interface is a wrapper for the C\texttt{++} library, and basically gives access to identical methods.  For
+a complete list and detailed descriptions of all the library classes, methods, and data structures, please
+refer to the ``WARP\_API\_Reference.pdf'' which has been automatically generated from the source code with
+Doxygen and is included here.
 
 \subsection{C\texttt{++}}
 
-If using the C\texttt{++} interface, the user simply needs to compile WARP and specify which geometry
-input to use at runtime. The syntax for compiling a WARP program are...
+If using the C\texttt{++} interface, the user simply needs to compile WARP (as instructed above) and 
+specify which geometry input to use at runtime. The syntax for running WARP with the C\texttt{++} 
+interface is
 
+\begin{verbatim}
+./warp <geometry> <histories>
+\end{verbatim}
 
+where ``warp" is the executable that was built with CMake and the current geometry options are ``godiva",
+``homfuel", ``pincell", and ``assembly". In addition to these, the user can construct new geometry
+configurations and then recompile WARP to run these new configurations using the C\texttt{++} interface. 
+
+Program specifications are done in the ``main.cpp" file. After the instantiation of a geometry object, 
+datapath ending in ``*.xsdir" must be designated as follows:
 
 \begin{verbatim}
 geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
@@ -148,7 +215,7 @@ material and its information are ``added" to the geometry object.
 Information for tallying (the cell number in which to tally and the filename to which the tally data is written) is then defined.
 
 Lastly, the geometry parameters are specified. The primitive type (cube, cylinder, hexagonal prism, or sphere) is noted and the number of the material with which the primitive will be filled is defined. The 
-``mins", ``maxs", and ``origin" vectors are filled with the primitive's Cartesian minima, maxima, and origin, repsectively (in units of centimeters). The primitive is then added to the geometry object and a corresponding transform is also added to the geometry object. The outer cell is set and the boundary
+``mins", ``maxs", and ``origin" vectors are filled with the primitive's Cartesian minima, maxima, and origin, respectively (in units of centimeters). The primitive is then added to the geometry object and a corresponding transform is also added to the geometry object. The outer cell is set and the boundary
 condition (``1" for vacuum or ``2" for reflecting) is written.
 
 An example of geometry and material specification for a bare plutonium sphere is shown below.
@@ -189,9 +256,10 @@ An example of geometry and material specification for a bare plutonium sphere is
 		geom.update();
 \end{verbatim}
 
-Finally, after the geometry and material input have been updated and checked by the code, parameters for how many neutron cycles to run are specified. A history object is instantiated with the number of
+Finally, after the geometry and material input have been updated and checked by the code, parameters for 
+how many neutron cycles to run are specified. A history object is instantiated with the number of
 histories per cycle to run and the geometry object in which to run then. Then, a ``print level" and 
-device (GPU) number are designated. The history is then initalized.
+device (GPU) number are designated. The history is then initialized.
 
 The user must specify whether to run in ``fixed-source" or ``criticality" mode, and the tally cell number
 is sent to the history object. The code runs for a certain number of inactive cycles and then a number of
@@ -219,36 +287,19 @@ Example syntax for setting up the history and cycle information is shown below. 
 	hist.write_tally(0);
 \end{verbatim}
 
-Once the main function has been writen, it can be compiled and linked to the WARP shared library...
-
-\begin{verbatim}
-compile and link
-\end{verbatim}
-
-Which then creates an executable named ``warp'' in this case.  It takes two arguments here, a case name and the number of neutrons per batch.  This can be changed to a user's needs in any way one would normally write a C\texttt{++} program.  For example, the number of active and skipped cycles, an output file name, or the verbosity level could be passed in from the command line, etc.
-
-\begin{verbatim}
-./warp <geometry> <histories>
-\end{verbatim}
-
-where the four current geometry input options are ``godiva", ``homfuel", ``pincell", and ``assembly". If 
-a different string is used or no string is specified, an error message is displayed, instructing the 
-user to specify an appropriate condition. The last argument is the number of neutron histories to run in 
-each cycle.
-
-Program specifications are done in the ``main.cpp" file. After the instantiation of a geometry object, 
-datapath ending in ``*.xsdir" must be designated as follows:
-
 \subsection{Python}
 
 The Python interface is very similar to the C\texttt{++} interface; the syntax differs only slightly.
-Additionally, if the Python interface is used, the user is not restricted to the pre-programmed 
-geometry and material configurations.
+Additionally, if the Python interface is used, it is easier for the user to use geometry and material 
+configurations other than the pre-programmed ones listed above.
 
 An example Python run file is shown below. The geometry and material configuration is the same as the
 bare plutonium sphere example discussed above in the C\texttt{++} interface. Similarly, the code is set
 to run in ``criticality" mode with 20 inactive and 40 active cycles of 100,000 neutron histories each.
 The tally information will be written into a file called ``godiva.tally".
+
+The code should be contained within a single Python file located in the build directory. It is run with
+the command \texttt{python filename.py}, where the file name is selected by the user.
 
 \begin{verbatim}
 #! /usr/bin/env python
@@ -318,8 +369,6 @@ hist.set_filename(filename)
 hist.run()
 hist.write_tally(0)
 \end{verbatim}
-
-
 
 \printindex
 
