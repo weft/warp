@@ -370,6 +370,30 @@ hist.run()
 hist.write_tally(0)
 \end{verbatim}
 
+\section{WARP Input}
+
+This section describes input details and syntax relevant to creating custom configurations to run with 
+WARP. Configurations may contain an unlimited number of z-aligned shapes; the input numbers corresponding
+to various shapes are shown in Table \ref{shapenum}.
+
+\begin{table}[h!]
+\centering
+\caption{Calculated multiplication factors and runtimes for the Jezebel configuration.}
+\label{shapenum}
+\begin{tabular}{| c | c |}
+\hline
+Shape & Number \\
+\hline
+Parallelpiped & 0 \\
+Cylinder & 1 \\
+Hexagon & 2 \\
+Sphere & 3 \\
+\hline
+\end{tabular}
+\end{table}
+
+Additionally, users can create hexagonal arrays of a given shape.
+
 \printindex
 
 \end{document}
