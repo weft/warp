@@ -80,7 +80,6 @@ way. WARP does things a little differently.  WARP applies the main transport loo
 large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many 
 pieces of data concurrently instead of executing many tasks concurrently.
 
-
 \begin{figure}[h!] 
   \centering
     \includegraphics[width=\textwidth]{graphics/datavtask.pdf}
@@ -159,7 +158,7 @@ by many Monte Carlo codes; the data includes cross sections as well as angular a
 used in neutron scattering and fission.
 
 ACE formatted files can be downloaded at \url{http://www.nndc.bnl.gov/endf/b7.1/acefiles.html} and are 
-also included with installations of the MCNP and Serpent softwares.
+also included with distributions of the MCNP and Serpent softwares.
  
 \end{description}
 
@@ -355,7 +354,6 @@ geom.check()
 #geom.print_all()
 geom.print_summary()
 
-
 # init hist and run
 hist = warp.whistory(100000,geom)
 hist.set_device(0)
@@ -425,7 +423,14 @@ This creates an array of 631 cylinders arranged uniformly in a hexagonal array s
 cylinders on each side. The cylinders all have a radius of 1 cm and a height of 40 cm; the center cylinder
 and the hexagonal array of cylinders are both centered at the coordinate origin. All cylinders are filled
 with material 1. Note that several hexagonal arrays can be created in a given configuration, but each 
-hexagonal array is of uniform spacing and repeats the same material and shape.
+hexagonal array is of uniform material, shape, and spacing.
+
+Input decks must be constructed in the order shown in the previous section, with the materials specified first, followed by the geometry and finally the run parameters. Names of the run output and tally output
+files can be specified as arbitrary strings by the user and do not have to follow the conventions shown 
+in the previous section.
+
+Isotopes must be specified as strings similar to those shown in the previous section (element number,
+isotope number, and specific temperature). This is the manner in which ACE files are named.
 
 \printindex
 
