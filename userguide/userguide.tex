@@ -392,7 +392,18 @@ Sphere & 3 \\
 \end{tabular}
 \end{table}
 
-Additionally, users can create hexagonal arrays of a given shape.
+Additionally, users can create hexagonal arrays of a given shape. This is done with the command
+
+\begin{verbatim}
+make_hex_array(\textbf{unsigned} index, \textbf{int} n, \textbf{float} x, \textbf{float} y, \textbf{float} phi, \textbf{unsigned} starting_index)
+\end{verbatim}
+
+Here, \texttt{index} is the index number of the shape to be duplicated as the array, \texttt{n} is the 
+number of shapes on an edge of the array, \texttt{x} is the x-coordinate of the center of the array,
+\texttt{y} is the y-coordinate of the center of the array, \texttt{phi} is the pitch-to-diameter ratio 
+of the array, and \texttt{starting\_index} is the number from which the code should increment the number
+of cells in the configuration (this may be set to the same value as \texttt{index}). An example is shown
+below.
 
 \printindex
 
