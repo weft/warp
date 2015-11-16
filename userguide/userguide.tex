@@ -5,6 +5,7 @@
 %  Updated for REFMAN.CLS (LaTeX2e)
 %
 \documentclass[twoside,a4paper]{refart}
+\usepackage{fancyvrb}
 \usepackage{makeidx}
 \usepackage{ifthen}
 \usepackage{graphicx}
@@ -371,8 +372,8 @@ hist.write_tally(0)
 \section{WARP Input}
 
 This section describes input details and syntax relevant to creating custom configurations to run with 
-WARP. Configurations may contain an unlimited number of z-aligned shapes; the input numbers corresponding
-to various shapes are shown in Table \ref{shapenum}.
+WARP. Configurations may contain an unlimited number of z-aligned shapes \textbf{which may not intersect
+or share any faces}. The input numbers corresponding to various shapes are shown in Table \ref{shapenum}.
 
 \begin{table}[h!]
 \centering
@@ -392,9 +393,10 @@ Sphere & 3 \\
 
 Additionally, users can create hexagonal arrays of a given shape. This is done with the command
 
-\begin{verbatim}
-make_hex_array(\textbf{unsigned} index, \textbf{int} n, \textbf{float} x, \textbf{float} y, \textbf{float} phi, \textbf{unsigned} starting_index)
-\end{verbatim}
+\begin{Verbatim}
+make_hex_array(unsigned index, int n, float x, float y, float phi, 
+unsigned starting_index)
+\end{Verbatim}
 
 Here, \texttt{index} is the index number of the shape to be duplicated as the array, \texttt{n} is the 
 number of shapes on an edge of the array, \texttt{x} is the x-coordinate of the center of the array,
