@@ -5,6 +5,7 @@
 %  Updated for REFMAN.CLS (LaTeX2e)
 %
 \documentclass[twoside,a4paper]{refart}
+\usepackage{fancyvrb}
 \usepackage{makeidx}
 \usepackage{ifthen}
 \usepackage{graphicx}
@@ -79,7 +80,6 @@ Typical CPU codes track a single neutron life, from cradle to grave, marking its
 way. WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably
 large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many 
 pieces of data concurrently instead of executing many tasks concurrently.
-
 
 \begin{figure}[h!] 
   \centering
@@ -159,7 +159,7 @@ by many Monte Carlo codes; the data includes cross sections as well as angular a
 used in neutron scattering and fission.
 
 ACE formatted files can be downloaded at \url{http://www.nndc.bnl.gov/endf/b7.1/acefiles.html} and are 
-also included with installations of the MCNP and Serpent softwares.
+also included with distributions of the MCNP and Serpent softwares.
  
 \end{description}
 
@@ -355,7 +355,6 @@ geom.check()
 #geom.print_all()
 geom.print_summary()
 
-
 # init hist and run
 hist = warp.whistory(100000,geom)
 hist.set_device(0)
@@ -369,6 +368,71 @@ hist.set_filename(filename)
 hist.run()
 hist.write_tally(0)
 \end{verbatim}
+
+\section{WARP Input}
+
+This section describes input details and syntax relevant to creating custom configurations to run with 
+WARP. Configurations may contain an unlimited number of z-aligned shapes \textbf{which may not intersect
+or share any faces}. The input numbers corresponding to various shapes are shown in Table \ref{shapenum}.
+
+\begin{table}[h!]
+\centering
+\caption{Calculated multiplication factors and runtimes for the Jezebel configuration.}
+\label{shapenum}
+\begin{tabular}{| c | c |}
+\hline
+Shape & Number \\
+\hline
+Parallelpiped & 0 \\
+Cylinder & 1 \\
+Hexagon & 2 \\
+Sphere & 3 \\
+\hline
+\end{tabular}
+\end{table}
+
+Additionally, users can create hexagonal arrays of a given shape. This is done with the command
+
+\begin{Verbatim}
+make_hex_array(unsigned index, int n, float x, float y, float phi, 
+unsigned starting_index)
+\end{Verbatim}
+
+Here, \texttt{index} is the index number of the shape to be duplicated as the array, \texttt{n} is the 
+number of shapes on an edge of the array, \texttt{x} is the x-coordinate of the center of the array,
+\texttt{y} is the y-coordinate of the center of the array, \texttt{phi} is the pitch-to-diameter ratio 
+of the elements in the array, and \texttt{starting\_index} is the number from which the code should 
+increment the number of cells in the configuration (this may be set to the same value as \texttt{index}). 
+An example is shown below.
+
+\begin{verbatim}
+type=1;
+material=1;
+mins[0]=-1.0;
+mins[1]=-1.0;
+mins[2]=-20.0;
+maxs[0]= 1.0;
+maxs[1]= 1.0;
+maxs[2]= 20.0;
+origin[0]=0.0;
+origin[1]=0.0;
+origin[2]=0.0;
+prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+geom.make_hex_array(prim_id,15,0.0,0.0,1.164,1); 
+\end{verbatim}
+
+This creates an array of 631 cylinders arranged uniformly in a hexagonal array such that the array has 15
+cylinders on each side. The cylinders all have a radius of 1 cm and a height of 40 cm; the center cylinder
+and the hexagonal array of cylinders are both centered at the coordinate origin. All cylinders are filled
+with material 1. Note that several hexagonal arrays can be created in a given configuration, but each 
+hexagonal array is of uniform material, shape, and spacing.
+
+Input decks must be constructed in the order shown in the previous section, with the materials specified first, followed by the geometry and finally the run parameters. Names of the run output and tally output
+files can be specified as arbitrary strings by the user and do not have to follow the conventions shown 
+in the previous section.
+
+Isotopes must be specified as strings similar to those shown in the previous section (element number,
+isotope number, and specific temperature). This is the manner in which ACE files are named.
 
 \printindex
 
