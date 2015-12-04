@@ -5,8 +5,18 @@
 %  Updated for REFMAN.CLS (LaTeX2e)
 %
 \documentclass[twoside,a4paper]{refart}
+\usepackage{fancyvrb}
 \usepackage{makeidx}
 \usepackage{ifthen}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=blue,
+    urlcolor=black
+}
 % ifthen wird vom Bild von N.Beebe gebraucht!
 
 \def\bs{\char'134 } % backslash in \tt font.
@@ -17,7 +27,7 @@
 \title{WARP User's Guide}
 \author{Ryan M. Bergmann \thanks{ryanmbergmann@gmail.com} \\
 Kelly L. Rowland \thanks{krowland@berkeley.edu}\\
-v 1.0,  May 2015}
+v 1.0,  Nov 2015}
 
 \date{}
 \emergencystretch1em  %
@@ -40,11 +50,21 @@ v 1.0,  May 2015}
 %
 %\end{abstract}
 
-This user's guide is meant to introduce a user to the way in which WARP executes and how it's top-level functionality can be used to solve neutron transport problems.  For more detailed information about the algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous energy
-Monte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuclear Engineering (doi:10.1016/j.anucene.2014.10.039).
+\includegraphics[width=\linewidth]{graphics/warp-vec.eps}
 
+\vspace*{\fill} % this vertically centers the next paragraph
+
+This user's guide is meant to introduce a user to the way in which WARP executes and how its top-level 
+functionality can be used to solve neutron transport problems.  For more detailed information about the 
+algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous 
+energy Monte Carlo neutron transport in general 3D geometries on GPUs'' in Annals of Nuclear Engineering 
+(doi:10.1016/j.anucene.2014.10.039).
+
+\vfill
+
+
+\newpage
 \tableofcontents
-
 \newpage
 
 
@@ -52,50 +72,133 @@ Monte Carlo neutron transport in general 3D geometries on GPU'' in Annals of Nuc
 
 \section{An Introduction to WARP}
 
-WARP, which XXXXXXXX, is a C\texttt{++} library that contains a set of classes and data structures that allow Monte Carlo neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and execute efficiently on GPUs.  Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the way.  WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many pieces of data concurrently instead of executing many tasks concurrently.
+WARP is a C\texttt{++} library that contains a set of classes and data structures that allow Monte Carlo 
+neutron transport to be performed using graphics processing units (GPUs).  It is written to scale well and
+execute efficiently on a single GPU.
 
-FIGURE OF THE DATA PARALLELISM UNDER THE TRANSPORT LOOP
+Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the 
+way. WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably
+large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many 
+pieces of data concurrently instead of executing many tasks concurrently.
 
-\section{Compiling WARP}
+\begin{figure}[h!] 
+  \centering
+    \includegraphics[width=\textwidth]{graphics/datavtask.pdf}
+     \caption{Data-parallel neutron trasport loop vs. a task-parallel transport loop for transporting N neutrons in parallel.  \label{datavtask} }
+\end{figure}
+
+\section{Dependencies of WARP}
 
 WARP has the following dependencies:
-\begin{itemize}
-	\item{C\texttt{++} compiler}
-	\item{CMake ($>=$ 2.8.10)}
-	\item{NVIDIA CUDA ($>=$ 5.0)}
-	\item{NVIDIA OptiX ($>= 3.0.1$)}
-	\item{CUDPP ($>=$ 2.1)}
-	\item{PyNE}
-	\item{SWIG}
-	\item{GoogleTest}
-	\item{Nuclear cross section data}
-\end{itemize}
 
-WARP is compiled with CMake.
+\begin{description}
 
-\begin{verbatim}
-   \documentclass[11pt,twoside,a4paper]{article}
-   \usepackage{mysty} %<- This calls the package "mysty"
-\end{verbatim}
+\item[C\texttt{++} compiler]\index{C\texttt{++} compiler}
+Compilers are programs that convert source code written in a given programming language (C\texttt{++}, in 
+this case) into machine language that is used by a computer's processor.
 
+One commonly used C\texttt{++} compiler is \texttt{gcc}, which can be downloaded at 
+\url{https://gcc.gnu.org/releases.html}. Installation instructions can be found at 
+\url{https://gcc.gnu.org/install/}.
+
+\item[CMake]\index{CMake}$\ge$ 2.8.10 \\
+CMake is ``an extensible, open-source system that manages the build process in an operating system and in
+a compiler-independent manner."
+
+CMake is free and can be downloaded here: \url{https://cmake.org/download/}.
+
+Instructions for installing CMake on various operating systems can be found at 
+\url{https://cmake.org/install/}.
+  
+\item[NVIDIA CUDA]\index{NVIDIA CUDA}$\ge$ 5.0 \\
+CUDA (``Compute Unified Device Architecture") is a parallel computing platform and programming model 
+invented by NVIDIA to utilize the power of the GPU. \textbf{Your computer must include a CUDA-enabled 
+GPU in order to install and use CUDA.}
+
+The latest version of CUDA can be downloaded here: \url{https://developer.nvidia.com/cuda-downloads}.
+
+Documentation for the CUDA Toolkit can be found at \url{http://docs.nvidia.com/cuda/index.html}.
+
+\item[NVIDIA OptiX]\index{NVIDIA OptiX}$\ge$ 3.0.1 \\
+OptiX is a software development kit developed by NVIDIA for ray tracing performance on GPUs; it provides a
+framework for accessing the GPU's ray tracing capabilities.
+
+Instructions for and information about downloading OptiX are here: \url{https://developer.nvidia.com/download}.
+
+\item[CUDPP]\index{CUDPP}$\ge$ 2.1 \\
+CUDPP (``CUDA Data Parallel Primitives") is a library of data-parallel algorithm primitives such as 
+parallel sort, can, and reduction.
+
+CUDPP can be downloaded at \url{http://cudpp.github.io/} with documentation available at 
+\url{http://cudpp.github.io/cudpp/2.2/}.
+
+\item[PyNE]\index{PyNE}$\ge$ 0.4 \\
+PyNE (``Python for Nuclear Engineering") is an open-source toolkit for calculations related to nuclear
+engineering.
+
+Installation instructions and options can be found at \url{http://pyne.io/install/index.html}.
+
+\item[SWIG]\index{SWIG}$\ge$ 1.3.40 \\
+SWIG is an interface compiler that connects programs written in C/C\texttt{++} with scripting languages
+like Python; it is used for the WARP Python interface.
+
+SWIG can be downloaded at \url{http://www.swig.org/download.html}.
+
+\item[Google Test]\index{GoogleTest}$\ge$ 1.7.0 \\
+Google Test is a framework for writing C\texttt{++} tests on a variety of platforms. The WARP test suite
+is built on Google Test.
+
+Google Test can be downloaded here: \url{https://code.google.com/p/googletest/downloads/list}.
+
+Documentation can be found at \url{https://code.google.com/p/googletest/wiki/Documentation}.
+
+\item[ACE formatted nuclear cross section data]\index{ACE formatted nuclear cross section data}
+$\ge$ ENDF/B-VII.1 \\
+ACE (``a compact ENDF") formatted data is nuclear cross section data is tabulated such that it is read in 
+by many Monte Carlo codes; the data includes cross sections as well as angular and energy distributions 
+used in neutron scattering and fission.
+
+ACE formatted files can be downloaded at \url{http://www.nndc.bnl.gov/endf/b7.1/acefiles.html} and are 
+also included with distributions of the MCNP and Serpent softwares.
+ 
+\end{description}
+
+\section{Building WARP}
+
+WARP is compiled with CMake. To build WARP, follow these steps:
+
+\begin{enumerate}
+\item{Create an empty directory outside of the WARP source code folder and navigate into that directory.}
+\item{In the terminal, enter \texttt{ccmake /path/to/warp}, where the path is the absolute or relative 
+path to the WARP source code directory.}
+\item{Configure the code and set \texttt{OptiX\_ROOT\_DIR} and \texttt{CUDPP\_ROOT\_DIR} as applicable
+and necessary for your system.}
+\item{Configure again after setting the above directories, and then generate code.}
+\item{In the terminal, enter the command \texttt{make}. This will build the WARP executables and test 
+suite.}
+\end{enumerate}
 
 \section{The Library Interface}
 
-WARP has two interfaces available for use, one in C\texttt{++} and the other in Python.
+WARP has two interfaces available for use -- one in C\texttt{++} directly and one in Python.  The Python 
+interface is a wrapper for the C\texttt{++} library, and basically gives access to identical methods.  For
+a complete list and detailed descriptions of all the library classes, methods, and data structures, please
+refer to the ``WARP\_API\_Reference.pdf'' which has been automatically generated from the source code with
+Doxygen and is included here.
 
 \subsection{C\texttt{++}}
 
-If using the C\texttt{++} interface, the user simply needs to compile WARP and specify which geometry
-input to use at runtime. The syntax for running WARP is
+If using the C\texttt{++} interface, the user simply needs to compile WARP (as instructed above) and 
+specify which geometry input to use at runtime. The syntax for running WARP with the C\texttt{++} 
+interface is
 
 \begin{verbatim}
 ./warp <geometry> <histories>
 \end{verbatim}
 
-where the four current geometry input options are ``godiva", ``homfuel", ``pincell", and ``assembly". If 
-a different string is used or no string is specified, an error message is displayed, instructing the 
-user to specify an appropriate condition. The last argument is the number of neutron histories to run in 
-each cycle.
+where ``warp" is the executable that was built with CMake and the current geometry options are ``godiva",
+``homfuel", ``pincell", and ``assembly". In addition to these, the user can construct new geometry
+configurations and then recompile WARP to run these new configurations using the C\texttt{++} interface. 
 
 Program specifications are done in the ``main.cpp" file. After the instantiation of a geometry object, 
 datapath ending in ``*.xsdir" must be designated as follows:
@@ -112,7 +215,7 @@ material and its information are ``added" to the geometry object.
 Information for tallying (the cell number in which to tally and the filename to which the tally data is written) is then defined.
 
 Lastly, the geometry parameters are specified. The primitive type (cube, cylinder, hexagonal prism, or sphere) is noted and the number of the material with which the primitive will be filled is defined. The 
-``mins", ``maxs", and ``origin" vectors are filled with the primitive's Cartesian minima, maxima, and origin, repsectively (in units of centimeters). The primitive is then added to the geometry object and a corresponding transform is also added to the geometry object. The outer cell is set and the boundary
+``mins", ``maxs", and ``origin" vectors are filled with the primitive's Cartesian minima, maxima, and origin, respectively (in units of centimeters). The primitive is then added to the geometry object and a corresponding transform is also added to the geometry object. The outer cell is set and the boundary
 condition (``1" for vacuum or ``2" for reflecting) is written.
 
 An example of geometry and material specification for a bare plutonium sphere is shown below.
@@ -153,9 +256,10 @@ An example of geometry and material specification for a bare plutonium sphere is
 		geom.update();
 \end{verbatim}
 
-Finally, after the geometry and material input have been updated and checked by the code, parameters for how many neutron cycles to run are specified. A history object is instantiated with the number of
+Finally, after the geometry and material input have been updated and checked by the code, parameters for 
+how many neutron cycles to run are specified. A history object is instantiated with the number of
 histories per cycle to run and the geometry object in which to run then. Then, a ``print level" and 
-device (GPU) number are designated. The history is then initalized.
+device (GPU) number are designated. The history is then initialized.
 
 The user must specify whether to run in ``fixed-source" or ``criticality" mode, and the tally cell number
 is sent to the history object. The code runs for a certain number of inactive cycles and then a number of
@@ -186,13 +290,16 @@ Example syntax for setting up the history and cycle information is shown below. 
 \subsection{Python}
 
 The Python interface is very similar to the C\texttt{++} interface; the syntax differs only slightly.
-Additionally, if the Python interface is used, the user is not restricted to the pre-programmed 
-geometry and material configurations.
+Additionally, if the Python interface is used, it is easier for the user to use geometry and material 
+configurations other than the pre-programmed ones listed above.
 
 An example Python run file is shown below. The geometry and material configuration is the same as the
 bare plutonium sphere example discussed above in the C\texttt{++} interface. Similarly, the code is set
 to run in ``criticality" mode with 20 inactive and 40 active cycles of 100,000 neutron histories each.
 The tally information will be written into a file called ``godiva.tally".
+
+The code should be contained within a single Python file located in the build directory. It is run with
+the command \texttt{python filename.py}, where the file name is selected by the user.
 
 \begin{verbatim}
 #! /usr/bin/env python
@@ -248,7 +355,6 @@ geom.check()
 #geom.print_all()
 geom.print_summary()
 
-
 # init hist and run
 hist = warp.whistory(100000,geom)
 hist.set_device(0)
@@ -263,65 +369,70 @@ hist.run()
 hist.write_tally(0)
 \end{verbatim}
 
-\begin{description}
+\section{WARP Input}
 
-\item[Line spacing]\index{line spacing}
-        The spacing between two lines should be larger than the spacing 
-        between two words to guide the eyes of the reader.
+This section describes input details and syntax relevant to creating custom configurations to run with 
+WARP. Configurations may contain an unlimited number of z-aligned shapes \textbf{which may not intersect
+or share any faces}. The input numbers corresponding to various shapes are shown in Table \ref{shapenum}.
 
-\item[Line length]\index{line length}
-        The length of a line -- or when using multicolumn layout of a 
-        column -- should be about 60 characters. When lines get longer they 
-        are more difficult to read and it is easier to go to the wrong line 
-        after finishing the current one. Increasing the linespacing may help a 
-        little.
-        When lines get to short it is difficult to set them justified, and you 
-        will get lots of hyphenated words.
-        
-\item[Page layout]\index{page layout}
-        Normal text pages should look the same throughout the document. 
-        Figures, tables and special pages like the index need not appear in 
-        the same layout but should take as much space as needed.
-        
-\item[Margin notes]\index{margin notes}
-        Margin notes are often more suitable than footnotes because they 
-        appear right next to the text they refer to. Special margin notes are 
-        the ``attention sign'' or the ``dangerous bend'' that guide the user 
-        to important parts of the text.
-        
-\item[Headings and Footings]\index{headings}\index{footings}
-        Headings and footings should make it easier for the reader to orient
-        himself in the document. If you expect readers to copy single pages
-        from the document they should contain information about the paper as
-        a whole, just in case you need more information or want to cite the
-        whole paper.
-        
-        If you expect the document to change often (like software manuals),
-        each page should contain a version information or at least a date.
-        
-\end{description}
+\begin{table}[h!]
+\centering
+\caption{Calculated multiplication factors and runtimes for the Jezebel configuration.}
+\label{shapenum}
+\begin{tabular}{| c | c |}
+\hline
+Shape & Number \\
+\hline
+Parallelpiped & 0 \\
+Cylinder & 1 \\
+Hexagon & 2 \\
+Sphere & 3 \\
+\hline
+\end{tabular}
+\end{table}
 
-\section{The Art of Layout-Design}
-\label{design}
-\index{layout design}
+Additionally, users can create hexagonal arrays of a given shape. This is done with the command
 
-\subsection{Common Rules}
-\label{design}
-\index{rules}
+\begin{Verbatim}
+make_hex_array(unsigned index, int n, float x, float y, float phi, 
+unsigned starting_index)
+\end{Verbatim}
 
+Here, \texttt{index} is the index number of the shape to be duplicated as the array, \texttt{n} is the 
+number of shapes on an edge of the array, \texttt{x} is the x-coordinate of the center of the array,
+\texttt{y} is the y-coordinate of the center of the array, \texttt{phi} is the pitch-to-diameter ratio 
+of the elements in the array, and \texttt{starting\_index} is the number from which the code should 
+increment the number of cells in the configuration (this may be set to the same value as \texttt{index}). 
+An example is shown below.
 
+\begin{verbatim}
+type=1;
+material=1;
+mins[0]=-1.0;
+mins[1]=-1.0;
+mins[2]=-20.0;
+maxs[0]= 1.0;
+maxs[1]= 1.0;
+maxs[2]= 20.0;
+origin[0]=0.0;
+origin[1]=0.0;
+origin[2]=0.0;
+prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+geom.make_hex_array(prim_id,15,0.0,0.0,1.164,1); 
+\end{verbatim}
 
-\subsection{Special note for technical descriptions}
+This creates an array of 631 cylinders arranged uniformly in a hexagonal array such that the array has 15
+cylinders on each side. The cylinders all have a radius of 1 cm and a height of 40 cm; the center cylinder
+and the hexagonal array of cylinders are both centered at the coordinate origin. All cylinders are filled
+with material 1. Note that several hexagonal arrays can be created in a given configuration, but each 
+hexagonal array is of uniform material, shape, and spacing.
 
+Input decks must be constructed in the order shown in the previous section, with the materials specified first, followed by the geometry and finally the run parameters. Names of the run output and tally output
+files can be specified as arbitrary strings by the user and do not have to follow the conventions shown 
+in the previous section.
 
-
-%%%%%%%%%% %%%%%%%%%%%%%% %%%%%%%%%%%% %%%%%%%%%%%% %%%%%%%% %%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%\input content
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Isotopes must be specified as strings similar to those shown in the previous section (element number,
+isotope number, and specific temperature). This is the manner in which ACE files are named.
 
 \printindex
 

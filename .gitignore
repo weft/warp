@@ -1,3 +1,8 @@
+*.aux
+*.idx
+*.log
+*.out
+*.toc
 *.o
 *.so
 *.tally
