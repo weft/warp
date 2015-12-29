@@ -60,14 +60,17 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	dump_flag = 0;
 }
 void whistory::init(){
+
 	// device must be set BEFORE an CUDA creation (streams included)
 	check_cuda(cudaSetDevice(compute_device));
 	//clear device
-	cudaDeviceReset();
+	check_cuda(cudaDeviceReset());
+
 	// create streams
 	for (int i = 0; i < 4; ++i){
-		cudaStreamCreate(&stream[i]);
+		check_cuda(cudaStreamCreate(&stream[i]));
 	}
+
 	// init optix stuff 
 	optix_obj.N=Ndataset;
 	optix_obj.stack_size_multiplier=1;
@@ -75,6 +78,8 @@ void whistory::init(){
 	if(print_flag >= 1){
 		optix_obj.print();
 	}
+	check_cuda(cudaPeekAtLastError());
+
 	// CUDA stuff
 	// need to set again after optix sometimes... 
 	check_cuda(cudaSetDevice(compute_device));
@@ -90,7 +95,7 @@ void whistory::init(){
 	if(print_flag >= 2){
 		device_report();
 	}
-	cudaDeviceSetLimit(cudaLimitPrintfFifoSize, (size_t) 10*1048576 );
+	check_cuda(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, (size_t) 10*1048576 ));
 	//device data
 	d_space 	= (source_point*) optix_obj.positions_ptr;
 	d_cellnum 	= (unsigned*)     optix_obj.cellnum_ptr;
@@ -125,6 +130,7 @@ void whistory::init(){
 	cudaMalloc( &d_rxn_remap		, Ndataset*sizeof(unsigned));
 	cudaMalloc( &d_num_active 		, 1*sizeof(unsigned));
 	cudaMalloc( &d_zeros			, Ndataset*sizeof(unsigned));
+	check_cuda(cudaPeekAtLastError());
 	// host data stuff
 	//xs_length_numbers 	= new unsigned [6];
 	space 			= new source_point 	[Ndataset];
@@ -163,8 +169,8 @@ void whistory::init(){
 	n_materials = problem_geom.n_materials;
 	//  map edge array
 	n_edges = 11;
-	cudaHostAlloc(&edges,n_edges*sizeof(unsigned),cudaHostAllocMapped);
-	cudaHostGetDevicePointer(&d_edges,edges,0);
+	check_cuda(cudaHostAlloc(&edges,n_edges*sizeof(unsigned),cudaHostAllocMapped));
+	check_cuda(cudaHostGetDevicePointer(&d_edges,edges,0));
 	// init host values
 	filename = "warp";
 	init_host();
@@ -314,10 +320,12 @@ void whistory::init_RNG(){
 	curandSetPseudoRandomGeneratorSeed( rand_gen , 123456789ULL );
 	curandGenerate( rand_gen , d_rn_bank , Ndataset * RNUM_PER_THREAD );
 	cudaMemcpy(rn_bank , d_rn_bank , Ndataset * RNUM_PER_THREAD *sizeof(unsigned) , cudaMemcpyDeviceToHost); // copy bank back to keep seeds
+	check_cuda(cudaPeekAtLastError());
 }
 void whistory::update_RNG(){
 
 	curandGenerate( rand_gen , d_rn_bank , Ndataset * RNUM_PER_THREAD );
+	check_cuda(cudaPeekAtLastError());
 
 }
 void whistory::init_CUDPP(){
@@ -379,6 +387,8 @@ void whistory::init_CUDPP(){
 	radix_config.options = CUDPP_OPTION_KEY_VALUE_PAIRS;
 	res = cudppPlan(theCudpp, &radixplan, radix_config, Ndataset, 1, 0);
 	if (CUDPP_SUCCESS != res){printf("Error creating CUDPPPlan for radix sort\n");exit(-1);}
+
+	check_cuda(cudaPeekAtLastError());
 
 }
 unsigned whistory::reduce_yield(){
@@ -1777,6 +1787,9 @@ void whistory::run(){
 		edges[8]  = 0;
 		edges[9]  = 0;
 		edges[10] = 0;
+
+		// check any previous errors
+		check_cuda(cudaPeekAtLastError());
 
 		// process batch
 		while(Nrun>0){
