@@ -9,13 +9,13 @@
  * \details cell number and material, transform coordinates and angles
  */
 struct wtransform {
-    unsigned    cellnum; /**< cell number */
-    unsigned    cellmat; /**< cell material */
-    float       dx;	 /**< dx */
-    float       dy;	 /**< dy */
-    float       dz;	 /**< dz */
-    float       theta; /**< polar angle */
-    float       phi;   /**< azimuthal angle */
+	unsigned	cellnum;	/**< cell number */
+	unsigned	cellmat;	/**< cell material */
+	float		dx;			/**< dx */
+	float		dy;			/**< dy */
+	float		dz;			/**< dz */
+	float		theta;		/**< polar angle */
+	float		phi;		/**< azimuthal angle */
 };
 
 /**
@@ -24,50 +24,32 @@ struct wtransform {
  * \details extrema arrays, location array, cell and material numbers, fissile flag
  */
 struct geom_data{
-    float       min[3]; /**< array of coordinate (x,y,z) minima */
-    float       max[3]; /**< array of coordinate (x,y,z) maxima */
-    float       loc[3]; /**< array of coordinate (x,y,z) locations */
-    int         cellnum; /**< cell number */
-    int         matnum;  /**< material number */
-    int         is_fissile; /**< fissile flag */
+	float	min[3];		/**< array of coordinate (x,y,z) minima */
+	float	max[3];		/**< array of coordinate (x,y,z) maxima */
+	float	loc[3];		/**< array of coordinate (x,y,z) locations */
+	int		cellnum;	/**< cell number */
+	int		matnum;		/**< material number */
+	int		is_fissile;	/**< fissile flag */
 };
 
 /**
- * \struct source_point datadef.h
+ * \struct spatial_data datadef.h
  * \brief contains the parameters of the neutron source point
  * \details 3D Cartesian coordinates, shifted coordinates, distance to nearest surface, total macroscopic
  *  cross section, boundary condition enforcement flag
  */
-struct source_point{ 
-    float x;    /**< x-coordinate */
-    float y; 	/**< y-coordinate */
-    float z;    /**< z-coordinate */
-    float xhat; /**< shifted x-coordinate */ 
-    float yhat; /**< shifted y-coordinate */
-    float zhat; /**< shifted z-coordinate */
-    float surf_dist; /**< distance to nearest surface */
-    float macro_t;   /**< total macroscopic cross section */
-    float norm[3];
-    unsigned enforce_BC; /**< boundary condition enforcement flag */
-    unsigned weight;
-};
-
-/**
- * \struct qnode datadef.h
- * \brief quaternary search node
- */
-struct qnode{
-    float  values[4]; /**< array of values */
-    qnode* leaves[4]; /**< array of node leaves */
-};
-
-/**
- * \struct qnode_host datadef.h
- * \brief quaternary search node host container
- */
-struct qnode_host{
-    qnode* cuda_pointer; /**< CUDA pointer */
-    qnode  node;	 /**< quaternary node */
+struct spatial_data{ 
+	float		x;			/**< x-coordinate */
+	float		y;			/**< y-coordinate */
+	float		z;			/**< z-coordinate */
+	float		xhat;		/**< shifted x-coordinate */ 
+	float		yhat;		/**< shifted y-coordinate */
+	float		zhat;		/**< shifted z-coordinate */
+	float		surf_dist;	/**< distance to nearest surface */
+	float		macro_t;	/**< total macroscopic cross section */
+	float		norm[3];	/**< normal vector of intersection */
+	unsigned	enforce_BC;	/**< boundary condition enforcement flag */
+	unsigned	weight;		/**< particle statistical weight */
 };
 
 /**
@@ -77,15 +59,15 @@ struct qnode_host{
  * potentially hit, continuity flag, hit buffer, and hit buffer index
  */
 struct intersection_point {
-    float       x; /**< x-coordinate */
-    float       y; /**< y-coordinate */
-    float       z; /**< z-coordinate */
-    float       surf_dist;  /**< distance to nearest surface */
-    int         cell; /**< cell number */
-    int         mat;  /**< material number */
-    int         fiss; /**< fissile flag */
-    float       norm[3];    /**< most recent normal */
-    int         sense;   /**< most recent cell sense */
+	float		x; 			/**< x-coordinate */
+	float		y; 			/**< y-coordinate */
+	float		z; 			/**< z-coordinate */
+	float		surf_dist;  /**< distance to nearest surface */
+	int			cell; 		/**< cell number */
+	int			mat;  		/**< material number */
+	int			fiss; 		/**< fissile flag */
+	float		norm[3];    /**< most recent normal */
+	int			sense;   	/**< most recent cell sense */
 };
 
 /**
@@ -95,13 +77,95 @@ struct intersection_point {
  * fraction list
  */
 struct material_def {
-    unsigned    id;	      /**< material ID */
-    unsigned    matnum;       /**< material number */
-    unsigned    is_fissile;   /**< fissile flag */
-    unsigned    num_isotopes; /**< number of isotopes */
-    float       density;      /**< density [g/cc] */
-    std::vector<std::string>   isotopes;     /**< isotope list */
-    float    *  fractions;    /**< isotope fractions */
+	unsigned					id;				/**< material ID */
+	unsigned					matnum;			/**< material number */
+	unsigned					is_fissile;		/**< fissile flag */
+	unsigned					num_isotopes;	/**< number of isotopes */
+	float						density;		/**< density [g/cc] */
+	std::vector<std::string>	isotopes;		/**< isotope list */
+	float*  					fractions;		/**< isotope fractions */
+};
+
+/**
+ * \struct dist_data datadef.h
+ * \brief contains information that defines a material
+ * \details material ID, number, fissile flag, number of isotopes, density, isotope list, isotope 
+ * fraction list
+ */
+struct dist_data {
+	float 			erg;	/**< energy point of this distribution */
+	unsigned 		len;	/**< length of the arrays in this ditribution */
+	unsigned 		law;	/**< sampling law of this distribution */
+	unsigned  		intt;	/**< interpolation flag of this distribution */
+	float* 			var;	/**< independent variable  (mu, E, etc.) */
+	float* 			pdf;	/**< probability density function array */
+	float* 			cdf;	/**< cumulative density function array */
+};
+
+/**
+ * \struct dist_container datadef.h
+ * \brief contains information that defines a material
+ * \details material ID, number, fissile flag, number of isotopes, density, isotope list, isotope 
+ * fraction list
+ */
+struct dist_container {
+	dist_data*		lower;			/**< pointer to distribution data of grid point below current energy */
+	dist_data*		upper;			/**< pointer to distribution data of grid point above current energy */
+};
+
+/**
+ * \struct cross_section_data datadef.h
+ * \brief contains information that defines a material
+ * \details material ID, number, fissile flag, number of isotopes, density, isotope list, isotope 
+ * fraction list
+ */
+struct cross_section_data {
+	float*				energy_grid;			/**< unionized energy grid vector */
+	unsigned*			rxn_numbers;			/**< reaction number vector */
+	float*				rxn_Q;					/**< reaction Q values */
+	float*				xs_data;				/**< cross section data matrix */
+	dist_container*		distributions;			/**< distribution data redirection matrix */
+};
+
+/**
+ * \struct particle_data datadef.h
+ * \brief contains information that defines a material
+ * \details material ID, number, fissile flag, number of isotopes, density, isotope list, isotope 
+ * fraction list
+ */
+struct particle_data {
+	spatial_data*	space;			/**< distribution data redirection matrix */
+	unsigned*		cellnum;		/**< distribution data redirection matrix */
+	unsigned*		matnum;			/**< distribution data redirection matrix */
+	unsigned*		rxn;			/**< distribution data redirection matrix */
+	unsigned*		done;			/**< distribution data redirection matrix */
+	unsigned*		remap;			/**< distribution data redirection matrix */
+	float*			E;				/**< distribution data redirection matrix */
+	float*			Q;				/**< distribution data redirection matrix */
+	float*			rn_bank;		/**< distribution data redirection matrix */
+	unsigned*		isonum;			/**< distribution data redirection matrix */
+	unsigned*		yield;			/**< distribution data redirection matrix */
+	float*			weight;			/**< distribution data redirection matrix */
+	unsigned*		index;			/**< distribution data redirection matrix */
+};
+
+/**
+ * \struct tally_data datadef.h
+ * \brief contains information that defines a material
+ * \details material ID, number, fissile flag, number of isotopes, density, isotope list, isotope 
+ * fraction list
+ */
+struct tally_data {
+	float*			tally_score;		/**< tally score */
+	float*			tally_square;		/**< tally square */
+	unsigned*		tally_count;		/**< tally count */
+	double*			tally_score_total;	/**< tally score accumulated total */
+	double*			tally_square_total;	/**< tally square accumulaed total */
+	long unsigned*	tally_count_total;	/**< tally count accumulated total */
+	unsigned		tally_cell;			/**< tally cell */
+	unsigned		tally_length;		/**< tally length (equi-log) */
+	float   		E_min;				/**< minimum energy */
+	float			E_max;				/**< maximum energy */
 };
 
 #endif

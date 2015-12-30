@@ -33,11 +33,12 @@ inline void check_cuda(cudaError_t code, const char *file, int line, bool abort=
 optix_stuff optix_obj;
 
 // whistory class
+whistory::~whistory(){
+}
 whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	// do problem gemetry stuff first
 	problem_geom = problem_geom_in;
-	// set tally vector length
-	n_tally = 1024;
+	// set run flag
 	RUN_FLAG = 1;
 	// keff stuff
 	keff_sum = 0.0;
@@ -61,17 +62,21 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 }
 void whistory::init(){
 
+	//
+	// EARLY DEVICE SETUP
+	//
 	// device must be set BEFORE an CUDA creation (streams included)
 	check_cuda(cudaSetDevice(compute_device));
 	//clear device
 	check_cuda(cudaDeviceReset());
-
 	// create streams
 	for (int i = 0; i < 4; ++i){
 		check_cuda(cudaStreamCreate(&stream[i]));
 	}
 
-	// init optix stuff 
+	//
+	// OPTIX 
+	//
 	optix_obj.N=Ndataset;
 	optix_obj.stack_size_multiplier=1;
 	optix_obj.init(problem_geom,compute_device,accel_type);
@@ -80,12 +85,15 @@ void whistory::init(){
 	}
 	check_cuda(cudaPeekAtLastError());
 
-	// CUDA stuff
-	// need to set again after optix sometimes... 
+	//
+	// CUDA 
+	//
+	// set device, need to set again after optix sometimes... 
 	check_cuda(cudaSetDevice(compute_device));
 	if(print_flag >= 1){
 		std::cout << "\e[1;32m" << "Dataset size is "<< N << "\e[m \n";
 	}
+	// block/thread structure
 	NUM_THREADS = 256;
 	RNUM_PER_THREAD = 1;
 	blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
@@ -95,66 +103,40 @@ void whistory::init(){
 	if(print_flag >= 2){
 		device_report();
 	}
+	// set print buffer size
 	check_cuda(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, (size_t) 10*1048576 ));
-	//device data
-	d_space 	= (source_point*) optix_obj.positions_ptr;
-	d_cellnum 	= (unsigned*)     optix_obj.cellnum_ptr;
-	d_matnum 	= (unsigned*)     optix_obj.matnum_ptr;
-	d_rxn 		= (unsigned*)     optix_obj.rxn_ptr;
-	d_done 		= (unsigned*)     optix_obj.done_ptr;
-	d_remap 	= (unsigned*)     optix_obj.remap_ptr;
-	cudaMalloc( &d_xs_length_numbers	, 6*sizeof(unsigned) );		 
-	cudaMalloc( &d_E 			, Ndataset*sizeof(float) );
-	cudaMalloc( &d_Q 			, Ndataset*sizeof(float) );
-	cudaMalloc( &d_rn_bank  		, Ndataset*RNUM_PER_THREAD*sizeof(float) );
-	cudaMalloc( &d_isonum   		, Ndataset*sizeof(unsigned) );
-	cudaMalloc( &d_yield			, Ndataset*sizeof(unsigned) );
-	cudaMalloc( &d_weight			, Ndataset*sizeof(float) );
-	cudaMalloc( &d_index			, Ndataset*sizeof(unsigned) );
-	cudaMalloc( &d_tally_score  		, n_tally*sizeof(float));
-	cudaMalloc( &d_tally_square  		, n_tally*sizeof(float));
-	cudaMalloc( &d_tally_count  		, n_tally*sizeof(unsigned));
-	cudaMalloc( &d_reduced_yields 		, 1*sizeof(unsigned));
-	cudaMalloc( &d_reduced_weight 		, 1*sizeof(float));
-	cudaMalloc( &d_reduced_done 		, 1*sizeof(unsigned));
-	cudaMalloc( &d_valid_result		, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_valid_N			, 1*sizeof(unsigned));
-	//cudaMalloc( &d_remap			, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_fissile_points		, Ndataset*sizeof(source_point));
-	cudaMalloc( &d_fissile_energy       	, Ndataset*sizeof(float));
-	cudaMalloc( &d_mask 			, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_completed 		, Ndataset*sizeof(unsigned));	
-	cudaMalloc( &d_scanned 			, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_num_completed 		, 1*sizeof(unsigned));
-	cudaMalloc( &d_active 			, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_rxn_remap		, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_num_active 		, 1*sizeof(unsigned));
-	cudaMalloc( &d_zeros			, Ndataset*sizeof(unsigned));
-	check_cuda(cudaPeekAtLastError());
-	// host data stuff
+
+	//
+	// device particle data arrays
+	//
+	init_device();
+
+	//
+	// HOST DATA
+	//
 	//xs_length_numbers 	= new unsigned [6];
-	space 			= new source_point 	[Ndataset];
-	E 				= new float 		[Ndataset];
-	Q 				= new float 		[Ndataset];
-	rn_bank  		= new unsigned 		[Ndataset*RNUM_PER_THREAD];
+	space 				= new source_point 	[Ndataset];
+	E 					= new float 		[Ndataset];
+	Q 					= new float 		[Ndataset];
+	rn_bank  			= new unsigned 		[Ndataset];
 	tally_score 		= new float 		[n_tally];
 	tally_square 		= new float 		[n_tally];
 	tally_count 		= new unsigned 		[n_tally];
 	tally_score_total	= new double 		[n_tally];
 	tally_square_total	= new double 		[n_tally];
 	tally_count_total	= new long unsigned	[n_tally];
-	index     		= new unsigned 		[Ndataset];
-	cellnum 		= new unsigned 		[Ndataset];
-	matnum 			= new unsigned 		[Ndataset];
-	rxn 			= new unsigned 		[Ndataset];
-	done 			= new unsigned 		[Ndataset];
-	isonum   		= new unsigned 		[Ndataset];
-	yield	   		= new unsigned 		[Ndataset];
-	remap 			= new unsigned 		[Ndataset];
-	zeros 			= new unsigned 		[Ndataset];
-	ones 			= new unsigned 		[Ndataset];
-	fones 			= new float  		[Ndataset];
-	weight	   		= new float  		[Ndataset];
+	index     			= new unsigned 		[Ndataset];
+	cellnum 			= new unsigned 		[Ndataset];
+	matnum 				= new unsigned 		[Ndataset];
+	rxn 				= new unsigned 		[Ndataset];
+	done 				= new unsigned 		[Ndataset];
+	isonum   			= new unsigned 		[Ndataset];
+	yield	   			= new unsigned 		[Ndataset];
+	remap 				= new unsigned 		[Ndataset];
+	zeros 				= new unsigned 		[Ndataset];
+	ones 				= new unsigned 		[Ndataset];
+	fones 				= new float  		[Ndataset];
+	weight	   			= new float  		[Ndataset];
 	// fission points array
 	fiss_img  =  new long unsigned [300*300]; for(int i=0;i<300*300;i++){fiss_img[i]=0;}
 	// init counters to 0
@@ -162,11 +144,11 @@ void whistory::init(){
 	total_bytes_energy  = 0;
 	//copy any info needed
 	memcpy(outer_cell_dims,optix_obj.outer_cell_dims,6*sizeof(float));
-	outer_cell = optix_obj.get_outer_cell();
+	outer_cell 		= optix_obj.get_outer_cell();
 	outer_cell_type = optix_obj.get_outer_cell_type();
-	isotopes = problem_geom.isotopes;
-	n_isotopes = problem_geom.n_isotopes;
-	n_materials = problem_geom.n_materials;
+	isotopes 		= problem_geom.isotopes;
+	n_isotopes 		= problem_geom.n_isotopes;
+	n_materials 	= problem_geom.n_materials;
 	//  map edge array
 	n_edges = 11;
 	check_cuda(cudaHostAlloc(&edges,n_edges*sizeof(unsigned),cudaHostAllocMapped));
@@ -177,77 +159,53 @@ void whistory::init(){
 	init_RNG();
 	init_CUDPP();
 	load_cross_sections();
-	//create_quad_tree();
 	copy_data_to_device();
 	is_initialized = 1;
 	if(print_flag >= 2){
 		printf("\e[1;31mDone with init\e[m\n");
 	}
 }
-whistory::~whistory(){
-	//cudaFree( d_xs_length_numbers 	);
-	//cudaFree( d_xs_MT_numbers_total );
-	//cudaFree( d_xs_MT_numbers 		);
-	//cudaFree( d_xs_data_MT 			);
-	//cudaFree( d_xs_data_main_E_grid );
-	//cudaFree( d_xs_data_scatter     );
-	//cudaFree( d_xs_data_energy      );
-	//cudaFree( d_tally_score 		);
-    //cudaFree( d_tally_count 		);
-    //cudaFree( d_xs_data_Q    		);
-	//cudaFree( d_index   );
-	//cudaFree( d_E         );
-	//cudaFree( d_Q         );
-	//cudaFree( d_rn_bank   );
-	//cudaFree( d_isonum    );
-	//cudaFree( d_yield     );
-	//cudaFree( d_awr_list);
-/*	delete xs_length_numbers; 
-	delete xs_MT_numbers_total;
-	delete xs_MT_numbers;
-	delete xs_data_MT;
-	delete xs_data_main_E_grid;
-	delete xs_data_Q;
-	delete space;
-	delete index;
-	delete awr_list;
-	delete E;
-	delete Q;
-	delete rn_bank;
-	delete cellnum;
-	delete matnum;
-	delete rxn;
-	delete done;
-	delete isonum;
-	delete yield; 
-	delete tally_count;
-	delete tally_score;
-	delete zeros;
-	delete ones;
-	// for loops to deallocate everything in the pointer arrays
-	for (int j=0 ; j < MT_columns ; j++){  //start after the total xs and total abs vectors
-		for (int k=0 ; k < MT_rows ; k++){
-			// scatter
-			//std::cout << "j,k = " << j << ", " << k << " colums,rows = " << MT_columns << ", " << MT_rows << "\n";
-			float * this_pointer =   xs_data_scatter     [k*MT_columns + j];
-			float * cuda_pointer =   xs_data_scatter_host[k*MT_columns + j];
-			if(this_pointer!=NULL){
-				while(xs_data_scatter[(k+1)*MT_columns + j ]==this_pointer){
-					k++; //push k to the end of the copies so don't try to free it twice
-				}
-				//std::cout << "j,k " << j << ", " << k << " - " ;
-				//std::cout << "freeing " << this_pointer << " " << cuda_pointer << "\n";
-				delete this_pointer;
-				//cudaFree(cuda_pointer);
-			}
-		}
-	}
-	//delete pointer arrays themselves
-	delete xs_data_scatter;
-	delete xs_data_energy;
-	delete xs_data_scatter_host;
-	delete xs_data_energy_host;
-*/}
+void whistory::init_device(){
+	// copy pointers initialized by optix
+	d_space 	= (source_point*) optix_obj.positions_ptr;
+	d_cellnum 	= (unsigned*)     optix_obj.cellnum_ptr;
+	d_matnum 	= (unsigned*)     optix_obj.matnum_ptr;
+	d_rxn 		= (unsigned*)     optix_obj.rxn_ptr;
+	d_done 		= (unsigned*)     optix_obj.done_ptr;
+	d_remap 	= (unsigned*)     optix_obj.remap_ptr;
+	// init others only used on CUDA side
+	cudaMalloc( &d_E 					, Ndataset*sizeof(float) );
+	cudaMalloc( &d_Q 					, Ndataset*sizeof(float) );
+	cudaMalloc( &d_rn_bank  			, Ndataset*sizeof(float) );
+	cudaMalloc( &d_isonum   			, Ndataset*sizeof(unsigned) );
+	cudaMalloc( &d_yield				, Ndataset*sizeof(unsigned) );
+	cudaMalloc( &d_weight				, Ndataset*sizeof(float) );
+	cudaMalloc( &d_index				, Ndataset*sizeof(unsigned) );
+
+	cudaMalloc( &d_xs_length_numbers	,        6*sizeof(unsigned) );
+
+	cudaMalloc( &d_reduced_yields 		,        1*sizeof(unsigned));
+	cudaMalloc( &d_reduced_weight 		,        1*sizeof(float));
+	cudaMalloc( &d_reduced_done 		,        1*sizeof(unsigned));
+	cudaMalloc( &d_valid_result			, Ndataset*sizeof(unsigned));
+	cudaMalloc( &d_valid_N				,        1*sizeof(unsigned));
+
+	cudaMalloc( &d_fissile_points		, Ndataset*sizeof(source_point));
+	cudaMalloc( &d_fissile_energy       , Ndataset*sizeof(float));
+
+	cudaMalloc( &d_scanned 				, Ndataset*sizeof(unsigned));
+	cudaMalloc( &d_num_completed 		,        1*sizeof(unsigned));
+	cudaMalloc( &d_active 				, Ndataset*sizeof(unsigned));
+	cudaMalloc( &d_rxn_remap			, Ndataset*sizeof(unsigned));
+	cudaMalloc( &d_num_active 			,        1*sizeof(unsigned));
+	cudaMalloc( &d_zeros				, Ndataset*sizeof(unsigned));
+
+	cudaMalloc( &d_tally_score  		,  n_tally*sizeof(float));
+	cudaMalloc( &d_tally_square  		,  n_tally*sizeof(float));
+	cudaMalloc( &d_tally_count  		,  n_tally*sizeof(unsigned));
+
+	check_cuda(cudaPeekAtLastError());
+}
 void whistory::init_host(){
 
 	for(int k=0;k<N;k++){
@@ -318,13 +276,13 @@ void whistory::init_RNG(){
 	}
 	curandCreateGenerator( &rand_gen , CURAND_RNG_PSEUDO_MTGP32 );  //mersenne twister type
 	curandSetPseudoRandomGeneratorSeed( rand_gen , 123456789ULL );
-	curandGenerate( rand_gen , d_rn_bank , Ndataset * RNUM_PER_THREAD );
-	cudaMemcpy(rn_bank , d_rn_bank , Ndataset * RNUM_PER_THREAD *sizeof(unsigned) , cudaMemcpyDeviceToHost); // copy bank back to keep seeds
+	curandGenerate( rand_gen , d_rn_bank , Ndataset  );
+	cudaMemcpy(rn_bank , d_rn_bank , Ndataset*sizeof(unsigned) , cudaMemcpyDeviceToHost); // copy bank back to keep seeds
 	check_cuda(cudaPeekAtLastError());
 }
 void whistory::update_RNG(){
 
-	curandGenerate( rand_gen , d_rn_bank , Ndataset * RNUM_PER_THREAD );
+	curandGenerate( rand_gen , d_rn_bank , Ndataset );
 	check_cuda(cudaPeekAtLastError());
 
 }
@@ -2672,147 +2630,5 @@ void whistory::nonzero(float* color, unsigned val, unsigned min, unsigned max){
 	color[0] = color[0]*256;
 	color[1] = color[1]*256;
 	color[2] = color[2]*256;
-
-}
-void whistory::create_quad_tree(){
-
-	std::cout << "\e[1;32m" << "Building quad tree for energy search... " << "\e[m \n";
-//
-//	// node vectors
-//	std::vector<qnode_host>   nodes;
-//	std::vector<qnode_host>   nodes_next;
-//
-//	// node variables
-//	qnode_host  this_qnode;
-//	qnode*      cuda_qnode;
-//
-//	// build bottom-up from the unionized E vector
-//	unsigned k, depth;
-//	unsigned rows_by_four = MT_rows;
-//	for(k=0; k < rows_by_four ; k = k+4){
-//		this_qnode.node.values[0] = xs_data_main_E_grid[ k+0 ];
-//		this_qnode.node.values[1] = xs_data_main_E_grid[ k+1 ];
-//		this_qnode.node.values[2] = xs_data_main_E_grid[ k+2 ];
-//		this_qnode.node.values[3] = xs_data_main_E_grid[ k+3 ];
-//		this_qnode.node.leaves[0] = (qnode*) ((long unsigned)k + 0);  // recast grid index as the pointer for lowest nodes
-//		this_qnode.node.leaves[1] = (qnode*) ((long unsigned)k + 1);
-//		this_qnode.node.leaves[2] = (qnode*) ((long unsigned)k + 2);
-//		this_qnode.node.leaves[3] = (qnode*) ((long unsigned)k + 3);
-//		cudaMalloc(&cuda_qnode,sizeof(qnode));
-//		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-//		this_qnode.cuda_pointer = cuda_qnode;
-//		nodes.push_back(this_qnode);
-//	}
-//	//do the last values
-//	if(MT_rows%4){
-//		unsigned n=0;
-//		for(k=rows_by_four;k<MT_rows;k++){
-//			this_qnode.node.values[n] = xs_data_main_E_grid[ k ];
-//			this_qnode.node.leaves[n] = (qnode*) ((long unsigned)k); 
-//			n++;
-//		}
-//		//repeat the last values
-//		for(k=n;k<4;k++){
-//			this_qnode.node.values[k] = this_qnode.node.values[n-1];
-//			this_qnode.node.leaves[k] = this_qnode.node.leaves[n-1];
-//		}
-//		// device allocate and add to vector
-//		cudaMalloc(&cuda_qnode,sizeof(qnode));
-//		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-//		this_qnode.cuda_pointer = cuda_qnode;
-//		nodes.push_back(this_qnode);
-//	}
-//
-//
-//	//now build it up!  length will *always* need to be a multiple of 4.  this routine pads the end nodes with 
-//	unsigned this_width = nodes.size();
-//	unsigned lowest_length = this_width;
-//	unsigned mod4 		= this_width % 4;
-//	unsigned end_depth=  (logf(lowest_length)/logf(4))+1;
-//	unsigned num_repeats = 1;
-//	unsigned starting_index = 0;
-//	float inf = 1e45;
-//	//std::cout << "end_depth="<<end_depth<<"\n";
-//	for(unsigned depth=0;depth<end_depth;depth++){
-//		//for(unsigned copy_repeats=0;copy_repeats<num_repeats;copy_repeats++){
-//		//	starting_index=copy_repeats*this_width;
-//		//for(unsigned copy_iteration=0;copy_iteration<4;copy_iteration++){
-//			for( k=starting_index;k<(starting_index+this_width-mod4);k=k+4){
-//				//std::cout << "k=" << k << "\n";
-//				this_qnode.node.values[0] = nodes[ k+0 ].node.values[0]; // can use 0 since values overlap
-//				this_qnode.node.values[1] = nodes[ k+1 ].node.values[0];
-//				this_qnode.node.values[2] = nodes[ k+2 ].node.values[0];
-//				this_qnode.node.values[3] = nodes[ k+3 ].node.values[0];  
-//				this_qnode.node.leaves[0] = nodes[ k+0 ].cuda_pointer;  // set pointers as the cuda pointer of the children
-//				this_qnode.node.leaves[1] = nodes[ k+1 ].cuda_pointer;
-//				this_qnode.node.leaves[2] = nodes[ k+2 ].cuda_pointer;
-//				this_qnode.node.leaves[3] = nodes[ k+3 ].cuda_pointer;
-//				cudaMalloc(&cuda_qnode,sizeof(qnode));
-//				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-//				this_qnode.cuda_pointer = cuda_qnode;
-//				nodes_next.push_back(this_qnode);
-//			}
-//			if(mod4){
-//				//std::cout << "adding padded node at " << nodes_next.size()-1 << "\n";
-//				unsigned n=0;
-//				for( k=(starting_index+this_width-mod4) ; k<(starting_index+this_width) ; k++){
-//					//std::cout <<"n="<<n << " k="<<k<<"\n";
-//					this_qnode.node.values[n] = nodes[ k ].node.values[0];
-//					this_qnode.node.leaves[n] = nodes[ k ].cuda_pointer;
-//					n++;
-//				}
-//				for( n;n<4;n++){
-//					//std::cout <<"n="<<n << " k="<<k<<"\n";
-//					this_qnode.node.values[n] = inf;
-//					this_qnode.node.leaves[n] = NULL;
-//				}
-//				cudaMalloc(&cuda_qnode,sizeof(qnode));
-//				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-//				this_qnode.cuda_pointer = cuda_qnode;
-//				nodes_next.push_back(this_qnode);
-//			}
-//		//}
-//	//}
-//		if(mod4){
-//			this_width=(this_width)/4+1;
-//		}
-//		else{
-//			this_width=this_width/4;
-//		}
-//		mod4=this_width%4;
-//		nodes=nodes_next;
-//		nodes_next.clear();
-//		num_repeats=num_repeats*4;
-//		//std::cout << "--------------------------------------\n";
-//		//for(int g=0;g<nodes.size();g++){ //node vector check
-//		//	std::cout << "node " << g << " values " << nodes[g].node.values[0] << " " << nodes[g].node.values[1] << " "<< nodes[g].node.values[2] << " "<< nodes[g].node.values[3] << " "<< nodes[g].node.values[4] << " " <<"\n";
-//		//	std::cout << "node " << g << " leaves " << nodes[g].node.leaves[0] << " " << nodes[g].node.leaves[1] << " "<< nodes[g].node.leaves[2] << " "<< nodes[g].node.leaves[3] << " " <<"\n";
-//		//}
-//	}
-//
-//
-//	// copy size to object vars
-//	qnodes_depth = end_depth;
-//	qnodes_width = nodes.size();
-//
-//	//copy root nodes vector to object variable
-//	//qnodes = new qnode[qnodes_width];
-//	//for(k=0;k<qnodes_width;k++){   //only need to copy heads, they have pointers to the rest in them
-//	//		qnodes[k].values[0] = nodes[k].node.values[0];
-//	//		qnodes[k].values[1] = nodes[k].node.values[1];
-//	//		qnodes[k].values[2] = nodes[k].node.values[2];
-//	//		qnodes[k].values[3] = nodes[k].node.values[3];
-//	//		qnodes[k].values[4] = nodes[k].node.values[4];
-//	//		qnodes[k].leaves[0] = nodes[k].node.leaves[0];
-//	//		qnodes[k].leaves[1] = nodes[k].node.leaves[1];
-//	//		qnodes[k].leaves[2] = nodes[k].node.leaves[2];
-//	//		qnodes[k].leaves[3] = nodes[k].node.leaves[3];
-//	//}
-//
-//	// make and copy device data
-//	cudaMalloc(	&d_qnodes_root,				sizeof(qnode)	);
-//	cudaMemcpy(	 d_qnodes_root,	&nodes[0].node,		sizeof(qnode),	cudaMemcpyHostToDevice); 
-//
-//	std::cout << "  Complete.  Depth of tree is "<< qnodes_depth << ", width is "<< qnodes_width <<".\n";
 
 }
