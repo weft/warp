@@ -7,131 +7,116 @@
  */
 
 class whistory { 
-	// wgeometry instance
-	wgeometry				problem_geom;			/**< problem geometry */
-	std::string				accel_type;				/**< acceleration type */
-	// CUDPP
-	CUDPPHandle				theCudpp;				/**< CUDPP handle */
-	CUDPPHashTableConfig	hash_config;			/**< CUDPP hash table configuration */
-	CUDPPConfiguration		compact_config;			/**< CUDPP compact configuration */
-	CUDPPConfiguration		scan_int_config;		/**< CUDPP scan int configuration */
-	CUDPPConfiguration		redu_int_config;		/**< CUDPP reduced int configuration */
-	CUDPPConfiguration		redu_float_config; 		/**< CUDPP reduced float configuration */
-	CUDPPConfiguration		radix_config;			/**< CUDPP radix configuration */
-	CUDPPHandle				mate_hash_table_handle; /**< CUDPP material hash table handle */
-	CUDPPHandle				fiss_hash_table_handle; /**< CUDPP fissile hash table handle */
-	CUDPPHandle				scanplan_int;			/**< CUDPP scan plan int handle */
-	CUDPPHandle				reduplan_int;			/**< CUDPP reduce plan int handle */
-	CUDPPHandle				reduplan_float;			/**< CUDPP reduce plan float handle */
-	CUDPPHandle				compactplan;			/**< CUDPP compact plan handle */
-	CUDPPHandle				radixplan;				/**< CUDPP radix plan handle */
-	CUDPPResult				res;					/**< CUDPP result */
-	unsigned*				d_valid_result;			/**< valid result pointer */
-	unsigned*				d_valid_N;				/**< valied number of histories pointer */
-	unsigned*				d_remap;				/**< remap pointer */
-	// CURAND
-	curandGenerator_t		rand_gen;				/**< random number generator handle */
-	// cuda parameters
-	unsigned				N;						/**< number of histories */
-	unsigned				Ndataset;				/**< dataset size for number of histories */
-	unsigned				NUM_THREADS;			/**< number of threads */
-	unsigned				blks;					/**< number of blocks */
-	unsigned				compute_device;			/**< compute device (always 0) */
-	cudaStream_t			stream[5];				/**< CUDA streams */
-	// host data
-	unsigned				RUN_FLAG;				/**< run flag */
-	unsigned				outer_cell;				/**< outermost cell */
-	unsigned				outer_cell_type;		/**< outermost cell type*/
-	unsigned				n_materials;			/**< number of materials */
-	unsigned				n_isotopes;				/**< number of isotopes */
-	unsigned				n_tally;				/**< number of tallies */
-	unsigned				n_skip;					/**< number of cycles to skip */
-	unsigned				n_cycles;				/**< number of active cycles */
-	float					keff_sum;				/**< keff sum */
-	float					keff2_sum;				/**< keff squared sum */
-	float					keff_err;				/**< keff error */
-	std::string				filename;				/**< file name */
-	unsigned				is_initialized;			/**< init flag */
-	unsigned				print_flag;				/**< print verbosity level*/
-	unsigned				dump_flag;				/**< dump level*/
-	/**
-	 * \brief cross section length numbers
-	 * \details 0 = isotopes, 1 = main menergy points, 2 = total number of reaction channels, 
-	 * 3 = matrix energy points, 4 = angular cosine points, 5 = outgoing energy points
-	 */
-	unsigned*		xs_length_numbers;		// 0=isotopes, 1=main E points, 2=total numer of reaction channels, 3=matrix E points, 4=angular cosine points, 5=outgoing energy points 
-	unsigned*		xs_MT_numbers_total;	/**< total cross sextion MT numbers */
-	unsigned*		xs_MT_numbers;			/**< cross section MT numbers */
-	float*			xs_data_MT;				/**< cross section MT data */
-	float*			xs_data_main_E_grid;	/**< cross section data main energy grid */
-	float**			xs_data_scatter;		/**< scattering cross section data */
-	float**			xs_data_energy;			/**< energy cross section data */
-	float**			xs_data_scatter_host;	/**< scattering cross section host data */
-	float**			xs_data_energy_host;	/**< energy cross section host data */
-	float*			xs_data_Q;				/**< cross section data Q-values */
-
-	particle_data	d_particles;			/**< device particle data pointers */
-	particle_data	h_particles;			/**< host particle data pointers */
-
-	tally_data		d_tally;				/**< device single tally data */
-	tally_data		h_tally;				/**< host single tally data */
-
-	float*			awr_list;				/**< atomic weight ratio (AWR) list */
-	float*			temp_list;				/**< isotope temperature list */
-	float*			number_density_matrix;	/**< isotope number density matrix */
 	
-	unsigned		reduced_yields;			/**< reduced yields */
-	float			reduced_weight;			/**< reduced weight */
-	unsigned*		remap;					/**< remap */
-	unsigned*		zeros;					/**< zeros */
-	unsigned*		ones;					/**< ones */
-	float*			fones;					/**< float ones */
-    long unsigned	reduced_yields_total;   /**< long unsigned for accumulating yield numbers accurately on the host */
-    double			reduced_weight_total;   /**< double for accumulating weight numbers accurately on the host */
+	// wgeometry instance
+	wgeometry					problem_geom;			/**< problem geometry */
+	std::string					accel_type;				/**< acceleration type */
+	
+	// CUDPP
+	CUDPPHandle					theCudpp;				/**< CUDPP handle */
+	CUDPPConfiguration			compact_config;			/**< CUDPP compact configuration */
+	CUDPPConfiguration			scan_int_config;		/**< CUDPP scan int configuration */
+	CUDPPConfiguration			redu_int_config;		/**< CUDPP reduced int configuration */
+	CUDPPConfiguration			redu_float_config; 		/**< CUDPP reduced float configuration */
+	CUDPPConfiguration			radix_config;			/**< CUDPP radix configuration */
+	CUDPPHandle					scanplan_int;			/**< CUDPP scan plan int handle */
+	CUDPPHandle					reduplan_int;			/**< CUDPP reduce plan int handle */
+	CUDPPHandle					reduplan_float;			/**< CUDPP reduce plan float handle */
+	CUDPPHandle					compactplan;			/**< CUDPP compact plan handle */
+	CUDPPHandle					radixplan;				/**< CUDPP radix plan handle */
+	CUDPPResult					res;					/**< CUDPP result */
+	
+	// CURAND generator handle
+	curandGenerator_t			rand_gen;				/**< random number generator handle */
+	
+	// cuda parameters
+	unsigned					N;						/**< number of histories */
+	unsigned					Ndataset;				/**< dataset size for number of histories */
+	unsigned					NUM_THREADS;			/**< number of threads per block */
+	unsigned					blks;					/**< number of blocks */
+	unsigned					compute_device;			/**< compute device */
+	cudaStream_t				stream[5];				/**< CUDA streams cor concurrent kernels */
+	
+	// host/device copied data
+	cross_section_data			d_xsdata;				/**< device cross section data structure */
+	cross_section_data			h_xsdata;				/**< host cross section data structure */
+	particle_data				d_particles;			/**< device particle data structure */
+	particle_data				h_particles;			/**< host particle data structure */
+	tally_data					d_tally;				/**< device single tally data */
+	tally_data					h_tally;				/**< host single tally data */
 
-	// device data
-	unsigned*		d_xs_length_numbers; /**< device cross section length numbers */
-	unsigned*		d_xs_MT_numbers_total; /**< device cross section total MT numbers */
-	unsigned*		d_xs_MT_numbers; /**< device cross section MT numbers */
-	float*			d_xs_data_MT; /**< device cross section MT numbers */
-	float*			d_xs_data_main_E_grid; /**< device cross section main energy grid */
-	float**			d_xs_data_scatter; /**< device scattering cross section data */
-	float** 		d_xs_data_energy; /**< device energy cross section data */
-	float*			d_xs_data_Q; /**< device cross section Q-value data */
-
-	float*			d_awr_list; /**< device AWR list */
-	float*			d_temp_list; /**< device isotope temperature list */
-	unsigned*		d_material_list; /**< device material list */
-	unsigned*		d_isotope_list; /**< device isotope list */
-	float*			d_number_density_matrix; /**< device isotope number density matrix */
-
-	unsigned*		d_reduced_yields; /**< device reduced yields */
-	float*			d_reduced_weight; /**< device reduced weight */
-	unsigned*		d_reduced_done; /**< device reduced done flags */
-	float*			d_fissile_energy; /**< device fissile energy */
-	spatial_data*	d_fissile_points; /**< device fissile points */
- 	unsigned*		d_scanned; /**< device scanned pointer */
- 	unsigned*		d_active; /**< device active pointer */
- 	unsigned*		d_num_completed; /**< device number of completed histories */
- 	unsigned*		d_num_active; /**< device number of active histories */
- 	spatial_data*	d_bank_space; /**< device bank space */
- 	float*			d_bank_E; /**< device bank energy */
-    unsigned*		d_zeros; /**< zeros */
 	// mapped arrays
-	unsigned		n_edges; /**< mapped array of number of edges */
-	unsigned*		  edges; /**< mapped array of edges */
-	unsigned*		d_edges; /**< device mapped array of edges */
-	// xs data parameters
-	std::vector<std::string>	isotopes; /**< cross section isotope string */
-	std::vector<unsigned>		xs_num_rxns;     /**< cross section number of reactions */
-	std::vector<unsigned>		xs_isotope_ints; /**< cross section isotope numbers */
-	unsigned					total_bytes_scatter; /**< total size of scattering data */
-	unsigned					total_bytes_energy ; /**< total size of energy data */
-	unsigned					MT_rows;    /**< MT number rows */
-	unsigned					MT_columns; /**< MT number columns */
+	unsigned					n_edges;				/**< mapped array of number of edges */
+	unsigned*					  edges;				/**< mapped array of edges */
+	unsigned*					d_edges;				/**< device mapped array of edges */
+	unsigned					 reduced_yields;		/**< reduced yields */
+	float						 reduced_weight;		/**< reduced weight */
+	unsigned*					d_reduced_yields;		/**< device reduced yields */
+	float*						d_reduced_weight;		/**< device reduced weight */
+	
+	// 
+    long unsigned				reduced_yields_total;   /**< long unsigned for accumulating yield numbers accurately on the host */
+    double						reduced_weight_total;   /**< double for accumulating weight numbers accurately on the host */
+
+	// materials data
+	unsigned*					material_list;			/**< material list */
+	unsigned*					isotope_list;			/**< isotope list */
+	float*						number_density_matrix;	/**< isotope number density matrix */
+	unsigned*					d_material_list;		/**< device material list */
+	unsigned*					d_isotope_list;			/**< device isotope list */
+	float*						d_number_density_matrix;/**< device isotope number density matrix */
+
+	// reference remapping arrays
+	unsigned*					  remap;				/**< remap */
+	unsigned*					d_remap;				/**< remap pointer */
+
+	// [re]initialization arrays
+	unsigned*					zeros;					/**< zeros array */
+	unsigned*					d_zeros;				/**< device zeros array */
+	unsigned*					ones;					/**< int ones array */
+	float*						fones;					/**< float ones array */
+
+	// host-only data
+	unsigned					RUN_FLAG;				/**< run flag */
+	unsigned					outer_cell;				/**< outermost cell */
+	unsigned					outer_cell_type;		/**< outermost cell type*/
+	unsigned					n_materials;			/**< number of materials */
+	unsigned					n_isotopes;				/**< number of isotopes */
+	unsigned					n_tallies;				/**< number of tallies */
+	unsigned					n_skip;					/**< number of cycles to skip */
+	unsigned					n_cycles;				/**< number of active cycles */
+	float						keff_sum;				/**< keff sum */
+	float						keff2_sum;				/**< keff squared sum */
+	float						keff_err;				/**< keff error */
+	std::string					filename;				/**< file name */
+	unsigned					is_initialized;			/**< init flag */
+	unsigned					print_flag;				/**< print verbosity level*/
+	unsigned					dump_flag;				/**< dump level*/
+
+	// device-only variables
+	unsigned*					d_valid_result;			/**< valid result pointer */
+	unsigned*					d_valid_N;				/**< valied number of histories pointer */
+	float*						d_fissile_energy;		/**< device fissile energy */
+	spatial_data*				d_fissile_points;		/**< device fissile points */
+ 	unsigned*					d_scanned;				/**< device scanned pointer */
+ 	unsigned*					d_num_completed;		/**< device number of completed histories */
+ 	unsigned*					d_num_active;			/**< device number of active histories */
+ 	spatial_data*				d_bank_space;			/**< device bank space */
+ 	float*						d_bank_E;				/**< device bank energy */
+
+	// xs data parameters used in parsing, copying, etc
+	std::vector<std::string>	isotopes;				/**< cross section isotope string */
+	std::vector<unsigned>		xs_num_rxns;			/**< cross section number of reactions */
+	std::vector<unsigned>		xs_isotope_ints;		/**< cross section isotope numbers */
+	unsigned					total_bytes_scatter;	/**< total size of scattering data */
+	unsigned					total_bytes_energy ;	/**< total size of energy data */
+	unsigned					MT_rows;				/**< MT number rows */
+	unsigned					MT_columns;				/**< MT number columns */
+
 	//geom parameters
-	float			outer_cell_dims [6]; /**< outer cell minima and maxima */
-	long unsigned*	fiss_img;  /**< fissile image accumulation */
+	float						outer_cell_dims [6];	/**< outer cell minima and maxima */
+	long unsigned*				fiss_img;				/**< fissile image accumulation */
+
 	// private transport functions 
 	/**
 	 * \brief initializes the random number generator
@@ -169,7 +154,7 @@ class whistory {
 	 * the lengths vector, gets the AWR vector, gets the Q vector. does scattering
 	 * stuff and energy stuff. passes information to the geometry.
 	 */
-	void load_cross_sections();
+	void init_cross_sections();
 	/**
 	 * \brief does an OptiX trace
 	 * @param[in] type - trace type

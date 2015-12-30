@@ -8,7 +8,7 @@
 #include <string.h>
 #include <cuda.h>
 #include <curand.h>
-#include <cudpp_hash.h>
+#include <cudpp.h>
 #include <Python.h>
 #include <png++/png.hpp>
 #include "datadef.h"
@@ -47,7 +47,7 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	// device data stuff
 	N = Nin;
 	// 3 should be more than enough for criticality, might not be for fixed
-	Ndataset = Nin * 3;
+	Ndataset = Nin * 1;
 	n_qnodes = 0;
 	reduced_yields_total = 0;
 	reduced_weight_total = 0;
@@ -94,7 +94,7 @@ void whistory::init(){
 		std::cout << "\e[1;32m" << "Dataset size is "<< N << "\e[m \n";
 	}
 	// block/thread structure
-	NUM_THREADS = 256;
+	NUM_THREADS		= 256;
 	RNUM_PER_THREAD = 1;
 	blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 	if(print_flag >= 1){
@@ -103,171 +103,204 @@ void whistory::init(){
 	if(print_flag >= 2){
 		device_report();
 	}
+
 	// set print buffer size
 	check_cuda(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, (size_t) 10*1048576 ));
 
-	//
-	// device particle data arrays
-	//
-	init_device();
-
-	//
-	// HOST DATA
-	//
-	//xs_length_numbers 	= new unsigned [6];
-	space 				= new source_point 	[Ndataset];
-	E 					= new float 		[Ndataset];
-	Q 					= new float 		[Ndataset];
-	rn_bank  			= new unsigned 		[Ndataset];
-	tally_score 		= new float 		[n_tally];
-	tally_square 		= new float 		[n_tally];
-	tally_count 		= new unsigned 		[n_tally];
-	tally_score_total	= new double 		[n_tally];
-	tally_square_total	= new double 		[n_tally];
-	tally_count_total	= new long unsigned	[n_tally];
-	index     			= new unsigned 		[Ndataset];
-	cellnum 			= new unsigned 		[Ndataset];
-	matnum 				= new unsigned 		[Ndataset];
-	rxn 				= new unsigned 		[Ndataset];
-	done 				= new unsigned 		[Ndataset];
-	isonum   			= new unsigned 		[Ndataset];
-	yield	   			= new unsigned 		[Ndataset];
-	remap 				= new unsigned 		[Ndataset];
-	zeros 				= new unsigned 		[Ndataset];
-	ones 				= new unsigned 		[Ndataset];
-	fones 				= new float  		[Ndataset];
-	weight	   			= new float  		[Ndataset];
 	// fission points array
 	fiss_img  =  new long unsigned [300*300]; for(int i=0;i<300*300;i++){fiss_img[i]=0;}
 	// init counters to 0
 	total_bytes_scatter = 0;
 	total_bytes_energy  = 0;
-	//copy any info needed
+
+	//copy any info needed from the geometry read
 	memcpy(outer_cell_dims,optix_obj.outer_cell_dims,6*sizeof(float));
 	outer_cell 		= optix_obj.get_outer_cell();
 	outer_cell_type = optix_obj.get_outer_cell_type();
 	isotopes 		= problem_geom.isotopes;
 	n_isotopes 		= problem_geom.n_isotopes;
 	n_materials 	= problem_geom.n_materials;
-	//  map edge array
+
+	// map edge array and reduced values
 	n_edges = 11;
-	check_cuda(cudaHostAlloc(&edges,n_edges*sizeof(unsigned),cudaHostAllocMapped));
-	check_cuda(cudaHostGetDevicePointer(&d_edges,edges,0));
-	// init host values
+	check_cuda(cudaHostAlloc( &edges          , n_edges*sizeof(unsigned), cudaHostAllocMapped));
+	check_cuda(cudaHostAlloc( &reduced_yields ,       1*sizeof(unsigned), cudaHostAllocMapped));
+	check_cuda(cudaHostAlloc( &reduced_weights,       1*sizeof(float)   , cudaHostAllocMapped));
+	check_cuda(cudaHostGetDevicePointer(&d_edges          ,  edges          , 0));
+	check_cuda(cudaHostGetDevicePointer(&d_reduced_yields ,  reduced_yields , 0));
+	check_cuda(cudaHostGetDevicePointer(&d_reduced_weights,  reduced_weights, 0));
+
+	// set anything else
 	filename = "warp";
-	init_host();
+
+	//
+	// init/copy the rest not done previously or in OptiX
+	//
 	init_RNG();
 	init_CUDPP();
-	load_cross_sections();
-	copy_data_to_device();
+	init_host();
+	init_device();
+	init_cross_sections();
+
+	// set inititalized flag, print done if flagged
 	is_initialized = 1;
 	if(print_flag >= 2){
 		printf("\e[1;31mDone with init\e[m\n");
 	}
 }
-void whistory::init_device(){
-	// copy pointers initialized by optix
-	d_space 	= (source_point*) optix_obj.positions_ptr;
-	d_cellnum 	= (unsigned*)     optix_obj.cellnum_ptr;
-	d_matnum 	= (unsigned*)     optix_obj.matnum_ptr;
-	d_rxn 		= (unsigned*)     optix_obj.rxn_ptr;
-	d_done 		= (unsigned*)     optix_obj.done_ptr;
-	d_remap 	= (unsigned*)     optix_obj.remap_ptr;
-	// init others only used on CUDA side
-	cudaMalloc( &d_E 					, Ndataset*sizeof(float) );
-	cudaMalloc( &d_Q 					, Ndataset*sizeof(float) );
-	cudaMalloc( &d_rn_bank  			, Ndataset*sizeof(float) );
-	cudaMalloc( &d_isonum   			, Ndataset*sizeof(unsigned) );
-	cudaMalloc( &d_yield				, Ndataset*sizeof(unsigned) );
-	cudaMalloc( &d_weight				, Ndataset*sizeof(float) );
-	cudaMalloc( &d_index				, Ndataset*sizeof(unsigned) );
-
-	cudaMalloc( &d_xs_length_numbers	,        6*sizeof(unsigned) );
-
-	cudaMalloc( &d_reduced_yields 		,        1*sizeof(unsigned));
-	cudaMalloc( &d_reduced_weight 		,        1*sizeof(float));
-	cudaMalloc( &d_reduced_done 		,        1*sizeof(unsigned));
-	cudaMalloc( &d_valid_result			, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_valid_N				,        1*sizeof(unsigned));
-
-	cudaMalloc( &d_fissile_points		, Ndataset*sizeof(source_point));
-	cudaMalloc( &d_fissile_energy       , Ndataset*sizeof(float));
-
-	cudaMalloc( &d_scanned 				, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_num_completed 		,        1*sizeof(unsigned));
-	cudaMalloc( &d_active 				, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_rxn_remap			, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_num_active 			,        1*sizeof(unsigned));
-	cudaMalloc( &d_zeros				, Ndataset*sizeof(unsigned));
-
-	cudaMalloc( &d_tally_score  		,  n_tally*sizeof(float));
-	cudaMalloc( &d_tally_square  		,  n_tally*sizeof(float));
-	cudaMalloc( &d_tally_count  		,  n_tally*sizeof(unsigned));
-
-	check_cuda(cudaPeekAtLastError());
-}
 void whistory::init_host(){
 
-	for(int k=0;k<N;k++){
-		remap[k]		= k;
-		zeros[k]		= 0;
-		ones[k]			= 1;
-		fones[k]		= 1.0;
-		space[k].x 		= 0.0;
-		space[k].y 		= 0.0;
-		space[k].z 		= 0.0;
-		space[k].xhat 		= 0.0;
-		space[k].yhat 		= 0.0;
-		space[k].zhat 		= 0.0;
-		space[k].surf_dist 	= 10000.0;
-		space[k].macro_t 	= 0.0;
-		space[k].enforce_BC     = 0;
-		space[k].norm[0]     = 0;
-		space[k].norm[1]     = 0;
-		space[k].norm[2]     = 0;
-		E[k]			= 2.5;
-		Q[k]			= 0.0;
-		cellnum[k]		= 0;
-		matnum[k]		= 0;
-		rxn[k]			= 0;
-		done[k]			= 0;
-		isonum[k]		= 0;
-		yield[k]		= 0;
-		weight[k]		= 1;
-	}
-	for(int k=N;k<Ndataset;k++){
-		remap[k]		= k;
-		zeros[k]		= 0;
-		ones[k]			= 1;
-		fones[k]		= 1.0;
-		space[k].x 		= 0.0;
-		space[k].y 		= 0.0;
-		space[k].z 		= 0.0;
-		space[k].xhat 		= 0.0;
-		space[k].yhat 		= 0.0;
-		space[k].zhat 		= 0.0;
-		space[k].surf_dist 	= 10000.0;
-		space[k].macro_t 	= 0.0;
-		space[k].enforce_BC = 0;
-		space[k].norm[0]     = 0;
-		space[k].norm[1]     = 0;
-		space[k].norm[2]     = 0;
-		E[k]			= 0.0;
-		Q[k]			= 0.0;
-		cellnum[k]		= 0;
-		matnum[k]		= 0;
-		rxn[k]			= 0;
-		done[k]			= 1;
-		isonum[k]		= 0;
-		yield[k]		= 0;
-		weight[k]		= 0;
-	}
-	for(int k=0;k<n_tally;k++){
-		tally_score_total[k]=0.0;
-		tally_square_total[k]=0.0;
-		tally_count_total[k]=0;
+	// allocate
+	h_particles.space	= new spatial_data 	[Ndataset];
+	h_particles.E		= new float 		[Ndataset];
+	h_particles.Q		= new float 		[Ndataset];
+	h_particles.rn_bank	= new unsigned 		[Ndataset];
+	h_particles.index	= new unsigned 		[Ndataset];
+	h_particles.cellnum	= new unsigned 		[Ndataset];
+	h_particles.matnum	= new unsigned 		[Ndataset];
+	h_particles.rxn		= new unsigned 		[Ndataset];
+	h_particles.isonum	= new unsigned 		[Ndataset];
+	h_particles.yield	= new unsigned 		[Ndataset];
+	h_particles.weight	= new float  		[Ndataset];
+	remap				= new unsigned 		[Ndataset];
+	zeros				= new unsigned 		[Ndataset];
+	ones				= new unsigned 		[Ndataset];
+	fones				= new float  		[Ndataset];
+
+	//  init
+	for(int k=0;k<Ndataset;k++){
+		h_particles.space[k].x				= 0.0;
+		h_particles.space[k].y				= 0.0;
+		h_particles.space[k].z				= 0.0;
+		h_particles.space[k].xhat			= 0.0;
+		h_particles.space[k].yhat			= 0.0;
+		h_particles.space[k].zhat			= 0.0;
+		h_particles.space[k].surf_dist		= 10000.0;
+		h_particles.space[k].macro_t		= 0.0;
+		h_particles.space[k].enforce_BC		= 0;
+		h_particles.space[k].norm[0]		= 0;
+		h_particles.space[k].norm[1]		= 0;
+		h_particles.space[k].norm[2]		= 0;
+		h_particles.E[k]					= 2.5;
+		h_particles.Q[k]					= 0.0;
+		h_particles.cellnum[k]				= 0;
+		h_particles.matnum[k]				= 0;
+		h_particles.rxn[k]					= 0;
+		h_particles.isonum[k]				= 0;
+		h_particles.yield[k]				= 0;
+		h_particles.weight[k]				= 1;
+		remap[k]							= k;
+		zeros[k]							= 0;
+		ones[k]								= 1;
+		fones[k]							= 1.0;
 	}
 
+	// set host tally size, bounds, allocate, and zero out all tallies
+	for(int i=0;i<n_tallies;i++){
+		h_tally[i].cell			=	0;
+		h_tally[i].length		=	1024;
+		h_tally[i].E_min		=	1e-12;
+		h_tally[i].E_max		=	20;
+		h_tally[i].score		=	new float			[h_tally[k].length]
+		h_tally[i].square		=	new float			[h_tally[k].length]
+		h_tally[i].count		=	new unsigned		[h_tally[k].length]
+		h_tally[i].score_total	=	new double			[h_tally[k].length]
+		h_tally[i].square_total	=	new double			[h_tally[k].length]
+		h_tally[i].count_total	=	new long unsigned	[h_tally[k].length]
+		for(int k=0;k<h_tally[k].length;k++){
+			h_tally[i].score[       k]	=	0.0;
+			h_tally[i].square[      k]	=	0.0;
+			h_tally[i].count[       k]	=	0.0;
+			h_tally[i].score_total[ k]	=	0.0;
+			h_tally[i].square_total[k]	=	0.0;
+			h_tally[i].count_total[ k]	=	0.0;
+		}
+	}
+
+}
+void whistory::init_device(){
+
+	// init host data to copy over to device
+	particle_data		temp_particles;
+	tally_data			temp_tally[n_tallies];
+
+	// copy pointers initialized by optix
+	temp_particles.space		= (source_point*)	optix_obj.positions_ptr;
+	temp_particles.cellnum		= (unsigned*)		optix_obj.cellnum_ptr;
+	temp_particles.matnum		= (unsigned*)		optix_obj.matnum_ptr;
+	temp_particles.rxn			= (unsigned*)		optix_obj.rxn_ptr;
+	d_remap						= (unsigned*)		optix_obj.remap_ptr;
+
+	// init others only used on CUDA side
+	cudaMalloc( &temp_particles.E			, Ndataset*sizeof(float)		);
+	cudaMalloc( &temp_particles.Q			, Ndataset*sizeof(float)		);
+	cudaMalloc( &temp_particles.rn_bank		, Ndataset*sizeof(float)		);
+	cudaMalloc( &temp_particles.isonum		, Ndataset*sizeof(unsigned)		);
+	cudaMalloc( &temp_particles.yield		, Ndataset*sizeof(unsigned)		);
+	cudaMalloc( &temp_particles.weight		, Ndataset*sizeof(float)		);
+	cudaMalloc( &temp_particles.index		, Ndataset*sizeof(unsigned)		);
+	cudaMalloc( &d_valid_result				, Ndataset*sizeof(unsigned)		);
+	cudaMalloc( &d_valid_N					,        1*sizeof(unsigned)		);
+	cudaMalloc( &d_fissile_points			, Ndataset*sizeof(source_point)	);
+	cudaMalloc( &d_fissile_energy       	, Ndataset*sizeof(float)		);
+	cudaMalloc( &d_scanned 					, Ndataset*sizeof(unsigned)		);
+	cudaMalloc( &d_num_completed 			,        1*sizeof(unsigned)		);
+	cudaMalloc( &d_rxn_remap				, Ndataset*sizeof(unsigned)		);
+	cudaMalloc( &d_num_active 				,        1*sizeof(unsigned)		);
+	cudaMalloc( &d_zeros					, Ndataset*sizeof(unsigned)		);
+
+	// copy values from initialized host arrays
+	cudaMemcpy( temp_particles.space		, h_particles.space			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice );
+	cudaMemcpy( temp_particles.cellnum		, h_particles.cellnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( temp_particles.matnum		, h_particles.matnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( temp_particles.rxn			, h_particles.rxn			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( temp_particles.E			, h_particles.E				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( temp_particles.Q			, h_particles.Q				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( temp_particles.rn_bank		, h_particles.rn_bank		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( temp_particles.isonum		, h_particles.isonum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( temp_particles.yield		, h_particles.yield			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( temp_particles.weight		, h_particles.weight		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( temp_particles.index		, h_particles.index			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_valid_result				, d_valid_result			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_valid_N					, d_valid_N					,        1*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_fissile_points			, d_fissile_points			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_fissile_energy			, d_fissile_energy			, Ndataset*sizeof(float)       	, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_scanned					, d_scanned					, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_num_completed 			, d_num_completed 			,        1*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_rxn_remap					, d_rxn_remap				, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_num_active 				, d_num_active 				,        1*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_remap						, d_remap					, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_zeros						, d_zeros					, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_ones						, d_ones					, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( d_fones						, d_fones					, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+
+
+	// init tally containers
+	for( int i=0 ; i<n_tallies ; i++ ){
+		// allocate
+		cudaMalloc( &temp_tally[i].score 			, h_tally[i].length*sizeof(float*)        );
+		cudaMalloc( &temp_tally[i].square 			, h_tally[i].length*sizeof(float*)        );
+		cudaMalloc( &temp_tally[i].count 			, h_tally[i].length*sizeof(unsigned*)     );
+		cudaMalloc( &temp_tally[i].score_total 		, h_tally[i].length*sizeof(double*)       );
+		cudaMalloc( &temp_tally[i].square_total 	, h_tally[i].length*sizeof(double*)       );
+		cudaMalloc( &temp_tally[i].count_total 		, h_tally[i].length*sizeof(long unsigned*));
+		// copy initialized values
+		cudaMemcpy(  temp_tally[i].score	    	, h_tally[i].score	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice );
+		cudaMemcpy(  temp_tally[i].square	    	, h_tally[i].square	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice );
+		cudaMemcpy(  temp_tally[i].count	    	, h_tally[i].count	       , h_tally[i].length*sizeof(unsigned)			,  cudaMemcpyHostToDevice );
+		cudaMemcpy(  temp_tally[i].score_total  	, h_tally[i].score_total   , h_tally[i].length*sizeof(double)			,  cudaMemcpyHostToDevice );
+		cudaMemcpy(  temp_tally[i].square_total 	, h_tally[i].square_total  , h_tally[i].length*sizeof(double)			,  cudaMemcpyHostToDevice );
+		cudaMemcpy(  temp_tally[i].count_total  	, h_tally[i].count_total   , h_tally[i].length*sizeof(long unsigned)	,  cudaMemcpyHostToDevice );
+	}
+
+	// allocate device structures and copy host structures (containing the device pointers) to the device structure
+	cudaMalloc( &d_particles				,           sizeof(particle_data)			                  );
+	cudaMemcpy(  d_particles, temp_particles,           sizeof(particle_data),		cudaMemcpyHostToDevice);
+	cudaMalloc( &d_tally					, n_tallies*sizeof(tally_data)			                      );
+	cudaMemcpy(  d_tally,		  temp_tally, n_tallies*sizeof(tally_data),			cudaMemcpyHostToDevice);
+
+	// check errors
+	check_cuda(cudaPeekAtLastError());
 }
 void whistory::init_RNG(){
 	unsigned seed = time( NULL );
@@ -422,108 +455,11 @@ void whistory::accumulate_tally(){
 
 	
 }
-unsigned whistory::reduce_done(){
+void whistory::init_cross_sections(){
 
-	unsigned reduced_done = 0;
-
-	printf("reducing done\n");
-	res = cudppReduce(reduplan_int, d_reduced_done, d_done, Ndataset);
-	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing done values\n");exit(-1);}
-	cudaMemcpy(&reduced_done, d_reduced_done, 1*sizeof(unsigned), cudaMemcpyDeviceToHost);
-
-	return reduced_done;
-
-}
-void whistory::copy_data_to_device(){
-
-	float * this_pointer;
-	float * cuda_pointer;
-	int vlen, next_vlen;
-	float * temp = new float [128];
-	for(int g=0;g<128;g++){temp[g]=123456789;}
-
-	if(print_flag >= 2){
-		std::cout << "\e[1;32m" << "Copying data to device "<<  compute_device << "\e[m \n";
-	}
-
-	// copy history data
-	if(print_flag >= 2){
-		std::cout << "  History data... ";
-	}
-	cudaMemcpy( d_space,		space,		Ndataset*sizeof(source_point),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_E,			E,			Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_Q,    		Q,			Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_weight,    	weight,		Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_done,			done,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_cellnum,		cellnum,	Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_matnum,		matnum,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_isonum,		isonum,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_yield,		yield,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_rxn,			rxn,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    cudaMemcpy( d_remap, 		remap,    	Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    cudaMemcpy( d_zeros,		zeros,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    if(print_flag >= 2){
-    	std::cout << "Done.\n";
-    	std::cout << "  Unionized cross sections... ";
-	}
-    // copy xs_data,  0=isotopes, 1=main E points, 2=total numer of reaction channels
-    cudaMemcpy( d_xs_length_numbers,     xs_length_numbers,     3*sizeof(unsigned),						  cudaMemcpyHostToDevice );
-    cudaMemcpy( d_xs_MT_numbers_total,   xs_MT_numbers_total,   xs_length_numbers[0]*sizeof(unsigned),			  cudaMemcpyHostToDevice );
-    cudaMemcpy( d_xs_MT_numbers,	     xs_MT_numbers,	    (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(unsigned), cudaMemcpyHostToDevice );
-    cudaMemcpy( d_xs_data_MT,	     xs_data_MT,	    MT_rows*MT_columns *sizeof(float), 				  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_xs_data_main_E_grid,   xs_data_main_E_grid,   xs_length_numbers[1]*sizeof(float),				  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_awr_list, 	     awr_list,   	    xs_length_numbers[0]*sizeof(float),				  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_temp_list, 	     temp_list,   	    xs_length_numbers[0]*sizeof(float),				  cudaMemcpyHostToDevice );
-	//cudaMemcpy( d_material_list,         material_list,         n_materials*sizeof(unsigned), 				  cudaMemcpyHostToDevice );
-	//cudaMemcpy( d_isotope_list,          isotope_list,          xs_length_numbers[0]*sizeof(unsigned), 			  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_number_density_matrix, number_density_matrix, n_materials*xs_length_numbers[0]*sizeof(float),    		  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_xs_data_Q,	     xs_data_Q, 	    (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(float),    cudaMemcpyHostToDevice );
-	if(print_flag >= 2){
-		std::cout << "Done.\n";
-	}
-	// copy device pointer array to device array
-	if(print_flag >= 2){
-		std::cout << "  Linked pointer arrays... ";
-	}
-	cudaMemcpy( d_xs_data_scatter, 	xs_data_scatter_host,	MT_rows*MT_columns*sizeof(float*), cudaMemcpyHostToDevice); 	
-	cudaMemcpy( d_xs_data_energy, 	xs_data_energy_host,	MT_rows*MT_columns*sizeof(float*), cudaMemcpyHostToDevice); 	
-	if(print_flag >= 2){
-		std::cout << "Done.\n";
-	}
-	// copy scattering data to device array pointers
-	//std::cout << "  Scattering data... ";
-	//for (int j=0 ; j < MT_columns ; j++){  //start after the total xs and total abs vectors
-	//	for (int k=0 ; k < MT_rows ; k++){
-	//		// scatter
-	//		this_pointer =   xs_data_scatter     [k*MT_columns + j];
-	//		cuda_pointer =   xs_data_scatter_host[k*MT_columns + j];
-	//		printf("cpu=%p gpu=%p\n",this_pointer,cuda_pointer);
-	//		if (this_pointer != NULL & k<MT_rows-1) {
-	//			memcpy(&vlen,     &this_pointer[2],1*sizeof(int));
-	//			memcpy(&next_vlen,&this_pointer[3],1*sizeof(int));
-	//			while(xs_data_scatter[(k+1)*MT_columns + j ]==this_pointer){
-	//				k++; //push k to the end of the copies so don't try to free it twice
-	//			}
-	//			cudaMemcpy(cuda_pointer,this_pointer,(2*vlen+2*next_vlen+4)*sizeof(float),cudaMemcpyHostToDevice);
-	//		}
-	//	}
-	//}
-	//std::cout << " Done.\n";
-	// zero out tally arrays
-	if(print_flag >= 2){
-		std::cout << "  Zeroing tally arrays... ";
-	}
-	cudaMemcpy( d_tally_score, 	d_zeros,	n_tally*sizeof(float),    cudaMemcpyDeviceToDevice); 	
-	cudaMemcpy( d_tally_square, d_zeros,	n_tally*sizeof(float),    cudaMemcpyDeviceToDevice); 	
-	cudaMemcpy( d_tally_count,	d_zeros,	n_tally*sizeof(unsigned), cudaMemcpyDeviceToDevice); 	
-	if(print_flag >= 2){
-		std::cout << "Done.\n";
-	}
-
-
-}
-void whistory::load_cross_sections(){
+	cross_section_data	temp_xsdata;
+	cudaMalloc( &d_xsdata					,           sizeof(cross_section_data)	                      );
+	cudaMemcpy(  d_xsdata,		 temp_xsdata,           sizeof(cross_section_data),	cudaMemcpyHostToDevice);
 	
 	if(print_flag >= 2){
 		std::cout << "\e[1;32m" << "Loading cross sections and unionizing..." << "\e[m \n";

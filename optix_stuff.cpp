@@ -46,13 +46,11 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	Program  miss_program;
 	Buffer 	 positions_buffer;
 	Buffer 	 rxn_buffer;
-	Buffer 	 done_buffer;
 	Buffer 	 cellnum_buffer;
 	Buffer 	 matnum_buffer;
 	Buffer 	 remap_buffer;
 	Variable positions_var;
 	Variable rxn_var;
-	Variable done_var;
 	Variable cellnum_var;
 	Variable matnum_var;
 	Variable remap_var;
@@ -127,13 +125,6 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	rxn_buffer -> getDevicePointer(optix_device,&rxn_ptr);
 	rxn_var = context["rxn_buffer"];
 	rxn_var -> set(rxn_buffer);
-
-	// Render done buffer and attach to variable, get pointer for CUDA
-	done_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
-	done_buffer -> setElementSize( sizeof(unsigned) );
-	done_buffer -> getDevicePointer(optix_device,&done_ptr);
-	done_var = context["done_buffer"];
-	done_var -> set(done_buffer);
 
 	// Render cellnum buffer and attach to variable, get pointer for CUDA
 	cellnum_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);

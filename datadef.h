@@ -120,12 +120,20 @@ struct dist_container {
  * fraction list
  */
 struct cross_section_data {
-	float*				energy_grid;			/**< unionized energy grid vector */
-	unsigned*			rxn_numbers;			/**< reaction number vector */
-	float*				rxn_Q;					/**< reaction Q values */
-	float*				xs_data;				/**< cross section data matrix */
-	dist_container*		distributions;			/**< distribution data redirection matrix */
+	unsigned			isotopes;					/**< number of isotopes */
+	unsigned			energy_grid_len;			/**< length of main energy grid*/
+	unsigned			total_reaction_channels;	/**< total number of reactions channels*/
+	unsigned*			rxn_numbers;				/**< reaction number vector */
+	unsigned*			isotope_rxn_numbers_total;	/**< total reaction channels for each isotope */
+	float*				energy_grid;				/**< unionized energy grid vector */
+	float*				rxn_Q;						/**< reaction Q values */
+	float*				xs_data;					/**< cross section data matrix */
+	float*				awr;						/**< isotope atomic weight ratio (AWR) list */
+	float*				temp;						/**< isotope temperature list (MeV) */
+	dist_container*		dist_scatter;				/**< distribution data redirection matrix */
+	dist_container*		dist_energy;				/**< distribution data redirection matrix */
 };
+
 
 /**
  * \struct particle_data datadef.h
@@ -138,8 +146,6 @@ struct particle_data {
 	unsigned*		cellnum;		/**< distribution data redirection matrix */
 	unsigned*		matnum;			/**< distribution data redirection matrix */
 	unsigned*		rxn;			/**< distribution data redirection matrix */
-	unsigned*		done;			/**< distribution data redirection matrix */
-	unsigned*		remap;			/**< distribution data redirection matrix */
 	float*			E;				/**< distribution data redirection matrix */
 	float*			Q;				/**< distribution data redirection matrix */
 	float*			rn_bank;		/**< distribution data redirection matrix */
@@ -156,16 +162,16 @@ struct particle_data {
  * fraction list
  */
 struct tally_data {
-	float*			tally_score;		/**< tally score */
-	float*			tally_square;		/**< tally square */
-	unsigned*		tally_count;		/**< tally count */
-	double*			tally_score_total;	/**< tally score accumulated total */
-	double*			tally_square_total;	/**< tally square accumulaed total */
-	long unsigned*	tally_count_total;	/**< tally count accumulated total */
-	unsigned		tally_cell;			/**< tally cell */
-	unsigned		tally_length;		/**< tally length (equi-log) */
-	float   		E_min;				/**< minimum energy */
-	float			E_max;				/**< maximum energy */
+	float*			score;			/**< tally score */
+	float*			square;			/**< tally square */
+	unsigned*		count;			/**< tally count */
+	double*			score_total;	/**< tally score accumulated total */
+	double*			square_total;	/**< tally square accumulaed total */
+	long unsigned*	count_total;	/**< tally count accumulated total */
+	unsigned		cell;			/**< tally cell (input) */
+	unsigned		length;			/**< tally length, edges are equi-log (input) */
+	float   		E_min;			/**< minimum energy (input) */
+	float			E_max;			/**< maximum energy (input) */
 };
 
 #endif
