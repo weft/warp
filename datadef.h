@@ -52,6 +52,20 @@ struct spatial_data{
 	unsigned	weight;		/**< particle statistical weight */
 };
 
+struct source_point{ 
+	float		x;			/**< x-coordinate */
+	float		y;			/**< y-coordinate */
+	float		z;			/**< z-coordinate */
+	float		xhat;		/**< shifted x-coordinate */ 
+	float		yhat;		/**< shifted y-coordinate */
+	float		zhat;		/**< shifted z-coordinate */
+	float		surf_dist;	/**< distance to nearest surface */
+	float		macro_t;	/**< total macroscopic cross section */
+	float		norm[3];	/**< normal vector of intersection */
+	unsigned	enforce_BC;	/**< boundary condition enforcement flag */
+	unsigned	weight;		/**< particle statistical weight */
+};
+
 /**
  * \struct intersection_point datadef.h
  * \brief contains information pertinent to an intersection point

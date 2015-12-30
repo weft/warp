@@ -3,7 +3,7 @@
 #include "datadef.h"
 #include "LCRNG.cuh"
 
-__global__ void pop_secondaries_kernel(unsigned N, unsigned RNUM_PER_THREAD, unsigned* completed, unsigned* scanned, unsigned* yield, unsigned* done, unsigned* index, unsigned* rxn, source_point* space, float* E , unsigned* rn_bank, float**  energydata){
+__global__ void pop_secondaries_kernel(unsigned N, unsigned* completed, unsigned* scanned, unsigned* yield, unsigned* done, unsigned* index, unsigned* rxn, source_point* space, float* E , unsigned* rn_bank, float**  energydata){
 
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid >= N){return;}
@@ -87,7 +87,7 @@ __global__ void pop_secondaries_kernel(unsigned N, unsigned RNUM_PER_THREAD, uns
 	if(arg<0){arg=0.0;}
 	E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
 	//sampled_E = e0 + (rn1-cdf0)/pdf0;
-	//printf("%u %u %u %u %u %p %6.4E %u %u %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E\n",tid,tid*RNUM_PER_THREAD + 12,fork,n,dex,this_array,rn1,next_vlen,vlen,this_E,e0,e1,cdf0,cdf1,pdf0,pdf1,m,sampled_E);
+	//printf("%u %u %u %u %u %p %6.4E %u %u %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E\n",tid,tid + 12,fork,n,dex,this_array,rn1,next_vlen,vlen,this_E,e0,e1,cdf0,cdf1,pdf0,pdf1,m,sampled_E);
 
 	// scale it
 	E1 = last_e_start + r*( next_e_start - last_e_start );
@@ -126,8 +126,8 @@ __global__ void pop_secondaries_kernel(unsigned N, unsigned RNUM_PER_THREAD, uns
 		//copy in values
 		rn1 = get_rand(&rn);
 		rn2 = get_rand(&rn);
-		//rn1 = rn_bank[ tid*RNUM_PER_THREAD + 11 + (k+1)*4];
-		//rn2 = rn_bank[ tid*RNUM_PER_THREAD + 12 + (k+1)*4];
+		//rn1 = rn_bank[ tid + 11 + (k+1)*4];
+		//rn2 = rn_bank[ tid + 12 + (k+1)*4];
 		//sample energy dist
 		sampled_E = 0.0;
 		if(  rn2 >= r ){   //sample last E
@@ -167,7 +167,7 @@ __global__ void pop_secondaries_kernel(unsigned N, unsigned RNUM_PER_THREAD, uns
 		if(arg<0){arg=0.0;}
 		E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
 		//sampled_E = e0 + (rn1-cdf0)/pdf0;
-		//printf("%u %u %u %u %u %p %6.4E %u %u %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E\n",tid,tid*RNUM_PER_THREAD + 11 + (k+1)*3,fork,n,dex,this_array,rn1,next_vlen,vlen,this_E,e0,e1,cdf0,cdf1,pdf0,pdf1,m,sampled_E);
+		//printf("%u %u %u %u %u %p %6.4E %u %u %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E %6.4E\n",tid,tid + 11 + (k+1)*3,fork,n,dex,this_array,rn1,next_vlen,vlen,this_E,e0,e1,cdf0,cdf1,pdf0,pdf1,m,sampled_E);
 
 		// scale it
 		E1 = last_e_start + r*( next_e_start - last_e_start );
@@ -215,11 +215,11 @@ __global__ void pop_secondaries_kernel(unsigned N, unsigned RNUM_PER_THREAD, uns
 
 }
 
-void pop_secondaries( unsigned NUM_THREADS,  unsigned N, unsigned RNUM_PER_THREAD, unsigned* d_completed, unsigned* d_scanned, unsigned* d_yield, unsigned* d_done, unsigned* d_index, unsigned* d_rxn, source_point* d_space, float* d_E , unsigned* d_rn_bank, float ** energydata){
+void pop_secondaries( unsigned NUM_THREADS,  unsigned N, unsigned* d_completed, unsigned* d_scanned, unsigned* d_yield, unsigned* d_done, unsigned* d_index, unsigned* d_rxn, source_point* d_space, float* d_E , unsigned* d_rn_bank, float ** energydata){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	pop_secondaries_kernel <<< blks, NUM_THREADS >>> ( N, RNUM_PER_THREAD, d_completed, d_scanned, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank, energydata);
+	pop_secondaries_kernel <<< blks, NUM_THREADS >>> ( N, d_completed, d_scanned, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank, energydata);
 	cudaThreadSynchronize();
 
 }

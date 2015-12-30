@@ -48,7 +48,6 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	N = Nin;
 	// 3 should be more than enough for criticality, might not be for fixed
 	Ndataset = Nin * 1;
-	n_qnodes = 0;
 	reduced_yields_total = 0;
 	reduced_weight_total = 0;
 	accel_type = "Sbvh";
@@ -95,7 +94,6 @@ void whistory::init(){
 	}
 	// block/thread structure
 	NUM_THREADS		= 256;
-	RNUM_PER_THREAD = 1;
 	blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 	if(print_flag >= 1){
 		std::cout << "\e[1;32m" << "Compute device set to "<< compute_device << "\e[m \n";
@@ -273,7 +271,6 @@ void whistory::init_device(){
 	cudaMemcpy( d_zeros						, d_zeros					, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
 	cudaMemcpy( d_ones						, d_ones					, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
 	cudaMemcpy( d_fones						, d_fones					, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
-
 
 	// init tally containers
 	for( int i=0 ; i<n_tallies ; i++ ){
@@ -1590,7 +1587,7 @@ void whistory::reset_fixed(){
 	cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
 
 	//set position, direction, energy
-	sample_fixed_source( NUM_THREADS, N, RNUM_PER_THREAD, d_active, d_rn_bank, d_E, d_space);
+	sample_fixed_source( NUM_THREADS, N, d_active, d_rn_bank, d_E, d_space);
 
 	// update RNG seeds
 	update_RNG();
@@ -1735,7 +1732,7 @@ void whistory::run(){
 				// pop secondaries back in
 				keff_cycle += reduce_yield();
 				prep_secondaries();
-				pop_secondaries( NUM_THREADS, Ndataset, RNUM_PER_THREAD, d_completed, d_scanned, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy);
+				pop_secondaries( NUM_THREADS, Ndataset, d_completed, d_scanned, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy);
 				//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
 			}
 			check_cuda(cudaPeekAtLastError());

@@ -133,10 +133,15 @@ class whistory {
 	 */
 	void init_CUDPP();
 	/**
-	 * \brief initializes data on the host device
+	 * \brief initializes data on the host
 	 * \details prepares data arrays by filling them with zeros
 	 */
 	void init_host();
+		/**
+	 * \brief initializes data on the device
+	 * \details prepares data arrays by filling them with zeros
+	 */
+	void init_device();
 	/**
 	 * \brief copies data from the host device to the compute device
 	 * \details copies history data, cross section data, and the device pointer
@@ -219,10 +224,6 @@ class whistory {
      * @param[in] 
      */
     void accumulate_tally();
-	/**
-	 * \brief builds a quad tree for energy search
-	 */
-	void create_quad_tree();
 	/**
 	 * \brief returns how long it takes to do something
 	 */
