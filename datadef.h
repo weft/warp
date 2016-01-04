@@ -52,20 +52,6 @@ struct spatial_data{
 	unsigned	weight;		/**< particle statistical weight */
 };
 
-struct source_point{ 
-	float		x;			/**< x-coordinate */
-	float		y;			/**< y-coordinate */
-	float		z;			/**< z-coordinate */
-	float		xhat;		/**< shifted x-coordinate */ 
-	float		yhat;		/**< shifted y-coordinate */
-	float		zhat;		/**< shifted z-coordinate */
-	float		surf_dist;	/**< distance to nearest surface */
-	float		macro_t;	/**< total macroscopic cross section */
-	float		norm[3];	/**< normal vector of intersection */
-	unsigned	enforce_BC;	/**< boundary condition enforcement flag */
-	unsigned	weight;		/**< particle statistical weight */
-};
-
 /**
  * \struct intersection_point datadef.h
  * \brief contains information pertinent to an intersection point
@@ -141,7 +127,7 @@ struct cross_section_data {
 	unsigned*			isotope_rxn_numbers_total;	/**< total reaction channels for each isotope */
 	float*				energy_grid;				/**< unionized energy grid vector */
 	float*				rxn_Q;						/**< reaction Q values */
-	float*				xs_data;					/**< cross section data matrix */
+	float*				xs;							/**< cross section data matrix */
 	float*				awr;						/**< isotope atomic weight ratio (AWR) list */
 	float*				temp;						/**< isotope temperature list (MeV) */
 	dist_container*		dist_scatter;				/**< distribution data redirection matrix */
@@ -162,7 +148,7 @@ struct particle_data {
 	unsigned*		rxn;			/**< distribution data redirection matrix */
 	float*			E;				/**< distribution data redirection matrix */
 	float*			Q;				/**< distribution data redirection matrix */
-	float*			rn_bank;		/**< distribution data redirection matrix */
+	unsigned*		rn_bank;		/**< distribution data redirection matrix */
 	unsigned*		isonum;			/**< distribution data redirection matrix */
 	unsigned*		yield;			/**< distribution data redirection matrix */
 	float*			weight;			/**< distribution data redirection matrix */

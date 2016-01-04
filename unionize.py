@@ -239,7 +239,7 @@ class cross_section_data:
 				#	print "no angular"
 				#print rxn.threshold()
 				#print len(table.energy[IE:]), len(rxn.sigma)
-				this_array = numpy.interp( self.MT_E_grid, table.energy[IE:], rxn.sigma , left=0.0 )  #interpolate MT cross section
+				this_array = numpy.interp( self.MT_E_grid, table.energy[IE:], rxn.sigma , left=0.0 )  #interpolate MT cross section, left means xs below threshold is 0
 				self.MT_array[:,MT_array_dex] = this_array  # insert into the MT array
 
 				#  this MT is done, increment counter

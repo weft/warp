@@ -114,7 +114,7 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	
 	// Render particle buffer and attach to variable, get pointer for CUDA
 	positions_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
-	positions_buffer -> setElementSize( sizeof(source_point) );
+	positions_buffer -> setElementSize( sizeof(spatial_data) );
 	positions_buffer -> getDevicePointer(optix_device,&positions_ptr);  // 0 is optix device
 	positions_var = context["positions_buffer"];
 	positions_var -> set(positions_buffer);

@@ -38,19 +38,19 @@ class whistory {
 	cudaStream_t				stream[5];				/**< CUDA streams cor concurrent kernels */
 	
 	// host/device copied data
-	cross_section_data			d_xsdata;				/**< device cross section data structure */
+	cross_section_data*			d_xsdata;				/**< device cross section data structure */
 	cross_section_data			h_xsdata;				/**< host cross section data structure */
-	particle_data				d_particles;			/**< device particle data structure */
+	particle_data*				d_particles;			/**< device particle data structure */
 	particle_data				h_particles;			/**< host particle data structure */
-	tally_data					d_tally;				/**< device single tally data */
-	tally_data					h_tally;				/**< host single tally data */
+	tally_data*					d_tally;				/**< device tally data */
+	tally_data*					h_tally;				/**< host tally data */
 
 	// mapped arrays
 	unsigned					n_edges;				/**< mapped array of number of edges */
 	unsigned*					  edges;				/**< mapped array of edges */
 	unsigned*					d_edges;				/**< device mapped array of edges */
-	unsigned					 reduced_yields;		/**< reduced yields */
-	float						 reduced_weight;		/**< reduced weight */
+	unsigned*					 reduced_yields;		/**< reduced yields */
+	float*						 reduced_weight;		/**< reduced weight */
 	unsigned*					d_reduced_yields;		/**< device reduced yields */
 	float*						d_reduced_weight;		/**< device reduced weight */
 	
@@ -264,7 +264,7 @@ class whistory {
 	 * @param[in] filename - filename
 	 * @param[in] opentype - file extension
 	 */
-	void  write_to_file(source_point*  , unsigned , std::string , std::string);
+	void  write_to_file(spatial_data*  , unsigned , std::string , std::string);
 	/**
 	 * \brief prints the locations of the source points to file
 	 * @param[in] array_in - source point array
@@ -273,7 +273,7 @@ class whistory {
 	 * @param[in] filename - filename
 	 * @param[in] opentype - file extension
 	 */
-	void  write_to_file(source_point*  , float*, unsigned , std::string , std::string);
+	void  write_to_file(spatial_data*  , float*, unsigned , std::string , std::string);
 	/**
 	 * \brief prints the source points to a file
 	 * @param[in] array_in - source point array
@@ -437,7 +437,7 @@ public:
 	 * @param[in] d_space - device space points
 	 * @param[in] N - dataset size 
 	 */
-	 void bin_fission_points( source_point * , unsigned );
+	 void bin_fission_points( spatial_data * , unsigned );
 	 /**
 	 * \brief writes binned fission point image to a .png
 	 */

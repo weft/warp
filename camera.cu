@@ -4,7 +4,7 @@
 
 using namespace optix;
 
-rtBuffer<source_point,1>            positions_buffer;
+rtBuffer<spatial_data,1>            positions_buffer;
 rtBuffer<unsigned,1>                rxn_buffer;
 rtBuffer<unsigned,1>                remap_buffer;
 rtBuffer<unsigned,1>                done_buffer;
