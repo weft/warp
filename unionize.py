@@ -132,13 +132,14 @@ class cross_section_data:
 			return self.datapath+'/'+a.group(1)
 		else:
 			print " ERROR: nuclide '"+tope+"' not found in '"+self.datapath+"/xsdir'!"
-			exit(0)
+			#exit(0)
+			return 0
 
 
 	##
 	# \brief unionization function
-	# \details unionizes MT energy grid and scattering energies in if present.
-	# @param[in] self - material with attributes to be unionized
+	# \details unionizes MT energy grid.
+	# @param[in] self - default for methods
 	def _unionize(self):
 
 		print "  --------- unionizing grid --------- "

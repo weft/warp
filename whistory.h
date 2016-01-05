@@ -38,12 +38,15 @@ class whistory {
 	cudaStream_t				stream[5];				/**< CUDA streams cor concurrent kernels */
 	
 	// host/device copied data
-	cross_section_data*			d_xsdata;				/**< device cross section data structure */
-	cross_section_data			h_xsdata;				/**< host cross section data structure */
-	particle_data*				d_particles;			/**< device particle data structure */
-	particle_data				h_particles;			/**< host particle data structure */
-	tally_data*					d_tally;				/**< device tally data */
-	tally_data*					h_tally;				/**< host tally data */
+	cross_section_data*			d_xsdata;				/**< device cross section data structure containing device pointers */
+	cross_section_data			dh_xsdata;				/**< host cross section data structure containing device pointers*/
+	cross_section_data			h_xsdata;				/**< host cross section data structure containing host pointers*/
+	particle_data*				d_particles;			/**< device particle data structure containing device pointers */
+	particle_data				dh_particles;			/**< host particle data structure containing device pointers*/
+	particle_data				h_particles;			/**< host particle data structure containing host pointers*/
+	tally_data*					d_tally;				/**< device tally data structure containing device pointers*/
+	tally_data*					dh_tally;				/**< host tally data structure containing device pointers*/
+	tally_data*					h_tally;				/**< host tally data structure containing hist pointers*/
 
 	// mapped arrays
 	unsigned					n_edges;				/**< mapped array of number of edges */
@@ -77,6 +80,7 @@ class whistory {
 	float*						fones;					/**< float ones array */
 
 	// host-only data
+	PyObject* 					xsdat_instance;			/**< Python object that loads and manipulates the cross section data */
 	unsigned					RUN_FLAG;				/**< run flag */
 	unsigned					outer_cell;				/**< outermost cell */
 	unsigned					outer_cell_type;		/**< outermost cell type*/
@@ -304,32 +308,46 @@ class whistory {
 	 * @param[in] 
 	 * @param[in] 
 	 */
-	void copy_python_buffer(float**,float**,PyObject*,std::string);
+	void copy_python_buffer(float**,float**,std::string);
 	/**
 	 * \brief calls python function, copys returned buffer to C and CUDA pointers
 	 * @param[in] 
 	 * @param[in] 
 	 * @param[in] 
 	 */
-	void copy_python_buffer(unsigned**,unsigned**,PyObject*,std::string);
+	void copy_python_buffer(unsigned**,unsigned**,std::string);
 	/**
 	 * \brief calls python function, copys returned buffer to C pointer (no cuda)
 	 * @param[in] 
 	 * @param[in] 
 	 */
-	void copy_python_buffer(float**,PyObject*,std::string);
+	void copy_python_buffer(float**,std::string);
 	/**
 	 * \brief calls python function, copys returned buffer to C pointer (no cuda)
 	 * @param[in] 
 	 * @param[in] 
 	 */
-	void copy_python_buffer(unsigned**,PyObject*,std::string);
+	void copy_python_buffer(unsigned**,std::string);
 	 /**
 	 * \brief initialized cross section data object in python
 	 * @param[in] 
 	 * @param[out]
 	 */
-	int init_python(PyObject**);
+	int init_python();
+	/**
+	 * \brief calls python function, copys returned buffer to C and CUDA pointers
+	 * @param[in] 
+	 * @param[in] 
+	 * @param[in] 
+	 */
+	void copy_scatter_data();
+	/**
+	 * \brief calls python function, copys returned buffer to C and CUDA pointers
+	 * @param[in] 
+	 * @param[in] 
+	 * @param[in] 
+	 */
+	void copy_energy_data();
 public:
 	/**
 	 * \brief constructor
