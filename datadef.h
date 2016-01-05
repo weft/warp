@@ -124,9 +124,9 @@ struct cross_section_data {
 	unsigned			energy_grid_len;			/**< length of main energy grid*/
 	unsigned			total_reaction_channels;	/**< total number of reactions channels*/
 	unsigned*			rxn_numbers;				/**< reaction number vector */
-	unsigned*			isotope_rxn_numbers_total;	/**< total reaction channels for each isotope */
+	unsigned*			rxn_numbers_total;			/**< total reaction channels for each isotope */
 	float*				energy_grid;				/**< unionized energy grid vector */
-	float*				rxn_Q;						/**< reaction Q values */
+	float*				Q;							/**< reaction Q values */
 	float*				xs;							/**< cross section data matrix */
 	float*				awr;						/**< isotope atomic weight ratio (AWR) list */
 	float*				temp;						/**< isotope temperature list (MeV) */

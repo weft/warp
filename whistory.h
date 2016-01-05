@@ -298,6 +298,38 @@ class whistory {
 	 * @param[in] opentype - file extension
 	 */
 	void  write_results(float,float,std::string);
+	/**
+	 * \brief calls python function, copys returned buffer to C and CUDA pointers
+	 * @param[in] 
+	 * @param[in] 
+	 * @param[in] 
+	 */
+	void copy_python_buffer(float**,float**,PyObject*,std::string);
+	/**
+	 * \brief calls python function, copys returned buffer to C and CUDA pointers
+	 * @param[in] 
+	 * @param[in] 
+	 * @param[in] 
+	 */
+	void copy_python_buffer(unsigned**,unsigned**,PyObject*,std::string);
+	/**
+	 * \brief calls python function, copys returned buffer to C pointer (no cuda)
+	 * @param[in] 
+	 * @param[in] 
+	 */
+	void copy_python_buffer(float**,PyObject*,std::string);
+	/**
+	 * \brief calls python function, copys returned buffer to C pointer (no cuda)
+	 * @param[in] 
+	 * @param[in] 
+	 */
+	void copy_python_buffer(unsigned**,PyObject*,std::string);
+	 /**
+	 * \brief initialized cross section data object in python
+	 * @param[in] 
+	 * @param[out]
+	 */
+	int init_python(PyObject**);
 public:
 	/**
 	 * \brief constructor
