@@ -618,8 +618,7 @@ void whistory::copy_python_buffer(unsigned** host_pointer,std::string function_n
 }
 int whistory::init_python(){
 
-	// misc variables for maths
-	unsigned bytes,rows,columns;
+	// misc variables
 	int do_final;
 
 	// python variables
@@ -758,6 +757,11 @@ void whistory::copy_scatter_data(){
 
 	// scan through the scattering array, copying the scattering distributions and replicating pointers to 
 	// them for each main energy grid points within the distribution's grid points
+	//
+	//  --- The current method copies the scattering distributions twice.  
+	//  --- This can be eliminated via copying pointers instead of reiniting ditributions, 
+	//  --- but this has been left for now for simplicity.
+	//
 	for( col=h_xsdata.isotopes ; col<total_cols ; col++ ){ // going down column to stay within to same isotope, not effcient for caching, but OK here since only done at init
 		row = 0;
 		while(row<total_rows){
