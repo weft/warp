@@ -725,7 +725,7 @@ void whistory::copy_scatter_data(){
 	// python variables for arguments
 	PyObject 	*row_obj, *col_obj, *call_string, *obj_list;
 	PyObject 	*lower_erg_obj, *lower_len_obj, *lower_law_obj, *lower_intt_obj, *lower_var_obj, *lower_pdf_obj, *lower_cdf_obj; 
-	PyObject 	*upper_erg_obj, *upper_len_obj, *upper_law_obj, *upper_intt_obj, *upper_var_obj, *upper_pdf_obj, *upper_cdf_obj, *upper_dex_obj; 
+	PyObject 	*upper_erg_obj, *upper_len_obj, *upper_law_obj, *upper_intt_obj, *upper_var_obj, *upper_pdf_obj, *upper_cdf_obj, *next_dex_obj; 
 	Py_buffer 	lower_var_buff, lower_pdf_buff, lower_cdf_buff, upper_var_buff, upper_pdf_buff, upper_cdf_buff;
 	
 	// local temp variables
@@ -792,7 +792,7 @@ void whistory::copy_scatter_data(){
 			upper_var_obj	= PyList_GetItem(obj_list,11);
 			upper_pdf_obj	= PyList_GetItem(obj_list,12);
 			upper_cdf_obj	= PyList_GetItem(obj_list,13);
-			upper_dex_obj	= PyList_GetItem(obj_list,14);
+			next_dex_obj	= PyList_GetItem(obj_list,14);
 			PyErr_Print();
 
 			// copy single values to temp objects
@@ -804,7 +804,7 @@ void whistory::copy_scatter_data(){
 			h_upper_dist.len	=	PyInt_AsLong(		upper_len_obj);
 			h_upper_dist.law	=	PyInt_AsLong(		upper_law_obj);
 			h_upper_dist.intt	=	PyInt_AsLong(		upper_intt_obj);
-			next_dex			=	PyInt_AsLong(		upper_dex_obj);
+			next_dex			=	PyInt_AsLong(		next_dex_obj);
 			PyErr_Print();
 
 

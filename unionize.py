@@ -342,216 +342,212 @@ class cross_section_data:
 		# returns [nextDex, length, mu, cdf] if scattering data exists
 
 		#find the isotope we are in
-		numbers = numpy.cumsum(self.reaction_numbers_total)
+		numbers = numpy.cumsum(self.reaction_numbers_total)  #list of how many reactions in each isotope
+		print self.reaction_numbers_total
+		print numbers
+		print self.reaction_numbers
 		isotope = numpy.argmax( (col - self.num_isotopes) < numbers )
 		table = self.tables[isotope]
 		MTnum = self.reaction_numbers[col]
 		rxn   = table.reactions[MTnum]
 
-		# get the energy from this index
+		# get the energy of this index
 		this_E = self.MT_E_grid[row]
-		
-		if hasattr(rxn,"ang_energy_in"):
-			#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has scattering data"
-			scatterE   = rxn.ang_energy_in
-			scatterMu  = rxn.ang_cos 
-			scatterCDF = rxn.ang_cdf 
-			scatterPDF = rxn.ang_pdf
-			if hasattr(rxn,"energy_dist"):
-				law=rxn.energy_dist.law
+
+		# do the cases
+		if rxn.multiplicity>10:
+			# this is a fission reaction
+			# scattering dist is actually nu
+
+			# find indicies
+			nu_t_upper_index = next((i for i, x in enumerate(this_E < self.tables.nu_t_energy) if x), None)
+			nu_t_lower_index = upper_index - 1
+			nu_p_upper_index = next((i for i, x in enumerate(this_E < self.tables.nu_p_energy) if x), None)
+			nu_p_lower_index = upper_index - 1
+
+			# make sure above threshold
+			if nut_t_lower_index < 0:
+
+				# set all to zero
+				law				= 0
+				intt			= 0
+				lower_erg		= 0
+				upper_erg		= 0
+				lower_len		= 0
+				upper_len		= 0
+				lower_ang_var 	= numpy.array([0.0])
+				upper_ang_var 	= numpy.array([0.0])
+				lower_ang_pdf 	= numpy.array([0.0])
+				upper_ang_pdf 	= numpy.array([0.0])
+				lower_ang_cdf 	= numpy.array([0.0])
+				upper_ang_cdf 	= numpy.array([0.0])
+
+				# next index
+				next_dex = next((i for i, x in enumerate(rxn.threshold() <= self.MT_E_grid) if x), None)
+				
 			else:
-				law=0
 
-			#  presence of nu overrides scattering table.  forces isotropic
-			if hasattr(table,"nu_t_energy") and ( MTnum == 18 or MTnum == 19 or MTnum == 20):
-					# return interpolated nu values
-					#print "nu for mt ",MTnum, table.name
-					interped_nu = numpy.interp( self.MT_E_grid, table.nu_t_energy, table.nu_t_value )   #
-					interped_nu = numpy.ascontiguousarray(interped_nu, dtype=numpy.float32)
-					#print interped_nu
-					#print "nu for MT="+str(MTnum)
-					return [-1,-1,-1,-1,-1,-1,-1,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu]
+				# get nu_t values
+				e0 = self.tables.nu_t_energy[nu_t_lower_index]
+				e1 = self.tables.nu_t_energy[nu_t_upper_index]
+				v0 = self.tables.nu_t_value[ nu_t_lower_index]
+				v1 = self.tables.nu_t_value[ nu_t_upper_index]
 
-			# check length
-			assert scatterE.__len__() > 0
+				# linearly interpolate
+				nu_t = (v1-v0)/(e1-e0)*(e1-this_E) + v0
 
-			# find the index of the scattering table energy
-			if this_E >= scatterE[0] and this_E <= scatterE[-1]:
+				# get nu_p values
+				e0 = self.tables.nu_p_energy[nu_p_lower_index]
+				e1 = self.tables.nu_p_energy[nu_p_upper_index]
+				v0 = self.tables.nu_p_value[ nu_p_lower_index]
+				v1 = self.tables.nu_p_value[ nu_p_upper_index]
+
+				# linearly interpolate
+				nu_p = (v1-v0)/(e1-e0)*(e1-this_E) + v0
+
+				# set values in vars
+				law				= -1
+				intt			= 0
+				lower_erg		= nu_t
+				upper_erg		= nu_p
+				lower_len		= 0
+				upper_len		= 0
+				lower_ang_var 	= numpy.array([0.0])
+				upper_ang_var 	= numpy.array([0.0])
+				lower_ang_pdf 	= numpy.array([0.0])
+				upper_ang_pdf 	= numpy.array([0.0])
+				lower_ang_cdf 	= numpy.array([0.0])
+				upper_ang_cdf 	= numpy.array([0.0])
+
+		elif hasattr(rxn,"energy_dist"):
+			# there is no angular table, everything is in energy dist
+			# find where this energy lies on this grid
+			upper_index = next((i for i, x in enumerate(this_E < rxn.energy_dist.energy_in) if x), None)
+			lower_index = upper_index - 1
+
+			# make sure above threshold
+			if lower_index < 0:
+
+				# set all to zero
+				law				= 0
+				intt			= 0
+				lower_erg		= 0
+				upper_erg		= 0
+				lower_len		= 0
+				upper_len		= 0
+				lower_ang_var 	= numpy.array([0.0])
+				upper_ang_var 	= numpy.array([0.0])
+				lower_ang_pdf 	= numpy.array([0.0])
+				upper_ang_pdf 	= numpy.array([0.0])
+				lower_ang_cdf 	= numpy.array([0.0])
+				upper_ang_cdf 	= numpy.array([0.0])
+
+				# next index
+				next_dex = next((i for i, x in enumerate(rxn.threshold() <= self.MT_E_grid) if x), None)
 				
-				scatter_dex = numpy.where( scatterE >= this_E )[0][0]
-
-				#get energy of next bin
-				if scatter_dex == scatterE.__len__()-1:
-					next_E  = self.MT_E_grid[-1]
-					plusone = 0
-				else:
-					next_E  = scatterE[scatter_dex+1]
-					plusone = 1
-
-				# find main E grid indext of next energy
-				nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-				
-				# construct vector
-				vlen      = scatterCDF[scatter_dex].__len__()
-				cdf       = numpy.ascontiguousarray(scatterCDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-				pdf   	  = numpy.ascontiguousarray(scatterPDF[scatter_dex],dtype=numpy.float32) 
-				mu        = numpy.ascontiguousarray(scatterMu[scatter_dex], dtype=numpy.float32)
-				nextvlen  = scatterCDF[scatter_dex+plusone].__len__()
-				nextcdf   = numpy.ascontiguousarray(scatterCDF[scatter_dex+ plusone],dtype=numpy.float32) 
-				nextpdf   = numpy.ascontiguousarray(scatterPDF[scatter_dex+ plusone],dtype=numpy.float32) 
-				nextmu    = numpy.ascontiguousarray(scatterMu[scatter_dex + plusone], dtype=numpy.float32)
-				
-				#check to make sure the same lengths
-				assert vlen == mu.__len__()
-				
-				# return
-				self.last_loaded = MTnum
-				return [nextDex,this_E,next_E,vlen,nextvlen,law,0,mu,cdf,pdf,nextmu,nextcdf,nextpdf]
-
-			else:  # return 0 if below the first energy]
-				next_E = scatterE[0]
-				nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-				#print "energy starts at dex "+str(nextDex)+", energy="+str(next_E)+","+str(self.MT_E_grid[nextDex])
-				return [nextDex,this_E,next_E,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-
-		elif hasattr(rxn,"energy_dist"): #and hasattr(rxn.energy_dist,"ang"):
-			#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has angular energy distribution data"
-
-			law 			= rxn.energy_dist.law
-			if law == 4 or law ==3 or law == 7 or law ==9 or law ==66:   # isotropic is not specified in preceeding section
-				#print "has ang?", hasattr(rxn.energy_dist,"ang")
-				next_E   = self.MT_E_grid[self.num_main_E-1]
-				nextDex = self.MT_E_grid.__len__()
-				if hasattr(table,"nu_t_energy") and ( MTnum == 18 or MTnum == 19 or MTnum == 20):
-					# return interpolated nu values
-					#print "nu for mt ",MTnum, table.name
-					interped_nu = numpy.interp( self.MT_E_grid, table.nu_t_energy, table.nu_t_value )   #
-					interped_nu = numpy.ascontiguousarray(interped_nu, dtype=numpy.float32)
-					#print interped_nu
-					#print "nu for MT="+str(MTnum)
-					return [-1,-1,-1,-1,-1,-1,-1,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu]
-				else:
-					return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-			elif law==44:   #hasattr(rxn.energy_dist,"ang"):
-				scatterE   	= rxn.energy_dist.energy_in
-				scatterCDF 	= rxn.energy_dist.frac 
-				scatterPDF  = rxn.energy_dist.frac  # cdf/pdf is the energy dist, mistlikely this is law 44
-				scatterINTT = rxn.energy_dist.intt
-				scatterMu  	= rxn.energy_dist.ang
-			elif law==61: #hasattr(rxn.energy_dist,"a_dist_mu_out"):    
-				scatterE   	= rxn.energy_dist.energy_in
-				scatterCDF  = rxn.energy_dist.a_dist_cdf
-				scatterPDF  = rxn.energy_dist.a_dist_pdf
-				scatterINTT = rxn.energy_dist.a_dist_intt 
-				scatterMu   = rxn.energy_dist.a_dist_mu_out 
 			else:
-				print "law ",law," not handled!"
-				
-			# check length
-			assert scatterE.__len__() > 0
 
-			# find the index of the scattering table energy
-			if this_E >= scatterE[0] and this_E <= scatterE[-1]:
-				
-				scatter_dex = numpy.where( scatterE >= this_E )[0][0]
+				# law/intt
+				law  = rxn.energy_dist.law
+				intt = rxn.energy_dist.intt
 
-				#get energy of next bin
-				if scatter_dex == scatterE.__len__()-1:
-					next_E  = self.MT_E_grid[-1]
-					plusone = 0
-				else:
-					next_E  = scatterE[scatter_dex+1]
-					plusone = 1
-				# find main E grid indext of next energy
-				nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-
-
-				if law == 44:
-					# simple, construct vector of analytical values
-					vlen      = scatterCDF[scatter_dex].__len__()
-					cdf       = numpy.ascontiguousarray(scatterCDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-					pdf       = numpy.ascontiguousarray(scatterPDF[scatter_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-					mu        = numpy.ascontiguousarray(scatterMu[ scatter_dex], dtype=numpy.float32)
-					nextvlen  = scatterCDF[scatter_dex+plusone].__len__()
-					nextcdf   = numpy.ascontiguousarray(scatterCDF[scatter_dex+ plusone],dtype=numpy.float32) 
-					nextpdf   = numpy.ascontiguousarray(scatterPDF[scatter_dex+ plusone],dtype=numpy.float32) 
-					nextmu    = numpy.ascontiguousarray(scatterMu[ scatter_dex+ plusone],dtype=numpy.float32)
-					intt 	  = scatterINTT[scatter_dex]
-					if type(intt) is list:
-						intt = intt[0]  # just take first value of list in intt, might be wrong :/
-					#check to make sure the same lengths
-					assert vlen == mu.__len__()
+				# energies
+				lower_erg = rxn.energy_dist.energy_in[lower_index]
+				upper_erg = rxn.energy_dist.energy_in[upper_index]
 	
-					self.last_loaded = MTnum
-					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,mu,cdf,pdf,nextmu,nextcdf,nextpdf]
-				elif law == 61:
-					# more complicated, need to return a flattened matrix for each E_out, for both E and next E since they could both be sampled
+				# get angular distribution values, else write zeros
+				if hasattr(rxn.energy_dist,"ang"):
+					lower_ang_var = rxn.energy_dist.ang[lower_index]
+					upper_ang_var = rxn.energy_dist.ang[upper_index]
+				else:
+					lower_ang_var = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
+					upper_ang_var = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
+	
+				# cdf and pdf should be zeros
+				lower_ang_pdf = numpy.zeros(rxn.energy_dist.pdf[lower_index].shape)
+				upper_ang_pdf = numpy.zeros(rxn.energy_dist.pdf[upper_index].shape)
+				lower_ang_cdf = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
+				upper_ang_cdf = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
 
-					# this E
-					outlen = rxn.energy_dist.energy_out[scatter_dex].__len__()
-					this_len = 0
-					locs = [0,0]
-					flatarray = numpy.array([])
-					for i in range(0,outlen):
-						if i>0:
-							locs.append(this_len*3+2+locs[i-1])  # compute location pointer based on previous
-						this_len  = rxn.energy_dist.a_dist_mu_out[scatter_dex][i].__len__()
-						intt 	  = scatterINTT[                  scatter_dex]
-						if type(intt) is list:
-							intt = intt[0]  # just take first value of list in intt, might be wrong :/
-						flatarray = numpy.append(flatarray,this_len)
-						flatarray = numpy.append(flatarray,intt)
-						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_mu_out[scatter_dex][i])
-						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_cdf[   scatter_dex][i])
-						flatarray = numpy.append(flatarray,rxn.energy_dist.a_dist_pdf[   scatter_dex][i])
-					flatarray = numpy.append(numpy.array(locs),flatarray)
-					l = flatarray.__len__()
-					flatarray[0] = l
+				# len
+				lower_len = len(lower_ang_var)
+				upper_len = len(upper_ang_var)
 
-					# next E
-					outlen = rxn.energy_dist.energy_out[scatter_dex+plusone].__len__()
-					this_len = 0
-					locs = [0]
-					flatarray2 = numpy.array([])
-					for i in range(0,outlen):
-						if i>0:
-							locs.append(this_len*3+2+locs[i-1])  # compute location pointer based on previous
-						this_len  = rxn.energy_dist.a_dist_mu_out[scatter_dex+plusone][i].__len__()
-						intt 	  = scatterINTT[                  scatter_dex+plusone]
-						if type(intt) is list:
-							intt = intt[0]  # just take first value of list in intt, might be wrong :/
-						flatarray2 = numpy.append(flatarray2,this_len)
-						flatarray2 = numpy.append(flatarray2,intt)
-						flatarray2 = numpy.append(flatarray2,rxn.energy_dist.a_dist_mu_out[scatter_dex+plusone][i])
-						flatarray2 = numpy.append(flatarray2,rxn.energy_dist.a_dist_cdf[   scatter_dex+plusone][i])
-						flatarray2 = numpy.append(flatarray2,rxn.energy_dist.a_dist_pdf[   scatter_dex+plusone][i])
-					flatarray2 = numpy.append(numpy.array(locs),flatarray2)
-					
-					flatarray_out = numpy.ascontiguousarray(numpy.append(flatarray,flatarray2),dtype=numpy.float32)   # encoding ints as foats reduces maximum!
+				# next index
+				next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), None)
 
-					self.last_loaded = MTnum    #  must encode into the same number of elements as other arrays
-					return [nextDex,this_E,next_E,l,l,law,intt,flatarray_out,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+		elif hasattr(rxn,"ang_energy_in"):
+			# get the data, easy.
+			# find where this energy lies on this grid
+			upper_index = next((i for i, x in enumerate(this_E < rxn.ang_energy_in) if x), None)
+			lower_index = upper_index - 1
 
-			else:  # return 0 if below the first energy]
-				next_E = scatterE[0]
-				nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-				#if MTnum==91:
-					#print "energy starts at dex "+str(nextDex)+", energy="+str(next_E)+","+str(self.MT_E_grid[nextDex])
-				return [nextDex,this_E,next_E,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-		#elif hasattr(table,"nu_t_energy"):
-		#	# return interpolated nu values
-		#	interped_nu = numpy.interp( self.MT_E_grid, table.nu_t_energy, table.nu_t_value )   #
-		#	interped_nu = numpy.ascontiguousarray(interped_nu, dtype=numpy.float32)
-		#	#print interped_nu
-		#	#print "nu for MT="+str(MTnum)
-		#	return [-1,-1,-1,-1,-1,-1,-1,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu,interped_nu]
+			# make sure above threshold
+			if lower_index < 0:
+
+				# set all to zero
+				law				= 0
+				intt			= 0
+				lower_erg		= 0
+				upper_erg		= 0
+				lower_len		= 0
+				upper_len		= 0
+				lower_ang_var 	= numpy.array([0.0])
+				upper_ang_var 	= numpy.array([0.0])
+				lower_ang_pdf 	= numpy.array([0.0])
+				upper_ang_pdf 	= numpy.array([0.0])
+				lower_ang_cdf 	= numpy.array([0.0])
+				upper_ang_cdf 	= numpy.array([0.0])
+
+				# next index
+				next_dex = next((i for i, x in enumerate(rxn.threshold() <= self.MT_E_grid) if x), None)
+
+			else:
+
+				# alway level scattering and histogram interpolation
+				law  = 3
+				intt = 1
+
+				# have energies
+				lower_erg = rxn.ang_energy_in[lower_index]
+				upper_erg = rxn.ang_energy_in[upper_index]
+	
+				# get angular distribution values, else write zeros
+				lower_ang_var = rxn.energy_dist.var[lower_index]
+				upper_ang_var = rxn.energy_dist.var[upper_index]
+				lower_ang_pdf = rxn.energy_dist.pdf[lower_index]
+				upper_ang_pdf = rxn.energy_dist.pdf[upper_index]
+				lower_ang_cdf = rxn.energy_dist.cdf[lower_index]
+				upper_ang_cdf = rxn.energy_dist.cdf[upper_index]
+
+				# len
+				lower_len = len(lower_ang_var)
+				upper_len = len(upper_ang_var)
+
+				# next index
+				next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), None)
+
 		else:
-			print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has no angular tables.  Writing NULL."
-			next_E   = self.MT_E_grid[self.num_main_E-1]
-			nextDex = self.MT_E_grid.__len__()
-			return [nextDex,this_E,next_E,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+			# error!
+			print "CASE NOT HANDLED IN SCATTERING!"
+			exit(0)
 
-
+		# return values in order
+		return [lower_erg,
+				lower_len,
+				law,
+				intt,
+				lower_var,
+				lower_pdf,
+				lower_cdf,
+				upper_erg,
+				upper_len,
+				law,
+				intt,
+				upper_var,
+				upper_pdf,
+				upper_cdf,
+				next_dex]
 
 	##
 	# \brief gets table of energy data
