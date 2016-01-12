@@ -8,9 +8,6 @@ int main(int argc, char* argv[]){
 	// BEGIN PROGRAM //
 	///////////////////
 
-	//print banner
-	print_banner();
-
 	// names
 	unsigned tallycell = 999;
 	unsigned N = 0;

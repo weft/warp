@@ -143,12 +143,12 @@ struct cross_section_data {
  */
 struct particle_data {
 	spatial_data*	space;			/**< distribution data redirection matrix */
-	unsigned*		cellnum;		/**< distribution data redirection matrix */
-	unsigned*		matnum;			/**< distribution data redirection matrix */
 	unsigned*		rxn;			/**< distribution data redirection matrix */
 	float*			E;				/**< distribution data redirection matrix */
 	float*			Q;				/**< distribution data redirection matrix */
 	unsigned*		rn_bank;		/**< distribution data redirection matrix */
+	unsigned*		cellnum;		/**< distribution data redirection matrix */
+	unsigned*		matnum;			/**< distribution data redirection matrix */
 	unsigned*		isonum;			/**< distribution data redirection matrix */
 	unsigned*		yield;			/**< distribution data redirection matrix */
 	float*			weight;			/**< distribution data redirection matrix */

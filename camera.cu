@@ -7,7 +7,6 @@ using namespace optix;
 rtBuffer<spatial_data,1>            positions_buffer;
 rtBuffer<unsigned,1>                rxn_buffer;
 rtBuffer<unsigned,1>                remap_buffer;
-rtBuffer<unsigned,1>                done_buffer;
 rtBuffer<unsigned,1>                cellnum_buffer;
 rtBuffer<unsigned,1>                matnum_buffer;
 rtDeclareVariable(rtObject,      top_object, , );

@@ -7,7 +7,7 @@
 #include <string.h>
 #include <png++/png.hpp>
 #include "datadef.h"
-#include "primitive.h"
+#include "wprimitive.h"
 #include "wgeometry.h"
 #include "optix_stuff.h"
 #include "device_copies.h"

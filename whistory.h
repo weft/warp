@@ -350,148 +350,152 @@ class whistory {
 	void copy_energy_data();
 public:
 	/**
-	 * \brief constructor
-	 * \details makes geometry, sets tally vector length, creates dataset size, sets
-	 * compute device and acceleration type, creates CUDA streams.
-	 */
+	* \brief constructor
+	* \details makes geometry, sets tally vector length, creates dataset size, sets
+	* compute device and acceleration type, creates CUDA streams.
+	*/
 	whistory(unsigned,wgeometry);
 	/**
-	 * \brief destructor
-	 */
+	* \brief destructor
+	*/
 	~whistory();
 	/**
-	 * \brief prints cross section data information
-	 */
+	* \brief prints cross section data information
+	*/
 	void print_xs_data();
 	/**
-	 * \brief prints pointer information
-	 */
+	* \brief prints pointer information
+	*/
 	void print_pointers();
 	/**
 	 * \brief prints table of properties of geometry materials
 	 */
 	void print_materials_table();
 	/**
-	 * \brief runs history
-	 * \details initializes run variables, clears fissile points file, opens run
-	 * stats file, records stats. finds the material and nearest surfact distance,
-	 * finds the main energy grid index, finds interaction length, computes spectra,
-	 * finds reaction type, remaps threads, does scattering reactions, reduces the
-	 * yield, resets the cycle, recalculates the running average, and prints the
-	 * total transport runtime.
-	 */
+	* \brief runs history
+	* \details initializes run variables, clears fissile points file, opens run
+	* stats file, records stats. finds the material and nearest surfact distance,
+	* finds the main energy grid index, finds interaction length, computes spectra,
+	* finds reaction type, remaps threads, does scattering reactions, reduces the
+	* yield, resets the cycle, recalculates the running average, and prints the
+	* total transport runtime.
+	*/
 	void run();
 	/**
-	 * \brief writes cross section data to file
-	 * @param[in] filename - filename
-	 */
+	* \brief writes cross section data to file
+	* @param[in] filename - filename
+	*/
 	void write_xs_data(std::string);
 	/**
-	 * \brief writes tally values to file
-	 * @param[in] tallynum - tally number
-	 */
+	* \brief writes tally values to file
+	* @param[in] tallynum - tally number
+	*/
 	void write_tally(unsigned);
 	/**
-	 * \brief sets tally cell to input value
-	 * @param[in] cell - tally cell
-	 */
+	* \brief sets tally cell to input value
+	* @param[in] cell - tally cell
+	*/
 	void set_tally_cell(unsigned);
 	/**
-	 * \brief sets run type
-	 * @param[in] type_in - run type
-	 */
+	* \brief sets run type
+	* @param[in] type_in - run type
+	*/
 	void set_run_type(unsigned);
 	/**
-	 * \brief sets run type
-	 * @param[in] type_in - run type
-	 */
+	* \brief sets run type
+	* @param[in] type_in - run type
+	*/
 	void set_run_type(std::string);
 	/**
-	 * \brief sets number of cycles to skip and number of active cycles
-	 * @param[in] n_cycles_in - number of active cycles
-	 * @param[in] n_skip_in - number of cycles to skip
-	 */
+	* \brief sets number of cycles to skip and number of active cycles
+	* @param[in] n_cycles_in - number of active cycles
+	* @param[in] n_skip_in - number of cycles to skip
+	*/
 	void set_run_param(unsigned,unsigned);
 	/**
-	 * \brief initialization function
-	 * \details initializes OptiX stuff and CUDA stuff, allocates device data, 
-	 * creates host data arrays, initializes counters to zero, copies outermost
-	 * cell dimensions and isotope list, maps edge array, initializes host values,
-	 * initializes the random number generator and CUDPP, loads cross sections, and
-	 * copies data to the compute device.
-	 */
+	* \brief initialization function
+	* \details initializes OptiX stuff and CUDA stuff, allocates device data, 
+	* creates host data arrays, initializes counters to zero, copies outermost
+	* cell dimensions and isotope list, maps edge array, initializes host values,
+	* initializes the random number generator and CUDPP, loads cross sections, and
+	* copies data to the compute device.
+	*/
 	void init();
 	/**
-	 * \brief prints out details (model, memory, compute capability, etc.) of all
-	 * available compute devices
-	 */
+	* \brief prints out details (model, memory, compute capability, etc.) of all
+	* available compute devices
+	*/
 	void device_report();
 	/**
-	 * \brief sets device number to input value
-	 * @param[in] dev_in - device number
-	 */
+	* \brief sets device number to input value
+	* @param[in] dev_in - device number
+	*/
 	void set_device(unsigned);
 	/**
-	 * \brief does nothing
-	 * @param[in] accel_in - acceleration type
-	 */
+	* \brief does nothing
+	* @param[in] accel_in - acceleration type
+	*/
 	void set_acceration(std::string);
 	/**
-	 * \brief sets filename to input string
-	 * @param[in] filename_in - filename
-	 */
+	* \brief sets filename to input string
+	* @param[in] filename_in - filename
+	*/
 	void set_filename(std::string);
 	/**
-	 * \brief appends history data to file in debug mode.
-	 * @param[in] iteration - iteration number
-	 */
-	 void write_histories(unsigned iteration);
+	* \brief appends history data to file in debug mode.
+	* @param[in] iteration - iteration number
+	*/
+	void write_histories(unsigned iteration);
 	/**
-	 * \brief sets amount of information printed to stdout
-	 * @param[in] level - level of verbosity
-	 */
-	 void set_print_level(unsigned level);
-	 /**
-	 * \brief sets what types of information are dumped to files
-	 * @param[in] level - dump type flag
-	 */
-	 void set_dump_level(unsigned level);
-	 /**
-	 * \brief produces png images of the geometry, named filename-[xy,xz,yz].png
-	 * @param[in] type, color is based 'cell' or 'material'
-	 */
-	 void plot_geom(std::string type);
+	* \brief sets amount of information printed to stdout
+	* @param[in] level - level of verbosity
+	*/
+	void set_print_level(unsigned level);
 	/**
-	 * \brief creates a color map
-	 * @param[in] color - rgb colors, float[3]
-	 * @param[in] x - value 
-	 * @param[in] min,max - values used to normalize the color  
-	 */
-	 void make_color(float* , unsigned , unsigned , unsigned );
-	 /**
-	 * \brief creates a hot2 color map
-	 * @param[in] color - rgb colors, float[3]
-	 * @param[in] x - value 
-	 * @param[in] min,max - values used to normalize the color  
-	 */
-	 void hot2(float* , long unsigned , long unsigned , long unsigned );
-	 /**
-	 * \brief creates a binary colormap, black iff 0
-	 * @param[in] color - rgb colors, float[3]
-	 * @param[in] x - value 
-	 * @param[in] min,max - values used to normalize the color; unused, only present to keep arguments the same as other colormaps 
-	 */
-	 void nonzero(float* , unsigned , unsigned , unsigned );
-	 /**
-	 * \brief bins and accumulates fission points to grid
-	 * @param[in] d_space - device space points
-	 * @param[in] N - dataset size 
-	 */
-	 void bin_fission_points( spatial_data * , unsigned );
-	 /**
-	 * \brief writes binned fission point image to a .png
-	 */
-	 void write_fission_points();
+	* \brief sets what types of information are dumped to files
+	* @param[in] level - dump type flag
+	*/
+	void set_dump_level(unsigned level);
+	/**
+	* \brief produces png images of the geometry, named filename-[xy,xz,yz].png
+	* @param[in] type, color is based 'cell' or 'material'
+	*/
+	void plot_geom(std::string type);
+	/**
+	* \brief creates a color map
+	* @param[in] color - rgb colors, float[3]
+	* @param[in] x - value 
+	* @param[in] min,max - values used to normalize the color  
+	*/
+	void make_color(float* , unsigned , unsigned , unsigned );
+	/**
+	* \brief creates a hot2 color map
+	* @param[in] color - rgb colors, float[3]
+	* @param[in] x - value 
+	* @param[in] min,max - values used to normalize the color  
+	*/
+	void hot2(float* , long unsigned , long unsigned , long unsigned );
+	/**
+	* \brief creates a binary colormap, black iff 0
+	* @param[in] color - rgb colors, float[3]
+	* @param[in] x - value 
+	* @param[in] min,max - values used to normalize the color; unused, only present to keep arguments the same as other colormaps 
+	*/
+	void nonzero(float* , unsigned , unsigned , unsigned );
+	/**
+	* \brief bins and accumulates fission points to grid
+	* @param[in] d_space - device space points
+	* @param[in] N - dataset size 
+	*/
+	void bin_fission_points( spatial_data * , unsigned );
+	/**
+	* \brief writes binned fission point image to a .png
+	*/
+	void write_fission_points();
+	/**
+	* \brief prints an amazing and beautiful WARP banner to stdout
+	*/
+	void print_banner();
 };
 
 #endif

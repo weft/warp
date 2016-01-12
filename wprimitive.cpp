@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <time.h>
 #include "datadef.h"
-#include "primitive.h"
+#include "wprimitive.h"
 
 int primitive::num_primitives=0;
 primitive::primitive(){

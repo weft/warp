@@ -7,7 +7,7 @@
 #include <time.h>
 #include <string.h>
 #include "datadef.h"
-#include "primitive.h"
+#include "wprimitive.h"
 #include "wgeometry.h"
 
 wgeometry::wgeometry(){

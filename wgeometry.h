@@ -1,6 +1,6 @@
 #ifndef WGEOMETRY_H
 #define WGEOMETRY_H
-#include "primitive.h"
+#include "wprimitive.h"
 
 /**
  * \class wgeometry wgeometry.h

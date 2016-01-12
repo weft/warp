@@ -3,7 +3,7 @@
 #include "datadef.h"
 #include "LCRNG.cuh"
 
-__global__ void set_positions_rand_kernel(unsigned N , unsigned outer_cell_type, source_point * positions_ptr , unsigned * rn_bank , float x_min , float y_min , float z_min , float x_max , float y_max , float z_max ){
+__global__ void set_positions_rand_kernel(unsigned N , unsigned outer_cell_type, spatial_data * positions_ptr , unsigned * rn_bank , float x_min , float y_min , float z_min , float x_max , float y_max , float z_max ){
 
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid>=N){return;}
@@ -57,7 +57,7 @@ __global__ void set_positions_rand_kernel(unsigned N , unsigned outer_cell_type,
 
 }
 
-void set_positions_rand( unsigned NUM_THREADS, unsigned N, unsigned outer_cell_type, source_point * d_space , unsigned * d_rn_bank, float * outer_cell_dims){
+void set_positions_rand( unsigned NUM_THREADS, unsigned N, unsigned outer_cell_type, spatial_data * d_space , unsigned * d_rn_bank, float * outer_cell_dims){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 

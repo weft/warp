@@ -6,9 +6,8 @@ rtDeclareVariable(intersection_point, payload, rtPayload, );
 rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
 rtDeclareVariable(unsigned,  trace_type, , );
 rtDeclareVariable(unsigned,  outer_cell, , );
-rtBuffer<unsigned,1>          done_buffer;
 rtBuffer<unsigned,1>          rxn_buffer;
-rtBuffer<source_point,1>      positions_buffer;
+rtBuffer<spatial_data,1>      positions_buffer;
 rtBuffer<unsigned,1>      	  matnum_buffer;
 rtBuffer<unsigned,1>      	  cellnum_buffer;
 rtBuffer<unsigned,1>      	  remap_buffer;
@@ -33,9 +32,5 @@ RT_PROGRAM void miss()
 	payload.mat  				=  3000;
 	payload.fiss 				=  0;
 
-	// deprecated with remap, should remove...  have to make fixed source run with remapping somehow...
-	if(trace_type==2){
-		done_buffer[launch_index]	=  1;
-	}
 
 }
