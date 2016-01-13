@@ -491,21 +491,7 @@ void whistory::copy_python_buffer(float** device_pointer,float** host_pointer,st
 	}
 
 	// get array size info
-	rows    = pBuff.shape[0];
-	if (pBuff.ndim == 0){
-		rows = 1;
-		columns = 1;
-	}
-	else if (pBuff.ndim == 1){
-		columns = 1;
-	}
-	else if (pBuff.ndim == 2){
-		columns = pBuff.shape[1]; 
-	}
-	else {
-		fprintf(stderr, "%s returned array with dimension > 2!!!\n", function_name.c_str());
-	}
-	bytes   = pBuff.len;
+	get_Py_buffer_dims(&rows,&columns,&bytes,&pBuff);
 
 	// allocate xs_data pointer arrays
 	*host_pointer = new float [rows*columns];
@@ -549,21 +535,7 @@ void whistory::copy_python_buffer(unsigned** device_pointer,unsigned** host_poin
 	}
 
 	// get array size info
-	rows    = pBuff.shape[0];
-	if (pBuff.ndim == 0){
-		rows = 1;
-		columns = 1;
-	}
-	else if (pBuff.ndim == 1){
-		columns = 1;
-	}
-	else if (pBuff.ndim == 2){
-		columns = pBuff.shape[1];
-	}
-	else {
-		fprintf(stderr, "%s returned array with dimension > 2!!!\n", function_name.c_str());
-	}
-	bytes   = pBuff.len;
+	get_Py_buffer_dims(&rows,&columns,&bytes,&pBuff);
 
 	// allocate xs_data pointer arrays
 	*host_pointer = new unsigned [rows*columns];
@@ -607,21 +579,7 @@ void whistory::copy_python_buffer(float** host_pointer,std::string function_name
 	}
 
 	// get array size info
-	rows    = pBuff.shape[0];
-	if (pBuff.ndim == 0){
-		rows = 1;
-		columns = 1;
-	}
-	else if (pBuff.ndim == 1){
-		columns = 1;
-	}
-	else if (pBuff.ndim == 2){
-		columns = pBuff.shape[1];
-	}
-	else {
-		fprintf(stderr, "%s returned array with dimension > 2!!!\n", function_name.c_str());
-	}
-	bytes   = pBuff.len;
+	get_Py_buffer_dims(&rows,&columns,&bytes,&pBuff);
 
 	// allocate xs_data pointer arrays
 	*host_pointer = new float [rows*columns];
@@ -661,21 +619,7 @@ void whistory::copy_python_buffer(unsigned** host_pointer,std::string function_n
 	}
 
 	// get array size info
-	rows    = pBuff.shape[0];
-	if (pBuff.ndim == 0){
-		rows = 1;
-		columns = 1;
-	}
-	else if (pBuff.ndim == 1){
-		columns = 1;
-	}
-	else if (pBuff.ndim == 2){
-		columns = pBuff.shape[1];
-	}
-	else {
-		fprintf(stderr, "%s returned array with dimension > 2!!!\n", function_name.c_str());
-	}
-	bytes   = pBuff.len;
+	get_Py_buffer_dims(&rows,&columns,&bytes,&pBuff);
 
 	// allocate xs_data pointer arrays
 	*host_pointer = new unsigned [rows*columns];
@@ -786,6 +730,29 @@ int whistory::init_python(){
 	return do_final;
 
 }
+void whistory::get_Py_buffer_dims(unsigned* rows, unsigned* columns, unsigned* bytes, Py_buffer* pBuff){
+
+	// get size
+	bytes[0]	=	pBuff[0].len;
+
+	// get dimensions
+	if (pBuff[0].ndim == 0){
+		rows[0]		=	1;
+		columns[0]	=	1;
+	}
+	else if (pBuff[0].ndim == 1){
+		rows[0]		=	pBuff[0].shape[0];
+		columns[0]	=	1;
+	}
+	else if (pBuff[0].ndim == 2){
+		rows[0]		=	pBuff[0].shape[0];
+		columns[0]	=	pBuff[0].shape[1];
+	}
+	else {
+		fprintf(stderr, "Python buffer returned array with dimension > 2!!!\n");
+	}
+
+}
 void whistory::copy_scatter_data(){
 	// get scattering ditributions from PyNE and set up data heirarchy on host and device 
 
@@ -802,7 +769,13 @@ void whistory::copy_scatter_data(){
 	// local temp variables
 	int 		row, col;
 	float 		nu_t, nu_p;
-	unsigned	array_index, next_dex;
+	unsigned	array_index, next_dex, lower_rows;
+	unsigned 	lower_var_buff_bytes,	lower_pdf_buff_bytes,	lower_cdf_buff_bytes;
+	unsigned 	lower_var_buff_rows,	lower_pdf_buff_rows,	lower_cdf_buff_rows;
+	unsigned 	lower_var_buff_columns,	lower_pdf_buff_columns,	lower_cdf_buff_columns;
+	unsigned 	upper_var_buff_bytes,	upper_pdf_buff_bytes,	upper_cdf_buff_bytes;
+	unsigned 	upper_var_buff_rows,	upper_pdf_buff_rows,	upper_cdf_buff_rows;
+	unsigned 	upper_var_buff_columns,	upper_pdf_buff_columns,	upper_cdf_buff_columns;
 	dist_data	 h_lower_dist,  h_upper_dist;
 	dist_data	dh_lower_dist, dh_upper_dist;
 	dist_data	*d_lower_dist, *d_upper_dist;
@@ -836,6 +809,7 @@ void whistory::copy_scatter_data(){
 	for( col=h_xsdata.isotopes ; col<total_cols ; col++ ){ // going down column to stay within to same isotope, not effcient for caching, but OK here since only done at init
 		row = 0;
 		while(row<total_rows){
+			printf("row %u total_rows %u\n", row, total_rows);
 
 			// compute array index
 			array_index = row*total_cols + col;
@@ -903,7 +877,7 @@ void whistory::copy_scatter_data(){
 			}
 			else{
 				// normal scattering distributions
-				// allocate temp arrays according to length reported
+				// get new pointers for temp arrays according to length reported
 				h_lower_dist.var	=	new 	float[h_lower_dist.len];
 				h_lower_dist.pdf	=	new 	float[h_lower_dist.len];
 				h_lower_dist.cdf	=	new 	float[h_lower_dist.len];
@@ -933,53 +907,62 @@ void whistory::copy_scatter_data(){
 				    return;
 				}
 	
+				// get array size info 
+				get_Py_buffer_dims(&lower_var_buff_rows, &lower_var_buff_columns, &lower_var_buff_bytes, &lower_var_buff);
+				get_Py_buffer_dims(&lower_pdf_buff_rows, &lower_pdf_buff_columns, &lower_pdf_buff_bytes, &lower_pdf_buff);
+				get_Py_buffer_dims(&lower_cdf_buff_rows, &lower_cdf_buff_columns, &lower_cdf_buff_bytes, &lower_cdf_buff);
+				get_Py_buffer_dims(&upper_var_buff_rows, &upper_var_buff_columns, &upper_var_buff_bytes, &upper_var_buff);
+				get_Py_buffer_dims(&upper_pdf_buff_rows, &upper_pdf_buff_columns, &upper_pdf_buff_bytes, &upper_pdf_buff);
+				get_Py_buffer_dims(&upper_cdf_buff_rows, &upper_cdf_buff_columns, &upper_cdf_buff_bytes, &upper_cdf_buff);
+
 				//make shapes and lengths are all the same
-				assert(lower_pdf_buff.shape[0]==lower_var_buff.shape[0]); // shape is in elements
-				assert(lower_pdf_buff.shape[1]==lower_var_buff.shape[1]);
-				assert(lower_cdf_buff.shape[0]==lower_var_buff.shape[0]);
-				assert(lower_cdf_buff.shape[1]==lower_var_buff.shape[1]);
-				assert(upper_pdf_buff.shape[0]==upper_var_buff.shape[0]);
-				assert(upper_pdf_buff.shape[1]==upper_var_buff.shape[1]);
-				assert(upper_cdf_buff.shape[0]==upper_var_buff.shape[0]);
-				assert(upper_cdf_buff.shape[1]==upper_var_buff.shape[1]);
-				assert(lower_pdf_buff.len==lower_var_buff.len); // len is in BYTES
-				assert(lower_cdf_buff.len==lower_var_buff.len);
-				assert(upper_pdf_buff.len==upper_var_buff.len);
-				assert(upper_cdf_buff.len==upper_var_buff.len);
+				assert(lower_pdf_buff_rows		==	lower_var_buff_rows		); // shape is in elements
+				assert(lower_pdf_buff_columns	==	lower_var_buff_columns	);
+				assert(lower_cdf_buff_rows		==	lower_var_buff_rows		);
+				assert(lower_cdf_buff_columns	==	lower_var_buff_columns	);
+				assert(upper_pdf_buff_rows		==	upper_var_buff_rows		);
+				assert(upper_pdf_buff_columns	==	upper_var_buff_columns	);
+				assert(upper_cdf_buff_rows		==	upper_var_buff_rows		);
+				assert(upper_cdf_buff_columns	==	upper_var_buff_columns	);
+				assert(lower_pdf_buff_bytes==lower_var_buff_bytes); // len is in BYTES
+				assert(lower_cdf_buff_bytes==lower_var_buff_bytes);
+				assert(upper_pdf_buff_bytes==upper_var_buff_bytes);
+				assert(upper_cdf_buff_bytes==upper_var_buff_bytes);
 
 				// make sure len corresponds to float32!
-				assert(lower_var_buff.len==lower_var_buff.shape[0]*sizeof(float));
-				assert(lower_pdf_buff.len==lower_pdf_buff.shape[0]*sizeof(float));
-				assert(lower_cdf_buff.len==lower_cdf_buff.shape[0]*sizeof(float));
-				assert(upper_var_buff.len==upper_var_buff.shape[0]*sizeof(float));
-				assert(upper_pdf_buff.len==upper_pdf_buff.shape[0]*sizeof(float));
-				assert(upper_cdf_buff.len==upper_cdf_buff.shape[0]*sizeof(float));
+				printf("buffer bytes %u elements %u float bytes %lu caluclated bytes %lu\n",lower_var_buff_bytes,(lower_var_buff_rows*lower_var_buff_columns),sizeof(float),(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
+				assert(lower_var_buff_bytes==(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
+				assert(lower_pdf_buff_bytes==(lower_pdf_buff_rows*lower_pdf_buff_columns)*sizeof(float));
+				assert(lower_cdf_buff_bytes==(lower_cdf_buff_rows*lower_cdf_buff_columns)*sizeof(float));
+				assert(upper_var_buff_bytes==(upper_var_buff_rows*upper_var_buff_columns)*sizeof(float));
+				assert(upper_pdf_buff_bytes==(upper_pdf_buff_rows*upper_pdf_buff_columns)*sizeof(float));
+				assert(upper_cdf_buff_bytes==(upper_cdf_buff_rows*upper_cdf_buff_columns)*sizeof(float));
 
 				// allocate device distribution arrays
-				cudaMalloc(&dh_lower_dist.var, lower_var_buff.len);   // len has been verified
-				cudaMalloc(&dh_lower_dist.pdf, lower_var_buff.len);
-				cudaMalloc(&dh_lower_dist.cdf, lower_var_buff.len);
-				cudaMalloc(&dh_upper_dist.var, upper_var_buff.len);
-				cudaMalloc(&dh_upper_dist.pdf, upper_var_buff.len);
-				cudaMalloc(&dh_upper_dist.cdf, upper_var_buff.len);
+				cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes);   // len has been verified
+				cudaMalloc(&dh_lower_dist.pdf, lower_var_buff_bytes);
+				cudaMalloc(&dh_lower_dist.cdf, lower_var_buff_bytes);
+				cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes);
+				cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes);
+				cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes);
 
 				// copy data from python buffer to host pointer in array
-				memcpy(h_lower_dist.var, lower_var_buff.buf, lower_var_buff.len);  
-				memcpy(h_lower_dist.pdf, lower_pdf_buff.buf, lower_var_buff.len);
-				memcpy(h_lower_dist.cdf, lower_cdf_buff.buf, lower_var_buff.len);
-				memcpy(h_upper_dist.var, upper_var_buff.buf, upper_var_buff.len);
-				memcpy(h_upper_dist.pdf, upper_pdf_buff.buf, upper_var_buff.len);
-				memcpy(h_upper_dist.cdf, upper_cdf_buff.buf, upper_var_buff.len);
+				memcpy(h_lower_dist.var, lower_var_buff.buf, lower_var_buff_bytes);  
+				memcpy(h_lower_dist.pdf, lower_pdf_buff.buf, lower_var_buff_bytes);
+				memcpy(h_lower_dist.cdf, lower_cdf_buff.buf, lower_var_buff_bytes);
+				memcpy(h_upper_dist.var, upper_var_buff.buf, upper_var_buff_bytes);
+				memcpy(h_upper_dist.pdf, upper_pdf_buff.buf, upper_var_buff_bytes);
+				memcpy(h_upper_dist.cdf, upper_cdf_buff.buf, upper_var_buff_bytes);
 
 				// copy data from host arrays to device arrays
-				cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff.len, cudaMemcpyHostToDevice);  
-				cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff.len, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff.len, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff.len, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff.len, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff.len, cudaMemcpyHostToDevice);
+				cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff_bytes, cudaMemcpyHostToDevice);  
+				cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff_bytes, cudaMemcpyHostToDevice);
+				cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff_bytes, cudaMemcpyHostToDevice);
+				cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice);
+				cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice);
+				cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice);
 
-				//copy vals in structure
+				// copy vals in structure
 				dh_lower_dist.erg	=	h_lower_dist.erg;
 				dh_lower_dist.len	=	h_lower_dist.len;
 				dh_lower_dist.law	=	h_lower_dist.law;
@@ -1008,6 +991,8 @@ void whistory::copy_scatter_data(){
 
 				// go to where the next index starts
 				row = next_dex;
+
+				printf("next dex %u\n",next_dex);
 
 			}
 
@@ -1077,21 +1062,28 @@ void whistory::init_cross_sections(){
 	copy_python_buffer(&dh_xsdata.temp,					&h_xsdata.temp,					"_get_temp_pointer");
 	copy_python_buffer(&dh_xsdata.Q,					&h_xsdata.Q,					"_get_Q_pointer");
 	copy_python_buffer(									&length_numbers,				"_get_length_numbers_pointer");
-	dh_xsdata.isotopes					= length_numbers[0];				
-	dh_xsdata.energy_grid_len			= length_numbers[1];	
-	dh_xsdata.total_reaction_channels	= length_numbers[2];
+	dh_xsdata.isotopes					= h_xsdata.isotopes					= length_numbers[0];				
+	dh_xsdata.energy_grid_len			= h_xsdata.energy_grid_len			= length_numbers[1];	
+	dh_xsdata.total_reaction_channels	= h_xsdata.total_reaction_channels	= length_numbers[2];
 
 	// copy scattering data
 	copy_scatter_data();
-
-	// 
-	exit(0);
+	check_cuda(cudaPeekAtLastError());
 
 	// copy energy data
 	//copy_energy_data(&temp_xsdata.dist_energy,  &h_xsdata.dist_energy,  xsdat_instance);
+	//check_cuda(cudaPeekAtLastError());
 
 	// intialization complete, copy host structure (containing device pointers) to device structure
 	cudaMemcpy( d_xsdata,	&dh_xsdata,	1*sizeof(cross_section_data),	cudaMemcpyHostToDevice);
+	check_cuda(cudaPeekAtLastError());
+
+	// launch a test kernel...
+	test_function( NUM_THREADS, 1, d_xsdata, d_particles, d_tally);
+	check_cuda(cudaPeekAtLastError());
+
+	// 
+	exit(0);
 
 	// finalize python if initialized by warp
 	if(do_final){

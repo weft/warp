@@ -255,7 +255,7 @@ class cross_section_data:
 	# \returns MT_num_array - array of MT numbers
 	def _get_MT_numbers_pointer(self):
 		MT_num_array = numpy.ascontiguousarray(numpy.array(self.reaction_numbers,order='C'),dtype=numpy.uint32)
-		# shift captures +1000
+		# shift fission +800, shift captures +1000
 		for n in range(0,len(MT_num_array)):
 			if MT_num_array[n] >= 11 and MT_num_array[n] <= 45:
 				MT_num_array[n] = MT_num_array[n]+800
@@ -263,6 +263,7 @@ class cross_section_data:
 				MT_num_array[n] = MT_num_array[n]+1000
 		print "  ----- MT reaction number list ----- "
 		print MT_num_array
+		print len(MT_num_array)
 		return MT_num_array
 
 	##
@@ -312,6 +313,7 @@ class cross_section_data:
 	# \returns lengths - lengths array
 	def _get_length_numbers_pointer(self):
 		lengths = numpy.ascontiguousarray( numpy.array([self.num_isotopes, self.num_main_E, self.num_reactions], order='C') ,dtype=numpy.uint32)
+		print lengths
 		return lengths
 
 	##
@@ -321,7 +323,9 @@ class cross_section_data:
 	def _get_MT_numbers_total_pointer(self):
 		numbers = numpy.array(self.reaction_numbers_total,order='C')
 		numbers = numpy.cumsum(numbers)
+		numbers = numpy.insert(numbers,0,0)
 		numbers = numpy.ascontiguousarray(numbers,dtype=numpy.uint32)
+		print numbers
 		return numbers
 
 	##
@@ -343,9 +347,9 @@ class cross_section_data:
 
 		#find the isotope we are in
 		numbers = numpy.cumsum(self.reaction_numbers_total)  #list of how many reactions in each isotope
-		print self.reaction_numbers_total
-		print numbers
-		print self.reaction_numbers
+		#print self.reaction_numbers_total
+		#print numbers
+		#print self.reaction_numbers
 		isotope = numpy.argmax( (col - self.num_isotopes) < numbers )
 		table = self.tables[isotope]
 		MTnum = self.reaction_numbers[col]
@@ -354,102 +358,208 @@ class cross_section_data:
 		# get the energy of this index
 		this_E = self.MT_E_grid[row]
 
+		print MTnum
+
 		# do the cases
-		if rxn.multiplicity>10:
+		if hasattr(table,"nu_t_energy") and rxn.multiplicity>10:
 			# this is a fission reaction
 			# scattering dist is actually nu
 
 			# find indicies
-			nu_t_upper_index = next((i for i, x in enumerate(this_E < self.tables.nu_t_energy) if x), None)
-			nu_t_lower_index = upper_index - 1
-			nu_p_upper_index = next((i for i, x in enumerate(this_E < self.tables.nu_p_energy) if x), None)
-			nu_p_lower_index = upper_index - 1
+			nu_t_upper_index = next((i for i, x in enumerate(this_E < table.nu_t_energy) if x), None)
+			nu_p_upper_index = next((i for i, x in enumerate(this_E < table.nu_p_energy) if x), None)
+
+			# if above upper nu grid value
+			if  nu_t_upper_index == None:
+				nu_t_upper_index = len(table.nu_t_energy)-1
+				nu_t_lower_index = len(table.nu_t_energy)-1
+			else:
+				nu_t_lower_index = nu_t_upper_index - 1
+
+			if  nu_p_upper_index == None:
+				nu_p_upper_index = len(table.nu_p_energy)-1
+				nu_p_lower_index = len(table.nu_p_energy)-1
+			else:
+				nu_p_lower_index = nu_p_upper_index - 1
 
 			# make sure above threshold
-			if nut_t_lower_index < 0:
+			if nu_t_lower_index < 0:
 
 				# set all to zero
-				law				= 0
-				intt			= 0
-				lower_erg		= 0
-				upper_erg		= 0
-				lower_len		= 0
-				upper_len		= 0
-				lower_ang_var 	= numpy.array([0.0])
-				upper_ang_var 	= numpy.array([0.0])
-				lower_ang_pdf 	= numpy.array([0.0])
-				upper_ang_pdf 	= numpy.array([0.0])
-				lower_ang_cdf 	= numpy.array([0.0])
-				upper_ang_cdf 	= numpy.array([0.0])
+				law			= 0
+				lower_intt	= 0
+				upper_intt	= 0
+				lower_erg	= 0
+				upper_erg	= 0
+				lower_len	= 0
+				upper_len	= 0
+				lower_var 	= numpy.array([0.0])
+				upper_var 	= numpy.array([0.0])
+				lower_pdf 	= numpy.array([0.0])
+				upper_pdf 	= numpy.array([0.0])
+				lower_cdf 	= numpy.array([0.0])
+				upper_cdf 	= numpy.array([0.0])
 
 				# next index
-				next_dex = next((i for i, x in enumerate(rxn.threshold() <= self.MT_E_grid) if x), None)
+				threshold = numpy.max([rxn.threshold(),table.nu_t_energy[0]])
+				next_dex = next((i for i, x in enumerate(threshold <= self.MT_E_grid) if x), None)
 				
 			else:
 
 				# get nu_t values
-				e0 = self.tables.nu_t_energy[nu_t_lower_index]
-				e1 = self.tables.nu_t_energy[nu_t_upper_index]
-				v0 = self.tables.nu_t_value[ nu_t_lower_index]
-				v1 = self.tables.nu_t_value[ nu_t_upper_index]
+				e0 = table.nu_t_energy[nu_t_lower_index]
+				e1 = table.nu_t_energy[nu_t_upper_index]
+				v0 = table.nu_t_value[ nu_t_lower_index]
+				v1 = table.nu_t_value[ nu_t_upper_index]
 
 				# linearly interpolate
 				nu_t = (v1-v0)/(e1-e0)*(e1-this_E) + v0
 
 				# get nu_p values
-				e0 = self.tables.nu_p_energy[nu_p_lower_index]
-				e1 = self.tables.nu_p_energy[nu_p_upper_index]
-				v0 = self.tables.nu_p_value[ nu_p_lower_index]
-				v1 = self.tables.nu_p_value[ nu_p_upper_index]
+				e0 = table.nu_p_energy[nu_p_lower_index]
+				e1 = table.nu_p_energy[nu_p_upper_index]
+				v0 = table.nu_p_value[ nu_p_lower_index]
+				v1 = table.nu_p_value[ nu_p_upper_index]
 
 				# linearly interpolate
 				nu_p = (v1-v0)/(e1-e0)*(e1-this_E) + v0
 
 				# set values in vars
-				law				= -1
-				intt			= 0
-				lower_erg		= nu_t
-				upper_erg		= nu_p
-				lower_len		= 0
-				upper_len		= 0
-				lower_ang_var 	= numpy.array([0.0])
-				upper_ang_var 	= numpy.array([0.0])
-				lower_ang_pdf 	= numpy.array([0.0])
-				upper_ang_pdf 	= numpy.array([0.0])
-				lower_ang_cdf 	= numpy.array([0.0])
-				upper_ang_cdf 	= numpy.array([0.0])
+				law			= -1
+				lower_intt	= 0
+				upper_intt	= 0
+				lower_erg	= nu_t
+				upper_erg	= nu_p
+				lower_len	= 0
+				upper_len	= 0
+				lower_var 	= numpy.array([0.0])
+				upper_var 	= numpy.array([0.0])
+				lower_pdf 	= numpy.array([0.0])
+				upper_pdf 	= numpy.array([0.0])
+				lower_cdf 	= numpy.array([0.0])
+				upper_cdf 	= numpy.array([0.0])
 
-		elif hasattr(rxn,"energy_dist"):
-			# there is no angular table, everything is in energy dist
-			# find where this energy lies on this grid
-			upper_index = next((i for i, x in enumerate(this_E < rxn.energy_dist.energy_in) if x), None)
+				# next index
+				next_dex = row+1  # go to next value
+
+		elif hasattr(rxn,"ang_energy_in"):
+			# get the data, easy.
+			# find where this energy lies on this grid, if above, return 
+			upper_index = next((i for i, x in enumerate(this_E < rxn.ang_energy_in) if x), len(rxn.ang_energy_in))
 			lower_index = upper_index - 1
+
+			# if above upper index, return two of the last
+			if upper_index == len(rxn.ang_energy_in):
+				upper_index = len(rxn.ang_energy_in)-1
+				lower_index = len(rxn.ang_energy_in)-1
 
 			# make sure above threshold
 			if lower_index < 0:
 
 				# set all to zero
-				law				= 0
-				intt			= 0
-				lower_erg		= 0
-				upper_erg		= 0
-				lower_len		= 0
-				upper_len		= 0
-				lower_ang_var 	= numpy.array([0.0])
-				upper_ang_var 	= numpy.array([0.0])
-				lower_ang_pdf 	= numpy.array([0.0])
-				upper_ang_pdf 	= numpy.array([0.0])
-				lower_ang_cdf 	= numpy.array([0.0])
-				upper_ang_cdf 	= numpy.array([0.0])
+				law			= 0
+				lower_intt	= 0
+				upper_intt	= 0
+				lower_erg	= 0
+				upper_erg	= 0
+				lower_len	= 0
+				upper_len	= 0
+				lower_var 	= numpy.array([0.0])
+				upper_var 	= numpy.array([0.0])
+				lower_pdf 	= numpy.array([0.0])
+				upper_pdf 	= numpy.array([0.0])
+				lower_cdf 	= numpy.array([0.0])
+				upper_cdf 	= numpy.array([0.0])
 
 				# next index
-				next_dex = next((i for i, x in enumerate(rxn.threshold() <= self.MT_E_grid) if x), None)
+				threshold = numpy.max([rxn.threshold(),rxn.ang_energy_in[0]])
+				next_dex = next((i for i, x in enumerate(threshold <= self.MT_E_grid) if x), None)
+
+			else:
+
+				# law
+				if hasattr(rxn,"energy_dist"):
+					law  = rxn.energy_dist.law 
+				else:
+					law  = 3
+
+				#intt
+				if hasattr(rxn,"energy_dist"):
+					if hasattr(rxn.energy_dist,"intt"):
+						lower_intt = rxn.energy_dist.intt[lower_index]
+						upper_intt = rxn.energy_dist.intt[upper_index]
+					else:
+						lower_intt = 1
+						upper_intt = 1
+				else:
+					lower_intt = 1
+					upper_intt = 1
+
+				# have energies
+				lower_erg = rxn.ang_energy_in[lower_index]
+				upper_erg = rxn.ang_energy_in[upper_index]
+	
+				# get angular distribution values, else write zeros
+				lower_var = rxn.ang_cos[lower_index]
+				upper_var = rxn.ang_cos[upper_index]
+				lower_pdf = rxn.ang_pdf[lower_index]
+				upper_pdf = rxn.ang_pdf[upper_index]
+				lower_cdf = rxn.ang_cdf[lower_index]
+				upper_cdf = rxn.ang_cdf[upper_index]
+
+				# len
+				lower_len = len(lower_var)
+				upper_len = len(upper_var)
+
+				# next index
+				if upper_index == lower_index == len(rxn.ang_energy_in)-1:  # above last dist energy bin
+					next_dex = len(self.MT_E_grid)
+				else:
+					next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
+
+		elif hasattr(rxn,"energy_dist"):
+			# there is no angular table, everything is in energy dist
+			# find where this energy lies on this grid
+			upper_index = next((i for i, x in enumerate(this_E < rxn.energy_dist.energy_in) if x), len(rxn.energy_dist.energy_in))
+			lower_index = upper_index - 1
+
+			print this_E, upper_index, lower_index
+
+			# if above upper index, return two of the last
+			if upper_index == len(rxn.energy_dist.energy_in):
+				upper_index = len(rxn.energy_dist.energy_in)-1
+				lower_index = len(rxn.energy_dist.energy_in)-1
+
+			# make sure above threshold
+			if lower_index < 0:
+
+				# set all to zero
+				law			= 0
+				lower_intt	= 0
+				upper_intt	= 0
+				lower_erg	= 0
+				upper_erg	= 0
+				lower_len	= 0
+				upper_len	= 0
+				lower_var 	= numpy.array([0.0])
+				upper_var 	= numpy.array([0.0])
+				lower_pdf 	= numpy.array([0.0])
+				upper_pdf 	= numpy.array([0.0])
+				lower_cdf 	= numpy.array([0.0])
+				upper_cdf 	= numpy.array([0.0])
+
+				# next index
+				threshold = numpy.max([rxn.threshold(),rxn.energy_dist.energy_in[0]])
+				next_dex = next((i for i, x in enumerate(threshold <= self.MT_E_grid) if x), None)
 				
 			else:
 
-				# law/intt
+				# law
 				law  = rxn.energy_dist.law
-				intt = rxn.energy_dist.intt
+
+				# interpolation type
+				lower_intt = rxn.energy_dist.intt[lower_index]
+				upper_intt = rxn.energy_dist.intt[upper_index]
 
 				# energies
 				lower_erg = rxn.energy_dist.energy_in[lower_index]
@@ -457,97 +567,64 @@ class cross_section_data:
 	
 				# get angular distribution values, else write zeros
 				if hasattr(rxn.energy_dist,"ang"):
-					lower_ang_var = rxn.energy_dist.ang[lower_index]
-					upper_ang_var = rxn.energy_dist.ang[upper_index]
+					lower_var = rxn.energy_dist.ang[lower_index]
+					upper_var = rxn.energy_dist.ang[upper_index]
 				else:
-					lower_ang_var = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
-					upper_ang_var = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
+					lower_var = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
+					upper_var = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
 	
 				# cdf and pdf should be zeros
-				lower_ang_pdf = numpy.zeros(rxn.energy_dist.pdf[lower_index].shape)
-				upper_ang_pdf = numpy.zeros(rxn.energy_dist.pdf[upper_index].shape)
-				lower_ang_cdf = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
-				upper_ang_cdf = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
+				lower_pdf = numpy.zeros(rxn.energy_dist.pdf[lower_index].shape)
+				upper_pdf = numpy.zeros(rxn.energy_dist.pdf[upper_index].shape)
+				lower_cdf = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
+				upper_cdf = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
 
 				# len
-				lower_len = len(lower_ang_var)
-				upper_len = len(upper_ang_var)
+				lower_len = len(lower_var)
+				upper_len = len(upper_var)
 
 				# next index
-				next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), None)
-
-		elif hasattr(rxn,"ang_energy_in"):
-			# get the data, easy.
-			# find where this energy lies on this grid
-			upper_index = next((i for i, x in enumerate(this_E < rxn.ang_energy_in) if x), None)
-			lower_index = upper_index - 1
-
-			# make sure above threshold
-			if lower_index < 0:
-
-				# set all to zero
-				law				= 0
-				intt			= 0
-				lower_erg		= 0
-				upper_erg		= 0
-				lower_len		= 0
-				upper_len		= 0
-				lower_ang_var 	= numpy.array([0.0])
-				upper_ang_var 	= numpy.array([0.0])
-				lower_ang_pdf 	= numpy.array([0.0])
-				upper_ang_pdf 	= numpy.array([0.0])
-				lower_ang_cdf 	= numpy.array([0.0])
-				upper_ang_cdf 	= numpy.array([0.0])
-
-				# next index
-				next_dex = next((i for i, x in enumerate(rxn.threshold() <= self.MT_E_grid) if x), None)
-
-			else:
-
-				# alway level scattering and histogram interpolation
-				law  = 3
-				intt = 1
-
-				# have energies
-				lower_erg = rxn.ang_energy_in[lower_index]
-				upper_erg = rxn.ang_energy_in[upper_index]
-	
-				# get angular distribution values, else write zeros
-				lower_ang_var = rxn.energy_dist.var[lower_index]
-				upper_ang_var = rxn.energy_dist.var[upper_index]
-				lower_ang_pdf = rxn.energy_dist.pdf[lower_index]
-				upper_ang_pdf = rxn.energy_dist.pdf[upper_index]
-				lower_ang_cdf = rxn.energy_dist.cdf[lower_index]
-				upper_ang_cdf = rxn.energy_dist.cdf[upper_index]
-
-				# len
-				lower_len = len(lower_ang_var)
-				upper_len = len(upper_ang_var)
-
-				# next index
-				next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), None)
+				if upper_index == lower_index == len(rxn.energy_dist.energy_in)-1:  # above last dist energy bin
+					next_dex = len(self.MT_E_grid)
+				else:
+					next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
 
 		else:
-			# error!
-			print "CASE NOT HANDLED IN SCATTERING!"
-			exit(0)
+			# no distributions
+			# set all to zero
+				law			= 0
+				lower_intt	= 0
+				upper_intt	= 0
+				lower_erg	= 0
+				upper_erg	= 0
+				lower_len	= 0
+				upper_len	= 0
+				lower_var 	= numpy.array([0.0])
+				upper_var 	= numpy.array([0.0])
+				lower_pdf 	= numpy.array([0.0])
+				upper_pdf 	= numpy.array([0.0])
+				lower_cdf 	= numpy.array([0.0])
+				upper_cdf 	= numpy.array([0.0])
 
-		# return values in order
-		return [lower_erg,
-				lower_len,
-				law,
-				intt,
-				lower_var,
-				lower_pdf,
-				lower_cdf,
-				upper_erg,
-				upper_len,
-				law,
-				intt,
-				upper_var,
-				upper_pdf,
-				upper_cdf,
-				next_dex]
+				# next index
+				next_dex = len(self.MT_E_grid)
+
+		# return values in order as float32 arrays
+		return [numpy.ascontiguousarray(lower_erg,	dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_len,	dtype=numpy.float32),
+				numpy.ascontiguousarray(law,		dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_intt,	dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_var,	dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_pdf,	dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_cdf,	dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_erg,	dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_len,	dtype=numpy.float32),
+				numpy.ascontiguousarray(law,		dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_intt,	dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_var,	dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_pdf,	dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_cdf,	dtype=numpy.float32),
+				numpy.ascontiguousarray(next_dex,	dtype=numpy.float32)]
 
 	##
 	# \brief gets table of energy data

@@ -496,6 +496,10 @@ public:
 	* \brief prints an amazing and beautiful WARP banner to stdout
 	*/
 	void print_banner();
+	/**
+	* \brief does size logic on python buffer and writes values into pointers passed.  Made since python interface routines don't set first/second shape value if the array size is 0/1
+	*/
+	void get_Py_buffer_dims(unsigned* , unsigned* , unsigned* , Py_buffer* );
 };
 
 #endif

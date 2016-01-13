@@ -28,6 +28,6 @@ void rebase_yield( unsigned , unsigned , float , unsigned* , unsigned* );
 void reaction_edges( unsigned ,  unsigned , unsigned* , unsigned* );
 void check_remap( unsigned , unsigned , unsigned* , unsigned* , unsigned* );
 void print_data( cudaStream_t , unsigned , unsigned , spatial_data* , float* , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* );
-
+void test_function(unsigned ,  unsigned , cross_section_data*, particle_data*, tally_data*);
 
 #endif
