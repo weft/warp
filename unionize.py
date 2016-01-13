@@ -483,6 +483,7 @@ class cross_section_data:
 				else:
 					law  = 3
 
+
 				#intt
 				if hasattr(rxn,"energy_dist"):
 					if hasattr(rxn.energy_dist,"intt"):
@@ -517,8 +518,8 @@ class cross_section_data:
 				else:
 					next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
 
-		elif hasattr(rxn,"energy_dist"):
-			# there is no angular table, everything is in energy dist
+		elif hasattr(rxn,"energy_dist") and hasattr(rxn.energy_dist,"energy_in"):
+			# there is no higher lavel angular table, everything is in energy_dist
 			# find where this energy lies on this grid
 			upper_index = next((i for i, x in enumerate(this_E < rxn.energy_dist.energy_in) if x), len(rxn.energy_dist.energy_in))
 			lower_index = upper_index - 1
@@ -591,8 +592,11 @@ class cross_section_data:
 
 		else:
 			# no distributions
-			# set all to zero
-				law			= 0
+			# set all to zero (except law if there is one)
+				if hasattr(rxn,"energy_dist"):
+					law = rxn.energy_dist.law
+				else:
+					law			= 0
 				lower_intt	= 0
 				upper_intt	= 0
 				lower_erg	= 0
