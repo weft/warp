@@ -120,7 +120,7 @@ struct dist_container {
  * fraction list
  */
 struct cross_section_data {
-	unsigned			isotopes;					/**< number of isotopes */
+	unsigned			n_isotopes;					/**< number of isotopes */
 	unsigned			energy_grid_len;			/**< length of main energy grid*/
 	unsigned			total_reaction_channels;	/**< total number of reactions channels*/
 	unsigned*			rxn_numbers;				/**< reaction number vector */

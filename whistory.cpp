@@ -134,9 +134,9 @@ void whistory::init(){
 	memcpy(outer_cell_dims,optix_obj.outer_cell_dims,6*sizeof(float));
 	outer_cell 		= optix_obj.get_outer_cell();
 	outer_cell_type = optix_obj.get_outer_cell_type();
-	isotopes 		= problem_geom.isotopes;
+	isotopes		= problem_geom.isotopes;
 	n_isotopes 		= problem_geom.n_isotopes;
-	n_materials 	= problem_geom.n_materials;
+	n_materials		= problem_geom.n_materials;
 
 	// map edge array and reduced values
 	n_edges = 11;
@@ -761,32 +761,34 @@ void whistory::copy_scatter_data(){
 	}
 
 	// python variables for arguments
-	PyObject 	*row_obj, *col_obj, *call_string, *obj_list;
-	PyObject 	*lower_erg_obj, *lower_len_obj, *lower_law_obj, *lower_intt_obj, *lower_var_obj, *lower_pdf_obj, *lower_cdf_obj; 
-	PyObject 	*upper_erg_obj, *upper_len_obj, *upper_law_obj, *upper_intt_obj, *upper_var_obj, *upper_pdf_obj, *upper_cdf_obj, *next_dex_obj; 
-	Py_buffer 	lower_var_buff, lower_pdf_buff, lower_cdf_buff, upper_var_buff, upper_pdf_buff, upper_cdf_buff;
+	PyObject	*row_obj, *col_obj, *call_string, *obj_list;
+	PyObject	*lower_erg_obj, *lower_len_obj, *lower_law_obj, *lower_intt_obj, *lower_var_obj, *lower_pdf_obj, *lower_cdf_obj; 
+	PyObject	*upper_erg_obj, *upper_len_obj, *upper_law_obj, *upper_intt_obj, *upper_var_obj, *upper_pdf_obj, *upper_cdf_obj, *next_dex_obj; 
+	Py_buffer	lower_var_buff, lower_pdf_buff, lower_cdf_buff, upper_var_buff, upper_pdf_buff, upper_cdf_buff;
 	
 	// local temp variables
-	int 		row, col;
-	float 		nu_t, nu_p;
-	unsigned	array_index, next_dex, lower_rows;
-	unsigned 	lower_var_buff_bytes,	lower_pdf_buff_bytes,	lower_cdf_buff_bytes;
-	unsigned 	lower_var_buff_rows,	lower_pdf_buff_rows,	lower_cdf_buff_rows;
-	unsigned 	lower_var_buff_columns,	lower_pdf_buff_columns,	lower_cdf_buff_columns;
-	unsigned 	upper_var_buff_bytes,	upper_pdf_buff_bytes,	upper_cdf_buff_bytes;
-	unsigned 	upper_var_buff_rows,	upper_pdf_buff_rows,	upper_cdf_buff_rows;
-	unsigned 	upper_var_buff_columns,	upper_pdf_buff_columns,	upper_cdf_buff_columns;
-	dist_data	 h_lower_dist,  h_upper_dist;
-	dist_data	dh_lower_dist, dh_upper_dist;
-	dist_data	*d_lower_dist, *d_upper_dist;
+	int				row, col;
+	float			nu_t, nu_p;
+	int				this_isotope;
+	unsigned		array_index, next_dex, lower_rows;
+	unsigned		lower_var_buff_bytes,	lower_pdf_buff_bytes,	lower_cdf_buff_bytes;
+	unsigned		lower_var_buff_rows,	lower_pdf_buff_rows,	lower_cdf_buff_rows;
+	unsigned		lower_var_buff_columns,	lower_pdf_buff_columns,	lower_cdf_buff_columns;
+	unsigned		upper_var_buff_bytes,	upper_pdf_buff_bytes,	upper_cdf_buff_bytes;
+	unsigned		upper_var_buff_rows,	upper_pdf_buff_rows,	upper_cdf_buff_rows;
+	unsigned		upper_var_buff_columns,	upper_pdf_buff_columns,	upper_cdf_buff_columns;
+	dist_data		 h_lower_dist,  h_upper_dist;
+	dist_data		dh_lower_dist, dh_upper_dist;
+	dist_data		*d_lower_dist, *d_upper_dist;
+	dist_container	*dh_dist_scatter;
 
 	// compute some sizes
 	unsigned total_rows = h_xsdata.energy_grid_len;
-	unsigned total_cols = h_xsdata.total_reaction_channels + h_xsdata.isotopes;
+	unsigned total_cols = h_xsdata.total_reaction_channels + h_xsdata.n_isotopes;
 
 	//ALLOCATE THE ARRAYS.
-	 h_xsdata.dist_scatter	= new dist_container [total_rows * total_cols];
-	dh_xsdata.dist_scatter	= new dist_container [total_rows * total_cols];
+	h_xsdata.dist_scatter	= new dist_container [total_rows * total_cols];
+	dh_dist_scatter			= new dist_container [total_rows * total_cols];
 
 	//set total cross sections to NULL
 	for (row=0 ; row<h_xsdata.energy_grid_len; row++){  //start after the total xs vectors
@@ -794,8 +796,8 @@ void whistory::copy_scatter_data(){
 				array_index = row*total_cols + col;
 				 h_xsdata.dist_scatter[array_index].upper = 0x0;
 				 h_xsdata.dist_scatter[array_index].lower = 0x0;
-				dh_xsdata.dist_scatter[array_index].upper = 0x0;
-				dh_xsdata.dist_scatter[array_index].lower = 0x0;
+				       dh_dist_scatter[array_index].upper = 0x0;
+				       dh_dist_scatter[array_index].lower = 0x0;
 		}
 	}
 
@@ -806,10 +808,24 @@ void whistory::copy_scatter_data(){
 	//  --- This can be eliminated via copying pointers instead of reiniting ditributions, 
 	//  --- but this has been left for now for simplicity.
 	//
-	for( col=h_xsdata.isotopes ; col<total_cols ; col++ ){ // going down column to stay within to same isotope, not effcient for caching, but OK here since only done at init
+	for( col=h_xsdata.n_isotopes ; col<total_cols ; col++ ){ // going down column to stay within to same isotope, not effcient for caching, but OK here since only done at init
+		
+		// rest row index
 		row = 0;
+
+		// print some nice info if flagged
+		if(print_flag >= 2){
+			this_isotope = -1;
+			for (int i=0;i<h_xsdata.n_isotopes+1;i++){
+				if(col>=(h_xsdata.rxn_numbers_total[i]+h_xsdata.n_isotopes) & col<(h_xsdata.rxn_numbers_total[i+1]+h_xsdata.n_isotopes)){
+					this_isotope = i;
+					break;
+				}
+			}
+			printf("   Getting scattering data for isotope %s - reaction %u\n",isotopes[this_isotope].c_str(),h_xsdata.rxn_numbers[col]);
+		}
+
 		while(row<total_rows){
-			printf("row %u total_rows %u\n", row, total_rows);
 
 			// compute array index
 			array_index = row*total_cols + col;
@@ -868,8 +884,8 @@ void whistory::copy_scatter_data(){
 				nu_p = PyFloat_AsDouble(	upper_erg_obj);
 				memcpy(& h_xsdata.dist_scatter[array_index].upper , &nu_t, 1*sizeof(float) );
 				memcpy(& h_xsdata.dist_scatter[array_index].lower , &nu_p, 1*sizeof(float) );
-				memcpy(&dh_xsdata.dist_scatter[array_index].upper , &nu_t, 1*sizeof(float) );
-				memcpy(&dh_xsdata.dist_scatter[array_index].lower , &nu_p, 1*sizeof(float) );
+				memcpy(       &dh_dist_scatter[array_index].upper , &nu_t, 1*sizeof(float) );
+				memcpy(       &dh_dist_scatter[array_index].lower , &nu_p, 1*sizeof(float) );
 
 				// go to next dex so python can do interpolation
 				row++;
@@ -930,7 +946,7 @@ void whistory::copy_scatter_data(){
 				assert(upper_cdf_buff_bytes==upper_var_buff_bytes);
 
 				// make sure len corresponds to float32!
-				printf("buffer bytes %u elements %u float bytes %lu caluclated bytes %lu\n",lower_var_buff_bytes,(lower_var_buff_rows*lower_var_buff_columns),sizeof(float),(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
+				//printf("buffer bytes %u elements %u float bytes %lu caluclated bytes %lu\n",lower_var_buff_bytes,(lower_var_buff_rows*lower_var_buff_columns),sizeof(float),(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
 				assert(lower_var_buff_bytes==(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
 				assert(lower_pdf_buff_bytes==(lower_pdf_buff_rows*lower_pdf_buff_columns)*sizeof(float));
 				assert(lower_cdf_buff_bytes==(lower_cdf_buff_rows*lower_cdf_buff_columns)*sizeof(float));
@@ -945,6 +961,7 @@ void whistory::copy_scatter_data(){
 				cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes);
 				cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes);
 				cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes);
+				check_cuda(cudaPeekAtLastError());
 
 				// copy data from python buffer to host pointer in array
 				memcpy(h_lower_dist.var, lower_var_buff.buf, lower_var_buff_bytes);  
@@ -961,6 +978,7 @@ void whistory::copy_scatter_data(){
 				cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice);
 				cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice);
 				cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice);
+				check_cuda(cudaPeekAtLastError());
 
 				// copy vals in structure
 				dh_lower_dist.erg	=	h_lower_dist.erg;
@@ -975,24 +993,26 @@ void whistory::copy_scatter_data(){
 				// allocate container
 				cudaMalloc(&d_lower_dist, 1*sizeof(dist_data));
 				cudaMalloc(&d_upper_dist, 1*sizeof(dist_data));
+				check_cuda(cudaPeekAtLastError());
 
 				// copy device pointers to device container
 				cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
 				cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
+				check_cuda(cudaPeekAtLastError());
 
 				// replicate pointers until next index
-				for (int i=0 ; i<(next_dex-row); i++){
-					array_index = (row + i)*total_cols + col;
-					 h_xsdata.dist_scatter[array_index].upper = &h_upper_dist;
-					 h_xsdata.dist_scatter[array_index].lower = &h_lower_dist;
-					dh_xsdata.dist_scatter[array_index].upper = d_upper_dist;
-					dh_xsdata.dist_scatter[array_index].lower = d_lower_dist;
+				for (int i=row ; i<next_dex; i++){
+					array_index = i*total_cols + col;
+					h_xsdata.dist_scatter[array_index].upper = &h_upper_dist;
+					h_xsdata.dist_scatter[array_index].lower = &h_lower_dist;
+					      dh_dist_scatter[array_index].upper =  d_upper_dist;
+					      dh_dist_scatter[array_index].lower =  d_lower_dist;
 				}
 
 				// go to where the next index starts
 				row = next_dex;
 
-				printf("next dex %u\n",next_dex);
+				//printf("next dex %u\n",next_dex);
 
 			}
 
@@ -1000,6 +1020,13 @@ void whistory::copy_scatter_data(){
 		}
 	}
 
+	// copy host array containing device pointers to device array
+	cudaMalloc(&dh_xsdata.dist_scatter,                total_rows*total_cols*sizeof(dist_container));
+	cudaMemcpy( dh_xsdata.dist_scatter,dh_dist_scatter,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice);
+	check_cuda(cudaPeekAtLastError());
+
+	// free host array containing device pointers, not needed anymore
+	delete dh_dist_scatter;
 
 
 //					// get flattened matrix for law 61
@@ -1062,7 +1089,7 @@ void whistory::init_cross_sections(){
 	copy_python_buffer(&dh_xsdata.temp,					&h_xsdata.temp,					"_get_temp_pointer");
 	copy_python_buffer(&dh_xsdata.Q,					&h_xsdata.Q,					"_get_Q_pointer");
 	copy_python_buffer(									&length_numbers,				"_get_length_numbers_pointer");
-	dh_xsdata.isotopes					= h_xsdata.isotopes					= length_numbers[0];				
+	dh_xsdata.n_isotopes				= h_xsdata.n_isotopes				= length_numbers[0];				
 	dh_xsdata.energy_grid_len			= h_xsdata.energy_grid_len			= length_numbers[1];	
 	dh_xsdata.total_reaction_channels	= h_xsdata.total_reaction_channels	= length_numbers[2];
 
@@ -1100,7 +1127,7 @@ void whistory::init_cross_sections(){
 	//problem_geom.get_material_table(&n_materials,&n_isotopes,&material_list,&isotope_list,&number_density_matrix);  
 	problem_geom.get_material_table(&n_materials,&n_isotopes,&number_density_matrix);  
 
-	assert(n_isotopes == h_xsdata.isotopes);
+	assert(n_isotopes == h_xsdata.n_isotopes);
 
 	//do cudamalloc for these arrays
 	//cudaMalloc(&d_material_list , 			n_materials*sizeof(unsigned) );

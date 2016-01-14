@@ -8,7 +8,7 @@ __global__ void test_kernel( unsigned N , cross_section_data* d_xsdata, particle
 	if (tid >= N){return;}
 
 	// declare shared variables
-	__shared__ 	unsigned			isotopes;				
+	__shared__ 	unsigned			n_isotopes;				
 	__shared__ 	unsigned			energy_grid_len;		
 	__shared__ 	unsigned			total_reaction_channels;
 	__shared__ 	unsigned*			rxn_numbers;			
@@ -23,7 +23,7 @@ __global__ void test_kernel( unsigned N , cross_section_data* d_xsdata, particle
 
 	// have thread 1 copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
-		isotopes					= d_xsdata[0].isotopes;								
+		n_isotopes					= d_xsdata[0].n_isotopes;								
 		energy_grid_len				= d_xsdata[0].energy_grid_len;				
 		total_reaction_channels		= d_xsdata[0].total_reaction_channels;
 		rxn_numbers 				= d_xsdata[0].rxn_numbers;						
@@ -39,19 +39,30 @@ __global__ void test_kernel( unsigned N , cross_section_data* d_xsdata, particle
 
 	// go about your thready business
 	unsigned row = energy_grid_len*0.99;
-	unsigned total_cols = isotopes + total_reaction_channels;
-	unsigned this_isotope = 0;
-	unsigned col_start= isotopes + rxn_numbers_total[this_isotope];
-	unsigned col_end  = isotopes + rxn_numbers_total[this_isotope+1];
-
+	unsigned total_cols = n_isotopes + total_reaction_channels;
+	unsigned this_isotope = 2;
+	unsigned col_start= n_isotopes + rxn_numbers_total[this_isotope];
+	unsigned col_end  = n_isotopes + rxn_numbers_total[this_isotope+1];
 	unsigned col = col_start + 0;
+	unsigned this_index = row*total_cols+col;
 
 	//
-	printf("tid %d here isotopes %u this isotope %u\n",tid,isotopes,this_isotope);
+	printf("\n");
+	printf("tid %d here isotopes %u this isotope %u\n",tid,n_isotopes,this_isotope);
 	printf("energy of grid index %u is %10.8E\n",row,energy_grid[row]);
-	printf("column is %u, rxn is %u, total columns %u, index is %u, total xs is %10.8E\n",col,rxn_numbers[col],total_cols,row*total_cols+col,xs[row*total_cols+col]);
-
+	printf("column is %u, rxn is %u, total columns %u, index is %u, total xs is %10.8E\n",col,rxn_numbers[col],total_cols,this_index,xs[this_index]);
+	printf("Q %6.4E\n",Q[col]);
+	printf("awr %6.4E\n",awr[col]);
+	printf("temp %6.4E\n",temp[col]);
 	printf("scattering dist pointer %p\n",dist_scatter);
+	printf("scattering dist pointers, lower %p upper %p\n",dist_scatter[this_index].lower,dist_scatter[this_index].upper);
+	if (dist_scatter[this_index].lower != 0x0){
+		printf("lower scattering dist, erg %6.8E len %u law %u intt %u\n",dist_scatter[this_index].lower[0].erg,dist_scatter[this_index].lower[0].len,dist_scatter[this_index].lower[0].law,dist_scatter[this_index].lower[0].intt);
+		printf("lower scattering dist, erg %6.8E len %u law %u intt %u\n",dist_scatter[this_index].upper[0].erg,dist_scatter[this_index].upper[0].len,dist_scatter[this_index].upper[0].law,dist_scatter[this_index].upper[0].intt);
+	}
+	else{
+		printf("Null dist pointers\n");
+	}
 
 
 }

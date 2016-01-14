@@ -263,7 +263,7 @@ class cross_section_data:
 				MT_num_array[n] = MT_num_array[n]+1000
 		print "  ----- MT reaction number list ----- "
 		print MT_num_array
-		print len(MT_num_array)
+		#print len(MT_num_array)
 		return MT_num_array
 
 	##
@@ -313,7 +313,7 @@ class cross_section_data:
 	# \returns lengths - lengths array
 	def _get_length_numbers_pointer(self):
 		lengths = numpy.ascontiguousarray( numpy.array([self.num_isotopes, self.num_main_E, self.num_reactions], order='C') ,dtype=numpy.uint32)
-		print lengths
+		#print lengths
 		return lengths
 
 	##
@@ -325,7 +325,7 @@ class cross_section_data:
 		numbers = numpy.cumsum(numbers)
 		numbers = numpy.insert(numbers,0,0)
 		numbers = numpy.ascontiguousarray(numbers,dtype=numpy.uint32)
-		print numbers
+		#print numbers
 		return numbers
 
 	##
@@ -358,7 +358,7 @@ class cross_section_data:
 		# get the energy of this index
 		this_E = self.MT_E_grid[row]
 
-		print MTnum
+		#print MTnum
 
 		# do the cases
 		if hasattr(table,"nu_t_energy") and rxn.multiplicity>10:
@@ -524,7 +524,7 @@ class cross_section_data:
 			upper_index = next((i for i, x in enumerate(this_E < rxn.energy_dist.energy_in) if x), len(rxn.energy_dist.energy_in))
 			lower_index = upper_index - 1
 
-			print this_E, upper_index, lower_index
+			#print this_E, upper_index, lower_index
 
 			# if above upper index, return two of the last
 			if upper_index == len(rxn.energy_dist.energy_in):
