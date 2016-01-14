@@ -406,23 +406,30 @@ class cross_section_data:
 				
 			else:
 
-				# get nu_t values
-				e0 = table.nu_t_energy[nu_t_lower_index]
-				e1 = table.nu_t_energy[nu_t_upper_index]
-				v0 = table.nu_t_value[ nu_t_lower_index]
-				v1 = table.nu_t_value[ nu_t_upper_index]
+				if nu_t_lower_index == nu_t_upper_index:  
+					# above last value, just return highest erg value
+					nu_t = table.nu_t_value[ nu_t_lower_index]
+					nu_p = table.nu_p_value[ nu_p_lower_index]
 
-				# linearly interpolate
-				nu_t = (v1-v0)/(e1-e0)*(e1-this_E) + v0
+				else:
 
-				# get nu_p values
-				e0 = table.nu_p_energy[nu_p_lower_index]
-				e1 = table.nu_p_energy[nu_p_upper_index]
-				v0 = table.nu_p_value[ nu_p_lower_index]
-				v1 = table.nu_p_value[ nu_p_upper_index]
-
-				# linearly interpolate
-				nu_p = (v1-v0)/(e1-e0)*(e1-this_E) + v0
+					# get nu_t values
+					e0 = table.nu_t_energy[nu_t_lower_index]
+					e1 = table.nu_t_energy[nu_t_upper_index]
+					v0 = table.nu_t_value[ nu_t_lower_index]
+					v1 = table.nu_t_value[ nu_t_upper_index]
+	
+					# linearly interpolate
+					nu_t = (v1-v0)/(e1-e0)*(e1-this_E) + v0
+	
+					# get nu_p values
+					e0 = table.nu_p_energy[nu_p_lower_index]
+					e1 = table.nu_p_energy[nu_p_upper_index]
+					v0 = table.nu_p_value[ nu_p_lower_index]
+					v1 = table.nu_p_value[ nu_p_upper_index]
+	
+					# linearly interpolate
+					nu_p = (v1-v0)/(e1-e0)*(e1-this_E) + v0
 
 				# set values in vars
 				law			= -1

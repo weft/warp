@@ -786,11 +786,11 @@ void whistory::copy_scatter_data(){
 	unsigned total_rows = h_xsdata.energy_grid_len;
 	unsigned total_cols = h_xsdata.total_reaction_channels + h_xsdata.n_isotopes;
 
-	//ALLOCATE THE ARRAYS.
+	// allocate host arrays
 	h_xsdata.dist_scatter	= new dist_container [total_rows * total_cols];
 	dh_dist_scatter			= new dist_container [total_rows * total_cols];
 
-	//set total cross sections to NULL
+	// init to null pointers
 	for (row=0 ; row<h_xsdata.energy_grid_len; row++){  //start after the total xs vectors
 			for (col=0 ; col<h_xsdata.total_reaction_channels ; col++){
 				array_index = row*total_cols + col;
@@ -1063,81 +1063,283 @@ void whistory::copy_scatter_data(){
 
 }
 void whistory::copy_energy_data(){
+	// get scattering ditributions from PyNE and set up data heirarchy on host and device 
 
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Loading/copying energy data and linking..." << "\e[m \n";
+	}
 
-
-}
-void whistory::init_cross_sections(){
+	// python variables for arguments
+	PyObject	*row_obj, *col_obj, *call_string, *obj_list;
+	PyObject	*lower_erg_obj, *lower_len_obj, *lower_law_obj, *lower_intt_obj, *lower_var_obj, *lower_pdf_obj, *lower_cdf_obj; 
+	PyObject	*upper_erg_obj, *upper_len_obj, *upper_law_obj, *upper_intt_obj, *upper_var_obj, *upper_pdf_obj, *upper_cdf_obj, *next_dex_obj; 
+	Py_buffer	lower_var_buff, lower_pdf_buff, lower_cdf_buff, upper_var_buff, upper_pdf_buff, upper_cdf_buff;
 	
-	if(print_flag >= 2){
-		std::cout << "\e[1;32m" << "Loading cross sections and unionizing..." << "\e[m \n";
+	// local temp variables
+	int				row, col;
+	float			nu_t, nu_p;
+	int				this_isotope;
+	unsigned		array_index, next_dex, lower_rows;
+	unsigned		lower_var_buff_bytes,	lower_pdf_buff_bytes,	lower_cdf_buff_bytes;
+	unsigned		lower_var_buff_rows,	lower_pdf_buff_rows,	lower_cdf_buff_rows;
+	unsigned		lower_var_buff_columns,	lower_pdf_buff_columns,	lower_cdf_buff_columns;
+	unsigned		upper_var_buff_bytes,	upper_pdf_buff_bytes,	upper_cdf_buff_bytes;
+	unsigned		upper_var_buff_rows,	upper_pdf_buff_rows,	upper_cdf_buff_rows;
+	unsigned		upper_var_buff_columns,	upper_pdf_buff_columns,	upper_cdf_buff_columns;
+	dist_data		 h_lower_dist,  h_upper_dist;
+	dist_data		dh_lower_dist, dh_upper_dist;
+	dist_data		*d_lower_dist, *d_upper_dist;
+	dist_container	*dh_dist_energy;
+
+	// compute some sizes
+	unsigned total_rows = h_xsdata.energy_grid_len;
+	unsigned total_cols = h_xsdata.total_reaction_channels + h_xsdata.n_isotopes;
+
+	// allocate host arrays
+	h_xsdata.dist_energy	= new dist_container [total_rows * total_cols];
+	dh_dist_energy			= new dist_container [total_rows * total_cols];
+
+	// init to null pointers
+	for (row=0 ; row<h_xsdata.energy_grid_len; row++){  //start after the total xs vectors
+			for (col=0 ; col<h_xsdata.total_reaction_channels ; col++){
+				array_index = row*total_cols + col;
+				 h_xsdata.dist_energy[array_index].upper = 0x0;
+				 h_xsdata.dist_energy[array_index].lower = 0x0;
+				       dh_dist_energy[array_index].upper = 0x0;
+				       dh_dist_energy[array_index].lower = 0x0;
+		}
 	}
 
-	// Python variables
-	int i, do_final;
-	unsigned* length_numbers = new unsigned [3];
+	// scan through the scattering array, copying the scattering distributions and replicating pointers to 
+	// them for each main energy grid points within the distribution's grid points
+	//
+	//  --- The current method copies the scattering distributions twice.  
+	//  --- This can be eliminated via copying pointers instead of reiniting ditributions, 
+	//  --- but this has been left for now for simplicity.
+	//
+	for( col=h_xsdata.n_isotopes ; col<total_cols ; col++ ){ // going down column to stay within to same isotope, not effcient for caching, but OK here since only done at init
+		
+		// rest row index
+		row = 0;
 
-	// Make python object ready for queries - init python, load cross sections, etc.
-	do_final = init_python();
+		// print some nice info if flagged
+		if(print_flag >= 2){
+			this_isotope = -1;
+			for (int i=0;i<h_xsdata.n_isotopes+1;i++){
+				if(col>=(h_xsdata.rxn_numbers_total[i]+h_xsdata.n_isotopes) & col<(h_xsdata.rxn_numbers_total[i+1]+h_xsdata.n_isotopes)){
+					this_isotope = i;
+					break;
+				}
+			}
+			printf("   Getting energy data for isotope %s - reaction %u\n",isotopes[this_isotope].c_str(),h_xsdata.rxn_numbers[col]);
+		}
 
-	// copy various cross section arrays from python
-	copy_python_buffer(&dh_xsdata.xs,         			&h_xsdata.xs,         			"_get_MT_array_pointer");
-	copy_python_buffer(&dh_xsdata.energy_grid,			&h_xsdata.energy_grid,			"_get_main_Egrid_pointer");
-	copy_python_buffer(&dh_xsdata.rxn_numbers,			&h_xsdata.rxn_numbers,			"_get_MT_numbers_pointer");
-	copy_python_buffer(&dh_xsdata.rxn_numbers_total,	&h_xsdata.rxn_numbers_total,	"_get_MT_numbers_total_pointer");
-	copy_python_buffer(&dh_xsdata.awr,					&h_xsdata.awr,					"_get_awr_pointer");
-	copy_python_buffer(&dh_xsdata.temp,					&h_xsdata.temp,					"_get_temp_pointer");
-	copy_python_buffer(&dh_xsdata.Q,					&h_xsdata.Q,					"_get_Q_pointer");
-	copy_python_buffer(									&length_numbers,				"_get_length_numbers_pointer");
-	dh_xsdata.n_isotopes				= h_xsdata.n_isotopes				= length_numbers[0];				
-	dh_xsdata.energy_grid_len			= h_xsdata.energy_grid_len			= length_numbers[1];	
-	dh_xsdata.total_reaction_channels	= h_xsdata.total_reaction_channels	= length_numbers[2];
+		while(row<total_rows){
 
-	// copy scattering data
-	copy_scatter_data();
-	check_cuda(cudaPeekAtLastError());
+			// compute array index
+			array_index = row*total_cols + col;
 
-	// copy energy data
-	//copy_energy_data(&temp_xsdata.dist_energy,  &h_xsdata.dist_energy,  xsdat_instance);
-	//check_cuda(cudaPeekAtLastError());
+			// call python object, which returns the two buffers 
+			// and the main e grid index that it needs to be replicated to
+			row_obj     = PyInt_FromLong     (row);
+			col_obj     = PyInt_FromLong     (col);
+			call_string = PyString_FromString("_get_energy_data");
+			obj_list    = PyObject_CallMethodObjArgs(xsdat_instance, call_string, row_obj, col_obj, NULL);
+			PyErr_Print();
 
-	// intialization complete, copy host structure (containing device pointers) to device structure
-	cudaMemcpy( d_xsdata,	&dh_xsdata,	1*sizeof(cross_section_data),	cudaMemcpyHostToDevice);
-	check_cuda(cudaPeekAtLastError());
+			// get objects in the returned list
+			lower_erg_obj	= PyList_GetItem(obj_list,0);
+			lower_len_obj	= PyList_GetItem(obj_list,1);
+			lower_law_obj	= PyList_GetItem(obj_list,2);
+			lower_intt_obj	= PyList_GetItem(obj_list,3);
+			lower_var_obj	= PyList_GetItem(obj_list,4);
+			lower_pdf_obj	= PyList_GetItem(obj_list,5);
+			lower_cdf_obj	= PyList_GetItem(obj_list,6);
+			upper_erg_obj	= PyList_GetItem(obj_list,7);
+			upper_len_obj	= PyList_GetItem(obj_list,8);
+			upper_law_obj	= PyList_GetItem(obj_list,9);
+			upper_intt_obj	= PyList_GetItem(obj_list,10);
+			upper_var_obj	= PyList_GetItem(obj_list,11);
+			upper_pdf_obj	= PyList_GetItem(obj_list,12);
+			upper_cdf_obj	= PyList_GetItem(obj_list,13);
+			next_dex_obj	= PyList_GetItem(obj_list,14);
+			PyErr_Print();
 
-	// launch a test kernel...
-	test_function( NUM_THREADS, 1, d_xsdata, d_particles, d_tally);
-	check_cuda(cudaPeekAtLastError());
+			// copy single values to temp objects
+			h_lower_dist.erg	=	PyFloat_AsDouble(	lower_erg_obj);
+			h_lower_dist.len	=	PyInt_AsLong(		lower_len_obj);
+			h_lower_dist.law	=	PyInt_AsLong(		lower_law_obj);
+			h_lower_dist.intt	=	PyInt_AsLong(		lower_intt_obj);
+			h_upper_dist.erg	=	PyFloat_AsDouble(	upper_erg_obj);
+			h_upper_dist.len	=	PyInt_AsLong(		upper_len_obj);
+			h_upper_dist.law	=	PyInt_AsLong(		upper_law_obj);
+			h_upper_dist.intt	=	PyInt_AsLong(		upper_intt_obj);
+			next_dex			=	PyInt_AsLong(		next_dex_obj);
+			PyErr_Print();
 
-	// 
-	exit(0);
 
-	// finalize python if initialized by warp
-	if(do_final){
-		Py_Finalize();
+			// decide what to put in the array according to length reported
+			if(h_lower_dist.len==0){   
+
+				// below threshold, do nothing except go to where the threshold is
+				row = next_dex;
+
+			}
+			else if (h_lower_dist.len==-1){  
+
+				// this is a fission reaction and this is nu_t, nu_p
+				// python routine linearly interpolates them, write current values
+				nu_t = PyFloat_AsDouble(	lower_erg_obj);
+				nu_p = PyFloat_AsDouble(	upper_erg_obj);
+				memcpy(& h_xsdata.dist_energy[array_index].upper , &nu_t, 1*sizeof(float) );
+				memcpy(& h_xsdata.dist_energy[array_index].lower , &nu_p, 1*sizeof(float) );
+				memcpy(       &dh_dist_energy[array_index].upper , &nu_t, 1*sizeof(float) );
+				memcpy(       &dh_dist_energy[array_index].lower , &nu_p, 1*sizeof(float) );
+
+				// go to next dex so python can do interpolation
+				row++;
+
+			}
+			else{
+				// normal scattering distributions
+				// get new pointers for temp arrays according to length reported
+				h_lower_dist.var	=	new 	float[h_lower_dist.len];
+				h_lower_dist.pdf	=	new 	float[h_lower_dist.len];
+				h_lower_dist.cdf	=	new 	float[h_lower_dist.len];
+				h_upper_dist.var	=	new 	float[h_upper_dist.len];
+				h_upper_dist.pdf	=	new 	float[h_upper_dist.len];
+				h_upper_dist.cdf	=	new 	float[h_upper_dist.len];
+
+				// get buffers from python
+				if (PyObject_CheckBuffer(lower_var_obj) &
+					PyObject_CheckBuffer(lower_pdf_obj) &
+					PyObject_CheckBuffer(lower_cdf_obj) &
+					PyObject_CheckBuffer(upper_var_obj) &
+					PyObject_CheckBuffer(upper_pdf_obj) &
+					PyObject_CheckBuffer(upper_cdf_obj) )
+					{
+					PyObject_GetBuffer( lower_var_obj, &lower_var_buff, PyBUF_ND);
+					PyObject_GetBuffer( lower_pdf_obj, &lower_pdf_buff, PyBUF_ND);
+					PyObject_GetBuffer( lower_cdf_obj, &lower_cdf_buff, PyBUF_ND);
+					PyObject_GetBuffer( upper_var_obj, &upper_var_buff, PyBUF_ND);
+					PyObject_GetBuffer( upper_pdf_obj, &upper_pdf_buff, PyBUF_ND);
+					PyObject_GetBuffer( upper_cdf_obj, &upper_cdf_buff, PyBUF_ND);
+					PyErr_Print();
+				}
+				else{
+					PyErr_Print();
+				    fprintf(stderr, "Returned object does not support buffer interface\n");
+				    return;
+				}
+	
+				// get array size info 
+				get_Py_buffer_dims(&lower_var_buff_rows, &lower_var_buff_columns, &lower_var_buff_bytes, &lower_var_buff);
+				get_Py_buffer_dims(&lower_pdf_buff_rows, &lower_pdf_buff_columns, &lower_pdf_buff_bytes, &lower_pdf_buff);
+				get_Py_buffer_dims(&lower_cdf_buff_rows, &lower_cdf_buff_columns, &lower_cdf_buff_bytes, &lower_cdf_buff);
+				get_Py_buffer_dims(&upper_var_buff_rows, &upper_var_buff_columns, &upper_var_buff_bytes, &upper_var_buff);
+				get_Py_buffer_dims(&upper_pdf_buff_rows, &upper_pdf_buff_columns, &upper_pdf_buff_bytes, &upper_pdf_buff);
+				get_Py_buffer_dims(&upper_cdf_buff_rows, &upper_cdf_buff_columns, &upper_cdf_buff_bytes, &upper_cdf_buff);
+
+				//make shapes and lengths are all the same
+				assert(lower_pdf_buff_rows		==	lower_var_buff_rows		); // shape is in elements
+				assert(lower_pdf_buff_columns	==	lower_var_buff_columns	);
+				assert(lower_cdf_buff_rows		==	lower_var_buff_rows		);
+				assert(lower_cdf_buff_columns	==	lower_var_buff_columns	);
+				assert(upper_pdf_buff_rows		==	upper_var_buff_rows		);
+				assert(upper_pdf_buff_columns	==	upper_var_buff_columns	);
+				assert(upper_cdf_buff_rows		==	upper_var_buff_rows		);
+				assert(upper_cdf_buff_columns	==	upper_var_buff_columns	);
+				assert(lower_pdf_buff_bytes==lower_var_buff_bytes); // len is in BYTES
+				assert(lower_cdf_buff_bytes==lower_var_buff_bytes);
+				assert(upper_pdf_buff_bytes==upper_var_buff_bytes);
+				assert(upper_cdf_buff_bytes==upper_var_buff_bytes);
+
+				// make sure len corresponds to float32!
+				//printf("buffer bytes %u elements %u float bytes %lu caluclated bytes %lu\n",lower_var_buff_bytes,(lower_var_buff_rows*lower_var_buff_columns),sizeof(float),(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
+				assert(lower_var_buff_bytes==(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
+				assert(lower_pdf_buff_bytes==(lower_pdf_buff_rows*lower_pdf_buff_columns)*sizeof(float));
+				assert(lower_cdf_buff_bytes==(lower_cdf_buff_rows*lower_cdf_buff_columns)*sizeof(float));
+				assert(upper_var_buff_bytes==(upper_var_buff_rows*upper_var_buff_columns)*sizeof(float));
+				assert(upper_pdf_buff_bytes==(upper_pdf_buff_rows*upper_pdf_buff_columns)*sizeof(float));
+				assert(upper_cdf_buff_bytes==(upper_cdf_buff_rows*upper_cdf_buff_columns)*sizeof(float));
+
+				// allocate device distribution arrays
+				cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes);   // len has been verified
+				cudaMalloc(&dh_lower_dist.pdf, lower_var_buff_bytes);
+				cudaMalloc(&dh_lower_dist.cdf, lower_var_buff_bytes);
+				cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes);
+				cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes);
+				cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes);
+				check_cuda(cudaPeekAtLastError());
+
+				// copy data from python buffer to host pointer in array
+				memcpy(h_lower_dist.var, lower_var_buff.buf, lower_var_buff_bytes);  
+				memcpy(h_lower_dist.pdf, lower_pdf_buff.buf, lower_var_buff_bytes);
+				memcpy(h_lower_dist.cdf, lower_cdf_buff.buf, lower_var_buff_bytes);
+				memcpy(h_upper_dist.var, upper_var_buff.buf, upper_var_buff_bytes);
+				memcpy(h_upper_dist.pdf, upper_pdf_buff.buf, upper_var_buff_bytes);
+				memcpy(h_upper_dist.cdf, upper_cdf_buff.buf, upper_var_buff_bytes);
+
+				// copy data from host arrays to device arrays
+				cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff_bytes, cudaMemcpyHostToDevice);  
+				cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff_bytes, cudaMemcpyHostToDevice);
+				cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff_bytes, cudaMemcpyHostToDevice);
+				cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice);
+				cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice);
+				cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice);
+				check_cuda(cudaPeekAtLastError());
+
+				// copy vals in structure
+				dh_lower_dist.erg	=	h_lower_dist.erg;
+				dh_lower_dist.len	=	h_lower_dist.len;
+				dh_lower_dist.law	=	h_lower_dist.law;
+				dh_lower_dist.intt	=	h_lower_dist.intt;
+				dh_upper_dist.erg	=	h_upper_dist.erg;
+				dh_upper_dist.len	=	h_upper_dist.len;
+				dh_upper_dist.law	=	h_upper_dist.law;
+				dh_upper_dist.intt	=	h_upper_dist.intt;
+
+				// allocate container
+				cudaMalloc(&d_lower_dist, 1*sizeof(dist_data));
+				cudaMalloc(&d_upper_dist, 1*sizeof(dist_data));
+				check_cuda(cudaPeekAtLastError());
+
+				// copy device pointers to device container
+				cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
+				cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
+				check_cuda(cudaPeekAtLastError());
+
+				// replicate pointers until next index
+				for (int i=row ; i<next_dex; i++){
+					array_index = i*total_cols + col;
+					h_xsdata.dist_energy[array_index].upper = &h_upper_dist;
+					h_xsdata.dist_energy[array_index].lower = &h_lower_dist;
+					      dh_dist_energy[array_index].upper =  d_upper_dist;
+					      dh_dist_energy[array_index].lower =  d_lower_dist;
+				}
+
+				// go to where the next index starts
+				row = next_dex;
+
+				//printf("next dex %u\n",next_dex);
+
+			}
+
+			PyErr_Print();
+		}
 	}
 
-	if(print_flag >= 2){
-		std::cout << "\e[1;32m" << "Making material table..." << "\e[m \n";
-	}
+	// copy host array containing device pointers to device array
+	cudaMalloc(&dh_xsdata.dist_energy,               total_rows*total_cols*sizeof(dist_container));
+	cudaMemcpy( dh_xsdata.dist_energy,dh_dist_energy,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice);
+	check_cuda(cudaPeekAtLastError());
 
-	//pass awr pointer to geometry object, make the number density table, copy pointers back
-	problem_geom.awr_list = h_xsdata.awr;
-	problem_geom.make_material_table();
-	//problem_geom.get_material_table(&n_materials,&n_isotopes,&material_list,&isotope_list,&number_density_matrix);  
-	problem_geom.get_material_table(&n_materials,&n_isotopes,&number_density_matrix);  
+	// free host array containing device pointers, not needed anymore
+	delete dh_dist_energy;
 
-	assert(n_isotopes == h_xsdata.n_isotopes);
 
-	//do cudamalloc for these arrays
-	//cudaMalloc(&d_material_list , 			n_materials*sizeof(unsigned) );
-	//cudaMalloc(&d_isotope_list , 			n_isotopes*sizeof(unsigned) );
-	cudaMalloc(&d_number_density_matrix , 	n_materials*n_isotopes*sizeof(float) );
 
-//
-//
-//
-//
+
 //    ////////////////////////////////////
 //    // do energy stuff
 //    ////////////////////////////////////
@@ -1285,7 +1487,80 @@ void whistory::init_cross_sections(){
 //	}
 
 
+}
+void whistory::init_cross_sections(){
+	
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Loading cross sections and unionizing..." << "\e[m \n";
+	}
 
+	// Python variables
+	int i, do_final;
+	unsigned* length_numbers = new unsigned [3];
+
+	// Make python object ready for queries - init python, load cross sections, etc.
+	do_final = init_python();
+
+	// copy various cross section arrays from python
+	copy_python_buffer(&dh_xsdata.xs,         			&h_xsdata.xs,         			"_get_MT_array_pointer");
+	copy_python_buffer(&dh_xsdata.energy_grid,			&h_xsdata.energy_grid,			"_get_main_Egrid_pointer");
+	copy_python_buffer(&dh_xsdata.rxn_numbers,			&h_xsdata.rxn_numbers,			"_get_MT_numbers_pointer");
+	copy_python_buffer(&dh_xsdata.rxn_numbers_total,	&h_xsdata.rxn_numbers_total,	"_get_MT_numbers_total_pointer");
+	copy_python_buffer(&dh_xsdata.awr,					&h_xsdata.awr,					"_get_awr_pointer");
+	copy_python_buffer(&dh_xsdata.temp,					&h_xsdata.temp,					"_get_temp_pointer");
+	copy_python_buffer(&dh_xsdata.Q,					&h_xsdata.Q,					"_get_Q_pointer");
+	copy_python_buffer(									&length_numbers,				"_get_length_numbers_pointer");
+	dh_xsdata.n_isotopes				= h_xsdata.n_isotopes				= length_numbers[0];				
+	dh_xsdata.energy_grid_len			= h_xsdata.energy_grid_len			= length_numbers[1];	
+	dh_xsdata.total_reaction_channels	= h_xsdata.total_reaction_channels	= length_numbers[2];
+
+	// copy scattering data
+	copy_scatter_data();
+	check_cuda(cudaPeekAtLastError());
+
+	// copy energy data
+	//copy_energy_data();
+	//check_cuda(cudaPeekAtLastError());
+
+	// intialization complete, copy host structure (containing device pointers) to device structure
+	cudaMemcpy( d_xsdata,	&dh_xsdata,	1*sizeof(cross_section_data),	cudaMemcpyHostToDevice);
+	check_cuda(cudaPeekAtLastError());
+
+	// launch a test kernel...
+	test_function( NUM_THREADS, 1, d_xsdata, d_particles, d_tally);
+	check_cuda(cudaPeekAtLastError());
+
+	// 
+	exit(0);
+
+	// finalize python if initialized by warp
+	if(do_final){
+		Py_Finalize();
+	}
+
+	if(print_flag >= 2){//
+
+	}
+
+	std::cout << "Done." << "\e[m \n";
+
+	std::cout << "\e[1;32m" << "Making material table..." << "\e[m \n";
+
+	//pass awr pointer to geometry object, make the number density table, copy pointers back
+	problem_geom.awr_list = h_xsdata.awr;
+	problem_geom.make_material_table();
+	//problem_geom.get_material_table(&n_materials,&n_isotopes,&material_list,&isotope_list,&number_density_matrix);  
+	problem_geom.get_material_table(&n_materials,&n_isotopes,&number_density_matrix);  
+
+	assert(n_isotopes == h_xsdata.n_isotopes);
+
+	//do cudamalloc for these arrays
+	//cudaMalloc(&d_material_list , 			n_materials*sizeof(unsigned) );
+	//cudaMalloc(&d_isotope_list , 			n_isotopes*sizeof(unsigned) );
+	cudaMalloc(&d_number_density_matrix , 	n_materials*n_isotopes*sizeof(float) );
+
+
+	std::cout << "Done." << "\e[m \n";
 }
 void whistory::print_xs_data(){  // 0=isotopes, 1=main E points, 2=total numer of reaction channels, 3=matrix E points, 4=angular cosine points, 5=outgoing energy points
 //	unsigned dsum = 0;
@@ -1355,9 +1630,8 @@ void whistory::write_xs_data(std::string filename){
 //		fprintf(xsfile,"% 6.4E % 6.4E % 6.4E %6.4E\n",space[j].x,space[j].y,space[j].z,E[j]);
 //	}
 //	fclose(xsfile); 
-//
-//	std::cout << "Done." << "\e[m \n";
-//
+
+
 }
 void whistory::print_pointers(){
 //	std::cout << "\e[1;32m" << "Pointer Info:" << "\e[m \n";
