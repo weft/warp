@@ -347,9 +347,6 @@ class cross_section_data:
 
 		#find the isotope we are in
 		numbers = numpy.cumsum(self.reaction_numbers_total)  #list of how many reactions in each isotope
-		#print self.reaction_numbers_total
-		#print numbers
-		#print self.reaction_numbers
 		isotope = numpy.argmax( (col - self.num_isotopes) < numbers )
 		table = self.tables[isotope]
 		MTnum = self.reaction_numbers[col]
@@ -600,25 +597,25 @@ class cross_section_data:
 		else:
 			# no distributions
 			# set all to zero (except law if there is one)
-				if hasattr(rxn,"energy_dist"):
-					law = rxn.energy_dist.law
-				else:
-					law			= 0
-				lower_intt	= 0
-				upper_intt	= 0
-				lower_erg	= 0
-				upper_erg	= 0
-				lower_len	= 0
-				upper_len	= 0
-				lower_var 	= numpy.array([0.0])
-				upper_var 	= numpy.array([0.0])
-				lower_pdf 	= numpy.array([0.0])
-				upper_pdf 	= numpy.array([0.0])
-				lower_cdf 	= numpy.array([0.0])
-				upper_cdf 	= numpy.array([0.0])
+			if hasattr(rxn,"energy_dist"):
+				law = rxn.energy_dist.law
+			else:
+				law			= 0
+			lower_intt	= 0
+			upper_intt	= 0
+			lower_erg	= 0
+			upper_erg	= 0
+			lower_len	= 0
+			upper_len	= 0
+			lower_var 	= numpy.array([0.0])
+			upper_var 	= numpy.array([0.0])
+			lower_pdf 	= numpy.array([0.0])
+			upper_pdf 	= numpy.array([0.0])
+			lower_cdf 	= numpy.array([0.0])
+			upper_cdf 	= numpy.array([0.0])
 
-				# next index
-				next_dex = len(self.MT_E_grid)
+			# next index
+			next_dex = len(self.MT_E_grid)
 
 		# return values in order as float32 arrays
 		return [numpy.ascontiguousarray(lower_erg,	dtype=numpy.float32),
@@ -653,163 +650,115 @@ class cross_section_data:
 		MTnum 	= self.reaction_numbers[col]
 		rxn   	= table.reactions[MTnum]
 
-		# get the energy from this index
+		# get the energy of this index
 		this_E = self.MT_E_grid[row]
 
-		if hasattr(rxn,"energy_dist"):
-			
-			#print "LAW="+str(rxn.energy_dist.law)+" MT="+str(MTnum)
+		#print MTnum
 
-			#get law
-			law        = rxn.energy_dist.law
+		# do the cases
+		if hasattr(rxn,"energy_dist") and hasattr(rxn.energy_dist,"energy_in"):
+			# there is no higher lavel angular table, everything is in energy_dist
+			# find where this energy lies on this grid
+			upper_index = next((i for i, x in enumerate(this_E < rxn.energy_dist.energy_in) if x), len(rxn.energy_dist.energy_in))
+			lower_index = upper_index - 1
 
-			#pack law data into vector
-			if law == 3:  
-			# level scattering
-				next_E = self.MT_E_grid[self.num_main_E-1]
-				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-			
-			elif law == 9 or law == 7: 
-			# evaporation spectrum
+			#print this_E, upper_index, lower_index
 
-				# get data
-				m_yield 	= 0	
-				if hasattr(rxn.energy_dist,"multiplicity"):
-					m_yield = rxn.energy_dist.multiplicity
-				dataE 		= rxn.energy_dist.energy_in
-				T 			= rxn.energy_dist.T
-				U 			= rxn.energy_dist.U
+			# if above upper index, return two of the last
+			if upper_index == len(rxn.energy_dist.energy_in):
+				upper_index = len(rxn.energy_dist.energy_in)-1
+				lower_index = len(rxn.energy_dist.energy_in)-1
 
-				# check length
-				assert dataE.__len__() > 0
+			# make sure above threshold
+			if lower_index < 0:
 
-				# find the index of the scattering table energy
-				if this_E >= dataE[0] and this_E <= dataE[-1]:
-					
-					data_dex = numpy.where( dataE >= this_E )[0][0]
+				# set all to zero
+				law			= 0
+				lower_intt	= 0
+				upper_intt	= 0
+				lower_erg	= 0
+				upper_erg	= 0
+				lower_len	= 0
+				upper_len	= 0
+				lower_var 	= numpy.array([0.0])
+				upper_var 	= numpy.array([0.0])
+				lower_pdf 	= numpy.array([0.0])
+				upper_pdf 	= numpy.array([0.0])
+				lower_cdf 	= numpy.array([0.0])
+				upper_cdf 	= numpy.array([0.0])
 
-					#get energy of next bin
-					if data_dex == dataE.__len__()-1:
-						next_E  = self.MT_E_grid[-1]
-						plusone = 0
-					else:
-						next_E  = dataE[data_dex+1]
-						plusone = 1
-
-					# find main E grid index of next energy
-					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-
-					# construct vector
-					vlen 			= 2
-					nextvlen		= 2
-					intt 			= 1  # assuption
-					if hasattr(rxn.energy_dist,"intt"):
-						print "INTT in law ,",law," ---- ",rxn.energy_dist.intt
-					this_T   		= numpy.ascontiguousarray( numpy.array(  [T[data_dex],T[data_dex+ plusone]]           ), dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-					this_U   		= numpy.ascontiguousarray( numpy.array(  [U,U]                                        ), dtype=numpy.float32)
-					this_Eedge		= numpy.ascontiguousarray( numpy.array(  [dataE[ data_dex], dataE[ data_dex+plusone]] ), dtype=numpy.float32)
-
-					# return
-					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,this_T,this_U,this_Eedge,numpy.array([0]),numpy.array([0]),numpy.array([0])]
-
-				else:  # return 0 if below the first energy]
-					next_E = dataE[0]
-					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-					return [nextDex,0,0,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-
-			elif law==4 or law == 44 or law==61:  
-			# Kalbach-87 tabular distribution, or correlated angle-energy dist
-
-				# get data
-				if hasattr(rxn.energy_dist,"multiplicity"):
-					m_yield    = rxn.energy_dist.multiplicity
-				else:
-					m_yield 	= 0
-				dataE   = rxn.energy_dist.energy_in
-				dataMu  = rxn.energy_dist.energy_out
-				dataCDF = rxn.energy_dist.cdf
-				dataPDF = rxn.energy_dist.pdf
-
-				# check length
-				assert dataE.__len__() > 0
-
-				# find the index of the scattering table energy
-				if this_E >= dataE[0] and this_E <= dataE[-1]:
-					
-					data_dex = numpy.where( dataE >= this_E )[0][0]
-
-					#get energy of next bin
-					if data_dex == dataE.__len__()-1:
-						next_E  = self.MT_E_grid[-1]
-						plusone = 0
-					else:
-						next_E  = dataE[data_dex+1]
-						plusone = 1
-					# find main E grid indext of next energy
-					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-
-					# construct vector
-					vlen  		=                         dataCDF[data_dex].__len__()
-					cdf   		= numpy.ascontiguousarray(dataCDF[data_dex],dtype=numpy.float32)  # C/F order doesn't matter for 1d arrays
-					pdf   		= numpy.ascontiguousarray(dataPDF[data_dex],dtype=numpy.float32)
-					mu    		= numpy.ascontiguousarray(dataMu[ data_dex], dtype=numpy.float32)
-					nextvlen 	=                         dataCDF[data_dex+ plusone].__len__()
-					nextcdf  	= numpy.ascontiguousarray(dataCDF[data_dex+ plusone],dtype=numpy.float32) 
-					nextpdf  	= numpy.ascontiguousarray(dataPDF[data_dex+ plusone],dtype=numpy.float32) 
-					nextmu   	= numpy.ascontiguousarray(dataMu[ data_dex+ plusone],dtype=numpy.float32)
-					intt 		= rxn.energy_dist.intt[data_dex]
-					
-					#check to make sure the same length
-					assert vlen == mu.__len__()
-					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,mu,cdf,pdf,nextmu,nextcdf,nextpdf]
+				# next index
+				threshold = numpy.max([rxn.threshold(),rxn.energy_dist.energy_in[0]])
+				next_dex = next((i for i, x in enumerate(threshold <= self.MT_E_grid) if x), None)
 				
-				else:  # return 0 if below the first energy]
-					next_E = dataE[0]
-					nextDex = numpy.where( self.MT_E_grid == next_E )[0][0]
-					return [nextDex,0,0,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
-			elif law==66:
-				#N-body phase space distribution
-
-				# get data
-				if hasattr(rxn.energy_dist,"multiplicity"):
-					m_yield    = rxn.energy_dist.multiplicity
-				else:
-					m_yield 	= 0
-				dataE   = rxn.energy_dist.energy
-				intt    = 0
-
-				# check length
-				assert dataE.__len__() > 0
-
-				# find the index of the scattering table energy
-				if this_E >= dataE[0] and this_E <= dataE[-1]:
-					
-					#get energy of next bin		
-					next_E   = self.MT_E_grid[-1]
-					vlen     = 3.
-					nextvlen = 3.
-
-					# find main E grid indext of next energy
-					nextDex = self.MT_E_grid.__len__()
-
-					# data
-					Q 			= numpy.ascontiguousarray(numpy.array([rxn.Q,rxn.energy_dist.nbodies,rxn.energy_dist.massratio]),dtype=numpy.float32)
-										
-					return [nextDex,this_E,next_E,vlen,nextvlen,law,intt,Q,Q,Q,Q,Q,Q]
-				
-				else:  # return 0 if below the first energy]
-					next_E = dataE[0]
-					nextDex = (numpy.where( self.MT_E_grid >= next_E )[0][0]) 
-					return [nextDex,0,0,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
 			else:
-				print "law ",law," not handled, writing nulls"
-				next_E = self.MT_E_grid[self.num_main_E-1]
-				return [(self.MT_E_grid.__len__()-1),this_E,next_E,0,0,law,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+
+				# law
+				law  = rxn.energy_dist.law
+
+				# interpolation type
+				lower_intt = rxn.energy_dist.intt[lower_index]
+				upper_intt = rxn.energy_dist.intt[upper_index]
+
+				# energies
+				lower_erg = rxn.energy_dist.energy_in[lower_index]
+				upper_erg = rxn.energy_dist.energy_in[upper_index]
+	
+				# 
+				lower_var = numpy.zeros(rxn.energy_dist.energy_out[lower_index].shape)
+				upper_var = numpy.zeros(rxn.energy_dist.energy_out[upper_index].shape)
+				lower_pdf = numpy.zeros(rxn.energy_dist.pdf[lower_index].shape)
+				upper_pdf = numpy.zeros(rxn.energy_dist.pdf[upper_index].shape)
+				lower_cdf = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
+				upper_cdf = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
+
+				# len
+				lower_len = len(lower_var)
+				upper_len = len(upper_var)
+
+				# next index
+				if upper_index == lower_index == len(rxn.energy_dist.energy_in)-1:  # above last dist energy bin
+					next_dex = len(self.MT_E_grid)
+				else:
+					next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
+
 		else:
-			#print "isotope "+str(isotope)+", MT = "+str(MTnum)+" has no energy tables"
-			next_E   = self.MT_E_grid[self.num_main_E-1]
-			nextDex = self.MT_E_grid.__len__()
-			return [nextDex,this_E,next_E,0,0,0,0,numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0]),numpy.array([0])]
+			# no distributions
+			# set all to zero (except law if there is one)
+			if hasattr(rxn,"energy_dist"):
+				law = rxn.energy_dist.law
+			else:
+				law			= 0
+			lower_intt	= 0
+			upper_intt	= 0
+			lower_erg	= 0
+			upper_erg	= 0
+			lower_len	= 0
+			upper_len	= 0
+			lower_var 	= numpy.array([0.0])
+			upper_var 	= numpy.array([0.0])
+			lower_pdf 	= numpy.array([0.0])
+			upper_pdf 	= numpy.array([0.0])
+			lower_cdf 	= numpy.array([0.0])
+			upper_cdf 	= numpy.array([0.0])
 
+			# next index
+			next_dex = len(self.MT_E_grid)
 
+		# return values in order as float32 arrays
+		return [numpy.ascontiguousarray(lower_erg,	dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_len,	dtype=numpy.float32),
+				numpy.ascontiguousarray(law,		dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_intt,	dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_var,	dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_pdf,	dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_cdf,	dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_erg,	dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_len,	dtype=numpy.float32),
+				numpy.ascontiguousarray(law,		dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_intt,	dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_var,	dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_pdf,	dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_cdf,	dtype=numpy.float32),
+				numpy.ascontiguousarray(next_dex,	dtype=numpy.float32)]
 

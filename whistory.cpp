@@ -1519,8 +1519,8 @@ void whistory::init_cross_sections(){
 	check_cuda(cudaPeekAtLastError());
 
 	// copy energy data
-	//copy_energy_data();
-	//check_cuda(cudaPeekAtLastError());
+	copy_energy_data();
+	check_cuda(cudaPeekAtLastError());
 
 	// intialization complete, copy host structure (containing device pointers) to device structure
 	cudaMemcpy( d_xsdata,	&dh_xsdata,	1*sizeof(cross_section_data),	cudaMemcpyHostToDevice);
@@ -1529,9 +1529,6 @@ void whistory::init_cross_sections(){
 	// launch a test kernel...
 	test_function( NUM_THREADS, 1, d_xsdata, d_particles, d_tally);
 	check_cuda(cudaPeekAtLastError());
-
-	// 
-	exit(0);
 
 	// finalize python if initialized by warp
 	if(do_final){
@@ -1549,18 +1546,17 @@ void whistory::init_cross_sections(){
 	//pass awr pointer to geometry object, make the number density table, copy pointers back
 	problem_geom.awr_list = h_xsdata.awr;
 	problem_geom.make_material_table();
-	//problem_geom.get_material_table(&n_materials,&n_isotopes,&material_list,&isotope_list,&number_density_matrix);  
 	problem_geom.get_material_table(&n_materials,&n_isotopes,&number_density_matrix);  
-
 	assert(n_isotopes == h_xsdata.n_isotopes);
 
-	//do cudamalloc for these arrays
-	//cudaMalloc(&d_material_list , 			n_materials*sizeof(unsigned) );
-	//cudaMalloc(&d_isotope_list , 			n_isotopes*sizeof(unsigned) );
-	cudaMalloc(&d_number_density_matrix , 	n_materials*n_isotopes*sizeof(float) );
-
-
+	// allocate material matrix (now that we have n_materials) and copy to device
+	cudaMalloc(&d_number_density_matrix,                        n_materials*n_isotopes*sizeof(float));
+	cudaMemcpy( d_number_density_matrix, number_density_matrix, n_materials*n_isotopes*sizeof(float), cudaMemcpyHostToDevice);
+	check_cuda(cudaPeekAtLastError());
+	
 	std::cout << "Done." << "\e[m \n";
+
+	exit(0);
 }
 void whistory::print_xs_data(){  // 0=isotopes, 1=main E points, 2=total numer of reaction channels, 3=matrix E points, 4=angular cosine points, 5=outgoing energy points
 //	unsigned dsum = 0;
