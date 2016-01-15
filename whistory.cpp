@@ -1585,13 +1585,23 @@ void whistory::sample_fissile_points(){
 		} 
 	}
 
+	float a=0.7;
+	float b=1.0;
+
+	if(print_flag >= 2){
+		printf("  Sampling Watt fission spectrum with a=%6.4f and b=%6.4f...\n",a,b);
+	}
+
+	sample_fissile_energy(NUM_THREADS, N, a, b, dh_particles.rn_bank, d_fissile_energy);
+
+
 	if(print_flag >= 2){
 		std::cout << "  Copying to starting points...\n";
 	}
 
-	cudaMemcpy(dh_particles.space,	d_fissile_points	,N*sizeof(spatial_data),	cudaMemcpyDeviceToDevice);
-	cudaMemcpy(dh_particles.E,    	d_fissile_energy	,N*sizeof(float),		cudaMemcpyDeviceToDevice);
-	cudaMemcpy(dh_particles.rxn,  	zeros 			    ,N*sizeof(unsigned),		cudaMemcpyHostToDevice);
+	cudaMemcpy(dh_particles.space,	d_fissile_points	,	N*sizeof(spatial_data),	cudaMemcpyDeviceToDevice);
+	cudaMemcpy(dh_particles.E,		d_fissile_energy	,	N*sizeof(float),		cudaMemcpyDeviceToDevice);
+	cudaMemcpy(dh_particles.rxn,	zeros 				,	N*sizeof(unsigned),		cudaMemcpyHostToDevice);
 	//cudaFree(d_fissile_points);
 
 	if(print_flag >= 2){
@@ -1741,63 +1751,63 @@ void whistory::reset_fixed(){
 }
 void whistory::run(){
 
-//	std::string runtype = "UNDEFINED";
-//	if     (RUN_FLAG==0){runtype="fixed";}
-//	else if(RUN_FLAG==1){runtype="criticality";}
-//
-//	double keff = 0.0;
-//	float keff_cycle = 0.0;
-//	float it = 0.0;
-//	unsigned current_fission_index = 0;
-//	unsigned current_fission_index_temp = 0;
-//	unsigned Nrun = N;
-//	int difference = 0;
-//	int iteration = 0;
-//	int iteration_total=0;
-//	unsigned converged = 0;
-//	unsigned active_size1, active_gap, escatter_N, escatter_start, iscatter_N, iscatter_start, cscatter_N, cscatter_start, fission_N, fission_start;
-//	std::string fiss_name, stats_name;
-//	FILE* statsfile;
-//	float runtime = get_time();
-//
-//	if(RUN_FLAG==0){
-//		reset_fixed();
-//		converged=1;
-//		n_skip=0;
-//	}
-//	else if(RUN_FLAG==1){
-//		sample_fissile_points();
-//	}
-//
-//	// init run vars for cycle
-//	if(RUN_FLAG==0){
-//		Nrun=Ndataset;
-//	}
-//	else if(RUN_FLAG==1){
-//		Nrun=N;
-//	}
-//	keff_cycle = 0;
-//
-//	if(print_flag>=1){
-//		printf("\e[1;32m--- Running in\e[m \e[1;31m%s\e[m \e[1;32msource mode --- \e[m \n",runtype.c_str());
-//		printf("\e[1;32m--- Skipping %u cycles, Running %u ACTIVE CYCLES, %u histories each--- \e[m \n",n_skip,n_cycles,N);
-//	}
-//
-//	// make sure fissile_points file is cleared
-//	//if(dump_flag>=3){          // level 3 includes fissile points
-//	//	fiss_name=filename;
-//	//	fiss_name.append(".fission_points.png");
-//	//	FILE* ffile = fopen(fiss_name.c_str(),"w");
-//	//	fclose(ffile);
-//	//}
-//
-//	// open file for run stats
-//	if(dump_flag>=2){         // level 2 includes stats files
-//		stats_name=filename;
-//		stats_name.append(".stats");
-//		statsfile = fopen(stats_name.c_str(),"w");
-//	}
-//
+	std::string runtype = "UNDEFINED";
+	if     (RUN_FLAG==0){runtype="fixed";}
+	else if(RUN_FLAG==1){runtype="criticality";}
+
+	double keff = 0.0;
+	float keff_cycle = 0.0;
+	float it = 0.0;
+	unsigned current_fission_index = 0;
+	unsigned current_fission_index_temp = 0;
+	unsigned Nrun = N;
+	int difference = 0;
+	int iteration = 0;
+	int iteration_total=0;
+	unsigned converged = 0;
+	unsigned active_size1, active_gap, escatter_N, escatter_start, iscatter_N, iscatter_start, cscatter_N, cscatter_start, fission_N, fission_start;
+	std::string fiss_name, stats_name;
+	FILE* statsfile;
+	float runtime = get_time();
+
+	if(RUN_FLAG==0){
+		reset_fixed();
+		converged=1;
+		n_skip=0;
+	}
+	else if(RUN_FLAG==1){
+		sample_fissile_points();
+	}
+
+	// init run vars for cycle
+	if(RUN_FLAG==0){
+		Nrun=Ndataset;
+	}
+	else if(RUN_FLAG==1){
+		Nrun=N;
+	}
+	keff_cycle = 0;
+
+	if(print_flag>=1){
+		printf("\e[1;32m--- Running in\e[m \e[1;31m%s\e[m \e[1;32msource mode --- \e[m \n",runtype.c_str());
+		printf("\e[1;32m--- Skipping %u cycles, Running %u ACTIVE CYCLES, %u histories each--- \e[m \n",n_skip,n_cycles,N);
+	}
+
+	// make sure fissile_points file is cleared
+	//if(dump_flag>=3){          // level 3 includes fissile points
+	//	fiss_name=filename;
+	//	fiss_name.append(".fission_points.png");
+	//	FILE* ffile = fopen(fiss_name.c_str(),"w");
+	//	fclose(ffile);
+	//}
+
+	// open file for run stats
+	if(dump_flag>=2){         // level 2 includes stats files
+		stats_name=filename;
+		stats_name.append(".stats");
+		statsfile = fopen(stats_name.c_str(),"w");
+	}
+
 //	while(iteration<n_cycles){
 //
 //		//write source positions to file if converged
