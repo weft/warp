@@ -20,7 +20,7 @@ void iscatter( cudaStream_t, unsigned , unsigned , unsigned , unsigned*, unsigne
 void cscatter( cudaStream_t, unsigned , unsigned, unsigned, unsigned , unsigned*, unsigned* , unsigned * , unsigned * , float *, spatial_data *  ,unsigned * , float* , float* , unsigned* , float**, float**);
 void fission(  cudaStream_t , unsigned , unsigned , unsigned  , unsigned* , unsigned* , unsigned* , unsigned* , float* , spatial_data* , unsigned* , float* , unsigned* , float* , float** , float** );
 void absorb(   cudaStream_t, unsigned , unsigned , unsigned*, unsigned*  , unsigned* );
-void find_E_grid_index( unsigned , unsigned, unsigned , unsigned* , float * , float* , unsigned *, unsigned* );
+void find_E_grid_index( unsigned , unsigned, cross_section_data* , unsigned* , float* , unsigned *, unsigned* );
 void print_histories(unsigned, unsigned, unsigned *, unsigned*, spatial_data*, float*, unsigned*,unsigned*,unsigned*);
 void pop_secondaries( unsigned, unsigned, unsigned* , unsigned* , unsigned* , unsigned* , unsigned*, unsigned*, spatial_data* , float* , unsigned* , float** );
 void pop_source( unsigned ,  unsigned , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* , spatial_data* , float*  , unsigned* , float ** , float** , spatial_data* , float* , float * , float* );

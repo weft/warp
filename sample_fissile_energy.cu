@@ -42,6 +42,8 @@ __global__ void sample_fissile_energy_kernel( unsigned N , float a , float b , u
 	// write current rn back to bank
 	rn_bank[tid]	=	rn;
 
+	//printf("%10.8E\n",l*x);
+
 }
 
 void sample_fissile_energy( unsigned NUM_THREADS,  unsigned N , float a , float b , unsigned* rn_bank , float* E){

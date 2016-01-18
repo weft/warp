@@ -1808,166 +1808,167 @@ void whistory::run(){
 		statsfile = fopen(stats_name.c_str(),"w");
 	}
 
-//	while(iteration<n_cycles){
-//
-//		//write source positions to file if converged
-//		if(converged){
-//			if(dump_flag>=3){
-//				//write_to_file(d_space,d_E,N,fiss_name,"a+");
-//				bin_fission_points(dh_particles.space,N);
-//			}
-//		}
-//
-//		// reset edges and active number
-//		Nrun=N;
-//		edges[0]  = 0; 
-//		edges[1]  = 0; 
-//		edges[2]  = 0;
-//		edges[3]  = 0;
-//		edges[4]  = 0;
-//		edges[5]  = 0;
-//		edges[6]  = 0; 
-//		edges[7]  = 0;
-//		edges[8]  = 0;
-//		edges[9]  = 0;
-//		edges[10] = 0;
-//
-//		// check any previous errors
-//		check_cuda(cudaPeekAtLastError());
-//
-//		// process batch
-//		while(Nrun>0){
-//
-//			//record stats
-//			if(dump_flag >= 2){
-//				fprintf(statsfile,"%u %10.8E\n",Nrun,get_time());
-//			}
-//			if(print_flag>=3){printf("TOP OF CYCLE, Nrun = %u\n",Nrun);
-//			}
-//	
-//			// find what material we are in and nearest surface distance
-//			trace(2, Nrun);
-//			check_cuda(cudaPeekAtLastError());
-//
-//			//find the main E grid index
-//			find_E_grid_index( NUM_THREADS, Nrun, xs_length_numbers[1],  d_remap, d_xs_data_main_E_grid, d_E, d_index, d_rxn);
-//			check_cuda(cudaPeekAtLastError());
-//
-//			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
-//			macroscopic( NUM_THREADS, Nrun,  n_isotopes, n_materials, MT_columns, outer_cell, d_remap, d_space, d_isonum, d_cellnum, d_index, d_matnum, d_rxn, d_xs_data_main_E_grid, dh_particles.rn_bank, d_E, d_xs_data_MT , d_number_density_matrix, d_done);
-//			check_cuda(cudaPeekAtLastError());
-//
-//			// run tally kernel to compute spectra
-//			if(converged){
-//				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn, d_weight);
-//			}
-//			check_cuda(cudaPeekAtLastError());
-//
-//			// run microscopic kernel to find reaction type
-//			microscopic( NUM_THREADS, Nrun, n_isotopes, MT_columns, d_remap, d_isonum, d_index, d_xs_data_main_E_grid, dh_particles.rn_bank, d_E, d_xs_data_MT , d_xs_MT_numbers_total, d_xs_MT_numbers, d_xs_data_Q, d_rxn, d_Q, d_done);
-//			check_cuda(cudaPeekAtLastError());
-//
-//			// remap threads to still active data
-//			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
-//			check_cuda(cudaPeekAtLastError());
-//
-//			// concurrent calls to do escatter/iscatter/cscatter/fission
-//			cudaThreadSynchronize();
-//			cudaDeviceSynchronize();
-//			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
-//			iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
-//			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
-//			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start , d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_yield, d_weight, d_xs_data_scatter, d_xs_data_energy);  
-//			cudaDeviceSynchronize();
-//			check_cuda(cudaPeekAtLastError());
-//
-//			if(RUN_FLAG==0){  //fixed source
-//				// pop secondaries back in
-//				keff_cycle += reduce_yield();
-//				prep_secondaries();
-//				pop_secondaries( NUM_THREADS, Ndataset, d_completed, d_scanned, d_yield, d_done, d_index, d_rxn, d_space, d_E , dh_particles.rn_bank , d_xs_data_energy);
-//				//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
-//			}
-//			check_cuda(cudaPeekAtLastError());
-//
-//			//std::cout << "press enter to continue...\n";
-//			//std::cin.ignore();
-//
-//		}
-//
-//		//reduce yield and reset cycle
-//		if(RUN_FLAG==0){
-//			keff_cycle = 1.0 - 1.0/(keff_cycle+1.0);   // based on: Ntotal = Nsource / (1-k) 
-//			reset_fixed();
-//			Nrun=Ndataset;
-//		}
-//		else if (RUN_FLAG==1){	
-//			accumulate_keff(converged, iteration, &keff, &keff_cycle);
-//			check_cuda(cudaPeekAtLastError());
-//			accumulate_tally();
-//			check_cuda(cudaPeekAtLastError());
-//			reset_cycle(keff_cycle);
-//			check_cuda(cudaPeekAtLastError());
-//			Nrun=N;
-//		}
-//
-//		// update active iteration
-//		if (converged){
-//			iteration++;
-//		}
-//
-//		// print whatever's clever
-//		if(print_flag >= 1){
-//			if(converged){
-//				     if(RUN_FLAG==0){std::cout << "Cumulative keff/sc-mult = " << keff << " / " << 1.0/(1.0-keff) << ", ACTIVE cycle " << iteration << ", cycle keff/sc-mult = " << keff_cycle << " / " << 1.0/(1.0-keff_cycle) << "\n";}
-//				else if(RUN_FLAG==1){printf("Cumulative keff =  %8.6E +- %6.4E , ACTIVE cycle %4u, cycle keff = %8.6E\n",keff,keff_err,iteration,keff_cycle);}
-//			}
-//			else{
-//				printf("Converging fission source... skipped cycle %4u\n",iteration_total+1);
-//			}
-//		}
-//
-//		if(dump_flag>=2){
-//			fprintf(statsfile,"---- iteration %u done ----\n",iteration);
-//		}
-//
-//		//std::cout << "press enter to continue...\n";
-//		//std::cin.ignore();
-//		//exit(0);
-//
-//		// set convergence flag
-//		if( iteration_total == n_skip-1){ 
-//			converged=1;
-//			reduced_yields_total = 0;
-//		}
-//
-//		// advance iteration number, reset cycle keff
-//		iteration_total++;
-//		keff_cycle = 0.0;
-//
-//	}
-//
-//
-//	// print total transport running time
-//	runtime = get_time() - runtime;
-//	if(print_flag >= 1){
-//		if(runtime>60.0){
-//			std::cout << "RUNTIME = " << runtime/60.0 << " minutes.\n";
-//		}
-//		else{
-//			std::cout << "RUNTIME = " << runtime << " seconds.\n";
-//		}
-//	}
-//
-//	if(dump_flag>=1){
-//		write_results(runtime,keff,"w");
-//	}
-//	if(dump_flag>=2){
-//		fclose(statsfile);
-//	}
-//	if(dump_flag>=3){
-//		write_fission_points();
-//	}
+	while(iteration<n_cycles){
+
+		//write source positions to file if converged
+		if(converged){
+			if(dump_flag>=3){
+				//write_to_file(d_space,d_E,N,fiss_name,"a+");
+				bin_fission_points(dh_particles.space,N);
+			}
+		}
+
+		// reset edges and active number
+		Nrun=N;
+		edges[0]  = 0; 
+		edges[1]  = 0; 
+		edges[2]  = 0;
+		edges[3]  = 0;
+		edges[4]  = 0;
+		edges[5]  = 0;
+		edges[6]  = 0; 
+		edges[7]  = 0;
+		edges[8]  = 0;
+		edges[9]  = 0;
+		edges[10] = 0;
+
+		// check any previous errors
+		check_cuda(cudaPeekAtLastError());
+
+		// process batch
+		while(Nrun>0){
+
+			//record stats
+			if(dump_flag >= 2){
+				fprintf(statsfile,"%u %10.8E\n",Nrun,get_time());
+			}
+			if(print_flag>=3){printf("TOP OF CYCLE, Nrun = %u\n",Nrun);
+			}
+	
+			// find what material we are in and nearest surface distance
+			trace(2, Nrun);
+			check_cuda(cudaPeekAtLastError());
+
+			//find the main E grid index
+			find_E_grid_index( NUM_THREADS, Nrun, d_xsdata, d_remap, dh_particles.E, dh_particles.index, dh_particles.rxn);
+			check_cuda(cudaPeekAtLastError());
+			exit(0);
+
+			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
+			//macroscopic( NUM_THREADS, Nrun,  n_isotopes, n_materials, MT_columns, outer_cell, d_remap, d_space, d_isonum, d_cellnum, d_index, d_matnum, d_rxn, d_xs_data_main_E_grid, dh_particles.rn_bank, d_E, d_xs_data_MT , d_number_density_matrix, d_done);
+			//check_cuda(cudaPeekAtLastError());
+
+			// run tally kernel to compute spectra
+			//if(converged){
+			//	tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn, d_weight);
+			//}
+			//check_cuda(cudaPeekAtLastError());
+
+			// run microscopic kernel to find reaction type
+			//microscopic( NUM_THREADS, Nrun, n_isotopes, MT_columns, d_remap, d_isonum, d_index, d_xs_data_main_E_grid, dh_particles.rn_bank, d_E, d_xs_data_MT , d_xs_MT_numbers_total, d_xs_MT_numbers, d_xs_data_Q, d_rxn, d_Q, d_done);
+			//check_cuda(cudaPeekAtLastError());
+
+			// remap threads to still active data
+			//remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
+			//check_cuda(cudaPeekAtLastError());
+
+			// concurrent calls to do escatter/iscatter/cscatter/fission
+			//cudaThreadSynchronize();
+			//cudaDeviceSynchronize();
+			//escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
+			//iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
+			//cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
+			//fission ( stream[3], NUM_THREADS,   fission_N,  fission_start , d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_yield, d_weight, d_xs_data_scatter, d_xs_data_energy);  
+			//cudaDeviceSynchronize();
+			//check_cuda(cudaPeekAtLastError());
+
+			//if(RUN_FLAG==0){  //fixed source
+			//	// pop secondaries back in
+			//	keff_cycle += reduce_yield();
+			//	prep_secondaries();
+			//	pop_secondaries( NUM_THREADS, Ndataset, d_completed, d_scanned, d_yield, d_done, d_index, d_rxn, d_space, d_E , dh_particles.rn_bank , d_xs_data_energy);
+			//	//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
+			//}
+			//check_cuda(cudaPeekAtLastError());
+
+			//std::cout << "press enter to continue...\n";
+			//std::cin.ignore();
+
+		}
+
+		//reduce yield and reset cycle
+		//if(RUN_FLAG==0){
+		//	keff_cycle = 1.0 - 1.0/(keff_cycle+1.0);   // based on: Ntotal = Nsource / (1-k) 
+		//	reset_fixed();
+		//	Nrun=Ndataset;
+		//}
+		//else if (RUN_FLAG==1){	
+		//	accumulate_keff(converged, iteration, &keff, &keff_cycle);
+		//	check_cuda(cudaPeekAtLastError());
+		//	accumulate_tally();
+		//	check_cuda(cudaPeekAtLastError());
+		//	reset_cycle(keff_cycle);
+		//	check_cuda(cudaPeekAtLastError());
+		//	Nrun=N;
+		//}
+
+		// update active iteration
+		if (converged){
+			iteration++;
+		}
+
+		// print whatever's clever
+		if(print_flag >= 1){
+			if(converged){
+				     if(RUN_FLAG==0){std::cout << "Cumulative keff/sc-mult = " << keff << " / " << 1.0/(1.0-keff) << ", ACTIVE cycle " << iteration << ", cycle keff/sc-mult = " << keff_cycle << " / " << 1.0/(1.0-keff_cycle) << "\n";}
+				else if(RUN_FLAG==1){printf("Cumulative keff =  %8.6E +- %6.4E , ACTIVE cycle %4u, cycle keff = %8.6E\n",keff,keff_err,iteration,keff_cycle);}
+			}
+			else{
+				printf("Converging fission source... skipped cycle %4u\n",iteration_total+1);
+			}
+		}
+
+		if(dump_flag>=2){
+			fprintf(statsfile,"---- iteration %u done ----\n",iteration);
+		}
+
+		//std::cout << "press enter to continue...\n";
+		//std::cin.ignore();
+		//exit(0);
+
+		// set convergence flag
+		if( iteration_total == n_skip-1){ 
+			converged=1;
+			reduced_yields_total = 0;
+		}
+
+		// advance iteration number, reset cycle keff
+		iteration_total++;
+		keff_cycle = 0.0;
+
+	}
+
+
+	// print total transport running time
+	runtime = get_time() - runtime;
+	if(print_flag >= 1){
+		if(runtime>60.0){
+			std::cout << "RUNTIME = " << runtime/60.0 << " minutes.\n";
+		}
+		else{
+			std::cout << "RUNTIME = " << runtime << " seconds.\n";
+		}
+	}
+	
+	if(dump_flag>=1){
+		write_results(runtime,keff,"w");
+	}
+	if(dump_flag>=2){
+		fclose(statsfile);
+	}
+	if(dump_flag>=3){
+		write_fission_points();
+	}
 
 }
 void whistory::write_results(float runtime, float keff, std::string opentype){

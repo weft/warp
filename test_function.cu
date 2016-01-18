@@ -81,6 +81,9 @@ __global__ void test_kernel( unsigned N , cross_section_data* d_xsdata, particle
 		printf("Null energy dist pointers\n");
 	}
 
+	//
+	printf("\n");
+
 
 }
 
