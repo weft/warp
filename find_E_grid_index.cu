@@ -7,46 +7,30 @@ __global__ void find_E_grid_index_kernel(unsigned N, cross_section_data* d_xsdat
 	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid_in >= N){return;}
 
-	// declare shared variables
-	//__shared__ 	unsigned			n_isotopes;				
-	__shared__ 	unsigned			energy_grid_len;		
-	//__shared__ 	unsigned			total_reaction_channels;
-	//__shared__ 	unsigned*			rxn_numbers;			
-	//__shared__ 	unsigned*			rxn_numbers_total;		
+	// declare shared variables			
+	__shared__ 	unsigned			energy_grid_len;				
 	__shared__ 	float*				energy_grid;			
-	//__shared__ 	float*				Q;						
-	//__shared__ 	float*				xs;						
-	//__shared__ 	float*				awr;					
-	//__shared__ 	float*				temp;					
-	//__shared__ 	dist_container*		dist_scatter;			
-	//__shared__ 	dist_container*		dist_energy; 
 
 	// have thread 1 copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
-		//n_isotopes					= d_xsdata[0].n_isotopes;								
-		energy_grid_len				= d_xsdata[0].energy_grid_len;				
-		//total_reaction_channels		= d_xsdata[0].total_reaction_channels;
-		//rxn_numbers 				= d_xsdata[0].rxn_numbers;						
-		//rxn_numbers_total			= d_xsdata[0].rxn_numbers_total;					
+		energy_grid_len				= d_xsdata[0].energy_grid_len;								
 		energy_grid 				= d_xsdata[0].energy_grid;						
-		//Q 							= d_xsdata[0].Q;												
-		//xs 							= d_xsdata[0].xs;												
-		//awr 						= d_xsdata[0].awr;										
-		//temp 						= d_xsdata[0].temp;										
-		//dist_scatter 				= d_xsdata[0].dist_scatter;						
-		//dist_energy 				= d_xsdata[0].dist_energy;  
 	}
+
+	// make sure shared loads happen before anything else
+	__syncthreads();
 
 	// return if terminated
 	unsigned this_rxn=rxn[tid_in];
 	if (this_rxn>=900){return;}
 
-	//remap
+	// remap
 	int tid=remap[tid_in];
 
 	// load data
 	float value = E[tid];
-	//unsigned donesearching = 0;
+
+	// init local
 	unsigned cnt  = 0;
 	unsigned powtwo = 2;
 	int dex  = (energy_grid_len-1) / 2;  //N_energiesgth starts at 1, duh
@@ -73,9 +57,10 @@ __global__ void find_E_grid_index_kernel(unsigned N, cross_section_data* d_xsdat
 		}
 	}
 
-
 	//write output index
 	index[tid]=dex;
+
+	//printf("rxn %u, remap[%i]=%u E %6.4E dex %u\n",this_rxn,tid_in,tid, value, dex);
 
 }
 

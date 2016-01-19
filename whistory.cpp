@@ -153,11 +153,15 @@ void whistory::init(){
 	//
 	// init/copy the rest not done previously or in OptiX
 	//
+	init_cross_sections();
 	init_host();
 	init_device();
 	init_RNG();
 	init_CUDPP();
-	init_cross_sections();
+
+	// launch a test kernel...
+	//test_function( NUM_THREADS, N, d_xsdata, d_particles, d_tally, d_remap);
+	//check_cuda(cudaPeekAtLastError());
 
 	// set inititalized flag, print done if flagged
 	is_initialized = 1;
@@ -199,7 +203,7 @@ void whistory::init_host(){
 		h_particles.space[k].surf_dist		= 10000.0;
 		h_particles.space[k].macro_t		= 0.0;
 		h_particles.space[k].enforce_BC		= 0;
-		h_particles.space[k].norm[0]		= 0;
+		h_particles.space[k].norm[0]		= 1;
 		h_particles.space[k].norm[1]		= 0;
 		h_particles.space[k].norm[2]		= 0;
 		h_particles.E[k]					= 2.5;
@@ -251,7 +255,6 @@ void whistory::init_device(){
 	// init others only used on CUDA side
 	cudaMalloc( &d_tally				,n_tallies*sizeof(tally_data)			);
 	cudaMalloc( &d_particles			,		 1*sizeof(particle_data)		);
-	cudaMalloc( &d_xsdata				,        1*sizeof(cross_section_data) 	);
 	cudaMalloc( &dh_particles.E			, Ndataset*sizeof(float)				);
 	cudaMalloc( &dh_particles.Q			, Ndataset*sizeof(float)				);
 	cudaMalloc( &dh_particles.rn_bank	, Ndataset*sizeof(float)				);
@@ -307,6 +310,7 @@ void whistory::init_device(){
 	cudaMemcpy(  d_tally,		dh_tally		, n_tallies*sizeof(tally_data),			cudaMemcpyHostToDevice);
 
 	// check errors
+	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaPeekAtLastError());
 
 }
@@ -1364,6 +1368,9 @@ void whistory::init_cross_sections(){
 	dh_xsdata.energy_grid_len			= h_xsdata.energy_grid_len			= length_numbers[1];	
 	dh_xsdata.total_reaction_channels	= h_xsdata.total_reaction_channels	= length_numbers[2];
 
+	// init device container
+	cudaMalloc( &d_xsdata,	1*sizeof(cross_section_data));
+
 	// copy scattering data
 	copy_scatter_data();
 	check_cuda(cudaPeekAtLastError());
@@ -1374,10 +1381,6 @@ void whistory::init_cross_sections(){
 
 	// intialization complete, copy host structure (containing device pointers) to device structure
 	cudaMemcpy( d_xsdata,	&dh_xsdata,	1*sizeof(cross_section_data),	cudaMemcpyHostToDevice);
-	check_cuda(cudaPeekAtLastError());
-
-	// launch a test kernel...
-	test_function( NUM_THREADS, 1, d_xsdata, d_particles, d_tally);
 	check_cuda(cudaPeekAtLastError());
 
 	// finalize python if initialized by warp
@@ -1770,6 +1773,11 @@ void whistory::run(){
 	FILE* statsfile;
 	float runtime = get_time();
 
+	if(is_initialized!=1){
+		printf("whistory instance not initialized!!!!  Exiting.\n");
+		exit(0);
+	}
+
 	if(RUN_FLAG==0){
 		reset_fixed();
 		converged=1;
@@ -1846,6 +1854,7 @@ void whistory::run(){
 			}
 	
 			// find what material we are in and nearest surface distance
+			//cudaMemcpy( d_remap					, remap						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
 			trace(2, Nrun);
 			check_cuda(cudaPeekAtLastError());
 

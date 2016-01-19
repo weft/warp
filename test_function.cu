@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "datadef.h"
 
-__global__ void test_kernel( unsigned N , cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally){
+__global__ void test_kernel( unsigned N , cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap){
 
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid >= N){return;}
@@ -37,6 +37,9 @@ __global__ void test_kernel( unsigned N , cross_section_data* d_xsdata, particle
 		dist_energy 				= d_xsdata[0].dist_energy;  
 	}
 
+	// make sure shared loads happen before anything else
+	__syncthreads();
+
 	// go about your thready business
 	unsigned row = energy_grid_len*0.99;
 	unsigned total_cols = n_isotopes + total_reaction_channels;
@@ -50,6 +53,7 @@ __global__ void test_kernel( unsigned N , cross_section_data* d_xsdata, particle
 	printf("\n ---- CUDA TEST FUNCTION ----\n");
 	printf("\n");
 	printf("tid %d here isotopes %u this isotope %u\n",tid,n_isotopes,this_isotope);
+	printf("remap[%d]=%u\n",tid,d_remap[tid]);
 	printf("energy of grid index %u is %10.8E\n",row,energy_grid[row]);
 	printf("col start %u end %u\n",col_start,col_end);
 	printf("column is %u, rxn is %u, total columns %u, index is %u, total xs is %10.8E\n",col,rxn_numbers[col],total_cols,this_index,xs[this_index]);
@@ -87,11 +91,11 @@ __global__ void test_kernel( unsigned N , cross_section_data* d_xsdata, particle
 
 }
 
-void test_function( unsigned NUM_THREADS,  unsigned N , cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally){
+void test_function( unsigned NUM_THREADS,  unsigned N , cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	test_kernel <<< blks, NUM_THREADS >>> (  N, d_xsdata, d_particles, d_tally );
+	test_kernel <<< blks, NUM_THREADS >>> (  N, d_xsdata, d_particles, d_tally , d_remap);
 	cudaThreadSynchronize();
 
 }
