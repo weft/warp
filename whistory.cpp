@@ -1861,11 +1861,11 @@ void whistory::run(){
 			//find the main E grid index
 			find_E_grid_index( NUM_THREADS, Nrun, d_xsdata, d_remap, dh_particles.E, dh_particles.index, dh_particles.rxn);
 			check_cuda(cudaPeekAtLastError());
-			exit(0);
 
 			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
-			//macroscopic( NUM_THREADS, Nrun,  n_isotopes, n_materials, MT_columns, outer_cell, d_remap, d_space, d_isonum, d_cellnum, d_index, d_matnum, d_rxn, d_xs_data_main_E_grid, dh_particles.rn_bank, d_E, d_xs_data_MT , d_number_density_matrix, d_done);
-			//check_cuda(cudaPeekAtLastError());
+			macroscopic( NUM_THREADS, Nrun, n_materials, d_xsdata, d_particles, d_remap, d_number_density_matrix );
+			check_cuda(cudaPeekAtLastError());
+			exit(0);
 
 			// run tally kernel to compute spectra
 			//if(converged){

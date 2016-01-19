@@ -3,18 +3,73 @@
 #include "datadef.h"
 #include "LCRNG.cuh"
 
-__global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_materials, unsigned n_columns, unsigned outer_cell, unsigned* remap, source_point * space, unsigned* isonum, unsigned* cellnum, unsigned * index, unsigned * matnum, unsigned* rxn, float * main_E_grid, unsigned * rn_bank, float * E, float * xs_data_MT , float* material_matrix, unsigned* done){
+__global__ void macroscopic_kernel(unsigned N, unsigned n_materials, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap, float* d_number_density_matrix){
 
 
 	int tid_in = threadIdx.x+blockIdx.x*blockDim.x; 
 	if (tid_in >= N){return;}
+
+	// declare shared variables
+	__shared__ 	unsigned			n_isotopes;				
+	//__shared__ 	unsigned			energy_grid_len;		
+	__shared__ 	unsigned			total_reaction_channels;
+	//__shared__ 	unsigned*			rxn_numbers;			
+	//__shared__ 	unsigned*			rxn_numbers_total;		
+	__shared__ 	float*				energy_grid;			
+	//__shared__ 	float*				rxn_Q;						
+	__shared__ 	float*				xs;						
+	//__shared__ 	float*				awr;					
+	//__shared__ 	float*				temp;					
+	//__shared__ 	dist_container*		dist_scatter;			
+	//__shared__ 	dist_container*		dist_energy; 
+	__shared__	spatial_data*		space;	
+	__shared__	unsigned*			rxn;	
+	__shared__	float*				E;		
+	//__shared__	float*				Q;		
+	__shared__	unsigned*			rn_bank;
+	//__shared__	unsigned*			cellnum;
+	__shared__	unsigned*			matnum;	
+	__shared__	unsigned*			isonum;	
+	//__shared__	unsigned*			yield;	
+	//__shared__	float*				weight;	
+	__shared__	unsigned*			index;	
+
+	// have thread 0 of block copy all pointers and static info into shared memory
+	if (threadIdx.x == 0){
+		n_isotopes					= d_xsdata[0].n_isotopes;								
+		//energy_grid_len				= d_xsdata[0].energy_grid_len;				
+		total_reaction_channels		= d_xsdata[0].total_reaction_channels;
+		//rxn_numbers 				= d_xsdata[0].rxn_numbers;						
+		//rxn_numbers_total			= d_xsdata[0].rxn_numbers_total;					
+		energy_grid 				= d_xsdata[0].energy_grid;						
+		//rxn_Q 						= d_xsdata[0].Q;												
+		xs 							= d_xsdata[0].xs;												
+		//awr 						= d_xsdata[0].awr;										
+		//temp 						= d_xsdata[0].temp;										
+		//dist_scatter 				= d_xsdata[0].dist_scatter;						
+		//dist_energy 				= d_xsdata[0].dist_energy; 
+		space						= d_particles[0].space;
+		rxn							= d_particles[0].rxn;
+		E							= d_particles[0].E;
+		//Q							= d_particles[0].Q;	
+		rn_bank						= d_particles[0].rn_bank;
+		//cellnum						= d_particles[0].cellnum;
+		matnum						= d_particles[0].matnum;
+		isonum						= d_particles[0].isonum;
+		//yield						= d_particles[0].yield;
+		//weight						= d_particles[0].weight;
+		index						= d_particles[0].index;
+	}
+
+	// make sure shared loads happen before anything else
+	__syncthreads();
 
 	// return if terminated
 	unsigned this_rxn=rxn[tid_in];
 	if (this_rxn>=900){return;}
 
 	//remap
-	int tid=remap[tid_in];
+	int tid=d_remap[tid_in];
 
 	// declare
 	float 		norm[3];
@@ -23,64 +78,48 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	float 		diff			= 0.0;
 	unsigned 	tope 			= 999999999;
 	float 		epsilon 		= 2.0e-5;
-	unsigned 	isdone 			= 0;
 	float 		dotp 			= 0.0;
+	float 		macro_t_total 	= 0.0;
+	unsigned 	n_columns 		= n_isotopes + total_reaction_channels;
 
 	// load from arrays
-	unsigned 	this_mat 		= matnum[tid];
-	unsigned 	dex 			= index[tid];  
+	unsigned 	this_mat 		=  matnum[tid];
+	unsigned 	dex 			=   index[tid];  
 	unsigned 	rn 				= rn_bank[tid];
-	//unsigned 	cell 			= cellnum[tid];
-	float 		this_E  		= E[tid];
-	float		x 				= space[tid].x;
-	float		y 				= space[tid].y;
-	float		z 				= space[tid].z;
-	float		xhat 			= space[tid].xhat;
-	float		yhat 			= space[tid].yhat;
-	float		zhat 			= space[tid].zhat;
-	float		surf_dist 		= space[tid].surf_dist;
-	unsigned 	enforce_BC 		= space[tid].enforce_BC;  
+	float 		this_E  		=       E[tid];
+	float		x 				=   space[tid].x;
+	float		y 				=   space[tid].y;
+	float		z 				=   space[tid].z;
+	float		xhat 			=   space[tid].xhat;
+	float		yhat 			=   space[tid].yhat;
+	float		zhat 			=   space[tid].zhat;
+	float		surf_dist 		=   space[tid].surf_dist;
+	unsigned 	enforce_BC 		=   space[tid].enforce_BC;  
 	memcpy(norm,space[tid].norm,3*sizeof(float));
-//	norm[0]=0;
-//	norm[1]=0;
-//	norm[2]=0;
 
-	float macro_t_total = 0.0;
-	float e0 = main_E_grid[dex];
-	float e1 = main_E_grid[dex+1];
+	float e0 = energy_grid[dex];
+	float e1 = energy_grid[dex+1];
 	float t0,t1,number_density,surf_minimum, xhat_new, yhat_new, zhat_new;
 
 	if(this_mat>=n_materials){
 		printf("MACRO - this_mat %u > n_materials %u!!!!!\n",this_mat,n_materials);
-        	rxn[tid_in]                     = 1001;  
-        	isonum[tid]                     = 0;
+        rxn[tid_in]   = 1001;  
+        isonum[tid]   = 0;
 		return;
 	}
 
 	if (this_rxn>801)printf("multiplicity %u entered macro at E %10.8E\n",this_rxn,this_E);
 
-	//if(dex>178889){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
-	//if(this_mat>2){printf("MATERIAL INVALID, this_mat = %u\n",this_mat);}
-	//if(n_isotopes>15){printf("N_ISOTOPES INVALID, n_isotopes = %u\n",n_isotopes);}
-	//if(n_columns>394){printf("N_COLUMNS INVALID, n_columns = %u\n",n_columns);}
-	//if(tid_in >= 370899 & tid_in <=370901){printf("this_mat %u n_isotopes %u n_columns %u dex %u\n", this_mat, n_isotopes, n_columns, dex);}
-	//if(tid_in >= 4635554 | tid_in <= 4635557){printf("n_isotopes %u this_mat %u\n",n_isotopes,this_mat);}
-
 	// compute the total macroscopic cross section for this material
 	for(int k=0; k<n_isotopes; k++){
-		//printf("index %u\n", (n_isotopes*this_mat+k));
-		number_density = material_matrix[n_isotopes*this_mat+k];
+		number_density = d_number_density_matrix[n_isotopes*this_mat+k];
 		if(number_density > 0.0){
 			//lienarly interpolate
-			//printf("val % 6.4E\n",material_matrix[n_isotopes*this_mat + k]);
-			t0 = xs_data_MT[n_columns* dex    + k];     //dex is the row number
-			t1 = xs_data_MT[n_columns*(dex+1) + k];
+			t0 = xs[n_columns* dex    + k];     //dex is the row number
+			t1 = xs[n_columns*(dex+1) + k];
 			macro_t_total += ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density;    //interpolated micro times number density
-			//printf("mat %u - density of tope %u = %6.3E\n",this_mat,k,material_matrix[n_isotopes*this_mat+k]);
 		}
 	}
-
-	//if(N==1228932){printf("tid_in %u -> tid %u, dex %u\n",tid_in, tid, dex);}
 
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;
@@ -88,12 +127,12 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	int flag = 0;
 	// determine the isotope which the reaction occurs
 	for(int k=0; k<n_isotopes; k++){
-		number_density = material_matrix[n_isotopes*this_mat+k];
+		number_density = d_number_density_matrix[n_isotopes*this_mat+k];
 		if(number_density > 0.0){
 			flag=1;
 			//lienarly interpolate
-			t0 = xs_data_MT[n_columns* dex    + k];     
-			t1 = xs_data_MT[n_columns*(dex+1) + k];
+			t0 = xs[n_columns* dex    + k];     
+			t1 = xs[n_columns*(dex+1) + k];
 			cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density ) / macro_t_total;
 			if( k==n_isotopes-1 & cum_prob<1.0){cum_prob=1.0;}  //sometimes roundoff makes this a problem
 			if( rn1 <= cum_prob){
@@ -107,11 +146,11 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 		printf("macro - ISOTOPE NOT SAMPLED CORRECTLY!  Resampling with scaled probability... tid %u rn1 %10.8E cum_prob %10.8E flag %d this_mat %u rxn %u\n",tid,rn1,cum_prob,flag,this_mat,this_rxn);
 		rn1 = rn1 * cum_prob;
 		for(int k=0; k<n_isotopes; k++){
-               		number_density = material_matrix[n_isotopes*this_mat+k];
+               		number_density = d_number_density_matrix[n_isotopes*this_mat+k];
                 	if(number_density > 0.0){
                 	        //lienarly interpolate
-                	        t0 = xs_data_MT[n_columns* dex    + k];
-                	        t1 = xs_data_MT[n_columns*(dex+1) + k];
+                	        t0 = xs[n_columns* dex    + k];
+                	        t1 = xs[n_columns*(dex+1) + k];
                 	        cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density ) / macro_t_total;
                 	        if( k==n_isotopes-1 & cum_prob<1.0){cum_prob=1.0;}  //sometimes roundoff makes this a problem
                 	        if( rn1 <= cum_prob){
@@ -145,7 +184,6 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			x += (surf_dist + 2.1*surf_minimum) * xhat;
 			y += (surf_dist + 2.1*surf_minimum) * yhat;
 			z += (surf_dist + 2.1*surf_minimum) * zhat;
-			isdone = 1;
 			this_rxn  = 999;
 			tope=999999997;  // make leaking a different isotope than resampling
 		}
@@ -160,7 +198,6 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			zhat_new = -(2.0 * dotp * norm[2]) + zhat; 
 			// flags
 			this_rxn = 801;  // reflection is 801 
-			isdone = 0;
 			tope=999999996;  // make reflection a different isotope 
 		}
 		else{ // if not outer cell, push through surface, set resample
@@ -168,7 +205,6 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 			y += (surf_dist*yhat - 1.2*epsilon*norm[1]);
 			z += (surf_dist*zhat - 1.2*epsilon*norm[2]);
 			this_rxn = 800;
-			isdone = 0;
 			tope=999999998;  // make resampling a different isotope than mis-sampling
 		}
 	}
@@ -192,16 +228,16 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_isotopes, unsigned n_m
 	rxn[tid_in] 			= this_rxn;  // rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
 	isonum[tid] 			= tope;
 	rn_bank[tid] 			= rn;
-	done[tid] 			= isdone;
 
+	printf("tope[%d]=%u\n", tid,tope);
 
 }
 
-void macroscopic( unsigned NUM_THREADS,  unsigned N, unsigned Ntopes, unsigned n_materials, unsigned n_col , unsigned outer_cell, unsigned* remap, source_point * space, unsigned* isonum, unsigned* cellnum, unsigned * index, unsigned * matnum, unsigned* rxn, float * main_E_grid, unsigned * rn_bank, float * E, float * xs_data_MT , float* material_matrix, unsigned* done){
+void macroscopic(unsigned NUM_THREADS, unsigned N, unsigned n_materials, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap, float* d_number_density_matrix ){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	macroscopic_kernel <<< blks, NUM_THREADS >>> ( N, Ntopes, n_materials, n_col, outer_cell, remap, space, isonum, cellnum, index, matnum, rxn, main_E_grid, rn_bank, E, xs_data_MT , material_matrix, done);
+	macroscopic_kernel <<< blks, NUM_THREADS >>> ( N, n_materials, d_xsdata, d_particles, d_remap, d_number_density_matrix);
 	cudaThreadSynchronize();
 
 }

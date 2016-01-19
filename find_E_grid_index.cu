@@ -11,7 +11,7 @@ __global__ void find_E_grid_index_kernel(unsigned N, cross_section_data* d_xsdat
 	__shared__ 	unsigned			energy_grid_len;				
 	__shared__ 	float*				energy_grid;			
 
-	// have thread 1 copy all pointers and static info into shared memory
+	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
 		energy_grid_len				= d_xsdata[0].energy_grid_len;								
 		energy_grid 				= d_xsdata[0].energy_grid;						
