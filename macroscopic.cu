@@ -74,14 +74,13 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, cross_secti
 	// declare
 	float 		norm[3];
 	float 		samp_dist 		= 0.0;
-	float 		cum_prob 		= 0.0;
 	float 		diff			= 0.0;
 	unsigned 	tope 			= 999999999;
 	float 		epsilon 		= 2.0e-5;
 	float 		dotp 			= 0.0;
 	float 		macro_t_total 	= 0.0;
 	int   		flag 			= 0;
-	float t0,t1,number_density,surf_minimum, xhat_new, yhat_new, zhat_new;
+	float surf_minimum, xhat_new, yhat_new, zhat_new;
 
 	// load from arrays
 	unsigned 	this_mat 		=  matnum[tid];
@@ -113,55 +112,22 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, cross_secti
 	if (this_rxn>801)printf("multiplicity %u entered macro at E %10.8E\n",this_rxn,this_E);
 
 	// compute the total macroscopic cross section for this material
-	macro_t_total = compute_macro_t(n_isotopes,
-									e0, e1, this_E,
-									&d_number_density_matrix[this_mat],  
-									&xs[dex*n_columns],  
-									&xs[(dex+1)*n_columns] 
-									);
+	macro_t_total = compute_macro_t(	n_isotopes,
+										e0, e1, this_E,
+										&d_number_density_matrix[this_mat],  
+										&xs[dex*n_columns],  
+										&xs[(dex+1)*n_columns] 				);
 
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;
 
-	// determine the isotope which the reaction occurs
-	for(int k=0; k<n_isotopes; k++){
-		number_density = d_number_density_matrix[n_isotopes*this_mat+k];
-		if(number_density > 0.0){
-			flag=1;
-			//lienarly interpolate
-			t0 = xs[n_columns* dex    + k];     
-			t1 = xs[n_columns*(dex+1) + k];
-			cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density ) / macro_t_total;
-			if( k==n_isotopes-1 & cum_prob<1.0){cum_prob=1.0;}  //sometimes roundoff makes this a problem
-			if( rn1 <= cum_prob){
-				// reactions happen in isotope k
-				tope = k;
-				break;
-			}
-		}
-	}
-	if(tope == 999999999){ 
-		printf("macro - ISOTOPE NOT SAMPLED CORRECTLY!  Resampling with scaled probability... tid %u rn1 %10.8E cum_prob %10.8E flag %d this_mat %u rxn %u\n",tid,rn1,cum_prob,flag,this_mat,this_rxn);
-		rn1 = rn1 * cum_prob;
-		for(int k=0; k<n_isotopes; k++){
-               		number_density = d_number_density_matrix[n_isotopes*this_mat+k];
-                	if(number_density > 0.0){
-                	        //lienarly interpolate
-                	        t0 = xs[n_columns* dex    + k];
-                	        t1 = xs[n_columns*(dex+1) + k];
-                	        cum_prob += ( ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density ) / macro_t_total;
-                	        if( k==n_isotopes-1 & cum_prob<1.0){cum_prob=1.0;}  //sometimes roundoff makes this a problem
-                	        if( rn1 <= cum_prob){
-                	                // reactions happen in isotope k
-                	                tope = k;
-                	                break;
-                	        }
-                	}
-        	}
-	}
-	if(tope == 999999999){
-                printf("macro - ISOTOPE  NOT SAMPLED CORRECTLY AFTER RESAMPLING WITH SCALED PROBABILITY! tid=%u rn1 %10.8E cum_prob %10.8E\n",tid,rn1,cum_prob);
-	}
+	// determine the isotope in the material for this cell
+	tope = sample_isotope(	n_isotopes, macro_t_total, get_rand(&rn),
+							e0, e1, this_E,
+							&d_number_density_matrix[this_mat],  
+							&xs[dex*n_columns],  
+							&xs[(dex+1)*n_columns]					);
+
 
 	// do surf/samp compare, calculate epsilon projection onto neutron trajectory
 	diff = surf_dist - samp_dist;

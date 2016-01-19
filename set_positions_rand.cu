@@ -1,7 +1,7 @@
 #include <cuda.h>
 #include <stdio.h>
 #include "datadef.h"
-#include "LCRNG.cuh"
+#include "warp_device.cuh"
 
 __global__ void set_positions_rand_kernel(unsigned N , unsigned outer_cell_type, spatial_data * positions_ptr , unsigned * rn_bank , float x_min , float y_min , float z_min , float x_max , float y_max , float z_max ){
 

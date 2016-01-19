@@ -1,7 +1,7 @@
 #include <cuda.h>
 #include <stdio.h>
 #include "datadef.h"
-#include "LCRNG.cuh"
+#include "warp_device.cuh"
 
 __global__ void sample_fissile_energy_kernel( unsigned N , float a , float b , unsigned* rn_bank , float* E ){
 
