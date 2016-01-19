@@ -130,49 +130,52 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, cross_secti
 
 
 	// do surf/samp compare, calculate epsilon projection onto neutron trajectory
+	// dotp positive = neutron is inside the cell (normal points out, trajectory must be coming from inside)
+	// dotp negative = neutorn is outside the cell
 	diff = surf_dist - samp_dist;
 	dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
-	surf_minimum = -epsilon / dotp;   // dotp *should* never be zero since optix won't report parallel lines
-	if (surf_minimum>surf_dist){surf_minimum = surf_dist;}
-
-	// complain if the dot product is positive.  normal should always be in the reflective sense, and normal should always be negative then.
-	if (dotp > 0.0 | dotp < -1.0){
-		//printf("norms(%u,:)=[%6.4E,%6.4E,%6.4E,%6.4E,%6.4E,%6.4E];\n",tid_in+1,x+surf_dist*xhat,y+surf_dist*yhat,z+surf_dist*zhat,norm[0],norm[1],norm[2]);
-		printf("!!! (surface normal) dot (neutron direction) is positive or < -1!   dotp = %10.8E\n",dotp);
-	}
+	surf_minimum = epsilon / fabsf(dotp);
 	
 	// surface logic
-	if( diff < surf_minimum ){  //move to surface, set resample flag, push neutron epsilon away from surface so backscatter works right
-		// enforce BC
-		if (enforce_BC == 1){  // black BC
-			x += (surf_dist + 2.1*surf_minimum) * xhat;
-			y += (surf_dist + 2.1*surf_minimum) * yhat;
-			z += (surf_dist + 2.1*surf_minimum) * zhat;
-			this_rxn  = 999;
-			tope=999999997;  // make leaking a different isotope than resampling
-		}
-		else if(enforce_BC == 2){  // specular reflection BC
-			// move epsilon off of surface
-			x += ((surf_dist*xhat) + 1.2*epsilon*norm[0]);
-			y += ((surf_dist*yhat) + 1.2*epsilon*norm[1]);
-			z += ((surf_dist*zhat) + 1.2*epsilon*norm[2]);
-			// calculate reflection
-			xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
-			yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
-			zhat_new = -(2.0 * dotp * norm[2]) + zhat; 
-			// flags
-			this_rxn = 801;  // reflection is 801 
-			tope=999999996;  // make reflection a different isotope 
-		}
-		else{ // if not outer cell, push through surface, set resample
-			x += (surf_dist*xhat - 1.2*epsilon*norm[0]);
-			y += (surf_dist*yhat - 1.2*epsilon*norm[1]);
-			z += (surf_dist*zhat - 1.2*epsilon*norm[2]);
-			this_rxn = 800;
-			tope=999999998;  // make resampling a different isotope than mis-sampling
+	if( diff < surf_minimum ){  // need to make some decisions so epsilon is handled correctly
+		// if not outer cell, neutron placement is too close to surface.  risk of next interaction not seeing the surface due to epsilon.
+		// preserve if in this cell or next, but make sure neutron is at least an epsilon away from the surface.
+		if (diff < 0.0){ // next cell, enforce BC or push through
+			if (enforce_BC == 1){  // black BC
+				x += (surf_dist + 2.1*surf_minimum) * xhat;
+				y += (surf_dist + 2.1*surf_minimum) * yhat;
+				z += (surf_dist + 2.1*surf_minimum) * zhat;
+				this_rxn  = 999;  // leaking is 999
+				tope=999999997;  
+			}
+			else if(enforce_BC == 2){  // specular reflection BC
+				// move epsilon off of surface
+				x += ((surf_dist*xhat) + 1.2*epsilon*norm[0]); // do not need copysign since dotp should always be positive (neutron always inside the outer cell)
+				y += ((surf_dist*yhat) + 1.2*epsilon*norm[1]);
+				z += ((surf_dist*zhat) + 1.2*epsilon*norm[2]);
+				// calculate reflection
+				xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
+				yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
+				zhat_new = -(2.0 * dotp * norm[2]) + zhat; 
+				// flags
+				this_rxn = 801;  // reflection is 801 
+				tope=999999996;  
+			}
+			else{   // next cell, move to intersection point, then move *out* epsilon along surface normal
+				x += surf_dist*xhat + copysignf(1.0,dotp)*1.2*epsilon*norm[0];
+				y += surf_dist*yhat + copysignf(1.0,dotp)*1.2*epsilon*norm[1];
+				z += surf_dist*zhat + copysignf(1.0,dotp)*1.2*epsilon*norm[2];
+				this_rxn = 800;  // resampling is 800
+				tope=999999998;  
+			}
+		else{   // this cell, move to intersection point, then move *in* epsilon along surface normal 
+			x += surf_dist*xhat - copysignf(1.0,dotp)*1.2*epsilon*norm[0];
+			y += surf_dist*yhat - copysignf(1.0,dotp)*1.2*epsilon*norm[1];
+			z += surf_dist*zhat - copysignf(1.0,dotp)*1.2*epsilon*norm[2];
+			this_rxn = 0;
 		}
 	}
-	else{  //move to sampled distance (adjust if within epsilon of boundary), null reaction
+	else{  // near side of minimum, can simply move the neutron
 			x += samp_dist * xhat;
 			y += samp_dist * yhat;
 			z += samp_dist * zhat;
@@ -193,7 +196,7 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, cross_secti
 	isonum[tid] 			= tope;
 	rn_bank[tid] 			= rn;
 
-	printf("tope[%d]=%u\n", tid,tope);
+	//printf("tope[%d]=%u\n", tid,tope);
 
 }
 
