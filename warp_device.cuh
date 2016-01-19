@@ -19,3 +19,20 @@ since 32-bit math is being used, 30 bits are used here
 	in[0]=nextint;
 	return randout;   						// return normalized float
 }
+
+inline __device__ float compute_macro_t( unsigned length , float energy0, float energy1, float this_E, float* multiplier, float* cdf0, float* cdf1){
+
+	float macro_t_total = 0.0;
+
+	for(int k=0; k<n_length; k++){
+			//linearly interpolate
+			t0 =  array0[k];
+			t1 =  array1[k];
+			macro_t_total += ( (array1[k]-array0[k])/(energy1-energy0)*(this_E-energy0) + array0[k] ) * multiplier[k];    //interpolated micro times number density
+		}
+	}
+
+	return macro_t_total;
+
+}
+

@@ -1,7 +1,7 @@
 #include <cuda.h>
 #include <stdio.h>
 #include "datadef.h"
-#include "LCRNG.cuh"
+#include "warp_device.cuh"
 
 __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap, float* d_number_density_matrix){
 
@@ -80,7 +80,8 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, cross_secti
 	float 		epsilon 		= 2.0e-5;
 	float 		dotp 			= 0.0;
 	float 		macro_t_total 	= 0.0;
-	unsigned 	n_columns 		= n_isotopes + total_reaction_channels;
+	int   		flag 			= 0;
+	float t0,t1,number_density,surf_minimum, xhat_new, yhat_new, zhat_new;
 
 	// load from arrays
 	unsigned 	this_mat 		=  matnum[tid];
@@ -97,9 +98,10 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, cross_secti
 	unsigned 	enforce_BC 		=   space[tid].enforce_BC;  
 	memcpy(norm,space[tid].norm,3*sizeof(float));
 
-	float e0 = energy_grid[dex];
-	float e1 = energy_grid[dex+1];
-	float t0,t1,number_density,surf_minimum, xhat_new, yhat_new, zhat_new;
+	// compute some things
+	unsigned 	n_columns 		= n_isotopes + total_reaction_channels;
+	float 		e0 				= energy_grid[dex];
+	float 		e1 				= energy_grid[dex+1];
 
 	if(this_mat>=n_materials){
 		printf("MACRO - this_mat %u > n_materials %u!!!!!\n",this_mat,n_materials);
@@ -111,20 +113,16 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, cross_secti
 	if (this_rxn>801)printf("multiplicity %u entered macro at E %10.8E\n",this_rxn,this_E);
 
 	// compute the total macroscopic cross section for this material
-	for(int k=0; k<n_isotopes; k++){
-		number_density = d_number_density_matrix[n_isotopes*this_mat+k];
-		if(number_density > 0.0){
-			//lienarly interpolate
-			t0 = xs[n_columns* dex    + k];     //dex is the row number
-			t1 = xs[n_columns*(dex+1) + k];
-			macro_t_total += ( (t1-t0)/(e1-e0)*(this_E-e0) + t0 ) * number_density;    //interpolated micro times number density
-		}
-	}
+	macro_t_total = compute_macro_t(n_isotopes,
+									e0, e1, this_E,
+									&d_number_density_matrix[this_mat],  
+									&xs[dex*n_columns],  
+									&xs[(dex+1)*n_columns] 
+									);
 
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;
-	float rn1 = get_rand(&rn);
-	int flag = 0;
+
 	// determine the isotope which the reaction occurs
 	for(int k=0; k<n_isotopes; k++){
 		number_density = d_number_density_matrix[n_isotopes*this_mat+k];
