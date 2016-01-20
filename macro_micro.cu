@@ -137,11 +137,15 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, unsigned n_
 									&xs[(dex+1)*n_columns]					);
 
 
-	// do surf/samp compare, calculate epsilon projection onto neutron trajectory
-	// dotp positive = neutron is inside the cell (normal points out, trajectory must be coming from inside)
-	// dotp negative = neutorn is outside the cell
+	// do surf/samp compare
 	diff = surf_dist - samp_dist;
-	dotp = norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
+
+	// calculate epsilon projection onto neutron trajectory
+	// dotp positive = neutron is inside the cell (normal points out, trajectory must be coming from inside)
+	// dotp negative = neutron is outside the cell
+	dotp = 	norm[0]*xhat + 
+			norm[1]*yhat + 
+			norm[2]*zhat;
 	surf_minimum = epsilon / fabsf(dotp);
 	
 	// surface logic
@@ -158,9 +162,9 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, unsigned n_
 			}
 			else if(enforce_BC == 2){  // specular reflection BC
 				// move epsilon off of surface
-				x += ((surf_dist*xhat) + 1.2*epsilon*norm[0]); // do not need copysign since dotp should always be positive (neutron always inside the outer cell)
-				y += ((surf_dist*yhat) + 1.2*epsilon*norm[1]);
-				z += ((surf_dist*zhat) + 1.2*epsilon*norm[2]);
+				x += ((surf_dist*xhat) + copysignf(1.0,dotp)*1.2*epsilon*norm[0]); 
+				y += ((surf_dist*yhat) + copysignf(1.0,dotp)*1.2*epsilon*norm[1]);
+				z += ((surf_dist*zhat) + copysignf(1.0,dotp)*1.2*epsilon*norm[2]);
 				// calculate reflection
 				xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
 				yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
@@ -277,19 +281,19 @@ __global__ void macroscopic_kernel(unsigned N, unsigned n_materials, unsigned n_
 	//
 	//
 
-	rxn[    tid_in] 		= this_rxn;  // rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
-	Q[      tid] 	 		= this_Q;
-	rn_bank[tid] 			= rn;
-	index[  tid] 			= this_dex; // write MT array index to dex instead of energy vector index
-	isonum[tid] 			= tope;
-	space[  tid].x 			= x;
-	space[  tid].y			= y;
-	space[  tid].z			= z;
-	space[  tid].macro_t 	= macro_t_total;
-	if(enforce_BC==2){
-		space[tid].xhat 	= xhat_new;  // write reflected directions for specular BC
-		space[tid].yhat 	= yhat_new;
-		space[tid].zhat 	= zhat_new;
+	rxn[    tid_in] 		=	this_rxn;			// rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
+	Q[      tid] 	 		=	this_Q;
+	rn_bank[tid] 			=	rn;
+	index[  tid] 			=	this_dex;			// write MT array index to dex instead of energy vector index
+	isonum[tid] 			=	tope;
+	space[  tid].x 			=	x;
+	space[  tid].y			=	y;
+	space[  tid].z			=	z;
+	space[  tid].macro_t 	=	macro_t_total;
+	if( enforce_BC==2 ){
+		space[tid].xhat 	=	xhat_new;			// write reflected directions for specular BC
+		space[tid].yhat 	=	yhat_new;
+		space[tid].zhat 	=	zhat_new;
 	}
 
 }
