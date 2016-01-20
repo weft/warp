@@ -20,8 +20,10 @@ since 32-bit math is being used, 30 bits are used here
 	return randout;   						// return normalized float
 }
 
-inline __device__ float compute_macro_t( unsigned length , float energy0, float energy1, float this_E, float* multiplier, float* array0, float* array1){
-
+inline __device__ float sum_cross_section( unsigned length , float energy0, float energy1, float this_E, float* multiplier, float* array0, float* array1){
+/*
+Calculates the sum of a cross section range.  Returns sum.
+*/
 	float macro_t_total = 0.0;
 
 	for( int k=0; k<length; k++ ){
@@ -33,8 +35,10 @@ inline __device__ float compute_macro_t( unsigned length , float energy0, float 
 
 }
 
-inline __device__ unsigned sample_isotope( unsigned length , float normalize, float rn, float energy0, float energy1, float this_E, float* multiplier, float* array0, float* array1){
-
+inline __device__ unsigned sample_cross_section( unsigned length , float normalize, float rn, float energy0, float energy1, float this_E, float* multiplier, float* array0, float* array1){
+/*
+Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  Returns array index.
+*/
 	unsigned	index				= 0;
 	float		cumulative_value	= 0.0;
 
@@ -50,3 +54,29 @@ inline __device__ unsigned sample_isotope( unsigned length , float normalize, fl
 
 }
 
+inline __device__ unsigned sample_probability_distribution( unsigned length , unsigned intt , float rn , float* var , float* pdf, float* cdf ){
+/*
+Samples a probability distribution with historgram or lin-lin interpolation.  Returns sampled index.
+*/
+	unsigned	index				= 0;
+	float		cumulative_value	= 0.0;
+
+	// scan the CDF,
+	for(index=0;index<length;index++){
+
+	}
+
+	if(intt=1){        // histogram interpolation
+
+	}
+	else if(intt==2){  // lin-lin interpolation
+
+	}
+	else{
+		printf("INTT=%u NOT HANDLED!\n",intt);
+		index = 4294967295;   // return -1
+	}
+
+	return index;
+
+}

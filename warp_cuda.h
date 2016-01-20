@@ -12,8 +12,7 @@ void set_positions_rand( unsigned, unsigned, unsigned, spatial_data * , unsigned
 void copy_points( unsigned , unsigned , unsigned*  , unsigned  , unsigned *  , spatial_data *  , spatial_data * , float*, float*);
 void sample_fission_spectra(unsigned , unsigned , unsigned , unsigned* , unsigned* , unsigned* , unsigned* , float * , float *, spatial_data* , float** );
 void sample_fixed_source( unsigned,unsigned,unsigned*,unsigned*,float*,spatial_data*);
-void macroscopic( unsigned , unsigned , unsigned , cross_section_data* , particle_data* , unsigned* , float* );
-void microscopic( unsigned , unsigned, unsigned , unsigned , unsigned*, unsigned* , unsigned * , float * , unsigned * , float * , float *  , unsigned * , unsigned * ,  float* , unsigned * , float*, unsigned* );
+void macro_micro( unsigned , unsigned,  unsigned , unsigned , cross_section_data* , particle_data* , tally_data* , unsigned* , float* );
 void tally_spec( unsigned ,  unsigned, unsigned , unsigned , unsigned*, spatial_data * , float* , float* , float * , unsigned * , unsigned*, unsigned*, unsigned*, float*);
 void escatter( cudaStream_t, unsigned , unsigned, unsigned , unsigned*, unsigned* , unsigned* , unsigned* , float*, spatial_data* , unsigned*, float*, float*, unsigned*, float**);
 void iscatter( cudaStream_t, unsigned , unsigned , unsigned , unsigned*, unsigned* , unsigned * , unsigned * , float *, spatial_data *  ,unsigned * , float* , float* , unsigned* , float**, float**);
