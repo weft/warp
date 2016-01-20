@@ -185,6 +185,7 @@ void whistory::init_host(){
 	h_particles.matnum	= new unsigned 		[Ndataset];
 	h_particles.rxn		= new unsigned 		[Ndataset];
 	h_particles.isonum	= new unsigned 		[Ndataset];
+	h_particles.talnum	= new int 			[Ndataset];
 	h_particles.yield	= new unsigned 		[Ndataset];
 	h_particles.weight	= new float  		[Ndataset];
 	remap				= new unsigned 		[Ndataset];
@@ -209,6 +210,7 @@ void whistory::init_host(){
 		h_particles.E[k]					= 2.5;
 		h_particles.Q[k]					= 0.0;
 		h_particles.cellnum[k]				= 0;
+		h_particles.talnum[k]				= -1;
 		h_particles.matnum[k]				= 0;
 		h_particles.rxn[k]					= 0;
 		h_particles.isonum[k]				= 0;
@@ -248,6 +250,7 @@ void whistory::init_device(){
 	// copy pointers initialized by optix
 	dh_particles.space		= (spatial_data*)	optix_obj.positions_ptr;
 	dh_particles.cellnum	= (unsigned*)		optix_obj.cellnum_ptr;
+	dh_particles.talnum		= (unsigned*)		optix_obj.talnum_ptr;
 	dh_particles.matnum		= (unsigned*)		optix_obj.matnum_ptr;
 	dh_particles.rxn		= (unsigned*)		optix_obj.rxn_ptr;
 	d_remap					= (unsigned*)		optix_obj.remap_ptr;
@@ -274,6 +277,7 @@ void whistory::init_device(){
 	// copy values from initialized host arrays
 	cudaMemcpy( dh_particles.space		, h_particles.space			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice );
 	cudaMemcpy( dh_particles.cellnum	, h_particles.cellnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	cudaMemcpy( dh_particles.talnum		, h_particles.talnum		, Ndataset*sizeof(int)			, cudaMemcpyHostToDevice );
 	cudaMemcpy( dh_particles.matnum		, h_particles.matnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
 	cudaMemcpy( dh_particles.rxn		, h_particles.rxn			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
 	cudaMemcpy( dh_particles.E			, h_particles.E				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice );

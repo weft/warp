@@ -9,20 +9,30 @@
 
 class wgeometry {
 public:
-	unsigned 	n_box; /**<  number of boxes */
-	unsigned 	n_cyl; /**<  number of cylinders */
-	unsigned 	n_hex; /**<  number of hexagons */
-	unsigned 	n_sph; /**<  number of spheres */
-	unsigned 	n_primitives; /**<  number of primitives */
-	unsigned 	n_transforms; /**<  number of transforms */
-	unsigned 	outer_cell; /**<  outermost cell (usually used for tallying) */
-	unsigned 	n_materials; /**<  number of materials */
-	unsigned 	n_isotopes; /**<  number of isotopes */
-	unsigned 	fissile_flag; /**<  indicates whether or not a material is fissile */
+	unsigned	n_box; /**<  number of boxes */
+	unsigned	n_cyl; /**<  number of cylinders */
+	unsigned	n_hex; /**<  number of hexagons */
+	unsigned	n_sph; /**<  number of spheres */
+	unsigned	n_primitives; /**<  number of primitives */
+	unsigned	n_transforms; /**<  number of transforms */
+	unsigned	outer_cell; /**<  outermost cell (usually used for tallying) */
+	unsigned	n_materials; /**<  number of materials */
+	unsigned	n_isotopes; /**<  number of isotopes */
+	unsigned	n_tallies; /**<  number of tallies */
+	unsigned	fissile_flag; /**<  indicates whether or not a material is fissile */
 	unsigned	boundary_condition; /**<  flag for the cell's boundary condition */
-	unsigned * 	material_num_list; /**<  list of material numbers */
-	unsigned * 	cell_num_list; /**<  list of cell numbers */
-	std::string datapath; /**< path to xsdir and data */
+	unsigned*	material_num_list; /**<  list of material numbers */
+	unsigned*	cell_num_list; /**<  list of cell numbers */
+	std::string	datapath; /**< path to xsdir and data */
+	std::vector<primitive>   	primitives; /**< primitives vector */
+	std::vector<unsigned>   	tally_cells; /**< primitives vector */
+	std::vector<material_def>	materials;  /**< materials vector */
+	std::vector<std::string>	isotopes;   /**< isotopes vector */
+	std::string 			    isotope_list; /**< isotope list */
+	unsigned *	isotope_list_array; /**< isotope list array */
+	unsigned *	material_list_array; /**< material list array */
+	float * 	concentrations_matrix; /**< concentrations matrix */
+	float * 	awr_list; /**< atomic weight ratio (AWR) list */
 	/**
 	 *  wgeometry constructor
 	 */ 
@@ -61,8 +71,12 @@ public:
 	unsigned add_primitive();
 	unsigned add_primitive(int , unsigned  ,std::vector<float>, std::vector<float>, std::vector<float> );
 	/**
+	 * adds a tally for the specified cell to the geometry object
+	 */ 
+	void add_tally(unsigned);
+	/**
 	 * updates the numbers of all shapes, compiles the list of all isotopes, creates
-	 * an isotope table.
+	 * an isotope table, sets tally indicies to cells.
 	 */ 
 	void update();
 	/**
@@ -178,14 +192,6 @@ public:
 	void make_hex_array(unsigned, int, float, float, float, unsigned);
 	void delete_primitive(unsigned);
 	void delete_transform(unsigned,unsigned);
-	std::vector<primitive>   	primitives; /**< primitives vector */
-	std::vector<material_def>	materials;  /**< materials vector */
-	std::vector<std::string>	isotopes;   /**< isotopes vector */
-	std::string 			    isotope_list; /**< isotope list */
-	unsigned *	isotope_list_array; /**< isotope list array */
-	unsigned *	material_list_array; /**< material list array */
-	float * 	concentrations_matrix; /**< concentrations matrix */
-	float * 	awr_list; /**< atomic weight ratio (AWR) list */
 };
 
 #endif

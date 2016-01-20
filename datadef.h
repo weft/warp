@@ -11,6 +11,7 @@
 struct wtransform {
 	unsigned	cellnum;	/**< cell number */
 	unsigned	cellmat;	/**< cell material */
+	int 		tally_index;/**< tally index*/
 	float		dx;			/**< dx */
 	float		dy;			/**< dy */
 	float		dz;			/**< dz */
@@ -28,6 +29,7 @@ struct geom_data{
 	float	max[3];		/**< array of coordinate (x,y,z) maxima */
 	float	loc[3];		/**< array of coordinate (x,y,z) locations */
 	int		cellnum;	/**< cell number */
+	int 	tally_index;/**< tally index*/
 	int		matnum;		/**< material number */
 	int		is_fissile;	/**< fissile flag */
 };
@@ -68,6 +70,7 @@ struct intersection_point {
 	int			fiss; 		/**< fissile flag */
 	float		norm[3];    /**< most recent normal */
 	int			sense;   	/**< most recent cell sense */
+	int 		tally_index /**< tally index of most recent cell */
 };
 
 /**
@@ -150,6 +153,7 @@ struct particle_data {
 	unsigned*		cellnum;		/**< distribution data redirection matrix */
 	unsigned*		matnum;			/**< distribution data redirection matrix */
 	unsigned*		isonum;			/**< distribution data redirection matrix */
+	int*			talnum;
 	unsigned*		yield;			/**< distribution data redirection matrix */
 	float*			weight;			/**< distribution data redirection matrix */
 	unsigned*		index;			/**< distribution data redirection matrix */

@@ -48,11 +48,13 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	Buffer 	 rxn_buffer;
 	Buffer 	 cellnum_buffer;
 	Buffer 	 matnum_buffer;
+	Buffer 	 talnum_buffer;
 	Buffer 	 remap_buffer;
 	Variable positions_var;
 	Variable rxn_var;
 	Variable cellnum_var;
 	Variable matnum_var;
+	Variable talnum_var;
 	Variable remap_var;
 	Variable outer_cell_var;
 	Variable boundary_condition_var;
@@ -139,6 +141,13 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	matnum_buffer -> getDevicePointer(optix_device,&matnum_ptr);
 	matnum_var = context["matnum_buffer"];
 	matnum_var -> set(matnum_buffer);
+
+	// Render talnum buffer and attach to variable, get pointer for CUDA
+	matnum_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
+	matnum_buffer -> setElementSize( sizeof(unsigned) );
+	matnum_buffer -> getDevicePointer(optix_device,&talnum_ptr);
+	matnum_var = context["talnum_buffer"];
+	matnum_var -> set(talnum_buffer);
 
 	// Render remap buffer and attach to variable, get pointer for CUDA
 	remap_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
@@ -227,6 +236,9 @@ void optix_stuff::trace(){
 	context -> launch( 0 , N );
 }
 void optix_stuff::make_geom_xform(wgeometry problem_geom){
+
+	printf("TRANSFORM-BASED INSTANTIATION ROUTINES ARE DEPRECATED AND WILL NOT WORK RIGHT.  ONLY KEPT FOR POSTERITY.\n");
+	exit(0);
 
 	using namespace optix;
 
@@ -559,10 +571,11 @@ void optix_stuff::make_geom_prim(wgeometry problem_geom){
 			// cell properties
 			geom_buffer_ptr[k].cellnum		= problem_geom.primitives[j].transforms[k].cellnum;
 			geom_buffer_ptr[k].matnum		= problem_geom.primitives[j].transforms[k].cellmat;
+			geom_buffer_ptr[k].talnum		= problem_geom.primitives[j].transforms[k].tally_index;
 			for(int z=0;z<problem_geom.get_material_count();z++){  // resolve the material number (user input) to material ID (index) to be used in the phyics routines
 				if (geom_buffer_ptr[k].matnum == problem_geom.materials[z].matnum){
-					geom_buffer_ptr[k].is_fissile =  problem_geom.materials[z].is_fissile;   // set fissile flag
-					geom_buffer_ptr[k].matnum    =  problem_geom.materials[z].id;            // hash the material number to the ID, which is the matrix index, not that user-set number
+					geom_buffer_ptr[k].is_fissile =  problem_geom.materials[z].is_fissile;    // set fissile flag
+					geom_buffer_ptr[k].matnum     =  problem_geom.materials[z].id;            // hash the material number to the ID, which is the matrix index, not that user-set number
 					break;
 				}
 			}

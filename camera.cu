@@ -106,6 +106,7 @@ RT_PROGRAM void camera()
 
 	// write cell/material numbers to buffer
 	cellnum_buffer[launch_index]	 				= payload.cell;
+	talnum_buffer[ launch_index]	 				= payload.tally_index;
 	if(trace_type == 3){  //write fissile flag if fissile query
 		matnum_buffer[launch_index] 				= payload.fiss;
 		rxn_buffer[launch_index_in] 				= 0;

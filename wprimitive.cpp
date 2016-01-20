@@ -64,6 +64,7 @@ unsigned primitive::add_transform(){
 	this_transform.dz      = 0;
 	this_transform.theta   = 0;
 	this_transform.phi     = 0;
+	this_transform.tally_index = -1;
 	transforms.push_back(this_transform);
 	n_transforms=transforms.size();
 	return (n_transforms-1);
@@ -79,6 +80,7 @@ unsigned primitive::add_transform(unsigned cellnum , float dx , float dy , float
 	this_transform.dz      = dz;
 	this_transform.theta   = theta;
 	this_transform.phi     = phi;
+	this_transform.tally_index = -1;
 	transforms.push_back(this_transform);
 	n_transforms=transforms.size();
 	return (n_transforms-1);
@@ -94,6 +96,7 @@ unsigned primitive::add_transform(unsigned cellnum ,unsigned cellmat, float dx ,
 	this_transform.dz      = dz;
 	this_transform.theta   = theta;
 	this_transform.phi     = phi;
+	this_transform.tally_index = -1;
 	transforms.push_back(this_transform);
 	n_transforms=transforms.size();
 	return (n_transforms-1);
@@ -106,14 +109,15 @@ void primitive::print_transform(){
 	std::cout << "   material = " << material << "\n";
 	for (int tnum=0;tnum<n_transforms;tnum++){
 		std::cout << "   ************ " << "\n";
-		std::cout << "   transform= " << tnum << "\n";
-		std::cout << "   cellnum  = " << transforms[tnum].cellnum << "\n";
-		std::cout << "   cellmat  = " << transforms[tnum].cellmat << "\n";
-		std::cout << "   dx       = " << transforms[tnum].dx << "\n";
-		std::cout << "   dy       = " << transforms[tnum].dy << "\n";
-		std::cout << "   dz       = " << transforms[tnum].dz << "\n";
-		std::cout << "   theta    = " << transforms[tnum].theta << "\n";
-		std::cout << "   phi      = " << transforms[tnum].phi << "\n";
+		std::cout << "   transform  = " << tnum << "\n";
+		std::cout << "   cellnum    = " << transforms[tnum].cellnum << "\n";
+		std::cout << "   cellmat    = " << transforms[tnum].cellmat << "\n";
+		std::cout << "   dx         = " << transforms[tnum].dx << "\n";
+		std::cout << "   dy         = " << transforms[tnum].dy << "\n";
+		std::cout << "   dz         = " << transforms[tnum].dz << "\n";
+		std::cout << "   theta      = " << transforms[tnum].theta << "\n";
+		std::cout << "   phi        = " << transforms[tnum].phi << "\n";
+		std::cout << "   tall_index = " << transforms[tnum].tally_index << "\n";
 	}
 }
 void primitive::print_transform(int tnum){
@@ -123,14 +127,15 @@ void primitive::print_transform(int tnum){
 	std::cout << "   type =  " << type << "\n";
 	std::cout << "   material = " << material << "\n";
 	std::cout << "   ************ " << "\n";
-	std::cout << "   transform= " << tnum << "\n";
-	std::cout << "   cellnum  = " << transforms[tnum].cellnum << "\n";
-	std::cout << "   cellmat  = " << transforms[tnum].cellmat << "\n";
-	std::cout << "   dx       = " << transforms[tnum].dx << "\n";
-	std::cout << "   dy       = " << transforms[tnum].dy << "\n";
-	std::cout << "   dz       = " << transforms[tnum].dz << "\n";
-	std::cout << "   theta    = " << transforms[tnum].theta << "\n";
-	std::cout << "   phi      = " << transforms[tnum].phi << "\n";
+	std::cout << "   transform  = " << tnum << "\n";
+	std::cout << "   cellnum    = " << transforms[tnum].cellnum << "\n";
+	std::cout << "   cellmat    = " << transforms[tnum].cellmat << "\n";
+	std::cout << "   dx         = " << transforms[tnum].dx << "\n";
+	std::cout << "   dy         = " << transforms[tnum].dy << "\n";
+	std::cout << "   dz         = " << transforms[tnum].dz << "\n";
+	std::cout << "   theta      = " << transforms[tnum].theta << "\n";
+	std::cout << "   phi        = " << transforms[tnum].phi << "\n";
+	std::cout << "   tall_index = " << transforms[tnum].tally_index << "\n";
 }
 void primitive::make_hex_array(int n, float x, float y, float PD_ratio, unsigned starting_index){
 
@@ -166,6 +171,7 @@ void primitive::make_hex_array(int n, float x, float y, float PD_ratio, unsigned
     		this_transform.dz=0;
     		this_transform.theta=0;
     		this_transform.phi=0;
+    		this_transform.tally_index = -1;
     		transforms.push_back(this_transform);
     		cnt++;
     		offsetx+=sqrt(3.0)*lattr;
