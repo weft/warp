@@ -4,7 +4,14 @@
 #include "warp_device.cuh"
 
 __global__ void macro_micro_kernel(unsigned N, unsigned n_materials, unsigned n_tallies, cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap, float* d_number_density_matrix){
-
+/*
+This kernel does a lot.  It does all the total interaction processes:  
+	samples the distance to the next interaction, 
+	determines if the interaction needs to be resampled if it is past the nearest surface
+	scores a flux tally if the current cell is flagged for one, and
+	determines the reaction type (if interaction distance doesn't need to be resampled)
+All neutrons need these things done, so these routines all live in the same routine.
+*/
 
 	int tid_in = threadIdx.x+blockIdx.x*blockDim.x; 
 	if (tid_in >= N){return;}

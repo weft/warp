@@ -1874,27 +1874,22 @@ void whistory::run(){
 			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
 			macro_micro( NUM_THREADS, Nrun, n_materials, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix );
 			check_cuda(cudaPeekAtLastError());
-			exit(0);
-
-			// run tally kernel to compute spectra - incorporate into macro_micro!!!
-			//if(converged){
-			//	tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn, d_weight);
-			//}
-			//check_cuda(cudaPeekAtLastError());
 
 			// remap threads to still active data
-			//remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
-			//check_cuda(cudaPeekAtLastError());
+			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
+			check_cuda(cudaPeekAtLastError());
+			exit(0);
 
-			// concurrent calls to do escatter/iscatter/cscatter/fission
-			//cudaThreadSynchronize();
-			//cudaDeviceSynchronize();
+			// concurrent calls to do escatter/iscatter/cscatter/fission.  Must sync after since these calls are not synchronous.
+			cudaThreadSynchronize();
+			cudaDeviceSynchronize();
+			scatter_level( NUM_THREADS, Nrun, n_materials, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix );
 			//escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
 			//iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
 			//cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
 			//fission ( stream[3], NUM_THREADS,   fission_N,  fission_start , d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_yield, d_weight, d_xs_data_scatter, d_xs_data_energy);  
-			//cudaDeviceSynchronize();
-			//check_cuda(cudaPeekAtLastError());
+			cudaDeviceSynchronize();
+			check_cuda(cudaPeekAtLastError());
 
 			//if(RUN_FLAG==0){  //fixed source
 			//	// pop secondaries back in
@@ -2054,95 +2049,95 @@ void whistory::prep_secondaries(){
 }
 void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned* escatter_start, unsigned* iscatter_N, unsigned* iscatter_start, unsigned* cscatter_N, unsigned* cscatter_start, unsigned* fission_N, unsigned* fission_start){
 
-//	unsigned resamp_N = 0;
-//	unsigned resamp_start = 0;
-//
-//	// sort key/value of rxn/tid
-//	if(*num_active>1){
-//		res = cudppRadixSort(radixplan, d_rxn, d_remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
-//		if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
-//	}
-//
-//	// launch edge detection kernel, writes mapped d_edges array
-//	reaction_edges(NUM_THREADS, *num_active, d_edges, d_rxn);
-//
-//	// calculate lengths and starting indicies for the blocks, 0 indicates not found
-//	if (edges[0]){
-//		*escatter_N 	= (edges[1]-edges[0])+1;
-//		*escatter_start	= edges[0]-1;
-//	}
-//	else{
-//		*escatter_N 	= 0;
-//		*escatter_start	= 0;
-//	}
-//	if (edges[2]){
-//		*iscatter_N 	= (edges[3]-edges[2])+1;
-//		*iscatter_start	= edges[2]-1;
-//	}
-//	else{
-//		*iscatter_N 	= 0;
-//		*iscatter_start	= 0;
-//	}
-//	if (edges[4]){
-//		*cscatter_N 	= (edges[5]-edges[4])+1;
-//		*cscatter_start	= edges[4]-1;
-//	}
-//	else{
-//		*cscatter_N 	= 0;
-//		*cscatter_start	= 0;
-//	}
-//	if (edges[6]){
-//		   resamp_N 	= (edges[7]-edges[6])+1;
-//		   resamp_start	= edges[6]-1;
-//	}
-//	else{
-//		   resamp_N 	= 0;
-//		   resamp_start	= 0;
-//	}
-//	if (edges[8]){
-//		 *fission_N 	= (edges[9]-edges[8])+1;
-//		 *fission_start	= edges[8]-1;
-//	}
-//	else{
-//		 *fission_N 	= 0;
-//		 *fission_start	= 0;
-//	}
-//
-//	//calculate total active, [10] is the starting index of >=811, so if==1, means that we are done!
-//	*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N + *fission_N;   // fission includes multiplicity, have to reprocess
-//
-//	// debug
-//	if(print_flag>=4){
-//		//print
-//		printf("num_active %u , edges[9] %u\n",*num_active,edges[9]);
-//		printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
-//		printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
-//		if(dump_flag>=2){//dump
-//			write_to_file(d_remap, d_rxn, N,"remap","w");
-//		}
-//	}
-//
-//	// ensure order
-//	if(*iscatter_N>0){ assert(*iscatter_start >= *escatter_start);}
-//	if(*cscatter_N>0){ assert(*cscatter_start >= *iscatter_start);}
-//	if(resamp_N>0){    assert(   resamp_start >= *cscatter_start);}
-//	if(*fission_N>0){  assert( *fission_start >=    resamp_start);}
-//
-//	// assert totals
-//
-//
-//	// rezero edge vector (mapped, so is reflected on GPU)
-//	edges[0]  = 0; 
-//	edges[1]  = 0; 
-//	edges[2]  = 0;
-//	edges[3]  = 0;
-//	edges[4]  = 0;
-//	edges[5]  = 0;
-//	edges[6]  = 0;
-//	edges[7]  = 0;
-//	edges[8]  = 0;
-//	edges[9]  = 0;
-//	edges[10] = 0;
+	unsigned resamp_N = 0;
+	unsigned resamp_start = 0;
+
+	// sort key/value of rxn/tid
+	if(*num_active>1){
+		res = cudppRadixSort(radixplan, dh_particles.rxn, dh_particles.remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
+		if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
+	}
+
+	// launch edge detection kernel, writes mapped d_edges array
+	reaction_edges(NUM_THREADS, *num_active, d_edges, dh_particles.rxn);
+
+	// calculate lengths and starting indicies for the blocks, 0 indicates not found
+	if (edges[0]){
+		*escatter_N 	= (edges[1]-edges[0])+1;
+		*escatter_start	= edges[0]-1;
+	}
+	else{
+		*escatter_N 	= 0;
+		*escatter_start	= 0;
+	}
+	if (edges[2]){
+		*iscatter_N 	= (edges[3]-edges[2])+1;
+		*iscatter_start	= edges[2]-1;
+	}
+	else{
+		*iscatter_N 	= 0;
+		*iscatter_start	= 0;
+	}
+	if (edges[4]){
+		*cscatter_N 	= (edges[5]-edges[4])+1;
+		*cscatter_start	= edges[4]-1;
+	}
+	else{
+		*cscatter_N 	= 0;
+		*cscatter_start	= 0;
+	}
+	if (edges[6]){
+		   resamp_N 	= (edges[7]-edges[6])+1;
+		   resamp_start	= edges[6]-1;
+	}
+	else{
+		   resamp_N 	= 0;
+		   resamp_start	= 0;
+	}
+	if (edges[8]){
+		 *fission_N 	= (edges[9]-edges[8])+1;
+		 *fission_start	= edges[8]-1;
+	}
+	else{
+		 *fission_N 	= 0;
+		 *fission_start	= 0;
+	}
+
+	//calculate total active, [10] is the starting index of >=811, so if==1, means that we are done!
+	*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N + *fission_N;   // fission includes multiplicity, have to reprocess
+
+	// debug
+	if(print_flag>=4){
+		//print
+		printf("num_active %u , edges[9] %u\n",*num_active,edges[9]);
+		printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
+		printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
+		if(dump_flag>=2){//dump
+			write_to_file(d_remap, d_rxn, N,"remap","w");
+		}
+	}
+
+	// ensure order
+	if(*iscatter_N>0){ assert(*iscatter_start >= *escatter_start);}
+	if(*cscatter_N>0){ assert(*cscatter_start >= *iscatter_start);}
+	if(resamp_N>0){    assert(   resamp_start >= *cscatter_start);}
+	if(*fission_N>0){  assert( *fission_start >=    resamp_start);}
+
+	// assert totals
+
+
+	// rezero edge vector (mapped, so is reflected on GPU)
+	edges[0]  = 0; 
+	edges[1]  = 0; 
+	edges[2]  = 0;
+	edges[3]  = 0;
+	edges[4]  = 0;
+	edges[5]  = 0;
+	edges[6]  = 0;
+	edges[7]  = 0;
+	edges[8]  = 0;
+	edges[9]  = 0;
+	edges[10] = 0;
 
 }
 void whistory::set_run_type(unsigned type_in){

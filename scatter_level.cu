@@ -3,48 +3,7 @@
 #include "datadef.h"
 #include "wfloat3.h"
 #include "binary_search.h"
-#include "LCRNG.cuh"
-
-inline __device__ void sample_therm(unsigned* rn, float* muout, float* vt, const float temp, const float E0, const float awr){
-
-	// adapted from OpenMC's sample_target_velocity subroutine in src/physics.F90
-
-	//float k 	= 8.617332478e-11; //MeV/k
-	float pi 	= 3.14159265359 ;
-	float mu,c,beta_vn,beta_vt,beta_vt_sq,r1,r2,alpha,accept_prob;
-	unsigned n;
-
-	beta_vn = sqrtf(awr * 1.00866491600 * E0 / temp );
-	alpha = 1.0/(1.0 + sqrtf(pi)*beta_vn/2.0);
-	
-	for(n=0;n<100;n++){
-	
-		r1 = get_rand(rn);
-		r2 = get_rand(rn);
-	
-		if (get_rand(rn) < alpha) {
-			beta_vt_sq = -logf(r1*r2);
-		}
-		else{
-			c = cosf(pi/2.0 * get_rand(rn) );
-			beta_vt_sq = -logf(r1) - logf(r2)*c*c;
-		}
-	
-		beta_vt = sqrtf(beta_vt_sq);
-	
-		mu = 2.0*get_rand(rn) - 1.0;
-	
-		accept_prob = sqrtf(beta_vn*beta_vn + beta_vt_sq - 2*beta_vn*beta_vt*mu) / (beta_vn + beta_vt);
-	
-		if ( get_rand(rn) < accept_prob){break;}
-	}
-
-	vt[0] = sqrtf(beta_vt_sq*2.0*temp/(awr*1.00866491600));
-	muout[0] = mu;
-	//printf("%6.4E %6.4E\n",vt[0],mu);
-
-}
-
+#include "warp_device.cuh"
 
 __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* remap, unsigned* isonum, unsigned * index, unsigned * rn_bank, float * E, source_point * space, unsigned * rxn, float * awr_list, float * Q, unsigned * done, float** scatterdat, float** energydat){
 
