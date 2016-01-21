@@ -5,7 +5,7 @@
 #include "binary_search.h"
 #include "warp_device.cuh"
 
-__global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* remap, unsigned* isonum, unsigned * index, unsigned * rn_bank, float * E, source_point * space, unsigned * rxn, float * awr_list, float * Q, unsigned * done, float** scatterdat, float** energydat){
+__global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
 	// return immediately if out of bounds
 	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
@@ -180,12 +180,12 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 
 }
 
-void iscatter( cudaStream_t stream, unsigned NUM_THREADS, unsigned N, unsigned starting_index, unsigned* remap, unsigned* isonum, unsigned * index, unsigned * rn_bank, float * E, source_point * space ,unsigned * rxn, float* awr_list, float * Q, unsigned* done, float** scatterdat, float** energydat){
+void iscatter( cudaStream_t stream, unsigned NUM_THREADS, unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
 	if(N<1){return;}
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	iscatter_kernel <<< blks, NUM_THREADS , 0 , stream >>> (  N, starting_index, remap, isonum, index, rn_bank, E, space, rxn, awr_list, Q, done, scatterdat, energydat);
+	iscatter_kernel <<< blks, NUM_THREADS , 0 , stream >>> (  N, starting_index, d_xsdata, d_particles, d_remap);
 	cudaThreadSynchronize();
 
 }
