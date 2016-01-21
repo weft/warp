@@ -143,11 +143,11 @@ void optix_stuff::init_internal(wgeometry problem_geom, unsigned compute_device_
 	matnum_var -> set(matnum_buffer);
 
 	// Render talnum buffer and attach to variable, get pointer for CUDA
-	matnum_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
-	matnum_buffer -> setElementSize( sizeof(unsigned) );
-	matnum_buffer -> getDevicePointer(optix_device,&talnum_ptr);
-	matnum_var = context["talnum_buffer"];
-	matnum_var -> set(talnum_buffer);
+	talnum_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
+	talnum_buffer -> setElementSize( sizeof(int) );
+	talnum_buffer -> getDevicePointer(optix_device,&talnum_ptr);
+	talnum_var = context["talnum_buffer"];
+	talnum_var -> set(talnum_buffer);
 
 	// Render remap buffer and attach to variable, get pointer for CUDA
 	remap_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT,RT_FORMAT_USER,N);
@@ -579,7 +579,7 @@ void optix_stuff::make_geom_prim(wgeometry problem_geom){
 					break;
 				}
 			}
-			//std::cout << "Prim/xform " << j << "," << k << " " << geom_buffer_ptr[k].min[0] << " "	<< geom_buffer_ptr[k].min[1]	<< " "	<< geom_buffer_ptr[k].min[2]	<< " "	<< geom_buffer_ptr[k].max[0]	<< " "	<< geom_buffer_ptr[k].max[1]	<< " "	<< geom_buffer_ptr[k].max[2]	<< " "	<< geom_buffer_ptr[k].cellnum	<< " "	<< geom_buffer_ptr[k].matnum	<< " "	<< geom_buffer_ptr[k].is_fissile << "\n";
+			//std::cout << "Prim/xform " << j << "," << k << " " << geom_buffer_ptr[k].min[0] << " "	<< geom_buffer_ptr[k].min[1]	<< " "	<< geom_buffer_ptr[k].min[2]	<< " "	<< geom_buffer_ptr[k].max[0]	<< " "	<< geom_buffer_ptr[k].max[1]	<< " "	<< geom_buffer_ptr[k].max[2]	<< " cellnm "	<< geom_buffer_ptr[k].cellnum	<< " matnum "	<< geom_buffer_ptr[k].matnum	<< " talnum " << geom_buffer_ptr[k].talnum << " fissile "	<< geom_buffer_ptr[k].is_fissile << "\n";
 		}
 		geom_buffer->unmap();
 
@@ -592,112 +592,6 @@ void optix_stuff::make_geom_prim(wgeometry problem_geom){
 	}
 
 }
-//float optix_stuff::trace_test(){
-//
-//	float mu, theta;
-//	float pi=3.14159;
-//
-//	//FILE* positionsfile = fopen("positionsfile","w");
-//	source_point * positions_local = new source_point[N];
-//	unsigned index;
-//	float x_min = outer_cell_dims[0];
-//	float y_min = outer_cell_dims[1];
-//	float z_min = outer_cell_dims[2];
-//	float x_max = outer_cell_dims[3];
-//	float y_max = outer_cell_dims[4];
-//	float z_max = outer_cell_dims[5];
-//
-//	//y_min = y_max = 0.0;
-//
-//	// make distribution random now
-//	int height = (int) sqrtf(N);
-//	int width  = (int) sqrtf(N);
-//	printf("image w/h %dx%d\n",width,height);
-//	float dx = (x_max-x_min)/width;
-//	float dy = (x_max-x_min)/height;
-//	float dz = (z_max-z_min)/height;
-//	for(int j=0;j<height;j++){
-//		for(int k=0;k<width;k++){
-//			mu = 2.0*get_rand()-1.0;
-//			theta = 2.0*pi*get_rand();
-//			index = j * width + k;
-//			positions_local[index].x = x_min + dx/2 + k*dx;
-//			positions_local[index].y = y_min + dy/2 + j*dy;
-//			positions_local[index].z = 0.0;//z_min + dz/2 + j*dz;
-//			positions_local[index].xhat = 	sqrtf(1-mu*mu) * cosf( theta ); 
-//			positions_local[index].yhat = 	sqrtf(1-mu*mu) * sinf( theta ); 
-//			positions_local[index].zhat = 	mu; 
-//			positions_local[index].surf_dist = 50000.0; 
-//			//printf("%6.4E %6.4E %6.4E %6.4E %6.4E %6.4E\n",positions_local[index].x,positions_local[index].y,positions_local[index].z,positions_local[index].xhat,positions_local[index].yhat,positions_local[index].zhat);
-//		}
-//	}
-//	for(index;index<N;index++){  //these are the end bits that don't fit into a square
-//			positions_local[index].x = 0.0;
-//			positions_local[index].y = 0.0;
-//			positions_local[index].z = 0.0;
-//			positions_local[index].xhat = 0.0;
-//			positions_local[index].yhat = 0.0;
-//			positions_local[index].zhat =-1.0;
-//			positions_local[index].surf_dist = 50000.0; 
-//	}
-//
-//	// copy starting positions data to pointer
-//	copy_to_device((void*)positions_ptr,positions_local,N*sizeof(source_point));
-//	
-//	// trace with with plane to generate image
-//	std::cout << "\e[1;32m" << "Tracing to image to build accel struct and to prove whereami..." << "\e[m \n";
-//	trace(2);
-//
-//	//copy to local buffer
-//	unsigned * image_local = new unsigned[width*height];
-//	if(image_type.compare("cell")==0){			copy_from_device(image_local,(void*)cellnum_ptr,width*height*sizeof(unsigned));}
-//	else if (image_type.compare("material")==0){	copy_from_device(image_local,(void*)matnum_ptr,width*height*sizeof(unsigned));}
-//
-//	// make image
-//	png::image< png::rgb_pixel > image(height, width);
-//	float * colormap = new float[3];
-//	for (size_t y = 0; y < image.get_height(); ++y)
-//	{
-//	    for (size_t x = 0; x < image.get_width(); ++x)
-//	    {
-//	    	if(image_type.compare("cell")==0){			make_color(colormap,image_local[y*width+x],mincell,maxcell);}
-//	    	else if (image_type.compare("material")==0){	make_color(colormap,image_local[y*width+x],0  ,n_materials);}
-//	        image[y][x] = png::rgb_pixel(colormap[0],colormap[1],colormap[2]);
-//	    }
-//	}
-//
-//	image.write("geom_test.png");
-//
-//	// make distribution random now
-//	for(index=0;index<N;index++){
-//			mu 				 = 2.0*get_rand()-1.0;
-//			theta				 = 2.0*pi*get_rand();
-//			positions_local[index].surf_dist =  500000;   
-//			positions_local[index].x         =     0.9 * ( ( x_max - x_min ) * get_rand() + x_min );  
-//			positions_local[index].y         =     0.9 * ( ( y_max - y_min ) * get_rand() + y_min );  
-//			positions_local[index].z         =     0.9 * ( ( z_max - z_min ) * get_rand() + z_min ); 
-//			positions_local[index].xhat      =     sqrtf(1-mu*mu) * cosf( theta );
-//			positions_local[index].yhat      =     sqrtf(1-mu*mu) * sinf( theta );
-//			positions_local[index].zhat      =     mu;
-//			//printf("%6.4E %6.4E %6.4E %6.4E %6.4E %6.4E\n",positions_local[index].x,positions_local[index].y,positions_local[index].z,positions_local[index].xhat,positions_local[index].yhat,positions_local[index].zhat);
-//	}
-//
-//	// copy starting positions data to pointer
-//	copy_to_device((void*)positions_ptr,positions_local,N*sizeof(source_point));
-//
-//	//trace and time
-//	std::cout << "\e[1;32m" << "Timing trace " << N << " particles... " ;
-//	float time_out = ((float)clock())/((float)CLOCKS_PER_SEC);
-//	trace(2);
-//	time_out = ((float)clock())/((float)CLOCKS_PER_SEC) - time_out; 
-//	std::cout << "\e[1;32m" << " done in " << time_out << " seconds \e[m \n";
-//
-//	// print out intersection points
-//
-//
-//	return time_out;
-//
-//}
 void optix_stuff::print(){
 	std::string instancing;
 	if(GEOM_FLAG==1){instancing="transform";}

@@ -114,8 +114,10 @@ __global__ void macro_micro_kernel(unsigned N, unsigned n_materials, unsigned n_
 	float 		e0 				= energy_grid[dex];
 	float 		e1 				= energy_grid[dex+1];
 
+	printf("tid %d this_E %6.4E e0 %6.4E e1 %6.4E matnum %u cellnum %u talnum %d\n",tid,this_E,e0,e1,this_mat,cellnum[tid],tally_index);
+
 	if(this_mat>=n_materials){
-		printf("MACRO - this_mat %u > n_materials %u!!!!!\n",this_mat,n_materials);
+		printf("MACRO - tid %u this_mat %u > n_materials %u!!!!!\n",tid,this_mat,n_materials);
         rxn[tid_in]   = 1001;  
         isonum[tid]   = 0;
 		return;
@@ -217,14 +219,14 @@ __global__ void macro_micro_kernel(unsigned N, unsigned n_materials, unsigned n_
 		}
 
 		// load  
-		float 		this_weight	= weight[tid];
-		unsigned 	bin_index 	= 0;
-		float 		E_max		= this_tally.E_min;
-		float 		E_min		= this_tally.E_max;
-		unsigned 	length		= this_tally.length;
+		float 		this_weight		= weight[tid];
+		unsigned 	bin_index 		= 0;
+		float 		E_max			= this_tally.E_min;
+		float 		E_min			= this_tally.E_max;
+		unsigned 	tally_length	= this_tally.length;
 
 		// determine bin number
-		bin_index = logf(this_E/E_min)/logf(E_max/E_min)*(length);
+		bin_index = logf(this_E/E_min)/logf(E_max/E_min)*(tally_length);
 
 		//score the bins atomicly, could be bad if many neutrons are in a single bin since this will serialize their operations
 		atomicAdd(&this_tally.score[ bin_index], this_weight/macro_t_total);

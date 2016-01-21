@@ -369,6 +369,7 @@ int main(int argc, char* argv[]){
 
 	// finalize geom
 	geom.set_outer_cell(999,2);  // cell, BC  1=black, 2=specular
+	geom.add_tally(tallycell);
 	geom.update();
 	if(geom.check()){std::cout << "geometry failed check!\n"; return 1;}
 	//geom.print_all();
@@ -391,7 +392,6 @@ int main(int argc, char* argv[]){
 	/////////////////////////////////////
 
 	hist.set_run_type("criticality");
-	hist.set_tally_cell(tallycell);
 	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
 	hist.plot_geom("cell");  // **MUST** be called after init.

@@ -392,11 +392,6 @@ public:
 	*/
 	void write_tally(unsigned);
 	/**
-	* \brief sets tally cell to input value
-	* @param[in] cell - tally cell
-	*/
-	void set_tally_cell(unsigned);
-	/**
 	* \brief sets run type
 	* @param[in] type_in - run type
 	*/

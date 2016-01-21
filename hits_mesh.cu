@@ -33,9 +33,9 @@ RT_PROGRAM void closest_hit()
 	if (sense == 0){rtPrintf("sense of closest_hit is 0!\n");}
 
 	//update mat, cell, fiss
-	payload.mat  = cellmat;
-	payload.cell = cellnum;
-	payload.mat  = celltal;
-	payload.fiss = cellfissile;
+	payload.mat			= cellmat;
+	payload.cell		= cellnum;
+	payload.tally_index	= celltal;
+	payload.fiss		= cellfissile;
 
 }

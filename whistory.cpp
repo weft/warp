@@ -137,6 +137,7 @@ void whistory::init(){
 	isotopes		= problem_geom.isotopes;
 	n_isotopes 		= problem_geom.n_isotopes;
 	n_materials		= problem_geom.n_materials;
+	n_tallies 		= problem_geom.n_tallies;
 
 	// map edge array and reduced values
 	n_edges = 11;
@@ -301,6 +302,10 @@ void whistory::init_device(){
 		cudaMalloc( &dh_tally[i].square_total 	, h_tally[i].length*sizeof(double*)       );
 		cudaMalloc( &dh_tally[i].count_total 	, h_tally[i].length*sizeof(long unsigned*));
 		// copy initialized values
+		dh_tally[i].cell		=	h_tally[i].cell;
+		dh_tally[i].length		=	h_tally[i].length;
+		dh_tally[i].E_min		=	h_tally[i].E_min;
+		dh_tally[i].E_max		=	h_tally[i].E_max;
 		cudaMemcpy(  dh_tally[i].score	    	, h_tally[i].score	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice );
 		cudaMemcpy(  dh_tally[i].square	    	, h_tally[i].square	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice );
 		cudaMemcpy(  dh_tally[i].count	    	, h_tally[i].count	       , h_tally[i].length*sizeof(unsigned)			,  cudaMemcpyHostToDevice );
@@ -2234,12 +2239,6 @@ void whistory::set_acceration(std::string accel_in){
 float whistory::get_time(){
 
 	return ((float)clock())/((float)CLOCKS_PER_SEC);
-
-}
-void whistory::set_tally_cell(unsigned cell){
-
-	// deprecated as of jan 12, 2016
-	//tally_cell = cell;
 
 }
 void whistory::write_histories(unsigned iteration){
