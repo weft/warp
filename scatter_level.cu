@@ -69,38 +69,30 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	// make sure shared loads happen before anything else
 	__syncthreads();
 
-
-
 	//remap to active
 	int tid=remap[starting_index + tid_in];
 	unsigned this_rxn = rxn[starting_index + tid_in];
-	//if(done[tid]){return;}
 
 	// print and return if wrong
-	if (this_rxn < 51 | this_rxn > 90){printf("iscatter kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;} 
-
-	// return if not inelastic
-	//if (rxn[tid] < 51 | rxn[tid] > 90 ){return;}  //return if not inelastic scatter
-
-	//printf("in iscatter\n");
+	if ( this_rxn!=2 & (this_rxn < 51 | this_rxn > 90) ){printf("level scattering kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;} 
 
 	//constants
 	const float  pi           =   3.14159265359 ;
 	const float  m_n          =   1.00866491600 ; // u
 	const float  E_cutoff     =   1e-11;
 	const float  E_max        =   20.0; //MeV
-	//const float  temp         =   300;    // K
+
 	// load history data
-	unsigned 	this_tope 	= isonum[tid];
-	unsigned 	this_dex	= index[tid];
-	float 		this_E 		= E[tid];
-	float 		this_Q 		= Q[tid];
-	wfloat3 	hats_old(space[tid].xhat,space[tid].yhat,space[tid].zhat);
-	float 		this_awr	= awr_list[this_tope];
-	float * 	this_Sarray = scatterdat[this_dex];
-	//float * 	this_Earray =  energydat[this_dex];
-	unsigned 	rn 			= rn_bank[ tid];
-	float 		rn1 		= get_rand(&rn);
+	wfloat3		hats_old(space[tid].xhat,space[tid].yhat,space[tid].zhat);
+	unsigned	this_tope		=	isonum[  tid];
+	unsigned	this_dex		=	index[   tid];
+	float		this_E			=	E[       tid];
+	float		this_Q			=	Q[       tid];
+	unsigned	rn				=	rn_bank[ tid];
+	float		this_awr		=	awr[this_tope];
+	dist_data*	scatter_lower	=	dist_scatter[this_dex].lower;
+	dist_data*	scatter_upper	=	dist_scatter[this_dex].upper;
+	float		rn1				=	get_rand(&rn);
 
 	// internal kernel variables
 	float 		mu, phi, next_E, last_E;
@@ -112,7 +104,7 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	float 		E_new				=   0.0;
 	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target, rotation_hat;
 	float 		mu0,mu1,cdf0,cdf1,arg;
-	//float 		v_rel,E_rel;
+	float 		v_rel,E_rel;
 
 	// ensure normalization
 	hats_old = hats_old / hats_old.norm2();
@@ -125,19 +117,19 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	hats_target.z = mu;
 
 	//sample therm dist if low E
-	//if(this_E <= 600*kb*temp ){
-	//	sample_therm(&rn,&mu,&speed_target,temp,this_E,this_awr);
-	//	//hats_target = rotate_angle(&rn,hats_old,mu);
-	//	rotation_hat = hats_old.cross( hats_target );
-	//	rotation_hat = rotation_hat / rotation_hat.norm2();
-	//	hats_target = hats_old;
-	//	hats_target.rodrigues_rotation( rotation_hat, acosf(mu) );
-	//	hats_target.rodrigues_rotation( hats_old,     phi       );
-	//}
-	//else{
+	if(this_E <= 600*kb*temp ){
+		sample_therm(&rn,&mu,&speed_target,temp,this_E,this_awr);
+		//hats_target = rotate_angle(&rn,hats_old,mu);
+		rotation_hat = hats_old.cross( hats_target );
+		rotation_hat = rotation_hat / rotation_hat.norm2();
+		hats_target = hats_old;
+		hats_target.rodrigues_rotation( rotation_hat, acosf(mu) );
+		hats_target.rodrigues_rotation( hats_old,     phi       );
+	}
+	else{
 		speed_target = 0.0;
-	//}
-	//__syncthreads();
+	}
+	__syncthreads();
 	
 	// make speed vectors
 	v_n_lf = hats_old    * speed_n;
