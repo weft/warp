@@ -202,7 +202,7 @@ void whistory::init_host(){
 		h_particles.space[k].yhat			= 0.0;
 		h_particles.space[k].zhat			= 0.0;
 		h_particles.space[k].surf_dist		= 10000.0;
-		h_particles.space[k].macro_t		= 0.0;
+		//h_particles.space[k].macro_t		= 0.0;
 		h_particles.space[k].enforce_BC		= 0;
 		h_particles.space[k].norm[0]		= 1;
 		h_particles.space[k].norm[1]		= 0;
@@ -224,7 +224,7 @@ void whistory::init_host(){
 
 	// set host tally size, bounds, allocate, and zero out all tallies
 	for(int i=0;i<n_tallies;i++){
-		h_tally[i].cell			=	geometry.tally_cells[i];
+		h_tally[i].cell			=	problem_geom.tally_cells[i];
 		h_tally[i].length		=	1024;
 		h_tally[i].E_min		=	1e-12;
 		h_tally[i].E_max		=	20;
@@ -250,7 +250,7 @@ void whistory::init_device(){
 	// copy pointers initialized by optix
 	dh_particles.space		= (spatial_data*)	optix_obj.positions_ptr;
 	dh_particles.cellnum	= (unsigned*)		optix_obj.cellnum_ptr;
-	dh_particles.talnum		= (unsigned*)		optix_obj.talnum_ptr;
+	dh_particles.talnum		= (int*)			optix_obj.talnum_ptr;
 	dh_particles.matnum		= (unsigned*)		optix_obj.matnum_ptr;
 	dh_particles.rxn		= (unsigned*)		optix_obj.rxn_ptr;
 	d_remap					= (unsigned*)		optix_obj.remap_ptr;

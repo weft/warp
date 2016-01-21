@@ -21,7 +21,7 @@ __global__ void copy_points_kernel( unsigned Nout, unsigned * Nvalid , unsigned 
 	positions_out[index_out].zhat 			= positions_in[index_in].zhat;
 	positions_out[index_out].enforce_BC 	= positions_in[index_in].enforce_BC;
 	positions_out[index_out].surf_dist 		= positions_in[index_in].surf_dist ;
-	positions_out[index_out].macro_t 		= positions_in[index_in].macro_t ;
+	//positions_out[index_out].macro_t 		= positions_in[index_in].macro_t ;
 	E_out[index_out] 						= E_in[index_in];
 
 	//printf("good point %6.4E %6.4E %6.4E\n",positions_out[index_out].x,positions_out[index_out].y,positions_out[index_out].z);

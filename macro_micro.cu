@@ -87,7 +87,7 @@ __global__ void macro_micro_kernel(unsigned N, unsigned n_materials, unsigned n_
 
 	// load from arrays
 	unsigned	this_mat		=  matnum[tid];
-	unsigned 	tally_index 	=  talnum[tid];
+	int 		tally_index 	=  talnum[tid];
 	unsigned	dex				=   index[tid];  
 	unsigned	rn				= rn_bank[tid];
 	float		this_E			=       E[tid];
@@ -211,24 +211,25 @@ __global__ void macro_micro_kernel(unsigned N, unsigned n_materials, unsigned n_
 	if( this_rxn==0 & tally_index>=0 ){
 
 		// check
-		if(tally_data[tally_index].cell!=cellnum[tid]){
-			printf("tid %u tally_index %i ",tid,tally_index,tally_data[tally_index].cell,cellnum[tid]);
+		tally_data	this_tally	= d_tally[tally_index];
+		if( this_tally.cell != cellnum[tid]){
+			printf("tid %u tally_index %i tally_cell %u cellnum[tid] %u\n",tid,tally_index,this_tally.cell,cellnum[tid]);
 		}
 
-		// load
-		tally_data	this_tally	= tally_data[tally_index];  
+		// load  
+		float 		this_weight	= weight[tid];
 		unsigned 	bin_index 	= 0;
-		float 		Emax		= tally_data[talnum[tid]].E_min;
-		float 		Emin		= tally_data[talnum[tid]].E_max;
-		unsigned 	length		= tally_data[talnum[tid]].length;
+		float 		E_max		= this_tally.E_min;
+		float 		E_min		= this_tally.E_max;
+		unsigned 	length		= this_tally.length;
 
 		// determine bin number
-		bin_index = logf(my_E/Emin)/logf(Emax/Emin)*(Ntally);
+		bin_index = logf(this_E/E_min)/logf(E_max/E_min)*(length);
 
 		//score the bins atomicly, could be bad if many neutrons are in a single bin since this will serialize their operations
-		atomicAdd(&this_tally.score_total[ bin_index], this_weight/macro_t );
-		atomicAdd(&this_tally.square_total[bin_index], this_weight/(macro_t * macro_t));
-		atomicInc(&this_tally.count_total[ bin_index], 4294967295);
+		atomicAdd(&this_tally.score[ bin_index], this_weight/macro_t_total);
+		atomicAdd(&this_tally.square[bin_index], this_weight/(macro_t_total * macro_t_total));
+		atomicInc(&this_tally.count[ bin_index], 4294967295);
 
 	}
 
@@ -296,12 +297,12 @@ __global__ void macro_micro_kernel(unsigned N, unsigned n_materials, unsigned n_
 	rxn[    tid_in]			=	this_rxn;			// rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
 	Q[      tid]			=	this_Q;
 	rn_bank[tid]			=	rn;
-	index[  tid]			=	this_dex;			// write MT array index to dex instead of energy vector index
-	isonum[tid]				=	tope;
+	index[  tid]			=	array_dex;			// write MT array index to dex instead of energy vector index
+	isonum[tid]				=	this_tope;
 	space[  tid].x			=	x;
 	space[  tid].y			=	y;
 	space[  tid].z			=	z;
-	space[  tid].macro_t	=	macro_t_total;
+	//space[  tid].macro_t	=	macro_t_total;
 	if( enforce_BC==2 ){
 		space[tid].xhat		=	xhat_new;			// write reflected directions for specular BC
 		space[tid].yhat		=	yhat_new;

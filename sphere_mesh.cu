@@ -45,7 +45,7 @@ RT_PROGRAM void intersect(int object_dex)
 
     if( rtPotentialIntersection( t0 ) ) {
         cellnum     = dims[object_dex].cellnum;
-        talnum      = dims[object_dex].tally_index;
+        celltal     = dims[object_dex].talnum;
         cellmat     = dims[object_dex].matnum;
         cellfissile = dims[object_dex].is_fissile;
         normal      = sgn * (xformed_origin + (t0 * ray.direction) ) / radius;
@@ -57,7 +57,7 @@ RT_PROGRAM void intersect(int object_dex)
     if(check_second) {
       if( rtPotentialIntersection( t1 ) ) {
          cellnum     = dims[object_dex].cellnum;
-         talnum      = dims[object_dex].tally_index;
+         celltal     = dims[object_dex].talnum;
          cellmat     = dims[object_dex].matnum;
          cellfissile = dims[object_dex].is_fissile;
          normal      = sgn * (xformed_origin + (t1 * ray.direction)) / radius;

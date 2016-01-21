@@ -9,12 +9,13 @@ rtBuffer<unsigned,1>                rxn_buffer;
 rtBuffer<unsigned,1>                remap_buffer;
 rtBuffer<unsigned,1>                cellnum_buffer;
 rtBuffer<unsigned,1>                matnum_buffer;
-rtDeclareVariable(rtObject,      top_object, , );
-rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
-rtDeclareVariable(uint, launch_dim,   rtLaunchDim, );
-rtDeclareVariable(unsigned,  outer_cell, , );
-rtDeclareVariable(unsigned,  trace_type, , );
-rtDeclareVariable(unsigned,  boundary_condition, , );
+rtBuffer<unsigned,1>                talnum_buffer;
+rtDeclareVariable(rtObject,		top_object, 		, 				);
+rtDeclareVariable(uint, 		launch_index_in, 	rtLaunchIndex, 	);
+rtDeclareVariable(uint, 		launch_dim,   		rtLaunchDim, 	);
+rtDeclareVariable(unsigned,  	outer_cell, 		, 				);
+rtDeclareVariable(unsigned,  	trace_type, 		, 				);
+rtDeclareVariable(unsigned,  	boundary_condition, , 				);
 
 RT_PROGRAM void camera()
 {

@@ -39,8 +39,8 @@ void wgeometry::add_tally(unsigned cellnum_in){
 	bool notfound = true;
 
 	// checks if already in list
-	for (int i=0; i<tally_list.size(); i++){
-		if (tally_list[i]==cellnum_in){
+	for (int i=0; i<tally_cells.size(); i++){
+		if (tally_cells[i]==cellnum_in){
 			printf("cell %u already marked for tally.\n",cellnum_in);
 			return;
 		}
@@ -61,7 +61,7 @@ void wgeometry::add_tally(unsigned cellnum_in){
 	}
 	else{
 		n_tallies = n_tallies + 1;
-		tally_list.push_back(cellnum_in);
+		tally_cells.push_back(cellnum_in);
 	}
 
 }
@@ -156,8 +156,8 @@ void wgeometry::update(){
 	// set tally index of transform to list index if cell number is in tally list
 	for( int k=0;k<n_primitives;k++ ){
 		for(int i=0; i<primitives[k].n_transforms; i++){
-			for(int t=0 ; t<n_tallies; t++)
-				if(primitives[k].transforms[i].cellnum==tally_list[t]){
+			for(int t=0 ; t<n_tallies; t++){
+				if(primitives[k].transforms[i].cellnum==tally_cells[t]){
 					primitives[k].transforms[i].tally_index = t;
 				}
 			}
