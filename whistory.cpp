@@ -224,7 +224,7 @@ void whistory::init_host(){
 
 	// set host tally size, bounds, allocate, and zero out all tallies
 	for(int i=0;i<n_tallies;i++){
-		h_tally[i].cell			=	0;
+		h_tally[i].cell			=	geometry.tally_cells[i];
 		h_tally[i].length		=	1024;
 		h_tally[i].E_min		=	1e-12;
 		h_tally[i].E_max		=	20;

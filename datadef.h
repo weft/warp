@@ -174,7 +174,7 @@ struct tally_data {
 	long unsigned*	count_total;	/**< tally count accumulated total */
 	unsigned		cell;			/**< tally cell (input) */
 	unsigned		length;			/**< tally length, edges are equi-log (input) */
-	float   		E_min;			/**< minimum energy (input) */
+	float			E_min;			/**< minimum energy (input) */
 	float			E_max;			/**< maximum energy (input) */
 };
 

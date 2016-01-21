@@ -87,6 +87,7 @@ __global__ void macro_micro_kernel(unsigned N, unsigned n_materials, unsigned n_
 
 	// load from arrays
 	unsigned	this_mat		=  matnum[tid];
+	unsigned 	tally_index 	=  talnum[tid];
 	unsigned	dex				=   index[tid];  
 	unsigned	rn				= rn_bank[tid];
 	float		this_E			=       E[tid];
@@ -206,25 +207,30 @@ __global__ void macro_micro_kernel(unsigned N, unsigned n_materials, unsigned n_
 	//
 	//
 
-	// only score tally if not leaked/resampled (collision estimator). 
-	if(this_rxn==0){
+	// only score tally if not leaked/resampled (collision estimator) and flagged for a tally. 
+	if( this_rxn==0 & tally_index>=0 ){
 
-		unsigned 	my_bin_index 	= 0;
+		// check
+		if(tally_data[tally_index].cell!=cellnum[tid]){
+			printf("tid %u tally_index %i ",tid,tally_index,tally_data[tally_index].cell,cellnum[tid]);
+		}
 
-		const float Emax 	= 20.00000;
-		const float Emin 	=  1.0e-11;
+		// load
+		tally_data	this_tally	= tally_data[tally_index];  
+		unsigned 	bin_index 	= 0;
+		float 		Emax		= tally_data[talnum[tid]].E_min;
+		float 		Emin		= tally_data[talnum[tid]].E_max;
+		unsigned 	length		= tally_data[talnum[tid]].length;
 
 		// determine bin number
-		my_bin_index = logf(my_E/Emin)/logf(Emax/Emin)*(Ntally);
+		bin_index = logf(my_E/Emin)/logf(Emax/Emin)*(Ntally);
 
 		//score the bins atomicly, could be bad if many neutrons are in a single bin since this will serialize their operations
-		atomicAdd(&tally_score [my_bin_index], this_weight/macro_t );
-		atomicAdd(&tally_square[my_bin_index], this_weight/(macro_t * macro_t));
-		atomicInc(&tally_count [my_bin_index], 4294967295);
+		atomicAdd(&this_tally.score_total[ bin_index], this_weight/macro_t );
+		atomicAdd(&this_tally.square_total[bin_index], this_weight/(macro_t * macro_t));
+		atomicInc(&this_tally.count_total[ bin_index], 4294967295);
 
 	}
-
-
 
 	//
 	//
