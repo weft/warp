@@ -7,12 +7,9 @@
 
 __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* remap, unsigned* isonum, unsigned * index, unsigned * rn_bank, float * E, source_point * space, unsigned * rxn, float * awr_list, float * Q, unsigned * done, float** scatterdat, float** energydat){
 
-
+	// return immediately if out of bounds
 	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
-	if (tid_in >= N){return;}       //return if out of bounds
-	
-		int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
-	if (tid_in >= N){return;}
+	if (tid_in >= N){return;}       
 
 	// declare shared variables
 	__shared__ 	unsigned			n_isotopes;				
@@ -70,8 +67,8 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	__syncthreads();
 
 	//remap to active
-	int tid=remap[starting_index + tid_in];
-	unsigned this_rxn = rxn[starting_index + tid_in];
+	int tid				=	remap[starting_index + tid_in];
+	unsigned this_rxn 	=	rxn[  starting_index + tid_in];
 
 	// print and return if wrong
 	if ( this_rxn!=2 & (this_rxn < 51 | this_rxn > 90) ){printf("level scattering kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;} 
@@ -110,21 +107,16 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	hats_old = hats_old / hats_old.norm2();
 
 	// make target isotropic
-	mu  = (2.0*get_rand(&rn)) - 1.0;
-	phi = 2.0*pi*get_rand(&rn);
-	hats_target.x = sqrtf(1.0-(mu*mu))*cosf(phi);
-	hats_target.y = sqrtf(1.0-(mu*mu))*sinf(phi); 
-	hats_target.z = mu;
+	mu				=	(2.0*   get_rand(&rn)) - 1.0;
+	phi				=	 2.0*pi*get_rand(&rn);
+	hats_target.x	=	sqrtf(1.0-(mu*mu))*cosf(phi);
+	hats_target.y	=	sqrtf(1.0-(mu*mu))*sinf(phi); 
+	hats_target.z	=	mu;
 
 	//sample therm dist if low E
 	if(this_E <= 600*kb*temp ){
 		sample_therm(&rn,&mu,&speed_target,temp,this_E,this_awr);
-		//hats_target = rotate_angle(&rn,hats_old,mu);
-		rotation_hat = hats_old.cross( hats_target );
-		rotation_hat = rotation_hat / rotation_hat.norm2();
-		hats_target = hats_old;
-		hats_target.rodrigues_rotation( rotation_hat, acosf(mu) );
-		hats_target.rodrigues_rotation( hats_old,     phi       );
+		hats_target = hats_old.rotate(mu, get_rand(&rn));
 	}
 	else{
 		speed_target = 0.0;
@@ -144,49 +136,12 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	
 	// sample new phi, mu_cm
 	phi = 2.0*pi*get_rand(&rn);
-	rn1 = get_rand(&rn);
-	offset=6;
 	if(this_Sarray == 0x0){
-		mu= 2.0*rn1-1.0; // assume CM isotropic scatter if null
-		// should make print by flag
-		//printf("null pointer in iscatter!,dex %u rxn %u tope %u E %6.4E Q %6.4E\n",this_dex,this_rxn,this_tope,this_E,this_Q);
+		mu= 2.0*rn1-1.0;       // assume CM isotropic scatter if null
 	}
-	else{  // 
-		//printf("rxn=%u dex=%u %p %6.4E\n",rxn[tid],this_dex,this_array,this_E);
-		memcpy(&last_E, 	&this_Sarray[0], sizeof(float));
-		memcpy(&next_E, 	&this_Sarray[1], sizeof(float));
-		memcpy(&vlen, 		&this_Sarray[2], sizeof(float));
-		memcpy(&next_vlen, 	&this_Sarray[3], sizeof(float));
-		float r = (this_E-last_E)/(next_E-last_E);
-		if(r<0){
-			printf("DATA NOT WITHIN ENERGY INTERVAL tid %u r % 10.8E rxn %u isotope %u this_E % 10.8E last_E % 10.8E next_E % 10.8E dex %u\n",tid,r,this_rxn,this_tope,this_E,last_E,next_E,this_dex);
-		}		
-		if(  get_rand(&rn) >= r ){   //sample last E
-			//k = binary_search(&this_Sarray[offset+vlen], rn1, vlen);
-			for ( k=0 ; k<vlen-1 ; k++ ){	
-				cdf0 = this_Sarray[ (offset+vlen) +k  ];
-				cdf1 = this_Sarray[ (offset+vlen) +k+1];
-				if( rn1 >= cdf0 & rn1 < cdf1 ){
-					break;
-				}
-			}
-			mu0  = this_Sarray[ (offset)      +k  ];
-			mu1  = this_Sarray[ (offset)      +k+1];
-			mu   = (mu1-mu0)/(cdf1-cdf0)*(rn1-cdf0)+mu0; 
-		}
-		else{   // sample E+1
-			//k = binary_search(&this_Sarray[offset+2*vlen+next_vlen], rn1, next_vlen);
-			for ( k=0 ; k<next_vlen-1 ; k++ ){
-				cdf0 = this_Sarray[ (offset+3*vlen+next_vlen) +k  ];
-				cdf1 = this_Sarray[ (offset+3*vlen+next_vlen) +k+1];
-				if( rn1 >= cdf0 & rn1 < cdf1 ){
-					break;
-				}
-			}
-			mu0  = this_Sarray[ (offset+3*vlen)           +k  ];
-			mu1  = this_Sarray[ (offset+3*vlen)           +k+1];
-			mu   = (mu1-mu0)/(cdf1-cdf0)*(rn1-cdf0)+mu0; 
-		}
+	else{  
+		// sample the distribution, pick upper or lower via stochastic mixing
+
 	}
 
 	// pre rotation directions
@@ -200,30 +155,28 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, unsigned* r
 	}
 	v_n_cm = hats_old * sqrtf( arg );
 
-	// transform back to L
+	// transform back to L frame
 	v_n_lf = v_n_cm + v_cm;
 	hats_new = v_n_lf / v_n_lf.norm2();
 	hats_new = hats_new / hats_new.norm2();  // get higher precision, make SURE vector is length one
-	// calculate energy
+	
+	// calculate energy in L frame
 	E_new = 0.5 * m_n * v_n_lf.dot(v_n_lf);
 
 	// enforce limits
 	if ( E_new <= E_cutoff | E_new > E_max ){
 		isdone=1;
 		this_rxn = 998;  // ecutoff code
+		rxn[starting_index+tid_in] = this_rxn;
 		printf("i CUTOFF, E = %10.8E\n",E_new);
 	}
 
-	//printf("%u isatter hat length % 10.8E\n",tid,sqrtf(hats_new.x*hats_new.x+hats_new.y*hats_new.y+hats_new.z*hats_new.z));
-
 	// write results
-	done[tid]       = isdone;
-	rxn[starting_index+tid_in] = this_rxn;
-	E[tid]          = E_new;
-	space[tid].xhat = hats_new.x;
-	space[tid].yhat = hats_new.y;
-	space[tid].zhat = hats_new.z;
-	rn_bank[tid] 	= rn;
+	E[      tid]		= E_new;
+	space[  tid].xhat	= hats_new.x;
+	space[  tid].yhat	= hats_new.y;
+	space[  tid].zhat	= hats_new.z;
+	rn_bank[tid]		= rn;
 
 }
 
