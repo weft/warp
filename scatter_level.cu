@@ -4,7 +4,7 @@
 #include "wfloat3.h"
 #include "warp_device.cuh"
 
-__global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
+__global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
 	// return immediately if out of bounds
 	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
@@ -202,12 +202,12 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 
 }
 
-void iscatter( cudaStream_t stream, unsigned NUM_THREADS, unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
+void scatter_level( cudaStream_t stream, unsigned NUM_THREADS, unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
 	if(N<1){return;}
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	iscatter_kernel <<< blks, NUM_THREADS , 0 , stream >>> (  N, starting_index, d_xsdata, d_particles, d_remap);
+	scatter_level_kernel <<< blks, NUM_THREADS , 0 , stream >>> (  N, starting_index, d_xsdata, d_particles, d_remap);
 	cudaThreadSynchronize();
 
 }

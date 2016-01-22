@@ -1878,16 +1878,16 @@ void whistory::run(){
 			// remap threads to still active data
 			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
 			check_cuda(cudaPeekAtLastError());
-			exit(0);
 
 			// concurrent calls to do escatter/iscatter/cscatter/fission.  Must sync after since these calls are not synchronous.
 			cudaThreadSynchronize();
 			cudaDeviceSynchronize();
 			scatter_level(	stream[0], NUM_THREADS, (escatter_N+iscatter_N), escatter_start, d_xsdata, d_particles, d_remap );
-			scatter_conti(	stream[0], NUM_THREADS, cscatter_N,              cscatter_start, d_xsdata, d_particles, d_remap );
-			fission ( 		stream[1], NUM_THREADS, fission_N,               fission_start,  d_xsdata, d_particles, d_remap );  
+			//scatter_conti(	stream[0], NUM_THREADS, cscatter_N,              cscatter_start, d_xsdata, d_particles, d_remap );
+			//fission ( 		stream[1], NUM_THREADS, fission_N,               fission_start,  d_xsdata, d_particles, d_remap );  
 			cudaDeviceSynchronize();
 			check_cuda(cudaPeekAtLastError());
+			exit(0);
 
 			//if(RUN_FLAG==0){  //fixed source
 			//	// pop secondaries back in
@@ -2052,7 +2052,7 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 
 	// sort key/value of rxn/tid
 	if(*num_active>1){
-		res = cudppRadixSort(radixplan, dh_particles.rxn, dh_particles.remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
+		res = cudppRadixSort(radixplan, dh_particles.rxn, d_remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
 		if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
 	}
 
@@ -2111,7 +2111,7 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 		printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
 		printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
 		if(dump_flag>=2){//dump
-			write_to_file(d_remap, d_rxn, N,"remap","w");
+			write_to_file(d_remap, dh_particles.rxn, N,"remap","w");
 		}
 	}
 
