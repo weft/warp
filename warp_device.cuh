@@ -93,7 +93,6 @@ inline __device__ float sample_law_3( unsigned length , unsigned intt , float rn
 Samples a law 3 probability distribution with historgram or lin-lin interpolation.  Returns sampled value (not array index).
 */
 	unsigned	index				= 0;
-	float		cumulative_value	= 0.0;
 	float 		out 				= 0.0;
 
 	// scan the CDF,
@@ -103,6 +102,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 		}
 	}
 	
+	// calculate sampled value
 	if(intt==1){
 		// histogram interpolation
 		out = var[index] + (rn - cdf[index])/pdf[index];

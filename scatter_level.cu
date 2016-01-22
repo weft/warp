@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include "datadef.h"
 #include "wfloat3.h"
-#include "binary_search.h"
 #include "warp_device.cuh"
 
 __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
@@ -12,54 +11,54 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 	if (tid_in >= N){return;}       
 
 	// declare shared variables
-	__shared__ 	unsigned			n_isotopes;				
-	__shared__ 	unsigned			energy_grid_len;		
-	__shared__ 	unsigned			total_reaction_channels;
-	__shared__ 	unsigned*			rxn_numbers;			
-	__shared__ 	unsigned*			rxn_numbers_total;		
-	__shared__ 	float*				energy_grid;			
-	__shared__ 	float*				rxn_Q;						
-	__shared__ 	float*				xs;						
+	//__shared__ 	unsigned			n_isotopes;				
+	//__shared__ 	unsigned			energy_grid_len;		
+	//__shared__ 	unsigned			total_reaction_channels;
+	//__shared__ 	unsigned*			rxn_numbers;			
+	//__shared__ 	unsigned*			rxn_numbers_total;		
+	//__shared__ 	float*				energy_grid;			
+	//__shared__ 	float*				rxn_Q;						
+	//__shared__ 	float*				xs;						
 	__shared__ 	float*				awr;					
 	__shared__ 	float*				temp;					
 	__shared__ 	dist_container*		dist_scatter;			
-	__shared__ 	dist_container*		dist_energy; 
+	//__shared__ 	dist_container*		dist_energy; 
 	__shared__	spatial_data*		space;	
 	__shared__	unsigned*			rxn;	
 	__shared__	float*				E;		
 	__shared__	float*				Q;		
 	__shared__	unsigned*			rn_bank;
-	__shared__	unsigned*			cellnum;
-	__shared__	unsigned*			matnum;	
+	//__shared__	unsigned*			cellnum;
+	//__shared__	unsigned*			matnum;	
 	__shared__	unsigned*			isonum;	
-	__shared__	unsigned*			yield;	
-	__shared__	float*				weight;	
+	//__shared__	unsigned*			yield;	
+	//__shared__	float*				weight;	
 	__shared__	unsigned*			index;	
 
 	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
-		n_isotopes					= d_xsdata[0].n_isotopes;								
-		energy_grid_len				= d_xsdata[0].energy_grid_len;				
-		total_reaction_channels		= d_xsdata[0].total_reaction_channels;
-		rxn_numbers 				= d_xsdata[0].rxn_numbers;						
-		rxn_numbers_total			= d_xsdata[0].rxn_numbers_total;					
-		energy_grid 				= d_xsdata[0].energy_grid;						
-		rxn_Q 						= d_xsdata[0].Q;												
-		xs 							= d_xsdata[0].xs;												
+		//n_isotopes					= d_xsdata[0].n_isotopes;								
+		//energy_grid_len				= d_xsdata[0].energy_grid_len;				
+		//total_reaction_channels		= d_xsdata[0].total_reaction_channels;
+		//rxn_numbers 				= d_xsdata[0].rxn_numbers;						
+		//rxn_numbers_total			= d_xsdata[0].rxn_numbers_total;					
+		//energy_grid 				= d_xsdata[0].energy_grid;						
+		//rxn_Q 						= d_xsdata[0].Q;												
+		//xs 							= d_xsdata[0].xs;												
 		awr 						= d_xsdata[0].awr;										
 		temp 						= d_xsdata[0].temp;										
 		dist_scatter 				= d_xsdata[0].dist_scatter;						
-		dist_energy 				= d_xsdata[0].dist_energy; 
+		//dist_energy 				= d_xsdata[0].dist_energy; 
 		space						= d_particles[0].space;
 		rxn							= d_particles[0].rxn;
 		E							= d_particles[0].E;
 		Q							= d_particles[0].Q;	
 		rn_bank						= d_particles[0].rn_bank;
-		cellnum						= d_particles[0].cellnum;
-		matnum						= d_particles[0].matnum;
+		//cellnum						= d_particles[0].cellnum;
+		//matnum						= d_particles[0].matnum;
 		isonum						= d_particles[0].isonum;
-		yield						= d_particles[0].yield;
-		weight						= d_particles[0].weight;
+		//yield						= d_particles[0].yield;
+		//weight						= d_particles[0].weight;
 		index						= d_particles[0].index;
 	}
 
@@ -67,17 +66,18 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 	__syncthreads();
 
 	//remap to active
-	int tid				=	remap[starting_index + tid_in];
-	unsigned this_rxn 	=	rxn[  starting_index + tid_in];
+	int tid				=	d_remap[starting_index + tid_in];
+	unsigned this_rxn 	=	rxn[    starting_index + tid_in];
 
 	// print and return if wrong
 	if ( this_rxn!=2 & (this_rxn < 51 | this_rxn > 90) ){printf("level scattering kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;} 
 
 	//constants
-	const float  pi           =   3.14159265359 ;
-	const float  m_n          =   1.00866491600 ; // u
-	const float  E_cutoff     =   1e-11;
-	const float  E_max        =   20.0; //MeV
+	const float  	pi			=   3.14159265359;
+	const float  	m_n			=   1.00866491600;		// u
+	const float  	E_cutoff	=   1e-11;				// MeV
+	const float  	E_max		=   20.0;				// MeV
+	const float		kb			=	8.617332478e-11;	// MeV/k
 
 	// load history data
 	wfloat3		hats_old(space[tid].xhat,space[tid].yhat,space[tid].zhat);
@@ -86,19 +86,16 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 	float		this_E			=	E[       tid];
 	float		this_Q			=	Q[       tid];
 	unsigned	rn				=	rn_bank[ tid];
-	float		this_awr		=	awr[this_tope];
+	float		this_awr		=	awr[ this_tope];
+	float		this_temp		=	temp[this_tope];
 
 	// internal kernel variables
-	float 		mu, phi, next_E, last_E;
-    unsigned 	vlen, next_vlen, offset, k; 
-    unsigned  	isdone = 0;
 	float  		E_target     		=   0;
 	float 		speed_target     	=   sqrtf(2.0*E_target/(this_awr*m_n));
 	float  		speed_n          	=   sqrtf(2.0*this_E/m_n);
 	float 		E_new				=   0.0;
-	wfloat3 	v_n_cm,v_t_cm,v_n_lf,v_t_lf,v_cm, hats_new, hats_target, rotation_hat;
-	float 		mu0,mu1,cdf0,cdf1,arg;
-	float 		v_rel,E_rel;
+	wfloat3 	v_n_cm, v_t_cm, v_n_lf, v_t_lf, v_cm, hats_new, hats_target, rotation_hat;
+	float 		mu, phi, arg;
 
 	// ensure normalization
 	hats_old = hats_old / hats_old.norm2();
@@ -111,8 +108,8 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 	hats_target.z	=	mu;
 
 	//sample therm dist if low E
-	if(this_E <= 600*kb*temp ){
-		sample_therm(&rn,&mu,&speed_target,temp,this_E,this_awr);
+	if(this_E <= 600*kb*this_temp ){
+		sample_therm(&rn,&mu,&speed_target,this_temp,this_E,this_awr);
 		hats_target = hats_old.rotate(mu, get_rand(&rn));
 	}
 	else{
@@ -142,9 +139,9 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 	else{  
 		// pick upper or lower via stochastic mixing
 		dist_data	this_dist;
-		dist_data	dist_lower	=	dist_scatter[0].dist_lower;
-		dist_data	dist_upper	=	dist_scatter[0].dist_upper;
-		unsigned	this_law	=	0
+		dist_data	dist_lower	=	dist_scatter[this_dex].lower[0];
+		dist_data	dist_upper	=	dist_scatter[this_dex].upper[0];
+		unsigned	this_law	=	0;
 		float		f			=	(this_E - dist_lower.erg) / (dist_upper.erg - dist_lower.erg);
 		if( get_rand(&rn)>f ){
 			this_dist = dist_lower;
@@ -156,7 +153,7 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 		// sample the distribution
 		this_law = this_dist.law;
 		if (this_law == 3 ){
-			mu = sample_law_3( 	this_dist.length , 
+			mu = sample_law_3( 	this_dist.len , 
 								this_dist.intt , 
 								get_rand(&rn) , 
 								this_dist.var , 
@@ -189,7 +186,6 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 
 	// enforce limits
 	if ( E_new <= E_cutoff | E_new > E_max ){
-		isdone=1;
 		this_rxn = 998;  // ecutoff code
 		rxn[starting_index+tid_in] = this_rxn;
 		printf("i CUTOFF, E = %10.8E\n",E_new);
