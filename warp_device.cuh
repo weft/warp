@@ -88,7 +88,7 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 }
 
-inline __device__ float sample_law_3( unsigned length , unsigned intt , float rn , float* var , float* pdf, float* cdf ){
+inline __device__ float sample_continuous_tablular( unsigned length , unsigned intt , float rn , float* var , float* pdf, float* cdf ){
 /*
 Samples a law 3 probability distribution with historgram or lin-lin interpolation.  Returns sampled value (not array index).
 */
@@ -101,6 +101,44 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 			break;
 		}
 	}
+	
+	// calculate sampled value
+	if(intt==1){
+		// histogram interpolation
+		out = var[index] + (rn - cdf[index])/pdf[index];
+	}
+	else if(intt==2){
+		// lin-lin interpolation
+		float m = (pdf[index+1]-pdf[index])/(var[index+1]-var[index]);
+		out = var[index] + (sqrtf(pdf[index]*pdf[index]+2.0*m*(rn-cdf[index]))-pdf[index])/m;
+	}
+	else{
+		// return invalid mu, like -2
+		printf("INTT=%u NOT HANDLED!\n",intt);
+		out = -2;		
+	}
+
+	// return sampled value
+	return out;
+
+}
+
+inline __device__ float sample_continuous_tablular( unsigned* index_out, unsigned length , unsigned intt , float rn , float* var , float* pdf, float* cdf ){
+/*
+Samples a law 3 probability distribution with historgram or lin-lin interpolation.  Returns sampled value and writes array index to passed in pointer.
+*/
+	unsigned	index				= 0;
+	float 		out 				= 0.0;
+
+	// scan the CDF,
+	for( index=0; index<length-1; index++ ){
+		if ( rn <= cdf[index+1] ){
+			break;
+		}
+	}
+
+	// write index to passed pointer
+	index_out[0] = index;
 	
 	// calculate sampled value
 	if(intt==1){

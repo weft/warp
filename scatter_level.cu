@@ -153,12 +153,12 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		// sample the distribution
 		this_law = this_dist.law;
 		if (this_law == 3 ){
-			mu = sample_law_3( 	this_dist.len , 
-								this_dist.intt , 
-								get_rand(&rn) , 
-								this_dist.var , 
-								this_dist.pdf, 
-								this_dist.cdf );
+			mu = sample_continuous_tablular( 	this_dist.len , 
+												this_dist.intt , 
+												get_rand(&rn) , 
+												this_dist.var , 
+												this_dist.pdf, 
+												this_dist.cdf );
 		}
 		else{
 			printf("law %u not yet implemented in level scttering!\n",this_law);
