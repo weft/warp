@@ -89,7 +89,6 @@ All neutrons need these things done, so these routines all live in the same rout
 	float		epsilon			= 2.0e-5;
 	float		dotp			= 0.0;
 	float		macro_t_total	= 0.0;
-	//int			flag			= 0;
 	float surf_minimum, xhat_new, yhat_new, zhat_new, this_Q;
 
 	// load from arrays
@@ -311,7 +310,6 @@ All neutrons need these things done, so these routines all live in the same rout
 	space[  tid].x			=	x;
 	space[  tid].y			=	y;
 	space[  tid].z			=	z;
-	//space[  tid].macro_t	=	macro_t_total;
 	if( enforce_BC==2 ){
 		space[tid].xhat		=	xhat_new;			// write reflected directions for specular BC
 		space[tid].yhat		=	yhat_new;

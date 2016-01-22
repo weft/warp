@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include "datadef.h"
 #include "wfloat3.h"
-#include "binary_search.h"
-#include "LCRNG.cuh"
+#include "warp_device.cuh"
 
 __global__ void cscatter_kernel(unsigned N, unsigned run_mode, unsigned starting_index, unsigned* remap, unsigned* isonum, unsigned * index, unsigned * rn_bank, float * E, source_point * space, unsigned * rxn, float * awr_list, float * Q, unsigned * done, float** scatterdat, float** energydat){
 

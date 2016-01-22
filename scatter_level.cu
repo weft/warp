@@ -191,6 +191,8 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 		printf("i CUTOFF, E = %10.8E\n",E_new);
 	}
 
+	printf("tid %d E_new %6.4E xhat %6.4E yhat %6.4E zhat %6.4E\n",tid,this_E,hats_new.x,hats_new.y,hats_new.z);
+
 	// write results
 	E[      tid]		= E_new;
 	space[  tid].xhat	= hats_new.x;

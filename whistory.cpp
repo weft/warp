@@ -1883,11 +1883,9 @@ void whistory::run(){
 			// concurrent calls to do escatter/iscatter/cscatter/fission.  Must sync after since these calls are not synchronous.
 			cudaThreadSynchronize();
 			cudaDeviceSynchronize();
-			scatter_level( stream[0], NUM_THREADS, lscatter_N, lscatter_start, d_xsdata, d_particles, d_remap );
-			//escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
-			//iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
-			//cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start, d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
-			//fission ( stream[3], NUM_THREADS,   fission_N,  fission_start , d_remap, d_isonum, d_index, dh_particles.rn_bank, d_E, d_space, d_rxn, d_awr_list, d_yield, d_weight, d_xs_data_scatter, d_xs_data_energy);  
+			scatter_level(	stream[0], NUM_THREADS, (escatter_N+iscatter_N), escatter_start, d_xsdata, d_particles, d_remap );
+			scatter_conti(	stream[0], NUM_THREADS, cscatter_N,              cscatter_start, d_xsdata, d_particles, d_remap );
+			fission ( 		stream[1], NUM_THREADS, fission_N,               fission_start,  d_xsdata, d_particles, d_remap );  
 			cudaDeviceSynchronize();
 			check_cuda(cudaPeekAtLastError());
 
