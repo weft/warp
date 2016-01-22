@@ -88,32 +88,38 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 }
 
-inline __device__ unsigned sample_probability_distribution( unsigned length , unsigned intt , float rn , float* var , float* pdf, float* cdf ){
+inline __device__ float sample_law_3( unsigned length , unsigned intt , float rn , float* var , float* pdf, float* cdf ){
 /*
-Samples a probability distribution with historgram or lin-lin interpolation.  Returns sampled index.
+Samples a law 3 probability distribution with historgram or lin-lin interpolation.  Returns sampled value (not array index).
 */
 	unsigned	index				= 0;
 	float		cumulative_value	= 0.0;
+	float 		out 				= 0.0;
 
 	// scan the CDF,
-	for(index=0;index<length;index++){
-
-		cumulative_value += index;
-
+	for( index=0; index<length-1; index++ ){
+		if ( rn <= cdf[index+1] ){
+			break;
+		}
 	}
-
-	if(intt==1){        // histogram interpolation
-
+	
+	if(intt==1){
+		// histogram interpolation
+		out = var[index] + (rn - cdf[index])/pdf[index];
 	}
-	else if(intt==2){  // lin-lin interpolation
-
+	else if(intt==2){
+		// lin-lin interpolation
+		float m = (pdf[index+1]-pdf[index])/(var[index+1]-var[index]);
+		out = var[index] + (sqrtf(pdf[index]*pdf[index]+2.0*m*(rn-cdf[index]))-pdf[index])/m;
 	}
 	else{
+		// return invalid mu, like -2
 		printf("INTT=%u NOT HANDLED!\n",intt);
-		index = 4294967295;   // return -1
+		out = -2;		
 	}
 
-	return index;
+	// return sampled value
+	return out;
 
 }
 

@@ -87,9 +87,6 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 	float		this_Q			=	Q[       tid];
 	unsigned	rn				=	rn_bank[ tid];
 	float		this_awr		=	awr[this_tope];
-	dist_data*	scatter_lower	=	dist_scatter[this_dex].lower;
-	dist_data*	scatter_upper	=	dist_scatter[this_dex].upper;
-	float		rn1				=	get_rand(&rn);
 
 	// internal kernel variables
 	float 		mu, phi, next_E, last_E;
@@ -134,14 +131,41 @@ __global__ void iscatter_kernel(unsigned N, unsigned starting_index, cross_secti
 	v_n_cm = v_n_lf - v_cm;
 	v_t_cm = v_t_lf - v_cm;
 	
-	// sample new phi, mu_cm
+	// sample new azimuthal phi, always isotropic
 	phi = 2.0*pi*get_rand(&rn);
-	if(this_Sarray == 0x0){
-		mu= 2.0*rn1-1.0;       // assume CM isotropic scatter if null
+
+	// sample polar cosine mu
+	if(dist_scatter == 0x0){
+		// isotropic scatter if null
+		mu= 2.0*get_rand(&rn)-1.0;
 	}
 	else{  
-		// sample the distribution, pick upper or lower via stochastic mixing
+		// pick upper or lower via stochastic mixing
+		dist_data	this_dist;
+		dist_data	dist_lower	=	dist_scatter[0].dist_lower;
+		dist_data	dist_upper	=	dist_scatter[0].dist_upper;
+		unsigned	this_law	=	0
+		float		f			=	(this_E - dist_lower.erg) / (dist_upper.erg - dist_lower.erg);
+		if( get_rand(&rn)>f ){
+			this_dist = dist_lower;
+		}
+		else{
+			this_dist = dist_upper;
+		}
 
+		// sample the distribution
+		this_law = this_dist.law;
+		if (this_law == 3 ){
+			mu = sample_law_3( 	this_dist.length , 
+								this_dist.intt , 
+								get_rand(&rn) , 
+								this_dist.var , 
+								this_dist.pdf, 
+								this_dist.cdf );
+		}
+		else{
+			printf("law %u not yet implemented in level scttering!\n",this_law);
+		}
 	}
 
 	// pre rotation directions
