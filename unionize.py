@@ -705,12 +705,12 @@ class cross_section_data:
 				upper_erg = rxn.energy_dist.energy_in[upper_index]
 	
 				# 
-				lower_var = numpy.zeros(rxn.energy_dist.energy_out[lower_index].shape)
-				upper_var = numpy.zeros(rxn.energy_dist.energy_out[upper_index].shape)
-				lower_pdf = numpy.zeros(rxn.energy_dist.pdf[lower_index].shape)
-				upper_pdf = numpy.zeros(rxn.energy_dist.pdf[upper_index].shape)
-				lower_cdf = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
-				upper_cdf = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
+				lower_var = rxn.energy_dist.energy_out[lower_index]
+				upper_var = rxn.energy_dist.energy_out[upper_index]
+				lower_pdf = rxn.energy_dist.pdf[lower_index]
+				upper_pdf = rxn.energy_dist.pdf[upper_index]
+				lower_cdf = rxn.energy_dist.cdf[lower_index]
+				upper_cdf = rxn.energy_dist.cdf[upper_index]
 
 				# len
 				lower_len = len(lower_var)

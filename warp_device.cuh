@@ -92,8 +92,8 @@ inline __device__ float sample_continuous_tablular( unsigned length , unsigned i
 /*
 Samples a law 3 probability distribution with historgram or lin-lin interpolation.  Returns sampled value (not array index).
 */
-	unsigned	index				= 0;
-	float 		out 				= 0.0;
+	unsigned	index	= 0;
+	float 		out 	= 0.0;
 
 	// scan the CDF,
 	for( index=0; index<length-1; index++ ){
@@ -127,8 +127,8 @@ inline __device__ float sample_continuous_tablular( unsigned* index_out, unsigne
 /*
 Samples a law 3 probability distribution with historgram or lin-lin interpolation.  Returns sampled value and writes array index to passed in pointer.
 */
-	unsigned	index				= 0;
-	float 		out 				= 0.0;
+	unsigned	index	= 0;
+	float 		out 	= 0.0;
 
 	// scan the CDF,
 	for( index=0; index<length-1; index++ ){
@@ -136,9 +136,6 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 			break;
 		}
 	}
-
-	// write index to passed pointer
-	index_out[0] = index;
 	
 	// calculate sampled value
 	if(intt==1){
@@ -155,6 +152,9 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 		printf("INTT=%u NOT HANDLED!\n",intt);
 		out = -2;		
 	}
+
+	// write index to passed pointer
+	index_out[0] = index;
 
 	// return sampled value
 	return out;

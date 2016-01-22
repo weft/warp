@@ -20,13 +20,13 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	//__shared__ 	float*				rxn_Q;						
 	//__shared__ 	float*				xs;						
 	__shared__ 	float*				awr;					
-	__shared__ 	float*				temp;					
+	//__shared__ 	float*				temp;					
 	__shared__ 	dist_container*		dist_scatter;			
 	__shared__ 	dist_container*		dist_energy; 
 	__shared__	spatial_data*		space;	
 	__shared__	unsigned*			rxn;	
 	__shared__	float*				E;		
-	__shared__	float*				Q;		
+	//__shared__	float*				Q;		
 	__shared__	unsigned*			rn_bank;
 	//__shared__	unsigned*			cellnum;
 	//__shared__	unsigned*			matnum;	
@@ -46,13 +46,13 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		//rxn_Q 						= d_xsdata[0].Q;												
 		//xs 							= d_xsdata[0].xs;												
 		awr 						= d_xsdata[0].awr;										
-		temp 						= d_xsdata[0].temp;										
+		//temp 						= d_xsdata[0].temp;										
 		dist_scatter 				= d_xsdata[0].dist_scatter;						
 		dist_energy 				= d_xsdata[0].dist_energy; 
 		space						= d_particles[0].space;
 		rxn							= d_particles[0].rxn;
 		E							= d_particles[0].E;
-		Q							= d_particles[0].Q;	
+		//Q							= d_particles[0].Q;	
 		rn_bank						= d_particles[0].rn_bank;
 		//cellnum						= d_particles[0].cellnum;
 		//matnum						= d_particles[0].matnum;
@@ -72,28 +72,28 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	// print and return if wrong
 	if ( this_rxn!=91 ){printf("level scattering kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;} 
 
+	// check E data pointers
+	if(dist_energy == 0x0){
+		printf("null pointer, energy array in continuum scatter!,tid %u rxn %u\n",tid,this_rxn);
+		return;
+	}
+
 	//constants
-	const float  	pi			=   3.14159265359;
+	//const float  	pi			=   3.14159265359;
 	const float  	m_n			=   1.00866491600;		// u
 	const float  	E_cutoff	=   1e-11;				// MeV
 	const float  	E_max		=   20.0;				// MeV
-	const float		kb			=	8.617332478e-11;	// MeV/k
-
-	// check E data pointers
-	if(dist_energy == 0x0){
-		printf("null pointer, energy array in continuum scatter!,dex %u rxn %u tope %u E %6.4E run mode %u\n",this_dex,this_rxn,this_tope,);
-		return;
-	}
+	//const float		kb			=	8.617332478e-11;	// MeV/k
 
 	// load history data
 	wfloat3		hats_old(space[tid].xhat,space[tid].yhat,space[tid].zhat);
 	unsigned	this_tope		=	isonum[  tid];
 	unsigned	this_dex		=	index[   tid];
 	float		this_E			=	E[       tid];
-	float		this_Q			=	Q[       tid];
+	//float		this_Q			=	Q[       tid];
 	unsigned	rn				=	rn_bank[ tid];
 	float		this_awr		=	awr[ this_tope];
-	float		this_temp		=	temp[this_tope];
+	//float		this_temp		=	temp[this_tope];
 
 	// pick upper or lower via stochastic mixing
 	dist_data	this_edist, this_sdist;
@@ -101,16 +101,17 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	dist_data	sdist_upper	=	dist_scatter[this_dex].upper[0];
 	dist_data	edist_lower	=	dist_energy[ this_dex].lower[0];
 	dist_data	edist_upper	=	dist_energy[ this_dex].upper[0];
-	unsigned	this_law	=	0;
-	float		f			=	(this_E - dist_lower.erg) / (dist_upper.erg - dist_lower.erg);
+	unsigned	this_law;
+	float		f			=	(this_E - edist_lower.erg) / (edist_upper.erg - edist_lower.erg);
 	if( get_rand(&rn)>f ){
-		this_edist = edist_lower;
-		this_sdist = sdist_lower;
+		this_edist	=	edist_lower;
+		this_sdist	=	sdist_lower;
 	}
 	else{
 		this_edist = edist_upper;
 		this_sdist = sdist_upper;
 	}
+	this_law	=	this_edist.law;
 
 	// internal kernel variables
 	float  		E_target     		=   0;
@@ -119,7 +120,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	float 		E_new				=   0.0;
 	float 		sampled_E			=	0.0;
 	wfloat3 	v_n_cm, v_t_cm, v_n_lf, v_t_lf, v_cm, hats_new, hats_target, rotation_hat;
-	float 		mu, phi, arg;
+	float 		mu, E0, E1, Ek;
 
 	// ensure normalization
 	hats_old = hats_old / hats_old.norm2();
@@ -136,24 +137,22 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	v_t_cm = v_t_lf - v_cm;
 
 
-	if (law ==4 ){
+	if (this_law ==4 ){
 
 		// sample continuous tabular
-		E0 = sample_continuous_tablular( 	this_dist.len , 
-											this_dist.intt , 
+		E0 = sample_continuous_tablular( 	this_edist.len , 
+											this_edist.intt , 
 											get_rand(&rn) , 
-											this_dist.var , 
-											this_dist.pdf, 
-											this_dist.cdf )
+											this_edist.var , 
+											this_edist.pdf, 
+											this_edist.cdf );
 		//scale it to bins 
-		E1 = dist_lower.var[0]                + f*( dist_upper.var[0]                - dist_lower.var[0] );
-		Ek = dist_lower.var[dist_lower.len-1] + f*( dist_upper.var[dist_upper.len-1] - dist_lower.var[dist_lower.len-1] );
-		sampled_E = E1 +(E0-this_dist.var[0])/(this_dist.var[this_dist.len-1]-this_dist.var[0])*(Ek-E1);
+		E1 = edist_lower.var[0]                 + f*( edist_upper.var[0]                 - edist_lower.var[0] );
+		Ek = edist_lower.var[edist_lower.len-1] + f*( edist_upper.var[edist_upper.len-1] - edist_lower.var[edist_lower.len-1] );
+		sampled_E = E1 +(E0-this_edist.var[0])/(this_edist.var[this_edist.len-1]-this_edist.var[0])*(Ek-E1);
 
 		// sample mu isotropically
 		mu  = 2.0*get_rand(&rn)-1.0;
-
-		printf("tid %d law %u ");
 
 	}
 //	else if (law==9){   //evaopration spectrum
@@ -199,7 +198,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 //		}
 //
 //	}
-	else if (law==44){
+	else if (this_law==44){
 
 		// make sure scatter array is present
 		if(dist_scatter == 0x0){
@@ -208,29 +207,32 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		}
 
 		// correct if below lower energy?
-		//if(this_E<last_E){
-		//	this_E = last_E;
+		//if(this_E<this_edist.var[this_edist.len-1]){
+		//	printf("above last e! \n");
+		//	//this_E = last_E;
 		//}
 
 		// compute interpolation factor
 		if(f<0){
-			printf("DATA NOT WITHIN ENERGY INTERVAL tid %u r % 10.8E rxn %u isotope %u this_E % 10.8E last_E % 10.8E next_E % 10.8E dex %u\n",tid,r,this_rxn,this_tope,this_E,last_E,next_E,this_dex);
+			printf("DATA NOT WITHIN ENERGY INTERVAL tid %u rxn %u\n",tid,this_rxn);
 		}
 
 		// sample tabular on energy, but get index as well as value
 		unsigned dist_index = 0;
 		E0 = sample_continuous_tablular( 	&dist_index ,
-											this_dist.len , 
-											this_dist.intt , 
+											this_edist.len , 
+											this_edist.intt , 
 											get_rand(&rn) , 
-											this_dist.var , 
-											this_dist.pdf, 
-											this_dist.cdf )
+											this_edist.var , 
+											this_edist.pdf, 
+											this_edist.cdf );
+		//printf("this_E %6.4E lower_E %6.4E upper_E %6.4E\n",this_E,edist_lower.erg,edist_upper.erg);
+		//printf("E0 %6.4E dist_index %u len %u intt %u\n",E0,dist_index,this_edist.len,this_edist.intt);
 
 		//scale it to bins 
-		E1 = dist_lower.var[0]                + f*( dist_upper.var[0]                - dist_lower.var[0] );
-		Ek = dist_lower.var[dist_lower.len-1] + f*( dist_upper.var[dist_upper.len-1] - dist_lower.var[dist_lower.len-1] );
-		sampled_E = E1 +(E0-this_dist.var[0])/(this_dist.var[this_dist.len-1]-this_dist.var[0])*(Ek-E1);
+		E1 = edist_lower.var[0]                 + f*( edist_upper.var[0]                 - edist_lower.var[0] );
+		Ek = edist_lower.var[edist_lower.len-1] + f*( edist_upper.var[edist_upper.len-1] - edist_lower.var[edist_lower.len-1] );
+		sampled_E = E1 +(E0-this_edist.var[0])/(this_edist.var[this_edist.len-1]-this_edist.var[0])*(Ek-E1);
 
 		// find correlated mu
 		float A 	= this_sdist.var[dist_index];
@@ -361,7 +363,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 //	}
 	else{
 
-		printf("LAW %u NOT HANDLED IN CONTINUUM SCATTER!  rxn %u\n",law,this_rxn);
+		printf("LAW %u NOT HANDLED IN CONTINUUM SCATTER!  rxn %u\n",this_law,this_rxn);
 
 	}
 
@@ -385,6 +387,8 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		this_rxn = 998;  // ecutoff code
 		printf("c CUTOFF, E = %10.8E\n",E_new);
 	}
+
+	printf("tid %d law %u sampled_E %6.4E mu %6.4E\n",tid,this_law,sampled_E,mu);
 	
 	// write universal results
 	E[tid]			=	E_new;
