@@ -257,66 +257,66 @@ void whistory::init_device(){
 	d_remap					= (unsigned*)		optix_obj.remap_ptr;
 
 	// init others only used on CUDA side
-	cudaMalloc( &d_tally				,n_tallies*sizeof(tally_data)			);
-	cudaMalloc( &d_particles			,		 1*sizeof(particle_data)		);
-	cudaMalloc( &dh_particles.E			, Ndataset*sizeof(float)				);
-	cudaMalloc( &dh_particles.Q			, Ndataset*sizeof(float)				);
-	cudaMalloc( &dh_particles.rn_bank	, Ndataset*sizeof(float)				);
-	cudaMalloc( &dh_particles.isonum	, Ndataset*sizeof(unsigned)				);
-	cudaMalloc( &dh_particles.yield		, Ndataset*sizeof(unsigned)				);
-	cudaMalloc( &dh_particles.weight	, Ndataset*sizeof(float)				);
-	cudaMalloc( &dh_particles.index		, Ndataset*sizeof(unsigned)				);
-	cudaMalloc( &d_valid_result			, Ndataset*sizeof(unsigned)				);
-	cudaMalloc( &d_valid_N				,        1*sizeof(unsigned)				);
-	cudaMalloc( &d_fissile_points		, Ndataset*sizeof(spatial_data)			);
-	cudaMalloc( &d_fissile_energy       , Ndataset*sizeof(float)				);
-	cudaMalloc( &d_scanned 				, Ndataset*sizeof(unsigned)				);
-	cudaMalloc( &d_num_completed 		,        1*sizeof(unsigned)				);
-	cudaMalloc( &d_num_active 			,        1*sizeof(unsigned)				);
-	cudaMalloc( &d_zeros				, Ndataset*sizeof(unsigned)				);
+	check_cuda(cudaMalloc( &d_tally					,n_tallies*sizeof(tally_data)			));
+	check_cuda(cudaMalloc( &d_particles				,		 1*sizeof(particle_data)		));
+	check_cuda(cudaMalloc( &dh_particles.E			, Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.Q			, Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.rn_bank	, Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.isonum		, Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &dh_particles.yield		, Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &dh_particles.weight		, Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.index		, Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_valid_result			, Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_valid_N				,        1*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_fissile_points		, Ndataset*sizeof(spatial_data)			));
+	check_cuda(cudaMalloc( &d_fissile_energy		, Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &d_scanned 				, Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_num_completed 		,        1*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_num_active 			,        1*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_zeros					, Ndataset*sizeof(unsigned)				));
 
 	// copy values from initialized host arrays
-	cudaMemcpy( dh_particles.space		, h_particles.space			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.cellnum	, h_particles.cellnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.talnum		, h_particles.talnum		, Ndataset*sizeof(int)			, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.matnum		, h_particles.matnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.rxn		, h_particles.rxn			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.E			, h_particles.E				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.Q			, h_particles.Q				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.rn_bank	, h_particles.rn_bank		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.isonum		, h_particles.isonum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.yield		, h_particles.yield			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.weight		, h_particles.weight		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( dh_particles.index		, h_particles.index			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( d_valid_result			, zeros						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( d_remap					, remap						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
-	cudaMemcpy( d_zeros					, zeros						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
+	check_cuda(cudaMemcpy( dh_particles.space		, h_particles.space			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.cellnum		, h_particles.cellnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.talnum		, h_particles.talnum		, Ndataset*sizeof(int)			, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.matnum		, h_particles.matnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.rxn			, h_particles.rxn			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.E			, h_particles.E				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.Q			, h_particles.Q				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.rn_bank		, h_particles.rn_bank		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.isonum		, h_particles.isonum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.yield		, h_particles.yield			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.weight		, h_particles.weight		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.index		, h_particles.index			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_valid_result			, zeros						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_remap					, remap						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_zeros					, zeros						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
 
 	// init tally containers
 	for( int i=0 ; i<n_tallies ; i++ ){
 		// allocate
-		cudaMalloc( &dh_tally[i].score 			, h_tally[i].length*sizeof(float*)        );
-		cudaMalloc( &dh_tally[i].square 		, h_tally[i].length*sizeof(float*)        );
-		cudaMalloc( &dh_tally[i].count 			, h_tally[i].length*sizeof(unsigned*)     );
-		cudaMalloc( &dh_tally[i].score_total 	, h_tally[i].length*sizeof(double*)       );
-		cudaMalloc( &dh_tally[i].square_total 	, h_tally[i].length*sizeof(double*)       );
-		cudaMalloc( &dh_tally[i].count_total 	, h_tally[i].length*sizeof(long unsigned*));
+		check_cuda(cudaMalloc( &dh_tally[i].score 			, h_tally[i].length*sizeof(float*)        ));
+		check_cuda(cudaMalloc( &dh_tally[i].square 			, h_tally[i].length*sizeof(float*)        ));
+		check_cuda(cudaMalloc( &dh_tally[i].count 			, h_tally[i].length*sizeof(unsigned*)     ));
+		check_cuda(cudaMalloc( &dh_tally[i].score_total 	, h_tally[i].length*sizeof(double*)       ));
+		check_cuda(cudaMalloc( &dh_tally[i].square_total 	, h_tally[i].length*sizeof(double*)       ));
+		check_cuda(cudaMalloc( &dh_tally[i].count_total 	, h_tally[i].length*sizeof(long unsigned*)));
 		// copy initialized values
 		dh_tally[i].cell		=	h_tally[i].cell;
 		dh_tally[i].length		=	h_tally[i].length;
 		dh_tally[i].E_min		=	h_tally[i].E_min;
 		dh_tally[i].E_max		=	h_tally[i].E_max;
-		cudaMemcpy(  dh_tally[i].score	    	, h_tally[i].score	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice );
-		cudaMemcpy(  dh_tally[i].square	    	, h_tally[i].square	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice );
-		cudaMemcpy(  dh_tally[i].count	    	, h_tally[i].count	       , h_tally[i].length*sizeof(unsigned)			,  cudaMemcpyHostToDevice );
-		cudaMemcpy(  dh_tally[i].score_total  	, h_tally[i].score_total   , h_tally[i].length*sizeof(double)			,  cudaMemcpyHostToDevice );
-		cudaMemcpy(  dh_tally[i].square_total 	, h_tally[i].square_total  , h_tally[i].length*sizeof(double)			,  cudaMemcpyHostToDevice );
-		cudaMemcpy(  dh_tally[i].count_total  	, h_tally[i].count_total   , h_tally[i].length*sizeof(long unsigned)	,  cudaMemcpyHostToDevice );
+		check_cuda(cudaMemcpy(  dh_tally[i].score	    	, h_tally[i].score	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice ));
+		check_cuda(cudaMemcpy(  dh_tally[i].square	    	, h_tally[i].square	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice ));
+		check_cuda(cudaMemcpy(  dh_tally[i].count	    	, h_tally[i].count	       , h_tally[i].length*sizeof(unsigned)			,  cudaMemcpyHostToDevice ));
+		check_cuda(cudaMemcpy(  dh_tally[i].score_total  	, h_tally[i].score_total   , h_tally[i].length*sizeof(double)			,  cudaMemcpyHostToDevice ));
+		check_cuda(cudaMemcpy(  dh_tally[i].square_total 	, h_tally[i].square_total  , h_tally[i].length*sizeof(double)			,  cudaMemcpyHostToDevice ));
+		check_cuda(cudaMemcpy(  dh_tally[i].count_total  	, h_tally[i].count_total   , h_tally[i].length*sizeof(long unsigned)	,  cudaMemcpyHostToDevice ));
 	}
 
 	// copy host structures (containing the device pointers) to the device structure
-	cudaMemcpy(  d_particles, 	&dh_particles	,		  1*sizeof(particle_data),		cudaMemcpyHostToDevice);
-	cudaMemcpy(  d_tally,		dh_tally		, n_tallies*sizeof(tally_data),			cudaMemcpyHostToDevice);
+	check_cuda(cudaMemcpy(  d_particles, 	&dh_particles	,		  1*sizeof(particle_data),		cudaMemcpyHostToDevice));
+	check_cuda(cudaMemcpy(  d_tally,		dh_tally		, n_tallies*sizeof(tally_data),			cudaMemcpyHostToDevice));
 
 	// check errors
 	check_cuda(cudaThreadSynchronize());
@@ -893,42 +893,12 @@ void whistory::copy_scatter_data(){
 
 				// this is a fission reaction and this is nu_t, nu_p
 				// python routine linearly interpolates them, write current values
-				// this is a poor layout for gpu loads.  could be made better in the future!
-				// encoding the values directly to the pointer positions (.lower,.upper) might be better!
 
-				// set all the local array pointers to zero
-				dh_lower_dist.var	=	h_lower_dist.var	=	0x0;
-				dh_lower_dist.pdf	=	h_lower_dist.pdf	=	0x0;
-				dh_lower_dist.cdf	=	h_lower_dist.cdf	=	0x0;
-				dh_upper_dist.var	=	h_upper_dist.var	=	0x0;
-				dh_upper_dist.pdf	=	h_upper_dist.pdf	=	0x0;
-				dh_upper_dist.cdf	=	h_upper_dist.cdf	=	0x0;
-
-				// copy scalar vals in structure
-				dh_lower_dist.erg	=	h_lower_dist.erg;
-				dh_lower_dist.len	=	h_lower_dist.len;
-				dh_lower_dist.law	=	h_lower_dist.law;
-				dh_lower_dist.intt	=	h_lower_dist.intt;
-				dh_upper_dist.erg	=	h_upper_dist.erg;
-				dh_upper_dist.len	=	h_upper_dist.len;
-				dh_upper_dist.law	=	h_upper_dist.law;
-				dh_upper_dist.intt	=	h_upper_dist.intt;
-
-				// allocate container
-				cudaMalloc(&d_lower_dist, 1*sizeof(dist_data));
-				cudaMalloc(&d_upper_dist, 1*sizeof(dist_data));
-				check_cuda(cudaPeekAtLastError());
-
-				// copy device pointers to device container
-				cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
-				cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
-				check_cuda(cudaPeekAtLastError());
-
-				// copy pointers to host arrays
-				h_xsdata.dist_scatter[array_index].upper = &h_upper_dist;
-				h_xsdata.dist_scatter[array_index].lower = &h_lower_dist;
-				      dh_dist_scatter[array_index].upper =  d_upper_dist;
-				      dh_dist_scatter[array_index].lower =  d_lower_dist;
+				// encode values directly to pointer positions on host arrays
+				memcpy(&h_xsdata.dist_scatter[array_index].upper, &h_upper_dist.erg , 1*sizeof(float));
+				memcpy(&h_xsdata.dist_scatter[array_index].lower, &h_lower_dist.erg , 1*sizeof(float));
+				memcpy(      &dh_dist_scatter[array_index].upper, &h_upper_dist.erg , 1*sizeof(float));
+				memcpy(      &dh_dist_scatter[array_index].lower, &h_lower_dist.erg , 1*sizeof(float));
 
 				// go to next dex so python can do interpolation
 				row++;
@@ -998,12 +968,12 @@ void whistory::copy_scatter_data(){
 				assert(upper_cdf_buff_bytes==(upper_cdf_buff_rows*upper_cdf_buff_columns)*sizeof(float));
 
 				// allocate device distribution arrays
-				cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes);   // len has been verified
-				cudaMalloc(&dh_lower_dist.pdf, lower_var_buff_bytes);
-				cudaMalloc(&dh_lower_dist.cdf, lower_var_buff_bytes);
-				cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes);
-				cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes);
-				cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes);
+				check_cuda(cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes));   // len has been verified
+				check_cuda(cudaMalloc(&dh_lower_dist.pdf, lower_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_lower_dist.cdf, lower_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes));
 				check_cuda(cudaPeekAtLastError());
 
 				// copy data from python buffer to host pointer in array
@@ -1015,12 +985,12 @@ void whistory::copy_scatter_data(){
 				memcpy(h_upper_dist.cdf, upper_cdf_buff.buf, upper_var_buff_bytes);
 
 				// copy data from host arrays to device arrays
-				cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff_bytes, cudaMemcpyHostToDevice);  
-				cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff_bytes, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff_bytes, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice);
+				check_cuda(cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff_bytes, cudaMemcpyHostToDevice));  
+				check_cuda(cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
 				check_cuda(cudaPeekAtLastError());
 
 				// copy vals in structure
@@ -1034,13 +1004,13 @@ void whistory::copy_scatter_data(){
 				dh_upper_dist.intt	=	h_upper_dist.intt;
 
 				// allocate container
-				cudaMalloc(&d_lower_dist, 1*sizeof(dist_data));
-				cudaMalloc(&d_upper_dist, 1*sizeof(dist_data));
+				check_cuda(cudaMalloc(&d_lower_dist, 1*sizeof(dist_data)));
+				check_cuda(cudaMalloc(&d_upper_dist, 1*sizeof(dist_data)));
 				check_cuda(cudaPeekAtLastError());
 
 				// copy device pointers to device container
-				cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
-				cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
+				check_cuda(cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
 				check_cuda(cudaPeekAtLastError());
 
 				// replicate pointers until next index
@@ -1064,8 +1034,8 @@ void whistory::copy_scatter_data(){
 	}
 
 	// copy host array containing device pointers to device array
-	cudaMalloc(&dh_xsdata.dist_scatter,                total_rows*total_cols*sizeof(dist_container));
-	cudaMemcpy( dh_xsdata.dist_scatter,dh_dist_scatter,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice);
+	check_cuda(cudaMalloc(&dh_xsdata.dist_scatter,                total_rows*total_cols*sizeof(dist_container)));
+	check_cuda(cudaMemcpy( dh_xsdata.dist_scatter,dh_dist_scatter,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
 	check_cuda(cudaPeekAtLastError());
 
 	// free host array containing device pointers, not needed anymore
@@ -1266,12 +1236,12 @@ void whistory::copy_energy_data(){
 				assert(upper_cdf_buff_bytes==(upper_cdf_buff_rows*upper_cdf_buff_columns)*sizeof(float));
 
 				// allocate device distribution arrays
-				cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes);   // len has been verified
-				cudaMalloc(&dh_lower_dist.pdf, lower_var_buff_bytes);
-				cudaMalloc(&dh_lower_dist.cdf, lower_var_buff_bytes);
-				cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes);
-				cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes);
-				cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes);
+				check_cuda(cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes));   // len has been verified
+				check_cuda(cudaMalloc(&dh_lower_dist.pdf, lower_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_lower_dist.cdf, lower_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes));
 				check_cuda(cudaPeekAtLastError());
 
 				// copy data from python buffer to host pointer in array
@@ -1283,12 +1253,12 @@ void whistory::copy_energy_data(){
 				memcpy(h_upper_dist.cdf, upper_cdf_buff.buf, upper_var_buff_bytes);
 
 				// copy data from host arrays to device arrays
-				cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff_bytes, cudaMemcpyHostToDevice);  
-				cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff_bytes, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff_bytes, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice);
-				cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice);
+				check_cuda(cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff_bytes, cudaMemcpyHostToDevice));  
+				check_cuda(cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
 				check_cuda(cudaPeekAtLastError());
 
 				// copy vals in structure
@@ -1302,13 +1272,13 @@ void whistory::copy_energy_data(){
 				dh_upper_dist.intt	=	h_upper_dist.intt;
 
 				// allocate container
-				cudaMalloc(&d_lower_dist, 1*sizeof(dist_data));
-				cudaMalloc(&d_upper_dist, 1*sizeof(dist_data));
+				check_cuda(cudaMalloc(&d_lower_dist, 1*sizeof(dist_data)));
+				check_cuda(cudaMalloc(&d_upper_dist, 1*sizeof(dist_data)));
 				check_cuda(cudaPeekAtLastError());
 
 				// copy device pointers to device container
-				cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
-				cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
+				check_cuda(cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
 				check_cuda(cudaPeekAtLastError());
 
 				// replicate pointers until next index
@@ -1332,8 +1302,8 @@ void whistory::copy_energy_data(){
 	}
 
 	// copy host array containing device pointers to device array
-	cudaMalloc(&dh_xsdata.dist_energy,               total_rows*total_cols*sizeof(dist_container));
-	cudaMemcpy( dh_xsdata.dist_energy,dh_dist_energy,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice);
+	check_cuda(cudaMalloc(&dh_xsdata.dist_energy,               total_rows*total_cols*sizeof(dist_container)));
+	check_cuda(cudaMemcpy( dh_xsdata.dist_energy,dh_dist_energy,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
 	check_cuda(cudaPeekAtLastError());
 
 	// free host array containing device pointers, not needed anymore
@@ -1402,8 +1372,8 @@ void whistory::init_cross_sections(){
 	assert(n_isotopes == h_xsdata.n_isotopes);
 
 	// allocate material matrix (now that we have n_materials) and copy to device
-	cudaMalloc(&d_number_density_matrix,                        n_materials*n_isotopes*sizeof(float));
-	cudaMemcpy( d_number_density_matrix, number_density_matrix, n_materials*n_isotopes*sizeof(float), cudaMemcpyHostToDevice);
+	check_cuda(cudaMalloc(&d_number_density_matrix,                        n_materials*n_isotopes*sizeof(float)));
+	check_cuda(cudaMemcpy( d_number_density_matrix, number_density_matrix, n_materials*n_isotopes*sizeof(float), cudaMemcpyHostToDevice));
 	check_cuda(cudaPeekAtLastError());
 	
 	std::cout << "Done." << "\e[m \n";

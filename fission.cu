@@ -47,9 +47,12 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	if (dist_scatter[this_dex].lower==0x0){
 		printf("scatter pointer for rxn %d is null!\n",this_rxn);
 	}
-	float		nu			=	dist_scatter[this_dex].lower[0].erg;  // lower erg is nu_t, upper erg is nu_p
+	float		nu			=	0.0;
 	unsigned	inu			=	0;
 	unsigned	this_yield	=	0;
+
+	// copy nu from array, lower erg is nu_t, upper erg is nu_p
+	memcpy(&nu, &dist_scatter[this_dex].lower, 1*sizeof(float));
 
 	// check nu
 	if (nu==0.0){
