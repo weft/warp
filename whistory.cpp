@@ -883,22 +883,52 @@ void whistory::copy_scatter_data(){
 
 
 			// decide what to put in the array according to length reported
-			if(h_lower_dist.len==0){   
+			if(h_lower_dist.law==0){   
 
 				// below threshold, do nothing except go to where the threshold is
 				row = next_dex;
 
 			}
-			else if (h_lower_dist.len==-1){  
+			else if (h_lower_dist.law==-1){  
 
 				// this is a fission reaction and this is nu_t, nu_p
 				// python routine linearly interpolates them, write current values
-				nu_t = PyFloat_AsDouble(	lower_erg_obj);
-				nu_p = PyFloat_AsDouble(	upper_erg_obj);
-				memcpy(& h_xsdata.dist_scatter[array_index].upper , &nu_t, 1*sizeof(float) );
-				memcpy(& h_xsdata.dist_scatter[array_index].lower , &nu_p, 1*sizeof(float) );
-				memcpy(       &dh_dist_scatter[array_index].upper , &nu_t, 1*sizeof(float) );
-				memcpy(       &dh_dist_scatter[array_index].lower , &nu_p, 1*sizeof(float) );
+				// this is a poor layout for gpu loads.  could be made better in the future!
+				// encoding the values directly to the pointer positions (.lower,.upper) might be better!
+
+				// set all the local array pointers to zero
+				dh_lower_dist.var	=	h_lower_dist.var	=	0x0;
+				dh_lower_dist.pdf	=	h_lower_dist.pdf	=	0x0;
+				dh_lower_dist.cdf	=	h_lower_dist.cdf	=	0x0;
+				dh_upper_dist.var	=	h_upper_dist.var	=	0x0;
+				dh_upper_dist.pdf	=	h_upper_dist.pdf	=	0x0;
+				dh_upper_dist.cdf	=	h_upper_dist.cdf	=	0x0;
+
+				// copy scalar vals in structure
+				dh_lower_dist.erg	=	h_lower_dist.erg;
+				dh_lower_dist.len	=	h_lower_dist.len;
+				dh_lower_dist.law	=	h_lower_dist.law;
+				dh_lower_dist.intt	=	h_lower_dist.intt;
+				dh_upper_dist.erg	=	h_upper_dist.erg;
+				dh_upper_dist.len	=	h_upper_dist.len;
+				dh_upper_dist.law	=	h_upper_dist.law;
+				dh_upper_dist.intt	=	h_upper_dist.intt;
+
+				// allocate container
+				cudaMalloc(&d_lower_dist, 1*sizeof(dist_data));
+				cudaMalloc(&d_upper_dist, 1*sizeof(dist_data));
+				check_cuda(cudaPeekAtLastError());
+
+				// copy device pointers to device container
+				cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
+				cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice);
+				check_cuda(cudaPeekAtLastError());
+
+				// copy pointers to host arrays
+				h_xsdata.dist_scatter[array_index].upper = &h_upper_dist;
+				h_xsdata.dist_scatter[array_index].lower = &h_lower_dist;
+				      dh_dist_scatter[array_index].upper =  d_upper_dist;
+				      dh_dist_scatter[array_index].lower =  d_lower_dist;
 
 				// go to next dex so python can do interpolation
 				row++;
@@ -1041,39 +1071,6 @@ void whistory::copy_scatter_data(){
 	// free host array containing device pointers, not needed anymore
 	delete dh_dist_scatter;
 
-
-//					// get flattened matrix for law 61
-//					if (PyObject_CheckBuffer(mu_vector_obj)){
-//						PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
-//					}
-//					else{
-//						PyErr_Print();
-//					    fprintf(stderr, "Returned object does not support buffer interface\n");
-//					    return;
-//					}
-//	
-//					//  get the buffers
-//					muRows     =  muBuff.shape[0];
-//					muColumns  =  muBuff.shape[1];
-//					muBytes    =  muBuff.len;
-//					//assert( muRows==1 | muColumns==1);  // make sure 1d
-//	
-//					this_pointer = new float [muBytes/sizeof(float)];
-//					cudaMalloc(&cuda_pointer,muBytes);
-//					total_bytes_scatter +=   muBytes;  // add to total count
-//					xs_data_scatter     [k*MT_columns + j] = this_pointer;
-//					xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
-//					PyErr_Print();
-//	
-//					// copy to cuda pointer and host pointer
-//					memcpy(this_pointer,muBuff.buf,muBytes);
-//					cudaMemcpy(cuda_pointer,this_pointer,muBytes,cudaMemcpyHostToDevice);
-//	
-//				}	
-//
-//			}
-
-
 }
 void whistory::copy_energy_data(){
 	// get scattering ditributions from PyNE and set up data heirarchy on host and device 
@@ -1201,16 +1198,8 @@ void whistory::copy_energy_data(){
 			else if (h_lower_dist.len==-1){  
 
 				// this is a fission reaction and this is nu_t, nu_p
-				// python routine linearly interpolates them, write current values
-				nu_t = PyFloat_AsDouble(	lower_erg_obj);
-				nu_p = PyFloat_AsDouble(	upper_erg_obj);
-				memcpy(& h_xsdata.dist_energy[array_index].upper , &nu_t, 1*sizeof(float) );
-				memcpy(& h_xsdata.dist_energy[array_index].lower , &nu_p, 1*sizeof(float) );
-				memcpy(       &dh_dist_energy[array_index].upper , &nu_t, 1*sizeof(float) );
-				memcpy(       &dh_dist_energy[array_index].lower , &nu_p, 1*sizeof(float) );
-
-				// go to next dex so python can do interpolation
-				row++;
+				// go to the end.  nu encoding was done in scattering array.
+				row = total_rows;
 
 			}
 			else{
@@ -1379,6 +1368,7 @@ void whistory::init_cross_sections(){
 
 	// init device container
 	cudaMalloc( &d_xsdata,	1*sizeof(cross_section_data));
+	check_cuda(cudaPeekAtLastError());
 
 	// copy scattering data
 	copy_scatter_data();

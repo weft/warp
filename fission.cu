@@ -36,51 +36,43 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	unsigned this_rxn 	=	rxn[    starting_index + tid_in];
 
 	// print and return if wrong
-	if ( this_rxn!=91 ){printf("level scattering kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;} 
+	if ( this_rxn != 818 & this_rxn != 819 & this_rxn != 820 & this_rxn != 821 ){printf("fission kernel accessing wrong reaction @ dex %u dex_in %u rxn %u\n",tid, tid_in,this_rxn);return;} 
 
 	// load history data
 	unsigned	this_dex		=	index[  tid];
 	unsigned	rn				=	rn_bank[tid];
 	float		this_weight		=	weight[ tid];
 
-	// local variables
-	float		nu			=	0.0;
+	// local variables, load nu from scattering dist variables
+	if (dist_scatter[this_dex].lower==0x0){
+		printf("scatter pointer for rxn %d is null!\n",this_rxn);
+	}
+	float		nu			=	dist_scatter[this_dex].lower[0].erg;  // lower erg is nu_t, upper erg is nu_p
 	unsigned	inu			=	0;
 	unsigned	this_yield	=	0;
 
-	// determine integer yields for fission
-	if (this_rxn == 818 | this_rxn == 819 | this_rxn == 820 | this_rxn == 821){
+	// check nu
+	if (nu==0.0){
+		nu=2.8;
+		printf("something is wrong with fission yields, nu = %6.4E, guessing %4.2f, rxn %u\n",0.0,nu,this_rxn); 
+	}
+
+	//  multiply nu by weight
+	nu = this_weight * nu;
+
+	// get integer part
+	inu = (unsigned) nu;
 	
-		//load nu value, since e search has alrady been done, nu should be where the scatter array is (fission is always isotropic)
-		memcpy(&nu, &dist_scatter[this_dex], sizeof(float));
-		if (nu==0.0){
-			nu=2.8;
-			printf("something is wrong with fission yields, nu = %6.4E, guessing %4.2f, rxn %u\n",0.0,nu,this_rxn); 
-		}
-
-		//  multiply nu by weight
-		nu = this_weight * nu;
-
-		// get integer part
-		inu = (unsigned) nu;
-		
-		// sample floor or ceil based on fractional part
-		if((float)inu+get_rand(&rn) <= nu){
-			this_yield = inu+1;
-		}
-		else{
-			this_yield = inu;
-		}
-
-		// put in 900 block to terminate on next sort
- 		this_rxn += 100;
-
+	// sample floor or ceil based on fractional part
+	if((float)inu+get_rand(&rn) <= nu){
+		this_yield = inu+1;
 	}
-	else{ 
-		// wrong reaction
-		printf("fission kernel accessing wrong reaction @ remapped dex %u sorted dex %u rxn %u\n",tid,starting_index + tid_in, this_rxn);
-		return;
+	else{
+		this_yield = inu;
 	}
+
+	// put in 900 block to terminate on next sort
+ 	this_rxn += 100;
 
 	printf("tid %d rxn %u wgt %6.4E yield %u\n", tid, this_rxn, this_weight, this_yield);
 
