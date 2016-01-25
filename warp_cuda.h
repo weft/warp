@@ -16,11 +16,8 @@ void macro_micro( unsigned , unsigned,  unsigned , unsigned , cross_section_data
 void tally_spec( unsigned ,  unsigned, unsigned , unsigned , unsigned*, spatial_data * , float* , float* , float * , unsigned * , unsigned*, unsigned*, unsigned*, float*);
 void scatter_level( cudaStream_t, unsigned , unsigned, unsigned, cross_section_data* , particle_data* , unsigned* );
 void scatter_conti( cudaStream_t, unsigned , unsigned, unsigned, cross_section_data* , particle_data* , unsigned* );
-void escatter( cudaStream_t, unsigned , unsigned, unsigned , unsigned*, unsigned* , unsigned* , unsigned* , float*, spatial_data* , unsigned*, float*, float*, unsigned*, float**);
-void iscatter( cudaStream_t, unsigned , unsigned , unsigned , unsigned*, unsigned* , unsigned * , unsigned * , float *, spatial_data *  ,unsigned * , float* , float* , unsigned* , float**, float**);
-void cscatter( cudaStream_t, unsigned , unsigned, unsigned, unsigned , unsigned*, unsigned* , unsigned * , unsigned * , float *, spatial_data *  ,unsigned * , float* , float* , unsigned* , float**, float**);
-void fission(  cudaStream_t , unsigned , unsigned , unsigned  , unsigned* , unsigned* , unsigned* , unsigned* , float* , spatial_data* , unsigned* , float* , unsigned* , float* , float** , float** );
-void absorb(   cudaStream_t, unsigned , unsigned , unsigned*, unsigned*  , unsigned* );
+void scatter_multi( cudaStream_t, unsigned , unsigned, unsigned, cross_section_data* , particle_data* , unsigned* );
+void fission(       cudaStream_t, unsigned , unsigned, unsigned, cross_section_data* , particle_data* , unsigned* );
 void find_E_grid_index( unsigned , unsigned, cross_section_data* , unsigned* , float* , unsigned *, unsigned* );
 void print_histories(unsigned, unsigned, unsigned *, unsigned*, spatial_data*, float*, unsigned*,unsigned*,unsigned*);
 void pop_secondaries( unsigned, unsigned, unsigned* , unsigned* , unsigned* , unsigned* , unsigned*, unsigned*, spatial_data* , float* , unsigned* , float** );

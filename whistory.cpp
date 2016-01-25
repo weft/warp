@@ -1884,7 +1884,8 @@ void whistory::run(){
 			cudaDeviceSynchronize();
 			scatter_level(	stream[0], NUM_THREADS, (escatter_N+iscatter_N), escatter_start, d_xsdata, d_particles, d_remap );
 			scatter_conti(	stream[1], NUM_THREADS, cscatter_N,              cscatter_start, d_xsdata, d_particles, d_remap );
-			fission ( 		stream[2], NUM_THREADS, fission_N,               fission_start,  d_xsdata, d_particles, d_remap );  
+			//scatter_multi(	stream[1], NUM_THREADS, cscatter_N,              cscatter_start, d_xsdata, d_particles, d_remap );
+			fission ( 		stream[3], NUM_THREADS, fission_N,               fission_start,  d_xsdata, d_particles, d_remap );  
 			cudaDeviceSynchronize();
 			check_cuda(cudaPeekAtLastError());
 			exit(0);
