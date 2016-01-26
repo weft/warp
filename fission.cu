@@ -36,7 +36,7 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	unsigned this_rxn 	=	rxn[    starting_index + tid_in];
 
 	// print and return if wrong
-	if ( this_rxn != 818 & this_rxn != 819 & this_rxn != 820 & this_rxn != 821 ){printf("fission kernel accessing wrong reaction @ dex %u dex_in %u rxn %u\n",tid, tid_in,this_rxn);return;} 
+	if ( this_rxn != 818 & this_rxn != 819 & this_rxn != 820 & this_rxn != 821 & this_rxn != 838 ){printf("fission kernel accessing wrong reaction @ dex %u dex_in %u rxn %u\n",tid, tid_in,this_rxn);return;} 
 
 	// load history data
 	unsigned	this_dex		=	index[  tid];

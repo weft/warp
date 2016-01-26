@@ -32,7 +32,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	//__shared__	unsigned*			matnum;	
 	__shared__	unsigned*			isonum;	
 	//__shared__	unsigned*			yield;	
-	//__shared__	float*				weight;	
+	__shared__	float*				weight;	
 	__shared__	unsigned*			index;	
 
 	// have thread 0 of block copy all pointers and static info into shared memory
@@ -58,7 +58,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		//matnum						= d_particles[0].matnum;
 		isonum						= d_particles[0].isonum;
 		//yield						= d_particles[0].yield;
-		//weight						= d_particles[0].weight;
+		weight						= d_particles[0].weight;
 		index						= d_particles[0].index;
 	}
 
@@ -70,11 +70,11 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	unsigned this_rxn 	=	rxn[    starting_index + tid_in];
 
 	// print and return if wrong
-	if ( this_rxn!=91 ){printf("level scattering kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;} 
+	if ( this_rxn < 11 | this_rxn > 45 ){printf("multiplicity scattering kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;} 
 
 	// check E data pointers
 	if(dist_energy == 0x0){
-		printf("null pointer, energy array in continuum scatter!,tid %u rxn %u\n",tid,this_rxn);
+		printf("null pointer, energy array in multiplicity scatter!,tid %u rxn %u\n",tid,this_rxn);
 		return;
 	}
 
@@ -90,6 +90,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	unsigned	this_tope		=	isonum[  tid];
 	unsigned	this_dex		=	index[   tid];
 	float		this_E			=	E[       tid];
+	float		this_weight		=	weight[  tid];
 	//float		this_Q			=	Q[       tid];
 	unsigned	rn				=	rn_bank[ tid];
 	float		this_awr		=	awr[ this_tope];
@@ -136,7 +137,6 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	v_n_cm = v_n_lf - v_cm;
 	v_t_cm = v_t_lf - v_cm;
 
-
 	if (this_law ==4 ){
 
 		// sample continuous tabular
@@ -155,49 +155,6 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		mu  = 2.0*get_rand(&rn)-1.0;
 
 	}
-//	else if (law==9){   //evaopration spectrum
-//
-//		// get tabulated temperature
-//		float t0 = this_Earray[ offset              ];
-//		float t1 = this_Earray[ offset + 1          ];
-//		float U  = this_Earray[ offset + vlen       ];
-//			  e0 = this_Earray[ offset + vlen*2     ];
-//			  e1 = this_Earray[ offset + vlen*2 + 1 ];
-//		float  T = 0.0;
-//		float  m = 0.0;
-//
-//		// interpolate T
-//		if (e1==e0){  // in top bin, both values are the same
-//			T = t0;
-//		}
-//		else if (intt==2){// lin-lin interpolation
-//			m = (this_E - e0)/(e1 - e0);
-//			T = (1.0 - m)*t0 + m*t1;
-//		}
-//		else if(intt==1){// histogram interpolation
-//			T  = (t1 - t0)/(e1 - e0) * this_E + t0;
-//		}
-//
-//		// rejection sample
-//		m  = (this_E - U)/T;
-//		e0 = 1.0-expf(-m);
-//		float x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
-//		while (  x>m ) {
-//			x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
-//		}
-//
-//		// mcnp5 volIII pg 2-43
-//		sampled_E = T * x;
-//
-//		//isotropic mu
-//		if (this_Sarray==0x0){
-//			mu  = 2.0*get_rand(&rn)-1.0;
-//		}
-//		else{
-//			printf("law 9 in cscatter has angular tables\n");
-//		}
-//
-//	}
 	else if (this_law==44){
 
 		// make sure scatter array is present
@@ -205,12 +162,6 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 			printf("null pointer, scatter array in continuum !,dex %u rxn %u tope %u E %6.4E \n",this_dex,this_rxn,this_tope,this_E);
 			return;
 		}
-
-		// correct if below lower energy?
-		//if(this_E<this_edist.var[this_edist.len-1]){
-		//	printf("above last e! \n");
-		//	//this_E = last_E;
-		//}
 
 		// compute interpolation factor
 		if(f<0){
@@ -226,8 +177,6 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 											this_edist.var , 
 											this_edist.pdf, 
 											this_edist.cdf );
-		//printf("this_E %6.4E lower_E %6.4E upper_E %6.4E\n",this_E,edist_lower.erg,edist_upper.erg);
-		//printf("E0 %6.4E dist_index %u len %u intt %u\n",E0,dist_index,this_edist.len,this_edist.intt);
 
 		//scale it to bins 
 		E1 = edist_lower.var[0]                 + f*( edist_upper.var[0]                 - edist_lower.var[0] );
@@ -247,123 +196,9 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		}
 
 	}
-//	else if (law==61){
-//
-//		unsigned distloc, vloc;
-//		float r = (this_E-last_E)/(next_E-last_E);
-//		last_e_start = this_Earray[ offset ];
-//		last_e_end   = this_Earray[ offset + vlen - 1 ];
-//		next_e_start = this_Earray[ offset + 3*vlen ];
-//		next_e_end   = this_Earray[ offset + 3*vlen + next_vlen - 1];
-//	
-//		rn1 = get_rand(&rn);
-//		rn2 = get_rand(&rn);
-//	
-//		//sample energy dist
-//		sampled_E = 0.0;
-//		if(  rn2 >= r ){   //sample last E
-//			distloc = 1;   // use the first flattened array
-//			diff = next_e_end - next_e_start;
-//			e_start = next_e_start;
-//			for ( n=0 ; n<vlen-1 ; n++ ){
-//				cdf0 		= this_Earray[ (offset +   vlen ) + n+0];
-//				cdf1 		= this_Earray[ (offset +   vlen ) + n+1];
-//				pdf0		= this_Earray[ (offset + 2*vlen ) + n+0];
-//				pdf1		= this_Earray[ (offset + 2*vlen ) + n+1];
-//				e0  		= this_Earray[ (offset          ) + n+0];
-//				e1  		= this_Earray[ (offset          ) + n+1]; 
-//				if( rn1 >= cdf0 & rn1 < cdf1 ){
-//					break;
-//				}
-//			}
-//		}
-//		else{
-//			distloc = this_Sarray[0];   // get location of the next flattened array
-//			diff = next_e_end - next_e_start;
-//			e_start = next_e_start;
-//			for ( n=0 ; n<next_vlen-1 ; n++ ){
-//				cdf0 		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+0];
-//				cdf1  		= this_Earray[ (offset + 3*vlen +   next_vlen ) + n+1];
-//				pdf0		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+0];
-//				pdf1		= this_Earray[ (offset + 3*vlen + 2*next_vlen ) + n+1];
-//				e0   		= this_Earray[ (offset + 3*vlen               ) + n+0];
-//				e1   		= this_Earray[ (offset + 3*vlen               ) + n+1];
-//				if( rn1 >= cdf0 & rn1 < cdf1 ){
-//					break;
-//				}
-//			}
-//		}
-//	
-//		if (intt==2){// lin-lin interpolation
-//			float m 	= (pdf1 - pdf0)/(e1-e0);
-//			float arg = pdf0*pdf0 + 2.0 * m * (rn1-cdf0);
-//			if(arg<0){
-//				E0 = e0 + (e1-e0)/(cdf1-cdf0)*(rn1-cdf0);
-//			}
-//			else{
-//				E0 	= e0 + (  sqrtf( arg ) - pdf0) / m ;
-//			}
-//		}
-//		else if(intt==1){// histogram interpolation
-//			E0 = e0 + (rn1-cdf0)/pdf0;
-//		}
-//		
-//		//scale it
-//		E1 = last_e_start + r*( next_e_start - last_e_start );
-//		Ek = last_e_end   + r*( next_e_end   - last_e_end   );
-//		sampled_E = E1 +(E0-e_start)*(Ek-E1)/diff;
-//
-//		//
-//		// sample mu from tabular distributions
-//		//
-//
-//		// get parameters
-//		unsigned vlen_S ;
-//		if(distloc){
-//			unsigned l = this_Sarray[0];
-//			vloc   = this_Sarray[l + n] + (l + next_vlen) ; // get appropriate vector location for this E_out
-//			}                
-//		else{   
-//			vloc   = this_Sarray[1 + n] + (1 + vlen) ;     
-//		}
-//		vlen_S = this_Sarray[vloc + 0];        // vector length
-//		intt   = this_Sarray[vloc + 1];        // interpolation type
-//		//printf("distloc %u vloc %u vlen_S %u intt %u \n",distloc,vloc,vlen_S,intt);
-//
-//		// sample the dist
-//		rn1 = get_rand(&rn);
-//		for ( n=0 ; n<vlen-1 ; n++ ){
-//			cdf0 		= this_Sarray[ (vloc + 2 +   vlen_S ) + n+0];
-//			cdf1  		= this_Sarray[ (vloc + 2 +   vlen_S ) + n+1];
-//			pdf0		= this_Sarray[ (vloc + 2 + 2*vlen_S ) + n+0];
-//			pdf1		= this_Sarray[ (vloc + 2 + 2*vlen_S ) + n+1];
-//			e0   		= this_Sarray[ (vloc + 2            ) + n+0];
-//			e1   		= this_Sarray[ (vloc + 2            ) + n+1];
-//			if( rn1 >= cdf0 & rn1 < cdf1 ){
-//				break;
-//			}
-//		}
-//
-//		// interpolate
-//		if (e1==e0){  // in top bin, both values are the same
-//				mu = e0;
-//			}
-//		else if (intt==2){// lin-lin interpolation
-//			r = (rn1 - cdf0)/(cdf1 - cdf0);
-//           mu = (1.0 - r)*e0 + r*e1;
-//		}
-//		else if(intt==1){// histogram interpolation
-//			mu  = (e1 - e0)/(cdf1 - cdf0) * rn1 + e0;
-//		}
-//		else{
-//			printf("intt in law 61 in cscatter is invlaid (%u)!\n",intt);
-//		}
-//		
-//
-//	}
 	else{
 
-		printf("LAW %u NOT HANDLED IN CONTINUUM SCATTER!  rxn %u\n",this_law,this_rxn);
+		printf("LAW %u NOT HANDLED IN MULTIPLICITY SCATTER!  rxn %u\n",this_law,this_rxn);
 
 	}
 
@@ -388,14 +223,35 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		printf("c CUTOFF, E = %10.8E\n",E_new);
 	}
 
-	printf("tid %d law %u sampled_E %6.4E mu %6.4E\n",tid,this_law,sampled_E,mu);
+	// multiply weight by multiplicity
+	if(     this_rxn == 22 | this_rxn == 23 | this_rxn == 28 | this_rxn == 29 | this_rxn == 32 | this_rxn == 33 | this_rxn == 34 | this_rxn == 35 | this_rxn == 36 | this_rxn == 44 | this_rxn == 45){
+		this_weight = this_weight * 1.0;
+	}
+	else if(this_rxn == 11 | this_rxn == 16 | this_rxn == 24 | this_rxn == 30 | this_rxn == 41){
+		this_weight = this_weight * 2.0;
+	}
+	else if(this_rxn == 17 | this_rxn == 25 | this_rxn == 42){
+		this_weight = this_weight * 3.0;
+	}
+	else if(this_rxn == 37){
+		this_weight = this_weight * 4.0;
+	}
+	else{
+		printf("UNKNOWN MT NUMBER %u IN MULTIPLICITY\n",this_rxn);
+	}
+
+
+	printf("tid %d law %u sampled_E %6.4E mu %6.4E weight %6.4E\n",tid,this_law,sampled_E,mu,this_weight);
 	
-	// write universal results
-	E[tid]			=	E_new;
+	// write results
+	E[      tid]	=	E_new;
+	rn_bank[tid]	=	rn;
+	weight[ tid]	=	this_weight;
 	space[tid].xhat	=	hats_new.x;
 	space[tid].yhat	=	hats_new.y;
 	space[tid].zhat	=	hats_new.z;
-	rn_bank[tid]	=	rn;
+
+
 
 }
 

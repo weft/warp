@@ -1737,7 +1737,7 @@ void whistory::run(){
 	int iteration = 0;
 	int iteration_total=0;
 	unsigned converged = 0;
-	unsigned active_size1, active_gap, escatter_N, escatter_start, iscatter_N, iscatter_start, cscatter_N, cscatter_start, fission_N, fission_start;
+	unsigned active_size1, active_gap, lscatter_N, lscatter_start, mscatter_N, mscatter_start, cscatter_N, cscatter_start, fission_N, fission_start;
 	std::string fiss_name, stats_name;
 	FILE* statsfile;
 	float runtime = get_time();
@@ -1836,16 +1836,16 @@ void whistory::run(){
 			check_cuda(cudaPeekAtLastError());
 
 			// remap threads to still active data
-			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
+			remap_active(&Nrun, &lscatter_N, &lscatter_start, &mscatter_N, &mscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
 			check_cuda(cudaPeekAtLastError());
 
 			// concurrent calls to do escatter/iscatter/cscatter/fission.  Must sync after since these calls are not synchronous.
 			cudaThreadSynchronize();
 			cudaDeviceSynchronize();
-			scatter_level(	stream[0], NUM_THREADS, (escatter_N+iscatter_N), escatter_start, d_xsdata, d_particles, d_remap );
-			scatter_conti(	stream[1], NUM_THREADS, cscatter_N,              cscatter_start, d_xsdata, d_particles, d_remap );
-			//scatter_multi(	stream[1], NUM_THREADS, cscatter_N,              cscatter_start, d_xsdata, d_particles, d_remap );
-			fission ( 		stream[3], NUM_THREADS, fission_N,               fission_start,  d_xsdata, d_particles, d_remap );  
+			scatter_level(	stream[0], NUM_THREADS, lscatter_N, lscatter_start, d_xsdata, d_particles, d_remap );
+			scatter_conti(	stream[1], NUM_THREADS, cscatter_N, cscatter_start, d_xsdata, d_particles, d_remap );
+			scatter_multi(	stream[2], NUM_THREADS, mscatter_N, mscatter_start, d_xsdata, d_particles, d_remap );
+			fission ( 		stream[3], NUM_THREADS, fission_N,  fission_start,  d_xsdata, d_particles, d_remap );  
 			cudaDeviceSynchronize();
 			check_cuda(cudaPeekAtLastError());
 			exit(0);
@@ -2006,7 +2006,7 @@ void whistory::prep_secondaries(){
 	//for(int k=0; k<Ndataset ; k++ ){printf("(tid,done,scanned,completed,yield) %u %u %u %u %u\n",k,tmp3[k],tmp1[k],tmp2[k],tmp4[k]);}
 
 }
-void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned* escatter_start, unsigned* iscatter_N, unsigned* iscatter_start, unsigned* cscatter_N, unsigned* cscatter_start, unsigned* fission_N, unsigned* fission_start){
+void whistory::remap_active(unsigned* num_active, unsigned* lscatter_N, unsigned* lscatter_start, unsigned* mscatter_N, unsigned* mscatter_start, unsigned* cscatter_N, unsigned* cscatter_start, unsigned* fission_N, unsigned* fission_start){
 
 	unsigned resamp_N = 0;
 	unsigned resamp_start = 0;
@@ -2022,20 +2022,20 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 
 	// calculate lengths and starting indicies for the blocks, 0 indicates not found
 	if (edges[0]){
-		*escatter_N 	= (edges[1]-edges[0])+1;
-		*escatter_start	= edges[0]-1;
+		*mscatter_N 	= (edges[1]-edges[0])+1;
+		*mscatter_start	= edges[0]-1;
 	}
 	else{
-		*escatter_N 	= 0;
-		*escatter_start	= 0;
+		*mscatter_N 	= 0;
+		*mscatter_start	= 0;
 	}
 	if (edges[2]){
-		*iscatter_N 	= (edges[3]-edges[2])+1;
-		*iscatter_start	= edges[2]-1;
+		*lscatter_N 	= (edges[3]-edges[2])+1;
+		*lscatter_start	= edges[2]-1;
 	}
 	else{
-		*iscatter_N 	= 0;
-		*iscatter_start	= 0;
+		*lscatter_N 	= 0;
+		*lscatter_start	= 0;
 	}
 	if (edges[4]){
 		*cscatter_N 	= (edges[5]-edges[4])+1;
@@ -2063,22 +2063,22 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	}
 
 	//calculate total active, [10] is the starting index of >=811, so if==1, means that we are done!
-	*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N + *fission_N;   // fission includes multiplicity, have to reprocess
+	*num_active=*lscatter_N + *mscatter_N + *cscatter_N + resamp_N + *fission_N;   // fission includes multiplicity, have to reprocess
 
 	// debug
 	if(print_flag>=4){
 		//print
 		printf("num_active %u , edges[9] %u\n",*num_active,edges[9]);
 		printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
-		printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
+		printf("mscatter s %u n %u, lscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*mscatter_start,*mscatter_N,*lscatter_start,*lscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
 		if(dump_flag>=2){//dump
 			write_to_file(d_remap, dh_particles.rxn, N,"remap","w");
 		}
 	}
 
 	// ensure order
-	if(*iscatter_N>0){ assert(*iscatter_start >= *escatter_start);}
-	if(*cscatter_N>0){ assert(*cscatter_start >= *iscatter_start);}
+	if(*mscatter_N>0){ assert(*mscatter_start >= *lscatter_start);}
+	if(*cscatter_N>0){ assert(*cscatter_start >= *mscatter_start);}
 	if(resamp_N>0){    assert(   resamp_start >= *cscatter_start);}
 	if(*fission_N>0){  assert( *fission_start >=    resamp_start);}
 

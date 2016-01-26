@@ -255,9 +255,11 @@ class cross_section_data:
 	# \returns MT_num_array - array of MT numbers
 	def _get_MT_numbers_pointer(self):
 		MT_num_array = numpy.ascontiguousarray(numpy.array(self.reaction_numbers,order='C'),dtype=numpy.uint32)
-		# shift fission +800, shift captures +1000
+		# shift elastic to 49, fission +800, shift captures +1000
 		for n in range(0,len(MT_num_array)):
-			if MT_num_array[n] >= 11 and MT_num_array[n] <= 45:
+			if MT_num_array[n] == 2:
+				MT_num_array[n] = 50
+			elif (MT_num_array[n] >= 18 and MT_num_array[n] <= 22) or MT_num_array[n] == 38 :
 				MT_num_array[n] = MT_num_array[n]+800
 			elif MT_num_array[n] > 100:
 				MT_num_array[n] = MT_num_array[n]+1000
