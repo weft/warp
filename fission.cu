@@ -77,7 +77,7 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	// put in 900 block to terminate on next sort
  	this_rxn += 100;
 
-	printf("tid %d rxn %u wgt %6.4E yield %u\n", tid, this_rxn, this_weight, this_yield);
+	//printf("tid %d rxn %u wgt %6.4E yield %u\n", tid, this_rxn, this_weight, this_yield);
 
 	// write 
 	yield[  tid]					=	this_yield;

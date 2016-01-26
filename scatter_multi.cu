@@ -241,7 +241,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	}
 
 
-	printf("tid %d law %u sampled_E %6.4E mu %6.4E weight %6.4E\n",tid,this_law,sampled_E,mu,this_weight);
+	//printf("tid %d law %u sampled_E %6.4E mu %6.4E weight %6.4E\n",tid,this_law,sampled_E,mu,this_weight);
 	
 	// write results
 	E[      tid]	=	E_new;

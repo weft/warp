@@ -229,7 +229,7 @@ int main(int argc, char* argv[]){
 
 
 		//godiva geom
-		type=2;
+		type=3;
 		material=1;
 		mins[0]= -5.1;
 		mins[1]= -5.1;
@@ -368,7 +368,7 @@ int main(int argc, char* argv[]){
 	}
 
 	// finalize geom
-	geom.set_outer_cell(999,2);  // cell, BC  1=black, 2=specular
+	geom.set_outer_cell(999,1);  // cell, BC  1=black, 2=specular
 	geom.add_tally(tallycell);
 	geom.update();
 	if(geom.check()){std::cout << "geometry failed check!\n"; return 1;}

@@ -176,6 +176,14 @@ void whistory::init_host(){
 	dh_tally	=	new tally_data[     n_tallies];
 	 h_tally	=	new tally_data_host[n_tallies];
 
+	// compute minumum size, incase dataset is shorter than tally, etc...
+	unsigned minumum_size = Ndataset;
+	for( int i=0 ; i<n_tallies ; i++ ){
+		if (h_tally[i].length > minumum_size){
+			minumum_size = h_tally[i].length;
+		}
+	}
+
 	// allocate
 	h_particles.space	= new spatial_data 	[Ndataset];
 	h_particles.E		= new float 		[Ndataset];
@@ -190,12 +198,12 @@ void whistory::init_host(){
 	h_particles.yield	= new unsigned 		[Ndataset];
 	h_particles.weight	= new float  		[Ndataset];
 	remap				= new unsigned 		[Ndataset];
-	zeros				= new unsigned 		[Ndataset];
-	ones				= new unsigned 		[Ndataset];
-	fones				= new float  		[Ndataset];
-	mones				= new int			[Ndataset];
+	zeros				= new unsigned 		[minumum_size];
+	ones				= new unsigned 		[minumum_size];
+	fones				= new float  		[minumum_size];
+	mones				= new int			[minumum_size];
 
-	//  init
+	//  init dataset lengths
 	for(int k=0;k<Ndataset;k++){
 		h_particles.space[k].x				= 0.0;
 		h_particles.space[k].y				= 0.0;
@@ -219,6 +227,10 @@ void whistory::init_host(){
 		h_particles.yield[k]				= 0;
 		h_particles.weight[k]				= 1;
 		remap[k]							= k;
+	}
+
+	// init minimum lengths
+	for(int k=0;k<minumum_size;k++){
 		zeros[k]							= 0;
 		ones[k]								= 1;
 		fones[k]							= 1.0;
@@ -258,24 +270,32 @@ void whistory::init_device(){
 	dh_particles.rxn		= (unsigned*)		optix_obj.rxn_ptr;
 	d_remap					= (unsigned*)		optix_obj.remap_ptr;
 
+	// compute minumum size, incase dataset is shorter than tally, etc...
+	unsigned minumum_size = Ndataset;
+	for( int i=0 ; i<n_tallies ; i++ ){
+		if (h_tally[i].length > minumum_size){
+			minumum_size = h_tally[i].length;
+		}
+	}
+
 	// init others only used on CUDA side
-	check_cuda(cudaMalloc( &d_tally					,n_tallies*sizeof(tally_data)			));
-	check_cuda(cudaMalloc( &d_particles				,		 1*sizeof(particle_data)		));
-	check_cuda(cudaMalloc( &dh_particles.E			, Ndataset*sizeof(float)				));
-	check_cuda(cudaMalloc( &dh_particles.Q			, Ndataset*sizeof(float)				));
-	check_cuda(cudaMalloc( &dh_particles.rn_bank	, Ndataset*sizeof(float)				));
-	check_cuda(cudaMalloc( &dh_particles.isonum		, Ndataset*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &dh_particles.yield		, Ndataset*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &dh_particles.weight		, Ndataset*sizeof(float)				));
-	check_cuda(cudaMalloc( &dh_particles.index		, Ndataset*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_valid_result			, Ndataset*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_valid_N				,        1*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_fissile_points		, Ndataset*sizeof(spatial_data)			));
-	check_cuda(cudaMalloc( &d_fissile_energy		, Ndataset*sizeof(float)				));
-	check_cuda(cudaMalloc( &d_scanned 				, Ndataset*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_num_completed 		,        1*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_num_active 			,        1*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_zeros					, Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_tally					,    n_tallies*sizeof(tally_data)			));
+	check_cuda(cudaMalloc( &d_particles				,    		 1*sizeof(particle_data)		));
+	check_cuda(cudaMalloc( &dh_particles.E			,     Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.Q			,     Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.rn_bank	,     Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.isonum		,     Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &dh_particles.yield		,     Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &dh_particles.weight		,     Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.index		,     Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_valid_result			,     Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_valid_N				,            1*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_fissile_points		,     Ndataset*sizeof(spatial_data)			));
+	check_cuda(cudaMalloc( &d_fissile_energy		,     Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &d_scanned 				,     Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_num_completed 		,            1*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_num_active 			,            1*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_zeros					, minumum_size*sizeof(unsigned)				));
 
 	// copy values from initialized host arrays
 	check_cuda(cudaMemcpy( dh_particles.space		, h_particles.space			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice ));
@@ -465,7 +485,7 @@ void whistory::accumulate_tally(){
 		check_cuda(cudaMemcpy(dh_tally[i].count,  d_zeros, h_tally[i].length*sizeof(unsigned), cudaMemcpyDeviceToDevice));
 	
 		//perform sums on 64bit host side values, zero 32bit arrays
-		for(unsigned k=0 ; k<n_tally ; k++){
+		for(unsigned k=0 ; k<n_tallies ; k++){
 			h_tally[i].score_total[ k] 	+=  h_tally[i].score[ k];
 			h_tally[i].square_total[k]	+=  h_tally[i].square[k];
 			h_tally[i].count_total[ k] 	+=  h_tally[i].count[ k];
@@ -1675,22 +1695,22 @@ void whistory::reset_cycle(float keff_cycle){
 	check_cuda(cudaPeekAtLastError());
 
 	//pop them in!  should be the right size now due to keff rebasing  
-	pop_fission( NUM_THREADS, d_xsdata, d_particles, d_scanned );
+	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_fissile_points, d_fissile_energy, d_scanned );
 	check_cuda(cudaPeekAtLastError());
 
  	// rest run arrays
 	check_cuda(cudaMemcpy( dh_particles.space,		d_fissile_points,	N*sizeof(spatial_data),	cudaMemcpyDeviceToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.E,			d_fissile_energy,	N*sizeof(unsigned),		cudaMemcpyDeviceToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.done,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.E,			d_fissile_energy,	N*sizeof(float),		cudaMemcpyDeviceToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.cellnum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.matnum,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.isonum,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.talnum,		mones,				N*sizeof(int),			cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.yield,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.rxn,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.remap,		remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_remap,					remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.index,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.weight,		fones,				N*sizeof(float),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.Q,			zeros,				N*sizeof(float),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaPeekAtLastError());
 
 	// update RNG seeds
@@ -1879,7 +1899,6 @@ void whistory::run(){
 			check_cuda(cudaPeekAtLastError());
 			Nrun=N;
 		//}
-			exit(0);
 
 		// update active iteration
 		if (converged){

@@ -388,7 +388,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		printf("c CUTOFF, E = %10.8E\n",E_new);
 	}
 
-	printf("tid %d law %u sampled_E %6.4E mu %6.4E\n",tid,this_law,sampled_E,mu);
+	//printf("tid %d law %u sampled_E %6.4E mu %6.4E\n",tid,this_law,sampled_E,mu);
 	
 	// write universal results
 	E[tid]			=	E_new;

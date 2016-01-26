@@ -120,7 +120,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	float 		e0 				= energy_grid[dex];
 	float 		e1 				= energy_grid[dex+1];
 
-	printf("tid %d this_E %6.4E e0 %6.4E e1 %6.4E matnum %u cellnum %u talnum %d\n",tid,this_E,e0,e1,this_mat,cellnum[tid],tally_index);
+	//printf("tid %d this_E %6.4E e0 %6.4E e1 %6.4E matnum %u cellnum %u talnum %d\n",tid,this_E,e0,e1,this_mat,cellnum[tid],tally_index);
 
 	if(this_mat>=n_materials){
 		printf("MACRO - tid %u this_mat %u > n_materials %u!!!!!\n",tid,this_mat,n_materials);
@@ -158,7 +158,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	dotp = 	norm[0]*xhat + 
 			norm[1]*yhat + 
 			norm[2]*zhat;
-	surf_minimum = epsilon / fabsf(dotp);
+	surf_minimum = 1.2 * epsilon / fabsf(dotp);
 	
 	// surface logic
 	if( diff < surf_minimum ){  // need to make some decisions so epsilon is handled correctly
@@ -166,6 +166,7 @@ All neutrons need these things done, so these routines all live in the same rout
 		// preserve if in this cell or next, but make sure neutron is at least an epsilon away from the surface.
 		if (diff < 0.0){ // next cell, enforce BC or push through
 			if (enforce_BC == 1){  // black BC
+				//printf("Killing at black BC...\n");
 				x += (surf_dist + 2.1*surf_minimum) * xhat;
 				y += (surf_dist + 2.1*surf_minimum) * yhat;
 				z += (surf_dist + 2.1*surf_minimum) * zhat;
@@ -173,10 +174,11 @@ All neutrons need these things done, so these routines all live in the same rout
 				this_tope=999999997;  
 			}
 			else if(enforce_BC == 2){  // specular reflection BC
+				printf("Reflecting at specular BC NOT IMPLEMENTED YET!\n");
 				// move epsilon off of surface
-				x += ((surf_dist*xhat) + copysignf(1.0,dotp)*1.2*epsilon*norm[0]); 
-				y += ((surf_dist*yhat) + copysignf(1.0,dotp)*1.2*epsilon*norm[1]);
-				z += ((surf_dist*zhat) + copysignf(1.0,dotp)*1.2*epsilon*norm[2]);
+				x += ((surf_dist*xhat) + copysignf(1.0,dotp)*1.5*epsilon*norm[0]); 
+				y += ((surf_dist*yhat) + copysignf(1.0,dotp)*1.5*epsilon*norm[1]);
+				z += ((surf_dist*zhat) + copysignf(1.0,dotp)*1.5*epsilon*norm[2]);
 				// calculate reflection
 				xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
 				yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
@@ -186,17 +188,19 @@ All neutrons need these things done, so these routines all live in the same rout
 				this_tope=999999996;  
 			}
 			else{   // next cell, move to intersection point, then move *out* epsilon along surface normal
-				x += surf_dist*xhat + copysignf(1.0,dotp)*1.2*epsilon*norm[0];
-				y += surf_dist*yhat + copysignf(1.0,dotp)*1.2*epsilon*norm[1];
-				z += surf_dist*zhat + copysignf(1.0,dotp)*1.2*epsilon*norm[2];
+				//printf("Moving to next cell...\n");
+				x += surf_dist*xhat + copysignf(1.0,dotp)*1.5*epsilon*norm[0];
+				y += surf_dist*yhat + copysignf(1.0,dotp)*1.5*epsilon*norm[1];
+				z += surf_dist*zhat + copysignf(1.0,dotp)*1.5*epsilon*norm[2];
 				this_rxn = 800;  // resampling is 800
 				this_tope=999999998;  
 				}
 			}
 		else{   // this cell, move to intersection point, then move *in* epsilon along surface normal 
-			x += surf_dist*xhat - copysignf(1.0,dotp)*1.2*epsilon*norm[0];
-			y += surf_dist*yhat - copysignf(1.0,dotp)*1.2*epsilon*norm[1];
-			z += surf_dist*zhat - copysignf(1.0,dotp)*1.2*epsilon*norm[2];
+			//printf("In this cell...\n");
+			x += surf_dist*xhat - copysignf(1.0,dotp)*1.5*epsilon*norm[0];
+			y += surf_dist*yhat - copysignf(1.0,dotp)*1.5*epsilon*norm[1];
+			z += surf_dist*zhat - copysignf(1.0,dotp)*1.5*epsilon*norm[2];
 			this_rxn = 0;
 		}
 	}
