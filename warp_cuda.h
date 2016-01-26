@@ -20,7 +20,7 @@ void scatter_multi( cudaStream_t, unsigned , unsigned, unsigned, cross_section_d
 void fission(       cudaStream_t, unsigned , unsigned, unsigned, cross_section_data* , particle_data* , unsigned* );
 void find_E_grid_index( unsigned , unsigned, cross_section_data* , unsigned* , float* , unsigned *, unsigned* );
 void print_histories(unsigned, unsigned, unsigned *, unsigned*, spatial_data*, float*, unsigned*,unsigned*,unsigned*);
-void pop_secondaries( unsigned, unsigned, unsigned* , unsigned* , unsigned* , unsigned* , unsigned*, unsigned*, spatial_data* , float* , unsigned* , float** );
+void pop_fission(  unsigned , unsigned , cross_section_data* , particle_data* , unsigned*) ;
 void pop_source( unsigned ,  unsigned , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* , spatial_data* , float*  , unsigned* , float ** , float** , spatial_data* , float* , float * , float* );
 void rebase_yield( unsigned , unsigned , float , unsigned* , unsigned* );
 void reaction_edges( unsigned ,  unsigned , unsigned* , unsigned* );

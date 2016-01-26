@@ -173,8 +173,8 @@ void whistory::init(){
 void whistory::init_host(){
 
 	// init tally arrays
-	dh_tally	=	new tally_data[n_tallies];
-	h_tally		=	new tally_data[n_tallies];
+	dh_tally	=	new tally_data[     n_tallies];
+	 h_tally	=	new tally_data_host[n_tallies];
 
 	// allocate
 	h_particles.space	= new spatial_data 	[Ndataset];
@@ -193,6 +193,7 @@ void whistory::init_host(){
 	zeros				= new unsigned 		[Ndataset];
 	ones				= new unsigned 		[Ndataset];
 	fones				= new float  		[Ndataset];
+	mones				= new int			[Ndataset];
 
 	//  init
 	for(int k=0;k<Ndataset;k++){
@@ -221,6 +222,7 @@ void whistory::init_host(){
 		zeros[k]							= 0;
 		ones[k]								= 1;
 		fones[k]							= 1.0;
+		mones[k]							= -1;
 	}
 
 	// set host tally size, bounds, allocate, and zero out all tallies
@@ -298,9 +300,6 @@ void whistory::init_device(){
 		check_cuda(cudaMalloc( &dh_tally[i].score 			, h_tally[i].length*sizeof(float*)        ));
 		check_cuda(cudaMalloc( &dh_tally[i].square 			, h_tally[i].length*sizeof(float*)        ));
 		check_cuda(cudaMalloc( &dh_tally[i].count 			, h_tally[i].length*sizeof(unsigned*)     ));
-		check_cuda(cudaMalloc( &dh_tally[i].score_total 	, h_tally[i].length*sizeof(double*)       ));
-		check_cuda(cudaMalloc( &dh_tally[i].square_total 	, h_tally[i].length*sizeof(double*)       ));
-		check_cuda(cudaMalloc( &dh_tally[i].count_total 	, h_tally[i].length*sizeof(long unsigned*)));
 		// copy initialized values
 		dh_tally[i].cell		=	h_tally[i].cell;
 		dh_tally[i].length		=	h_tally[i].length;
@@ -309,9 +308,6 @@ void whistory::init_device(){
 		check_cuda(cudaMemcpy(  dh_tally[i].score	    	, h_tally[i].score	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice ));
 		check_cuda(cudaMemcpy(  dh_tally[i].square	    	, h_tally[i].square	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice ));
 		check_cuda(cudaMemcpy(  dh_tally[i].count	    	, h_tally[i].count	       , h_tally[i].length*sizeof(unsigned)			,  cudaMemcpyHostToDevice ));
-		check_cuda(cudaMemcpy(  dh_tally[i].score_total  	, h_tally[i].score_total   , h_tally[i].length*sizeof(double)			,  cudaMemcpyHostToDevice ));
-		check_cuda(cudaMemcpy(  dh_tally[i].square_total 	, h_tally[i].square_total  , h_tally[i].length*sizeof(double)			,  cudaMemcpyHostToDevice ));
-		check_cuda(cudaMemcpy(  dh_tally[i].count_total  	, h_tally[i].count_total   , h_tally[i].length*sizeof(long unsigned)	,  cudaMemcpyHostToDevice ));
 	}
 
 	// copy host structures (containing the device pointers) to the device structure
@@ -407,7 +403,7 @@ unsigned whistory::reduce_yield(){
 
 	unsigned reduced_yields;
 
-	res = cudppReduce(reduplan_int, d_reduced_yields, h_particles.yield, N);
+	res = cudppReduce(reduplan_int, d_reduced_yields, dh_particles.yield, N);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing yield values\n");exit(-1);}
 	check_cuda(cudaMemcpy(&reduced_yields, d_reduced_yields, 1*sizeof(unsigned), cudaMemcpyDeviceToHost));
 
@@ -418,7 +414,7 @@ float whistory::reduce_weight(){
 
 	float reduced_weight;
 
-	res = cudppReduce(reduplan_float, d_reduced_weight, h_particles.weight, N);
+	res = cudppReduce(reduplan_float, d_reduced_weight, dh_particles.weight, N);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing weight values\n");exit(-1);}
 	check_cuda(cudaMemcpy(&reduced_weight, d_reduced_weight, 1*sizeof(float), cudaMemcpyDeviceToHost));
 
@@ -429,8 +425,8 @@ void whistory::accumulate_keff(unsigned converged, unsigned iteration, double* k
 
 	float this_count, this_square, this_mean, keff_err2;
 
-	long unsigned reduced_yields = reduce_yield();
-	double        reduced_weight  = reduce_weight();
+	long unsigned reduced_yields	=	reduce_yield();
+	double        reduced_weight	=	reduce_weight();
 
 	*keff_cycle = reduced_yields / reduced_weight;
 
@@ -456,23 +452,29 @@ void whistory::accumulate_keff(unsigned converged, unsigned iteration, double* k
 }
 void whistory::accumulate_tally(){
 
-//	//copy data to host
-//	check_cuda(cudaMemcpy(tally_score,  d_tally_score,  n_tally*sizeof(float),    cudaMemcpyDeviceToHost));
-//	check_cuda(cudaMemcpy(tally_square, d_tally_square, n_tally*sizeof(float),    cudaMemcpyDeviceToHost));
-//	check_cuda(cudaMemcpy(tally_count,  d_tally_count,  n_tally*sizeof(unsigned), cudaMemcpyDeviceToHost));
-//
-//	//zero out vectors
-//	check_cuda(cudaMemcpy(d_tally_score,  d_zeros, n_tally*sizeof(float),    cudaMemcpyDeviceToDevice));
-//	check_cuda(cudaMemcpy(d_tally_square, d_zeros, n_tally*sizeof(float),    cudaMemcpyDeviceToDevice));
-//	check_cuda(cudaMemcpy(d_tally_count,  d_zeros, n_tally*sizeof(unsigned), cudaMemcpyDeviceToDevice));
-//
-//	//perform sums on 64bit host side values
-//	for(unsigned k=0 ; k<n_tally ; k++){
-//		tally_score_total[k] 	+=  tally_score[k];
-//		tally_square_total[k]	+=  tally_square[k];
-//		tally_count_total[k] 	+=  tally_count[k];
-//		//printf("score %10.8E %10.8E\n",tally_score[k],tally_score_total[k]);
-//	}
+	for(int i=0;i<n_tallies;i++){
+
+		//copy data to host
+		check_cuda(cudaMemcpy(h_tally[i].score,  dh_tally[i].score,  h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToHost));
+		check_cuda(cudaMemcpy(h_tally[i].square, dh_tally[i].square, h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToHost));
+		check_cuda(cudaMemcpy(h_tally[i].count,  dh_tally[i].count,  h_tally[i].length*sizeof(unsigned), cudaMemcpyDeviceToHost));
+	
+		//zero out vectors
+		check_cuda(cudaMemcpy(dh_tally[i].score,  d_zeros, h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToDevice));
+		check_cuda(cudaMemcpy(dh_tally[i].square, d_zeros, h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToDevice));
+		check_cuda(cudaMemcpy(dh_tally[i].count,  d_zeros, h_tally[i].length*sizeof(unsigned), cudaMemcpyDeviceToDevice));
+	
+		//perform sums on 64bit host side values, zero 32bit arrays
+		for(unsigned k=0 ; k<n_tally ; k++){
+			h_tally[i].score_total[ k] 	+=  h_tally[i].score[ k];
+			h_tally[i].square_total[k]	+=  h_tally[i].square[k];
+			h_tally[i].count_total[ k] 	+=  h_tally[i].count[ k];
+			h_tally[i].score[ k]	= 	0.0;
+			h_tally[i].square[k]	=	0.0;
+			h_tally[i].count[ k]	=	0;
+		}
+
+	}
 
 	
 }
@@ -1657,46 +1659,47 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 
 }
 void whistory::reset_cycle(float keff_cycle){
-//
-//	// re-base the yield so keff is 1
-//	rebase_yield( NUM_THREADS, N,  keff_cycle, dh_particles.rn_bank, dh_particles.yield);
-//	check_cuda(cudaPeekAtLastError());
-//
-//	// prefix sum scan (non-inclusive) yields to see where to write
-//	res = cudppScan( scanplan_int, d_scanned,  dh_particles.yield,  Ndataset );
-//	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
-//	check_cuda(cudaPeekAtLastError());
-//
-//	// swap the key/values to sort the rxn vector by tid to align the rest of data with the right reactions, done so 18 doesn't have to be assumed.  Sorting is necessary for prefix sum to work (order-dependent)
-//	res = cudppRadixSort(radixplan, d_remap, dh_particles.rxn, N);  
-//	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
-//	check_cuda(cudaPeekAtLastError());
-//
-//	//pop them in!  should be the right size now due to keff rebasing  
-//	pop_source( NUM_THREADS, N,  d_remap, d_isonum, d_scanned, d_yield, d_index, d_rxn, d_space, d_E , dh_particles.rn_bank , d_xs_data_energy, d_xs_data_scatter, d_fissile_points, d_fissile_energy, d_awr_list, d_weight);
-//	check_cuda(cudaPeekAtLastError());
-//
-// 	// rest run arrays
-//	cudaMemcpy( d_space,	d_fissile_points,	N*sizeof(spatial_data),	cudaMemcpyDeviceToDevice );
-//	cudaMemcpy( d_E,		d_fissile_energy,	N*sizeof(unsigned),		cudaMemcpyDeviceToDevice );
-//	cudaMemcpy( d_done,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-//	cudaMemcpy( d_cellnum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-//	cudaMemcpy( d_matnum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-//	cudaMemcpy( d_isonum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-//	cudaMemcpy( d_yield,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-//	cudaMemcpy( d_rxn,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-//	cudaMemcpy( d_remap,	remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-//	cudaMemcpy( d_index,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-//	cudaMemcpy( d_weight,	fones,				N*sizeof(float),		cudaMemcpyHostToDevice );
-//	check_cuda(cudaPeekAtLastError());
-//
-//	// update RNG seeds
-//	update_RNG();
-//	check_cuda(cudaPeekAtLastError());
-//
-//	// sync, these H2D and D2D copies aren't strictly synchronous
-//	cudaDeviceSynchronize();
-//	check_cuda(cudaPeekAtLastError());
+
+	// re-base the yield so keff is 1
+	rebase_yield( NUM_THREADS, N,  keff_cycle, d_particles );
+	check_cuda(cudaPeekAtLastError());
+
+	// prefix sum scan (non-inclusive) yields to see where to write
+	res = cudppScan( scanplan_int, d_scanned,  dh_particles.yield,  Ndataset );
+	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
+	check_cuda(cudaPeekAtLastError());
+
+	// swap the key/values to sort the rxn vector by tid to align the rest of data with the right reactions, done so 18 doesn't have to be assumed.  Sorting is necessary for prefix sum to work (order-dependent)
+	res = cudppRadixSort(radixplan, d_remap, dh_particles.rxn, N);  
+	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
+	check_cuda(cudaPeekAtLastError());
+
+	//pop them in!  should be the right size now due to keff rebasing  
+	pop_fission( NUM_THREADS, d_xsdata, d_particles, d_scanned );
+	check_cuda(cudaPeekAtLastError());
+
+ 	// rest run arrays
+	check_cuda(cudaMemcpy( dh_particles.space,		d_fissile_points,	N*sizeof(spatial_data),	cudaMemcpyDeviceToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.E,			d_fissile_energy,	N*sizeof(unsigned),		cudaMemcpyDeviceToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.done,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.cellnum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.matnum,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.isonum,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.talnum,		mones,				N*sizeof(int),			cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.yield,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.rxn,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.remap,		remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.index,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.weight,		fones,				N*sizeof(float),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaPeekAtLastError());
+
+	// update RNG seeds
+	update_RNG();
+	check_cuda(cudaPeekAtLastError());
+
+	// sync, these H2D and D2D copies aren't strictly synchronous
+	check_cuda(cudaDeviceSynchronize());
+	check_cuda(cudaPeekAtLastError());
 
 }
 void whistory::reset_fixed(){
@@ -1823,7 +1826,6 @@ void whistory::run(){
 			}
 	
 			// find what material we are in and nearest surface distance
-			//cudaMemcpy( d_remap					, remap						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice );
 			trace(2, Nrun);
 			check_cuda(cudaPeekAtLastError());
 
@@ -1854,8 +1856,7 @@ void whistory::run(){
 			//	// pop secondaries back in
 			//	keff_cycle += reduce_yield();
 			//	prep_secondaries();
-			//	pop_secondaries( NUM_THREADS, Ndataset, d_completed, d_scanned, d_yield, d_done, d_index, d_rxn, d_space, d_E , dh_particles.rn_bank , d_xs_data_energy);
-			//	//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
+			//	pop_secondaries( NUM_THREADS, d_xsdata, d_particles, d_scanned );
 			//}
 			//check_cuda(cudaPeekAtLastError());
 
@@ -1871,13 +1872,13 @@ void whistory::run(){
 		//	Nrun=Ndataset;
 		//}
 		//else if (RUN_FLAG==1){	
-		//	accumulate_keff(converged, iteration, &keff, &keff_cycle);
-		//	check_cuda(cudaPeekAtLastError());
-		//	accumulate_tally();
-		//	check_cuda(cudaPeekAtLastError());
-		//	reset_cycle(keff_cycle);
-		//	check_cuda(cudaPeekAtLastError());
-		//	Nrun=N;
+			accumulate_keff(converged, iteration, &keff, &keff_cycle);
+			check_cuda(cudaPeekAtLastError());
+			accumulate_tally();
+			check_cuda(cudaPeekAtLastError());
+			reset_cycle(keff_cycle);
+			check_cuda(cudaPeekAtLastError());
+			Nrun=N;
 		//}
 
 		// update active iteration

@@ -46,7 +46,7 @@ class whistory {
 	particle_data				h_particles;			/**< host particle data structure containing host pointers*/
 	tally_data*					d_tally;				/**< device tally data structure containing device pointers*/
 	tally_data*					dh_tally;				/**< host tally data structure containing device pointers*/
-	tally_data*					h_tally;				/**< host tally data structure containing hist pointers*/
+	tally_data_host*			h_tally;				/**< host tally data structure containing host pointers (has long values for accumulation)*/
 
 	// mapped arrays
 	unsigned					n_edges;				/**< mapped array of number of edges */
@@ -77,6 +77,7 @@ class whistory {
 	unsigned*					zeros;					/**< zeros array */
 	unsigned*					d_zeros;				/**< device zeros array */
 	unsigned*					ones;					/**< int ones array */
+	int*						mones;					/**< int negative ones array */
 	float*						fones;					/**< float ones array */
 
 	// host-only data

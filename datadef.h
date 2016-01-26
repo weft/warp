@@ -165,13 +165,23 @@ struct particle_data {
  * \details material ID, number, fissile flag, number of isotopes, density, isotope list, isotope 
  * fraction list
  */
-struct tally_data {
+struct tally_data_host {
 	float*			score;			/**< tally score */
 	float*			square;			/**< tally square */
 	unsigned*		count;			/**< tally count */
 	double*			score_total;	/**< tally score accumulated total */
 	double*			square_total;	/**< tally square accumulaed total */
 	long unsigned*	count_total;	/**< tally count accumulated total */
+	unsigned		cell;			/**< tally cell (input) */
+	unsigned		length;			/**< tally length, edges are equi-log (input) */
+	float			E_min;			/**< minimum energy (input) */
+	float			E_max;			/**< maximum energy (input) */
+};
+
+struct tally_data {
+	float*			score;			/**< tally score */
+	float*			square;			/**< tally square */
+	unsigned*		count;			/**< tally count */
 	unsigned		cell;			/**< tally cell (input) */
 	unsigned		length;			/**< tally length, edges are equi-log (input) */
 	float			E_min;			/**< minimum energy (input) */
