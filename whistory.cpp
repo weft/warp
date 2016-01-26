@@ -1850,7 +1850,6 @@ void whistory::run(){
 			fission ( 		stream[3], NUM_THREADS, fission_N,  fission_start,  d_xsdata, d_particles, d_remap );  
 			check_cuda(cudaDeviceSynchronize());
 			check_cuda(cudaPeekAtLastError());
-			exit(0);
 
 			//if(RUN_FLAG==0){  //fixed source
 			//	// pop secondaries back in
@@ -1880,6 +1879,7 @@ void whistory::run(){
 			check_cuda(cudaPeekAtLastError());
 			Nrun=N;
 		//}
+			exit(0);
 
 		// update active iteration
 		if (converged){
