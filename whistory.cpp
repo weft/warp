@@ -409,7 +409,7 @@ unsigned whistory::reduce_yield(){
 
 	res = cudppReduce(reduplan_int, d_reduced_yields, h_particles.yield, N);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing yield values\n");exit(-1);}
-	cudaMemcpy(&reduced_yields, d_reduced_yields, 1*sizeof(unsigned), cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(&reduced_yields, d_reduced_yields, 1*sizeof(unsigned), cudaMemcpyDeviceToHost));
 
 	return reduced_yields;
 
@@ -420,7 +420,7 @@ float whistory::reduce_weight(){
 
 	res = cudppReduce(reduplan_float, d_reduced_weight, h_particles.weight, N);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing weight values\n");exit(-1);}
-	cudaMemcpy(&reduced_weight, d_reduced_weight, 1*sizeof(float), cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(&reduced_weight, d_reduced_weight, 1*sizeof(float), cudaMemcpyDeviceToHost));
 
 	return reduced_weight;
 
@@ -457,14 +457,14 @@ void whistory::accumulate_keff(unsigned converged, unsigned iteration, double* k
 void whistory::accumulate_tally(){
 
 //	//copy data to host
-//	cudaMemcpy(tally_score,  d_tally_score,  n_tally*sizeof(float),    cudaMemcpyDeviceToHost);
-//	cudaMemcpy(tally_square, d_tally_square, n_tally*sizeof(float),    cudaMemcpyDeviceToHost);
-//	cudaMemcpy(tally_count,  d_tally_count,  n_tally*sizeof(unsigned), cudaMemcpyDeviceToHost);
+//	check_cuda(cudaMemcpy(tally_score,  d_tally_score,  n_tally*sizeof(float),    cudaMemcpyDeviceToHost));
+//	check_cuda(cudaMemcpy(tally_square, d_tally_square, n_tally*sizeof(float),    cudaMemcpyDeviceToHost));
+//	check_cuda(cudaMemcpy(tally_count,  d_tally_count,  n_tally*sizeof(unsigned), cudaMemcpyDeviceToHost));
 //
 //	//zero out vectors
-//	cudaMemcpy(d_tally_score,  d_zeros, n_tally*sizeof(float),    cudaMemcpyDeviceToDevice);
-//	cudaMemcpy(d_tally_square, d_zeros, n_tally*sizeof(float),    cudaMemcpyDeviceToDevice);
-//	cudaMemcpy(d_tally_count,  d_zeros, n_tally*sizeof(unsigned), cudaMemcpyDeviceToDevice);
+//	check_cuda(cudaMemcpy(d_tally_score,  d_zeros, n_tally*sizeof(float),    cudaMemcpyDeviceToDevice));
+//	check_cuda(cudaMemcpy(d_tally_square, d_zeros, n_tally*sizeof(float),    cudaMemcpyDeviceToDevice));
+//	check_cuda(cudaMemcpy(d_tally_count,  d_zeros, n_tally*sizeof(unsigned), cudaMemcpyDeviceToDevice));
 //
 //	//perform sums on 64bit host side values
 //	for(unsigned k=0 ; k<n_tally ; k++){
@@ -1337,7 +1337,7 @@ void whistory::init_cross_sections(){
 	dh_xsdata.total_reaction_channels	= h_xsdata.total_reaction_channels	= length_numbers[2];
 
 	// init device container
-	cudaMalloc( &d_xsdata,	1*sizeof(cross_section_data));
+	check_cuda(cudaMalloc( &d_xsdata,	1*sizeof(cross_section_data)));
 	check_cuda(cudaPeekAtLastError());
 
 	// copy scattering data
@@ -1349,7 +1349,7 @@ void whistory::init_cross_sections(){
 	check_cuda(cudaPeekAtLastError());
 
 	// intialization complete, copy host structure (containing device pointers) to device structure
-	cudaMemcpy( d_xsdata,	&dh_xsdata,	1*sizeof(cross_section_data),	cudaMemcpyHostToDevice);
+	check_cuda(cudaMemcpy( d_xsdata,	&dh_xsdata,	1*sizeof(cross_section_data),	cudaMemcpyHostToDevice));
 	check_cuda(cudaPeekAtLastError());
 
 	// finalize python if initialized by warp
@@ -1488,7 +1488,7 @@ void whistory::print_pointers(){
 void whistory::trace(unsigned type){
 
 	//make sure device is ready
-	cudaDeviceSynchronize();
+	check_cuda(cudaDeviceSynchronize());
 
 	//trace
 	optix_obj.trace(type);
@@ -1497,7 +1497,7 @@ void whistory::trace(unsigned type){
 void whistory::trace(unsigned type, unsigned n_active){
 
 	//make sure device is ready
-	cudaDeviceSynchronize();
+	check_cuda(cudaDeviceSynchronize());
 
 	//trace
 	optix_obj.trace(type,n_active);
@@ -1541,7 +1541,7 @@ void whistory::sample_fissile_points(){
 		if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in compacting\n");exit(-1);}
 
 		// copy back and add
-		cudaMemcpy( &valid_N, d_valid_N, 1*sizeof(unsigned), cudaMemcpyDeviceToHost);
+		check_cuda(cudaMemcpy( &valid_N, d_valid_N, 1*sizeof(unsigned), cudaMemcpyDeviceToHost));
 		current_index += valid_N;
 
 		//copy in new values, keep track of index, copies positions and direction
@@ -1571,9 +1571,9 @@ void whistory::sample_fissile_points(){
 		std::cout << "  Copying to starting points...\n";
 	}
 
-	cudaMemcpy(dh_particles.space,	d_fissile_points	,	N*sizeof(spatial_data),	cudaMemcpyDeviceToDevice);
-	cudaMemcpy(dh_particles.E,		d_fissile_energy	,	N*sizeof(float),		cudaMemcpyDeviceToDevice);
-	cudaMemcpy(dh_particles.rxn,	zeros 				,	N*sizeof(unsigned),		cudaMemcpyHostToDevice);
+	check_cuda(cudaMemcpy(dh_particles.space,	d_fissile_points	,	N*sizeof(spatial_data),	cudaMemcpyDeviceToDevice));
+	check_cuda(cudaMemcpy(dh_particles.E,		d_fissile_energy	,	N*sizeof(float),		cudaMemcpyDeviceToDevice));
+	check_cuda(cudaMemcpy(dh_particles.rxn,		zeros 				,	N*sizeof(unsigned),		cudaMemcpyHostToDevice));
 	//cudaFree(d_fissile_points);
 
 	if(print_flag >= 2){
@@ -1582,7 +1582,7 @@ void whistory::sample_fissile_points(){
 
 	//write starting positions to file
 	if(dump_flag >= 3){
-		cudaMemcpy(h_particles.space,dh_particles.space,N*sizeof(spatial_data),cudaMemcpyDeviceToHost);
+		check_cuda(cudaMemcpy(h_particles.space,dh_particles.space,N*sizeof(spatial_data),cudaMemcpyDeviceToHost));
 		FILE* positionsfile = fopen("starting_positions","w");
 		for(int k=0;k<N;k++){
 			fprintf(positionsfile,"% 10.8E % 10.8E % 10.8E % 10.8E % 10.8E % 10.8E\n",h_particles.space[k].x,h_particles.space[k].y,h_particles.space[k].z,h_particles.space[k].xhat,h_particles.space[k].yhat,h_particles.space[k].zhat);
@@ -1598,7 +1598,7 @@ void whistory::write_to_file(spatial_data* array_in , unsigned N , std::string f
 
 	FILE* f  = fopen(filename.c_str(),opentype.c_str());
 	spatial_data * hostdata = new spatial_data [N];
-	cudaMemcpy(hostdata,array_in,N*sizeof(spatial_data),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(hostdata,array_in,N*sizeof(spatial_data),cudaMemcpyDeviceToHost));
 
 	for(unsigned k = 0;  k<N ;k++){
 		fprintf(f,"% 6.4E % 6.4E % 6.4E\n",hostdata[k].x,hostdata[k].y,hostdata[k].z);
@@ -1613,8 +1613,8 @@ void whistory::write_to_file(spatial_data* array_in , float* array_in2, unsigned
 	FILE* f  = fopen(filename.c_str(),opentype.c_str());
 	spatial_data * hostdata = new spatial_data [N];
 	float * hostdata2 = new float [N];
-	cudaMemcpy(hostdata,array_in,N*sizeof(spatial_data),cudaMemcpyDeviceToHost);
-	cudaMemcpy(hostdata2,array_in2,N*sizeof(float),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(hostdata,array_in,N*sizeof(spatial_data),cudaMemcpyDeviceToHost));
+	check_cuda(cudaMemcpy(hostdata2,array_in2,N*sizeof(float),cudaMemcpyDeviceToHost));
 
 	for(unsigned k = 0;  k<N ;k++){
 		fprintf(f,"% 6.4E % 6.4E % 6.4E % 6.4E\n",hostdata[k].x,hostdata[k].y,hostdata[k].z,hostdata2[k]);
@@ -1629,7 +1629,7 @@ void whistory::write_to_file(unsigned* array_in , unsigned N , std::string filen
 
 	FILE* f  = fopen(filename.c_str(),opentype.c_str());
 	unsigned * hostdata = new unsigned [N];
-	cudaMemcpy(hostdata,array_in,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(hostdata,array_in,N*sizeof(unsigned),cudaMemcpyDeviceToHost));
 
 	for(unsigned k = 0;  k<N ;k++){
 		fprintf(f,"%u\n",hostdata[k]);
@@ -1644,8 +1644,8 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 	FILE* f  = fopen(filename.c_str(),opentype.c_str());
 	unsigned * hostdata = new unsigned [N];
 	unsigned * hostdata2 = new unsigned [N];
-	cudaMemcpy(hostdata,array_in,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-	cudaMemcpy(hostdata2,array_in2,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(hostdata,array_in,N*sizeof(unsigned),cudaMemcpyDeviceToHost));
+	check_cuda(cudaMemcpy(hostdata2,array_in2,N*sizeof(unsigned),cudaMemcpyDeviceToHost));
 
 	for(unsigned k = 0;  k<N ;k++){
 		fprintf(f,"%u %u\n",hostdata[k],hostdata2[k]);
@@ -1840,13 +1840,13 @@ void whistory::run(){
 			check_cuda(cudaPeekAtLastError());
 
 			// concurrent calls to do escatter/iscatter/cscatter/fission.  Must sync after since these calls are not synchronous.
-			cudaThreadSynchronize();
-			cudaDeviceSynchronize();
+			check_cuda(cudaThreadSynchronize());
+			check_cuda(cudaDeviceSynchronize());
 			scatter_level(	stream[0], NUM_THREADS, lscatter_N, lscatter_start, d_xsdata, d_particles, d_remap );
 			scatter_conti(	stream[1], NUM_THREADS, cscatter_N, cscatter_start, d_xsdata, d_particles, d_remap );
 			scatter_multi(	stream[2], NUM_THREADS, mscatter_N, mscatter_start, d_xsdata, d_particles, d_remap );
 			fission ( 		stream[3], NUM_THREADS, fission_N,  fission_start,  d_xsdata, d_particles, d_remap );  
-			cudaDeviceSynchronize();
+			check_cuda(cudaDeviceSynchronize());
 			check_cuda(cudaPeekAtLastError());
 			exit(0);
 
@@ -2162,8 +2162,8 @@ void whistory::device_report(){
 	std::string 	enabled_string;
 
 	// get the number of devices
-	cudaGetDeviceCount(&n_devices);
-	cudaGetDevice(&enabled_dev);
+	check_cuda(cudaGetDeviceCount(&n_devices));
+	check_cuda(cudaGetDevice(&enabled_dev));
 
 	// loop over and print
 	std::cout << "\e[1;32m" << "--- Compute Devices Present ---" << "\e[m \n";
@@ -2171,7 +2171,7 @@ void whistory::device_report(){
 	std::cout << "  | Device  | Model                       |  SMs  | Global Mem | SM Freq | Mem Freq | Compute Cap. | Concurrent Kern |" << "\n";
 	std::cout << "  --------------------------------------------------------------------------------------------------------------------\n";
 	for(unsigned k=0;k<n_devices;k++){
-		cudaGetDeviceProperties(&device_prop,k);
+		check_cuda(cudaGetDeviceProperties(&device_prop,k));
 		compute_cap = (float)device_prop.major + (float)device_prop.minor/10.0;
 		con_string = "no ";
 		enabled_string=' ';
@@ -2299,7 +2299,7 @@ void whistory::bin_fission_points( spatial_data * d_space, unsigned N){
 
 	// copy from device
 	spatial_data * positions_local = new spatial_data[N];
-	cudaMemcpy(positions_local,dh_particles.space,N*sizeof(spatial_data),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(positions_local,dh_particles.space,N*sizeof(spatial_data),cudaMemcpyDeviceToHost));
 
 	// bin to grid
 	for(unsigned i=0; i<N; i++){
@@ -2441,13 +2441,13 @@ void whistory::plot_geom(std::string type_in){
 	}
 
 	// copy starting positions data to pointer
-	cudaMemcpy(dh_particles.space,positions_local,N_plot*sizeof(spatial_data),cudaMemcpyHostToDevice);
+	check_cuda(cudaMemcpy(dh_particles.space,positions_local,N_plot*sizeof(spatial_data),cudaMemcpyHostToDevice));
 	
 	// trace with whereami?
 	trace(4, N_plot);
 	
 	//copy to local buffer
-	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost));
 
 	// make image
 	png::image< png::rgb_pixel > image(width, height);
@@ -2503,13 +2503,13 @@ void whistory::plot_geom(std::string type_in){
 	}
 
 	// copy starting positions data to pointer
-	cudaMemcpy(dh_particles.space,positions_local,N_plot*sizeof(spatial_data),cudaMemcpyHostToDevice);
+	check_cuda(cudaMemcpy(dh_particles.space,positions_local,N_plot*sizeof(spatial_data),cudaMemcpyHostToDevice));
 	
 	// trace with whereami?
 	trace(4, N_plot);
 	
 	//copy to local buffer
-	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost));
 
 	// make image
 	image = png::image< png::rgb_pixel > (width, height);
@@ -2564,13 +2564,13 @@ void whistory::plot_geom(std::string type_in){
 	}
 
 	// copy starting positions data to pointer
-	cudaMemcpy(dh_particles.space,positions_local,N_plot*sizeof(spatial_data),cudaMemcpyHostToDevice);
+	check_cuda(cudaMemcpy(dh_particles.space,positions_local,N_plot*sizeof(spatial_data),cudaMemcpyHostToDevice));
 	
 	// trace with whereami?
 	trace(4, N_plot);
 	
 	//copy to local buffer
-	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost));
 
 	// make image
 	image = png::image< png::rgb_pixel > (width, height);

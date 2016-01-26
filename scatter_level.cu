@@ -70,7 +70,7 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	unsigned this_rxn 	=	rxn[    starting_index + tid_in];
 
 	// print and return if wrong
-	if ( this_rxn < 50 | this_rxn > 90) ){printf("level scattering kernel accessing wrong reaction @ dex %u dex_in %u rxn %u\n",tid, tid_in, this_rxn);return;} 
+	if ( this_rxn < 50 | this_rxn > 90 ){printf("level scattering kernel accessing wrong reaction @ dex %u dex_in %u rxn %u\n",tid, tid_in, this_rxn);return;} 
 
 	//constants
 	const float  	pi			=   3.14159265359;
