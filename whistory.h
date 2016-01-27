@@ -391,7 +391,7 @@ public:
 	* \brief writes tally values to file
 	* @param[in] tallynum - tally number
 	*/
-	void write_tally(unsigned);
+	void write_tally();
 	/**
 	* \brief sets run type
 	* @param[in] type_in - run type

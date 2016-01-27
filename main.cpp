@@ -380,7 +380,7 @@ int main(int argc, char* argv[]){
 	/////////////////////////////////////////////////////////////////
 
 	whistory hist ( N , geom );
-	hist.set_print_level(4);
+	hist.set_print_level(3);
 	hist.set_dump_level(3);
 	hist.set_device(0);
 	hist.init();
@@ -396,7 +396,7 @@ int main(int argc, char* argv[]){
 	hist.set_filename(filename);
 	hist.plot_geom("cell");  // **MUST** be called after init.
 	hist.run();
-	hist.write_tally(0);
+	hist.write_tally();
 	//hist.write_xs_data("xsdata");
 
 	return 0;

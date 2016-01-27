@@ -249,7 +249,7 @@ void whistory::init_host(){
 		h_tally[i].score_total	=	new double			[h_tally[i].length];
 		h_tally[i].square_total	=	new double			[h_tally[i].length];
 		h_tally[i].count_total	=	new long unsigned	[h_tally[i].length];
-		for(int k=0;k<h_tally[k].length;k++){
+		for(int k=0;k<h_tally[i].length;k++){
 			h_tally[i].score[       k]	=	0.0;
 			h_tally[i].square[      k]	=	0.0;
 			h_tally[i].count[       k]	=	0.0;
@@ -479,14 +479,18 @@ void whistory::accumulate_tally(){
 		check_cuda(cudaMemcpy(h_tally[i].score,  dh_tally[i].score,  h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToHost));
 		check_cuda(cudaMemcpy(h_tally[i].square, dh_tally[i].square, h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToHost));
 		check_cuda(cudaMemcpy(h_tally[i].count,  dh_tally[i].count,  h_tally[i].length*sizeof(unsigned), cudaMemcpyDeviceToHost));
+		check_cuda(cudaThreadSynchronize());
+		check_cuda(cudaDeviceSynchronize());
 	
 		//zero out vectors
 		check_cuda(cudaMemcpy(dh_tally[i].score,  d_zeros, h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToDevice));
 		check_cuda(cudaMemcpy(dh_tally[i].square, d_zeros, h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToDevice));
 		check_cuda(cudaMemcpy(dh_tally[i].count,  d_zeros, h_tally[i].length*sizeof(unsigned), cudaMemcpyDeviceToDevice));
+		check_cuda(cudaThreadSynchronize());
+		check_cuda(cudaDeviceSynchronize());
 	
 		//perform sums on 64bit host side values, zero 32bit arrays
-		for(unsigned k=0 ; k<n_tallies ; k++){
+		for(unsigned k=0 ; k<h_tally[i].length; k++){
 			h_tally[i].score_total[ k] 	+=  h_tally[i].score[ k];
 			h_tally[i].square_total[k]	+=  h_tally[i].square[k];
 			h_tally[i].count_total[ k] 	+=  h_tally[i].count[ k];
@@ -1683,6 +1687,8 @@ void whistory::reset_cycle(float keff_cycle){
 
 	// re-base the yield so keff is 1
 	rebase_yield( NUM_THREADS, N,  keff_cycle, d_particles );
+	check_cuda(cudaThreadSynchronize());
+	check_cuda(cudaDeviceSynchronize());
 	check_cuda(cudaPeekAtLastError());
 
 	// prefix sum scan (non-inclusive) yields to see where to write
@@ -1698,6 +1704,10 @@ void whistory::reset_cycle(float keff_cycle){
 	//pop them in!  should be the right size now due to keff rebasing  
 	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_fissile_points, d_fissile_energy, d_scanned );
 	check_cuda(cudaPeekAtLastError());
+
+	// sync
+	check_cuda(cudaThreadSynchronize());
+	check_cuda(cudaDeviceSynchronize());
 
  	// rest run arrays
 	check_cuda(cudaMemcpy( dh_particles.space,		d_fissile_points,	N*sizeof(spatial_data),	cudaMemcpyDeviceToDevice ));
@@ -1719,6 +1729,7 @@ void whistory::reset_cycle(float keff_cycle){
 	check_cuda(cudaPeekAtLastError());
 
 	// sync, these H2D and D2D copies aren't strictly synchronous
+	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
 	check_cuda(cudaPeekAtLastError());
 
@@ -1969,7 +1980,9 @@ void whistory::write_results(float runtime, float keff, std::string opentype){
 	fclose(f);
 
 }
-void whistory::write_tally(unsigned tallynum){
+void whistory::write_tally(){
+
+	// tallies should already be accumulated here.
 
 	//tallynum is unused at this point
 	float tally_err 	= 0;
@@ -1977,10 +1990,10 @@ void whistory::write_tally(unsigned tallynum){
 	float this_square 	= 0;
 	float this_mean 	= 0;
 	float this_count 	= 0;
-	float Emin 			= 1e-11;
-	float Emax 			= 20.0;
 	float edge0 		= 0.0;
 	float edge1 		= 0.0;
+
+	float Emin, Emax , length;
 
 	// open file
 	std::string tallyname = filename+".tally";
@@ -1989,26 +2002,34 @@ void whistory::write_tally(unsigned tallynum){
 	// go through tallies
 	for(int i=0; i<n_tallies ; i++){
 
+		// get this tally's info
+		Emin		=	h_tally[i].E_min;
+		Emax		=	h_tally[i].E_max;
+		length		=	h_tally[i].length;
+
 		// write header
-		fprintf(tfile," TALLY  %6u: CELL %6u \n", i, h_tally[i].cell);
-		fprintf(tfile," lower bin edge (MeV)     upper bin edge (MeV)    Tally     Err     Count  \n", );
+		fprintf(tfile,"TALLY  %6u  : CELL %6u \n", i, h_tally[i].cell);
+		fprintf(tfile,"lower bin edge (MeV)       upper bin edge (MeV)      Tally                     Err                      Count   \n");
+		fprintf(tfile,"================================================================================================================\n");
 
 		// write tally values
-		for (int k=0;k<h_tally[i].length;k++){
+		for (int k=0;k<length;k++){
 			this_count  	= (float) 	h_tally[i].count_total[k];
 			this_mean 		= 			h_tally[i].score_total[k];
 			this_square 	= 			h_tally[i].square_total[k];
 			tally_err_sq 	= 			(1.0/((this_count - 1.0))) * ( (this_count*this_square)/(this_mean*this_mean) -  1.0 ) ;
-			edge0 = Emin*powf((Emax/Emin), ((float)k)  / ((float)h_tally[i].length) );
-			edge1 = Emin*powf((Emax/Emin), ((float)k+1)/ ((float)h_tally[i].length) );
+			edge0 = Emin*powf((Emax/Emin), ((float)(k)  )/ ((float)length) );
+			edge1 = Emin*powf((Emax/Emin), ((float)(k+1))/ ((float)length) );
 			if(tally_err_sq>0.0){ 	
-				tally_err = sqrtf(tally_err_sq);}
+				tally_err = sqrtf(tally_err_sq);
+			}
 			else{					
-				tally_err = 0.0;}
-			fprintf(tfile,"%10.8E %10.8E %10.8E %10.8E %lu\n", edge0, edge1, this_mean/reduced_weight_total, tally_err, h_tally[i].count_total[k]);
+				tally_err = 0.0;
+			}
+			fprintf(tfile,"% 10.8E           % 10.8E           % 10.8E           % 10.8E           %lu\n", edge0, edge1, this_mean/reduced_weight_total, tally_err, h_tally[i].count_total[k]);
 		}
 
-		fprintf(tfile,"\n---------------------------------------------------------------------------\n", i, h_tally[i].cell);
+		fprintf(tfile,"\n--------------------------------------------------------------------------------------------------------------\n");
 
 	}
 

@@ -225,14 +225,14 @@ All neutrons need these things done, so these routines all live in the same rout
 		// check
 		tally_data	this_tally	= d_tally[tally_index];
 		if( this_tally.cell != cellnum[tid]){
-			printf("tid %u tally_index %i tally_cell %u cellnum[tid] %u\n",tid,tally_index,this_tally.cell,cellnum[tid]);
+			printf("TALLY CELL AND REPORTED INDEX MISMATCH!!!  tid %u tally_index %i tally_cell %u cellnum[tid] %u\n",tid,tally_index,this_tally.cell,cellnum[tid]);
 		}
 
 		// load  
 		float 		this_weight		= weight[tid];
 		unsigned 	bin_index 		= 0;
-		float 		E_max			= this_tally.E_min;
-		float 		E_min			= this_tally.E_max;
+		float 		E_max			= this_tally.E_max;
+		float 		E_min			= this_tally.E_min;
 		unsigned 	tally_length	= this_tally.length;
 
 		// determine bin number
