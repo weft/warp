@@ -54,7 +54,7 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 	if (tid<N-1){
 		// 11-45 edge
 		if( rxn1 >= 11 && rxn1 <= 45 ){
-			if( rxn2 >=51 && rxn2 <= 90){
+			if( rxn2 >=50 && rxn2 <= 90){
 				edges[1] = tid+1;
 				edges[2] = tid+2;
 			}

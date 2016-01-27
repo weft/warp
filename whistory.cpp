@@ -447,6 +447,7 @@ void whistory::accumulate_keff(unsigned converged, unsigned iteration, double* k
 
 	long unsigned reduced_yields	=	reduce_yield();
 	double        reduced_weight	=	reduce_weight();
+	printf("reduce_yield %lu reduce_weight %6.4E\n",reduced_yields,reduced_weight);
 
 	*keff_cycle = reduced_yields / reduced_weight;
 
@@ -2097,8 +2098,8 @@ void whistory::remap_active(unsigned* num_active, unsigned* lscatter_N, unsigned
 	}
 
 	// ensure order
-	if(*mscatter_N>0){ assert(*mscatter_start >= *lscatter_start);}
-	if(*cscatter_N>0){ assert(*cscatter_start >= *mscatter_start);}
+	if(*mscatter_N>0){ assert(*lscatter_start >= *mscatter_start);}
+	if(*cscatter_N>0){ assert(*cscatter_start >= *lscatter_start);}
 	if(resamp_N>0){    assert(   resamp_start >= *cscatter_start);}
 	if(*fission_N>0){  assert( *fission_start >=    resamp_start);}
 

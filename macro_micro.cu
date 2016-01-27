@@ -287,6 +287,8 @@ All neutrons need these things done, so these routines all live in the same rout
 		this_rxn	=	rxn_numbers[this_col];
 		this_Q		=	rxn_Q[      this_col];
 		array_dex	=	dex*n_columns + this_col; 
+
+		//printf("this_tope %u this_E %6.4E micro_t %6.4E col_start %u col_end %u \n",this_tope,this_E,micro_t,col_start,col_end);
 	
 		// errors?
 		if(this_rxn == 999999999){ // there is a gap in between the last MT and the total cross section, remap the rn to fit into the available data (effectively rescales the total cross section so everything adds up to it, if things aren't samples the first time around)

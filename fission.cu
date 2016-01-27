@@ -62,6 +62,10 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 
 	//  multiply nu by weight
 	nu = this_weight * nu;
+	if (this_weight<1.0){
+		printf("weight = 0!\n");
+	}
+	//printf("nu %6.4E\n",nu);
 
 	// get integer part
 	inu = (unsigned) nu;
