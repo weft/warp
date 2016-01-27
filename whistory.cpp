@@ -1971,40 +1971,50 @@ void whistory::write_results(float runtime, float keff, std::string opentype){
 }
 void whistory::write_tally(unsigned tallynum){
 
-//	//tallynum is unused at this point
-//	float tally_err 	= 0;
-//	float tally_err_sq 	= 0;
-//	float this_square 	= 0;
-//	float this_mean 	= 0;
-//	float this_count 	= 0;
-//	float Emin 			= 1e-11;
-//	float Emax 			= 20.0;
-//	float edge 			= 0.0;
-//
-//	// write tally values
-//	std::string tallyname = filename+".tally";
-//	FILE* tfile = fopen(tallyname.c_str(),"w");
-//	for (int k=0;k<n_tally;k++){
-//		this_count  	= (float) 	(N*n_cycles);//tally_count_total[k];
-//		this_mean 		= 			tally_score_total[k];
-//		this_square 	= 			tally_square_total[k];
-//		tally_err_sq 	= 			(1.0/((this_count - 1.0))) * ( (this_count*this_square)/(this_mean*this_mean) -  1.0 ) ;
-//		if(tally_err_sq>0.0){ 	
-//			tally_err = sqrtf(tally_err_sq);}
-//		else{					
-//			tally_err = 0.0;}
-//		fprintf(tfile,"%10.8E %10.8E %lu\n", this_mean/reduced_weight_total, tally_err, tally_count_total[k]);
-//	}
-//	fclose(tfile);
-//
-//	//write spacing, since there is n_tally+1 values, including it with the tally bins in a flat text messes with reading in as a matrix
-//	std::string binsname = filename+".tallybins";
-//	tfile = fopen(binsname.c_str(),"w");
-//	for (int k=0;k<=n_tally;k++){
-//		edge = Emin*powf((Emax/Emin), ((float)k)/ ((float)n_tally) );
-//		fprintf(tfile,"%10.8E\n",edge);
-//	}
-//	fclose(tfile);
+	//tallynum is unused at this point
+	float tally_err 	= 0;
+	float tally_err_sq 	= 0;
+	float this_square 	= 0;
+	float this_mean 	= 0;
+	float this_count 	= 0;
+	float Emin 			= 1e-11;
+	float Emax 			= 20.0;
+	float edge0 		= 0.0;
+	float edge1 		= 0.0;
+
+	// open file
+	std::string tallyname = filename+".tally";
+	FILE* tfile = fopen(tallyname.c_str(),"w");
+
+	// go through tallies
+	for(int i=0; i<n_tallies ; i++){
+
+		// write header
+		fprintf(tfile," TALLY  %6u: CELL %6u \n", i, h_tally[i].cell);
+		fprintf(tfile," lower bin edge (MeV)     upper bin edge (MeV)    Tally     Err     Count  \n", );
+
+		// write tally values
+		for (int k=0;k<h_tally[i].length;k++){
+			this_count  	= (float) 	h_tally[i].count_total[k];
+			this_mean 		= 			h_tally[i].score_total[k];
+			this_square 	= 			h_tally[i].square_total[k];
+			tally_err_sq 	= 			(1.0/((this_count - 1.0))) * ( (this_count*this_square)/(this_mean*this_mean) -  1.0 ) ;
+			edge0 = Emin*powf((Emax/Emin), ((float)k)  / ((float)h_tally[i].length) );
+			edge1 = Emin*powf((Emax/Emin), ((float)k+1)/ ((float)h_tally[i].length) );
+			if(tally_err_sq>0.0){ 	
+				tally_err = sqrtf(tally_err_sq);}
+			else{					
+				tally_err = 0.0;}
+			fprintf(tfile,"%10.8E %10.8E %10.8E %10.8E %lu\n", edge0, edge1, this_mean/reduced_weight_total, tally_err, h_tally[i].count_total[k]);
+		}
+
+		fprintf(tfile,"\n---------------------------------------------------------------------------\n", i, h_tally[i].cell);
+
+	}
+
+	// close file
+	fclose(tfile);
+
 }
 void whistory::prep_secondaries(){
 
