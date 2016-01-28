@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "datadef.h"
 #include "warp_device.cuh"
+#include "check_cuda.h"
+
 
 __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, spatial_data* d_fissile_points, float* d_fissile_energy, unsigned* scanned){
 
@@ -138,7 +140,7 @@ void pop_fission( unsigned NUM_THREADS, unsigned N, cross_section_data* d_xsdata
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
 	pop_fission_kernel <<< blks, NUM_THREADS >>> ( N, d_xsdata, d_particles, d_fissile_points, d_fissile_energy, scanned);
-	cudaThreadSynchronize();
+	check_cuda(cudaThreadSynchronize());
 
 }
 

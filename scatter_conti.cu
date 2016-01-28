@@ -3,6 +3,8 @@
 #include "datadef.h"
 #include "wfloat3.h"
 #include "warp_device.cuh"
+#include "check_cuda.h"
+
 
 __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
@@ -405,7 +407,7 @@ void scatter_conti( cudaStream_t stream, unsigned NUM_THREADS, unsigned N, unsig
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 	
 	scatter_conti_kernel <<< blks, NUM_THREADS , 0 , stream >>> ( N, starting_index, d_xsdata, d_particles, d_remap );
-	cudaThreadSynchronize();
+	check_cuda(cudaThreadSynchronize());
 
 }
 

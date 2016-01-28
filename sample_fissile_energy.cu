@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "datadef.h"
 #include "warp_device.cuh"
+#include "check_cuda.h"
+
 
 __global__ void sample_fissile_energy_kernel( unsigned N , float a , float b , unsigned* rn_bank , float* E ){
 
@@ -51,7 +53,7 @@ void sample_fissile_energy( unsigned NUM_THREADS,  unsigned N , float a , float 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
 	sample_fissile_energy_kernel <<< blks, NUM_THREADS >>> (  N , a , b, rn_bank, E );
-	cudaThreadSynchronize();
+	check_cuda(cudaThreadSynchronize());
 
 }
 

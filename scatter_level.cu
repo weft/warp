@@ -3,6 +3,8 @@
 #include "datadef.h"
 #include "wfloat3.h"
 #include "warp_device.cuh"
+#include "check_cuda.h"
+
 
 __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
@@ -187,7 +189,6 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	// enforce limits
 	if ( E_new <= E_cutoff | E_new > E_max ){
 		this_rxn = 998;  // ecutoff code
-		rxn[starting_index+tid_in] = this_rxn;
 		printf("i CUTOFF, E = %10.8E\n",E_new);
 	}
 
@@ -208,7 +209,7 @@ void scatter_level( cudaStream_t stream, unsigned NUM_THREADS, unsigned N, unsig
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
 	scatter_level_kernel <<< blks, NUM_THREADS , 0 , stream >>> (  N, starting_index, d_xsdata, d_particles, d_remap);
-	cudaThreadSynchronize();
+	check_cuda(cudaThreadSynchronize());
 
 }
 

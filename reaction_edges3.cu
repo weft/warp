@@ -1,5 +1,7 @@
 #include <cuda.h>
 #include <stdio.h>
+#include "check_cuda.h"
+
 
 __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rxn){
 
@@ -163,7 +165,7 @@ void reaction_edges( unsigned NUM_THREADS,  unsigned N, unsigned* d_edges, unsig
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
 	reaction_edges_kernel <<< blks, NUM_THREADS >>> ( N, d_edges, d_rxn);
-	cudaDeviceSynchronize();
+	check_cuda(cudaDeviceSynchronize());
 
 }
 

@@ -39,7 +39,7 @@ RT_PROGRAM void camera()
 	intersection_point  payload;
 
 	// null rxn, miss will set it if there is a miss
-	rxn_buffer[launch_index_in] = 0.0;
+	// rxn_buffer[launch_index_in] = 0.0;
 
 	//rtPrintf("ray %u rxn %u xyz-hat % 10.8E % 10.8E % 10.8E\n",launch_index,rxn_buffer[launch_index_in],positions_buffer[launch_index].xhat,positions_buffer[launch_index].yhat,positions_buffer[launch_index].zhat);
 

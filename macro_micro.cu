@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "datadef.h"
 #include "warp_device.cuh"
+#include "check_cuda.h"
 
 __global__ void macro_micro_kernel(unsigned N, unsigned n_materials, unsigned n_tallies, cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap, float* d_number_density_matrix){
 /*
@@ -86,9 +87,10 @@ All neutrons need these things done, so these routines all live in the same rout
 	float		diff			= 0.0;
 	unsigned	this_tope		= 999999999;
 	unsigned	array_dex		= 0;
-	float		epsilon			= 2.0e-5;
 	float		dotp			= 0.0;
 	float		macro_t_total	= 0.0;
+	float		epsilon			= 2.0e-5;
+	float		push_value		= 2.0;
 	float surf_minimum, xhat_new, yhat_new, zhat_new, this_Q;
 
 	// load from arrays
@@ -167,40 +169,40 @@ All neutrons need these things done, so these routines all live in the same rout
 		if (diff < 0.0){ // next cell, enforce BC or push through
 			if (enforce_BC == 1){  // black BC
 				//printf("Killing at black BC...\n");
-				x += (surf_dist + 2.1*surf_minimum) * xhat;
-				y += (surf_dist + 2.1*surf_minimum) * yhat;
-				z += (surf_dist + 2.1*surf_minimum) * zhat;
+				x += (surf_dist + 3.0*push_value*surf_minimum) * xhat;
+				y += (surf_dist + 3.0*push_value*surf_minimum) * yhat;
+				z += (surf_dist + 3.0*push_value*surf_minimum) * zhat;
 				this_rxn  = 999;  // leaking is 999
-				this_tope=999999997;  
+				this_tope = 999999997;  
 			}
 			else if(enforce_BC == 2){  // specular reflection BC
 				printf("Reflecting at specular BC NOT IMPLEMENTED YET!\n");
 				// move epsilon off of surface
-				x += ((surf_dist*xhat) + copysignf(1.0,dotp)*1.5*epsilon*norm[0]); 
-				y += ((surf_dist*yhat) + copysignf(1.0,dotp)*1.5*epsilon*norm[1]);
-				z += ((surf_dist*zhat) + copysignf(1.0,dotp)*1.5*epsilon*norm[2]);
+				x += ((surf_dist*xhat) + copysignf(1.0,dotp)*push_value*epsilon*norm[0]); 
+				y += ((surf_dist*yhat) + copysignf(1.0,dotp)*push_value*epsilon*norm[1]);
+				z += ((surf_dist*zhat) + copysignf(1.0,dotp)*push_value*epsilon*norm[2]);
 				// calculate reflection
 				xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
 				yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
 				zhat_new = -(2.0 * dotp * norm[2]) + zhat; 
 				// flags
-				this_rxn = 801;  // reflection is 801 
-				this_tope=999999996;  
+				this_rxn  = 801;  // reflection is 801 
+				this_tope = 999999996;  
 			}
 			else{   // next cell, move to intersection point, then move *out* epsilon along surface normal
 				//printf("Moving to next cell...\n");
-				x += surf_dist*xhat + copysignf(1.0,dotp)*1.5*epsilon*norm[0];
-				y += surf_dist*yhat + copysignf(1.0,dotp)*1.5*epsilon*norm[1];
-				z += surf_dist*zhat + copysignf(1.0,dotp)*1.5*epsilon*norm[2];
-				this_rxn = 800;  // resampling is 800
-				this_tope=999999998;  
+				x += surf_dist*xhat + copysignf(1.0,dotp)*push_value*epsilon*norm[0];
+				y += surf_dist*yhat + copysignf(1.0,dotp)*push_value*epsilon*norm[1];
+				z += surf_dist*zhat + copysignf(1.0,dotp)*push_value*epsilon*norm[2];
+				this_rxn  = 800;  // resampling is 800
+				this_tope = 999999998;  
 				}
 			}
 		else{   // this cell, move to intersection point, then move *in* epsilon along surface normal 
 			//printf("In this cell...\n");
-			x += surf_dist*xhat - copysignf(1.0,dotp)*1.5*epsilon*norm[0];
-			y += surf_dist*yhat - copysignf(1.0,dotp)*1.5*epsilon*norm[1];
-			z += surf_dist*zhat - copysignf(1.0,dotp)*1.5*epsilon*norm[2];
+			x += surf_dist*xhat - copysignf(1.0,dotp)*push_value*epsilon*norm[0];
+			y += surf_dist*yhat - copysignf(1.0,dotp)*push_value*epsilon*norm[1];
+			z += surf_dist*zhat - copysignf(1.0,dotp)*push_value*epsilon*norm[2];
 			this_rxn = 0;
 		}
 	}
@@ -210,6 +212,7 @@ All neutrons need these things done, so these routines all live in the same rout
 			z += samp_dist * zhat;
 			this_rxn = 0;
 	}
+
 
 	//
 	//
@@ -308,11 +311,17 @@ All neutrons need these things done, so these routines all live in the same rout
 	//
 	//
 
+	if(this_rxn==0){printf("rxn for tid_in %d / tid %d is still ZERO at end of macro_micro!\n", tid_in, tid);}
+
+	//if(tid==9469){
+	//	printf("tid_in %u tid %u:  rxn %u xyz %6.4E %6.4E %6.4E\n",tid_in,tid,this_rxn,x,y,z);
+	//}
+
 	rxn[    tid_in]			=	this_rxn;			// rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
 	Q[      tid]			=	this_Q;
 	rn_bank[tid]			=	rn;
 	index[  tid]			=	array_dex;			// write MT array index to dex instead of energy vector index
-	isonum[tid]				=	this_tope;
+	isonum[ tid]			=	this_tope;
 	space[  tid].x			=	x;
 	space[  tid].y			=	y;
 	space[  tid].z			=	z;
@@ -329,7 +338,7 @@ void macro_micro(unsigned NUM_THREADS, unsigned N, unsigned n_materials, unsigne
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
 	macro_micro_kernel <<< blks, NUM_THREADS >>> ( N, n_materials, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix);
-	cudaThreadSynchronize();
+	check_cuda(cudaThreadSynchronize());
 
 }
 

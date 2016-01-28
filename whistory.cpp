@@ -17,17 +17,7 @@
 #include "optix_stuff.h"
 #include "warp_cuda.h"
 #include "whistory.h"
-
-// CUDA error check wrapper
-inline void check_cuda(cudaError_t code, const char *file, int line, bool abort=true)
-{
-   if (code != cudaSuccess)
-   {
-      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
-      if (abort) exit(code);
-   }
-}
-#define check_cuda(ans) { check_cuda((ans), __FILE__, __LINE__); }
+#include "check_cuda.h"
 
 // instantiate single, global optix object
 optix_stuff optix_obj;
@@ -212,7 +202,6 @@ void whistory::init_host(){
 		h_particles.space[k].yhat			= 0.0;
 		h_particles.space[k].zhat			= 0.0;
 		h_particles.space[k].surf_dist		= 10000.0;
-		//h_particles.space[k].macro_t		= 0.0;
 		h_particles.space[k].enforce_BC		= 0;
 		h_particles.space[k].norm[0]		= 1;
 		h_particles.space[k].norm[1]		= 0;
@@ -1861,11 +1850,11 @@ void whistory::run(){
 			trace(2, Nrun);
 			check_cuda(cudaPeekAtLastError());
 
-			//find the main E grid index
+			// find the main E grid index
 			find_E_grid_index( NUM_THREADS, Nrun, d_xsdata, d_remap, dh_particles.E, dh_particles.index, dh_particles.rxn);
 			check_cuda(cudaPeekAtLastError());
 
-			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
+			// run macroscopic kernel to find interaction length, do tally, find reaction isotope, move to interaction length, set resample flag, etc 
 			macro_micro( NUM_THREADS, Nrun, n_materials, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix );
 			check_cuda(cudaPeekAtLastError());
 
@@ -2068,6 +2057,15 @@ void whistory::remap_active(unsigned* num_active, unsigned* lscatter_N, unsigned
 		res = cudppRadixSort(radixplan, dh_particles.rxn, d_remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
 		if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
 	}
+
+	//copy back and print
+	//printf("(index,rxn,remap:\n");
+	//check_cuda(cudaMemcpy(remap,d_remap,Ndataset*sizeof(unsigned),cudaMemcpyDeviceToHost));
+	//check_cuda(cudaMemcpy(h_particles.rxn,dh_particles.rxn,Ndataset*sizeof(unsigned),cudaMemcpyDeviceToHost));
+	//for (int g=0;g<Ndataset;g++){
+	//	printf("(%d,%u,%u)  ",g,h_particles.rxn[g],remap[g]);
+	//}
+	//printf("\n");
 
 	// launch edge detection kernel, writes mapped d_edges array
 	reaction_edges(NUM_THREADS, *num_active, d_edges, dh_particles.rxn);
