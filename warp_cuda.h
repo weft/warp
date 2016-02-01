@@ -12,7 +12,7 @@ void set_positions_rand( unsigned, unsigned, unsigned, spatial_data * , unsigned
 void copy_points( unsigned , unsigned , unsigned*  , unsigned  , unsigned *  , spatial_data *  , spatial_data * , float*, float*);
 void sample_fission_spectra(unsigned , unsigned , unsigned , unsigned* , unsigned* , unsigned* , unsigned* , float * , float *, spatial_data* , float** );
 void sample_fixed_source( unsigned,unsigned,unsigned*,unsigned*,float*,spatial_data*);
-void macro_micro( unsigned , unsigned , unsigned ,  unsigned , unsigned , cross_section_data* , particle_data* , tally_data* , unsigned* , float* );
+void macro_micro( unsigned , unsigned , unsigned ,  unsigned , unsigned , unsigned , cross_section_data* , particle_data* , tally_data* , unsigned* , float* );
 void tally_spec( unsigned ,  unsigned, unsigned , unsigned , unsigned*, spatial_data * , float* , float* , float * , unsigned * , unsigned*, unsigned*, unsigned*, float*);
 void scatter_level( cudaStream_t, unsigned , unsigned, unsigned, cross_section_data* , particle_data* , unsigned* );
 void scatter_conti( cudaStream_t, unsigned , unsigned, unsigned, cross_section_data* , particle_data* , unsigned* );

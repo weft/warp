@@ -4,7 +4,7 @@
 #include "warp_device.cuh"
 #include "check_cuda.h"
 
-__global__ void macro_micro_kernel(unsigned N, unsigned n_materials, unsigned n_tallies, cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap, float* d_number_density_matrix){
+__global__ void macro_micro_kernel(unsigned N, unsigned converged, unsigned n_materials, unsigned n_tallies, cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap, float* d_number_density_matrix){
 /*
 This kernel does a lot.  It does all the total interaction processes:  
 	samples the distance to the next interaction, 
@@ -227,7 +227,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	//
 
 	// only score tally if flagged for a tally. 
-	if( tally_index>=0 & this_rxn==0 ){
+	if( tally_index>=0 & this_rxn==0 & converged==1){
 
 		// check
 		tally_data	this_tally	= d_tally[tally_index];
@@ -330,11 +330,11 @@ All neutrons need these things done, so these routines all live in the same rout
 
 }
 
-void macro_micro(unsigned NUM_THREADS, unsigned N, unsigned n_materials, unsigned n_isotopes, unsigned n_tallies, cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap, float* d_number_density_matrix ){
+void macro_micro(unsigned NUM_THREADS, unsigned N, unsigned converged, unsigned n_materials, unsigned n_isotopes, unsigned n_tallies, cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap, float* d_number_density_matrix ){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	macro_micro_kernel <<< blks, NUM_THREADS, n_materials*n_isotopes*sizeof(float) >>> ( N, n_materials, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix);
+	macro_micro_kernel <<< blks, NUM_THREADS, n_materials*n_isotopes*sizeof(float) >>> ( N, converged, n_materials, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix);
 	check_cuda(cudaThreadSynchronize());
 
 }

@@ -1856,7 +1856,7 @@ void whistory::run(){
 			check_cuda(cudaPeekAtLastError());
 
 			// run macroscopic kernel to find interaction length, do tally, find reaction isotope, move to interaction length, set resample flag, etc 
-			macro_micro( NUM_THREADS, Nrun, n_materials, h_xsdata.n_isotopes, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix );
+			macro_micro( NUM_THREADS, Nrun, converged, n_materials, h_xsdata.n_isotopes, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix );
 			check_cuda(cudaPeekAtLastError());
 
 			// remap threads to still active data
