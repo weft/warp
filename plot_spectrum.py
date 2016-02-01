@@ -7,14 +7,12 @@ import matplotlib.gridspec as gridspec
 import matplotlib.colorbar as cbar
 import matplotlib.pyplot as plt 
 from matplotlib.ticker import MaxNLocator
-from MCNPtools.mctal import mctal
+# from MCNPtools.mctal import mctal
 
 
 #from pyne import ace
 import numpy as np
 import numpy
-import pylab as pl
-import matplotlib.pyplot as plt 
 
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
@@ -61,12 +59,15 @@ def get_warp_data(filepath):
 	val = []
 	err = []
 	for line in fobj:
-		g=re.match(" *([0-9].[0-9E\+\-]+) +([0-9].[0-9E\+\-]+) +([0-9].[0-9E\+\-]+) +([0-9].[0-9E\+\-]+) +([0-9]+)",line)
+		g=re.match(" *([0-9].[0-9E\+\-]+) +([0-9].[0-9E\+\-]+) +([0-9].[0-9E\+\-]+) +([0-9.INFinfE\+\-]+) +([0-9]+)",line)
 		if g:
 			ene1.append(float(g.group(1)))
-			ene2.append(float(g.group(1)))
+			ene2.append(float(g.group(2)))
 			val.append(float(g.group(3)))
 			err.append(float(g.group(4)))
+		else:
+			pass
+			#print line
 	ene = ene1
 	ene.append(ene2[-1])
 	alldata = [numpy.array(ene),numpy.array(val),numpy.array(err)]
@@ -83,8 +84,11 @@ warp_err  = warpdata[2]
 
 mcnp_vol = 5.1*5.1*5.1*numpy.pi*4.0/3.0
 
+err_range = 1.0
+
 widths=numpy.diff(tallybins)
 avg=(tallybins[:-1]+tallybins[1:])/2
+print tallybins[0],tallybins[-1],len(tallybins)
 newflux=tally
 newflux=numpy.divide(newflux,widths)
 newflux=numpy.multiply(newflux,avg)
@@ -104,7 +108,7 @@ serp_avg=(serp_E[:-1]+serp_E[1:])/2
 serp_flux=numpy.divide(serpF,serp_widths)
 serp_flux=numpy.multiply(serp_flux,serp_avg)
 
-fig = pl.figure(figsize=(10,6))
+fig = plt.figure(figsize=(10,6))
 gs = gridspec.GridSpec(3, 1, height_ratios=[6, 1, 1]) 
 ax0 = plt.subplot(gs[0])
 ax1 = plt.subplot(gs[1])
@@ -119,14 +123,14 @@ ax0.legend(handles,labels,loc=2)
 ax0.set_xlim([1e-11,20])
 ax0.grid(True)
 
-#ax2.semilogx(serpE,numpy.divide(newflux-serpF,serpF),'b',linestyle='steps-mid',label='Flux Relative Error vs. Serpent')
-#ax2.set_xlim([1e-11,20])
-#ax2.set_ylim([-err_range,err_range])
-#ax2.fill_between(serpE,-2.0*serpErr,2.0*serpErr,color='black',facecolor='green', alpha=0.5)
-#ax2.set_xscale('log')
-#ax2.yaxis.set_major_locator(MaxNLocator(4))
-#ax2.set_xlabel('Energy (MeV)')
-#ax2.set_ylabel('Rel. Err. \n vs. Serpent')
-#ax2.grid(True)
+ax2.semilogx(serp_avg,numpy.divide(newflux-serpF,serpF),'b',linestyle='steps-mid',label='Flux Relative Error vs. Serpent')
+ax2.set_xlim([1e-11,20])
+ax2.set_ylim([-err_range,err_range])
+ax2.fill_between(serp_avg,-2.0*serpErr,2.0*serpErr,color='black',facecolor='green', alpha=0.5)
+ax2.set_xscale('log')
+ax2.yaxis.set_major_locator(MaxNLocator(4))
+ax2.set_xlabel('Energy (MeV)')
+ax2.set_ylabel('Rel. Err. \n vs. Serpent')
+ax2.grid(True)
 
-pl.show()
+plt.show()
