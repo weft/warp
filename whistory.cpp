@@ -231,7 +231,7 @@ void whistory::init_host(){
 	for(int i=0;i<n_tallies;i++){
 		h_tally[i].cell			=	problem_geom.tally_cells[i];
 		h_tally[i].length		=	1024;
-		h_tally[i].E_min		=	1e-12;
+		h_tally[i].E_min		=	1e-11;
 		h_tally[i].E_max		=	20;
 		h_tally[i].score		=	new float			[h_tally[i].length];
 		h_tally[i].square		=	new float			[h_tally[i].length];

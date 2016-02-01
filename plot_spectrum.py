@@ -84,7 +84,7 @@ warp_err  = warpdata[2]
 
 mcnp_vol = 5.1*5.1*5.1*numpy.pi*4.0/3.0
 
-err_range = 1.0
+err_range = 0.05
 
 widths=numpy.diff(tallybins)
 avg=(tallybins[:-1]+tallybins[1:])/2

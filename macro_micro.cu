@@ -214,7 +214,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	}
 
 	// skip rest if leaked or resampled
-	if (this_rxn>0){
+	if (this_rxn==0){
 	
 		//
 		//
