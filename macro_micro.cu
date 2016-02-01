@@ -42,7 +42,8 @@ All neutrons need these things done, so these routines all live in the same rout
 	//__shared__	unsigned*			yield;	
 	__shared__	float*				weight;	
 	__shared__	unsigned*			index;	
-	__shared__	float*				s_number_density_matrix;
+	// dynamically allocated shared array for material matrix
+	extern __shared__	float		s_number_density_matrix[];
 
 
 	// have thread 0 of block copy all pointers and static info into shared memory
@@ -327,11 +328,11 @@ All neutrons need these things done, so these routines all live in the same rout
 
 }
 
-void macro_micro(unsigned NUM_THREADS, unsigned N, unsigned n_materials, unsigned n_tallies, cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap, float* d_number_density_matrix ){
+void macro_micro(unsigned NUM_THREADS, unsigned N, unsigned n_materials, unsigned n_isotopes, unsigned n_tallies, cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap, float* d_number_density_matrix ){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	macro_micro_kernel <<< blks, NUM_THREADS >>> ( N, n_materials, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix);
+	macro_micro_kernel <<< blks, NUM_THREADS, n_materials*n_isotopes*sizeof(float) >>> ( N, n_materials, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix);
 	check_cuda(cudaThreadSynchronize());
 
 }
