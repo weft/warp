@@ -213,59 +213,56 @@ All neutrons need these things done, so these routines all live in the same rout
 			this_rxn = 0;
 	}
 
-	// return if leaked or resampled
-	//if (this_rxn>0){
-	//	return;
-	//}
-
-	//
-	//
-	//
-	//  TALLY SECTION
-	//  -- score tally if valid
-	//  -- only reachable if collided!
-	//
-
-	// only score tally if flagged for a tally. 
-	if( tally_index>=0 & this_rxn==0 & converged==1){
-
-		// check
-		tally_data	this_tally	= d_tally[tally_index];
-		if( this_tally.cell != cellnum[tid]){
-			printf("TALLY CELL AND REPORTED INDEX MISMATCH!!!  tid %u tally_index %i tally_cell %u cellnum[tid] %u\n",tid,tally_index,this_tally.cell,cellnum[tid]);
+	// skip rest if leaked or resampled
+	if (this_rxn>0){
+	
+		//
+		//
+		//
+		//  TALLY SECTION
+		//  -- score tally if valid
+		//  
+		//
+	
+		// only score if converged and if cell flagged for a tally. 
+		if( tally_index>=0 & converged==1){
+	
+			// check
+			tally_data	this_tally	= d_tally[tally_index];
+			if( this_tally.cell != cellnum[tid]){
+				printf("TALLY CELL AND REPORTED INDEX MISMATCH!!!  tid %u tally_index %i tally_cell %u cellnum[tid] %u\n",tid,tally_index,this_tally.cell,cellnum[tid]);
+			}
+	
+			// load  
+			float 		this_weight		= weight[tid];
+			unsigned 	bin_index 		= 0;
+			float 		E_max			= this_tally.E_max;
+			float 		E_min			= this_tally.E_min;
+			unsigned 	tally_length	= this_tally.length;
+	
+			// determine bin number
+			bin_index = logf(this_E/E_min)/logf(E_max/E_min)*(tally_length);
+	
+			//score the bins atomicly, could be bad if many neutrons are in a single bin since this will serialize their operations
+			atomicAdd(&this_tally.score[ bin_index], this_weight/macro_t_total);
+			atomicAdd(&this_tally.square[bin_index], this_weight/(macro_t_total * macro_t_total));
+			atomicInc(&this_tally.count[ bin_index], 4294967295);
+	
 		}
-
-		// load  
-		float 		this_weight		= weight[tid];
-		unsigned 	bin_index 		= 0;
-		float 		E_max			= this_tally.E_max;
-		float 		E_min			= this_tally.E_min;
-		unsigned 	tally_length	= this_tally.length;
-
-		// determine bin number
-		bin_index = logf(this_E/E_min)/logf(E_max/E_min)*(tally_length);
-
-		//score the bins atomicly, could be bad if many neutrons are in a single bin since this will serialize their operations
-		atomicAdd(&this_tally.score[ bin_index], this_weight/macro_t_total);
-		atomicAdd(&this_tally.square[bin_index], this_weight/(macro_t_total * macro_t_total));
-		atomicInc(&this_tally.count[ bin_index], 4294967295);
-
-	}
-
-	//
-	//
-	//
-	//  MICROSCOPIC SECTION
-	//  -- find reaction type
-	//  -- only reachable if collided!
-	//
-	if(this_rxn==0){
-		
+	
+		//
+		//
+		//
+		//  MICROSCOPIC SECTION
+		//  -- find reaction type
+		//  -- only reachable if collided!
+		//
+			
 		unsigned	col_start	=	0;
 		unsigned	col_end		=	0;
 		unsigned	this_col	=	0;
 		float		micro_t		=	0.0;
-	
+		
 		// compute the index ranges 
 		if(this_tope>=n_isotopes){
 			printf("micro - ISOTOPE NUMBER FROM MACRO > NUMBER OF ISOTOPES!  n_isotopes %u tope %u\n",n_isotopes,this_tope);
@@ -275,7 +272,7 @@ All neutrons need these things done, so these routines all live in the same rout
 			col_start	=	n_isotopes + rxn_numbers_total[this_tope];
 			col_end		=	n_isotopes + rxn_numbers_total[this_tope+1];
 		}
-	
+		
 		// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
 		micro_t = sum_cross_section(	1,
 										e0, e1, this_E,
@@ -291,7 +288,7 @@ All neutrons need these things done, so these routines all live in the same rout
 		this_rxn	=	rxn_numbers[this_col];
 		this_Q		=	rxn_Q[      this_col];
 		array_dex	=	dex*n_columns + this_col; 
-	
+		
 		//printf("this_tope %u this_E %6.4E micro_t %6.4E col_start %u col_end %u \n",this_tope,this_E,micro_t,col_start,col_end);
 		
 		// errors?
@@ -302,8 +299,9 @@ All neutrons need these things done, so these routines all live in the same rout
 			printf("MT=%u!!!, changing to 1102...\n",this_rxn);
 			this_rxn = 1102;
 		}
+	
 	}
-
+	
 	//
 	//
 	//
