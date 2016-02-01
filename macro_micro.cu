@@ -42,6 +42,8 @@ All neutrons need these things done, so these routines all live in the same rout
 	//__shared__	unsigned*			yield;	
 	__shared__	float*				weight;	
 	__shared__	unsigned*			index;	
+	__shared__	float*				s_number_density_matrix;
+
 
 	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
@@ -69,16 +71,19 @@ All neutrons need these things done, so these routines all live in the same rout
 		//yield						= d_particles[0].yield;
 		weight						= d_particles[0].weight;
 		index						= d_particles[0].index;
+		// copy material matrix, hopefully small enough to fit!
+		memcpy(s_number_density_matrix,d_number_density_matrix,n_isotopes*n_materials*sizeof(float));
 	}
 
 	// make sure shared loads happen before anything else
 	__syncthreads();
 
 	// return if terminated
-	unsigned this_rxn=rxn[tid_in];
+	unsigned this_rxn = rxn[tid_in];
 	if (this_rxn>=900){return;}
+	else              {this_rxn = 0;}
 
-	//remap
+	// remap
 	int tid=d_remap[tid_in];
 
 	// declare
@@ -89,8 +94,8 @@ All neutrons need these things done, so these routines all live in the same rout
 	unsigned	array_dex		= 0;
 	float		dotp			= 0.0;
 	float		macro_t_total	= 0.0;
-	float		epsilon			= 2.0e-5;
-	float		push_value		= 2.0;
+	const float	epsilon			= 2.0e-5;
+	const float	push_value		= 2.0;
 	float surf_minimum, xhat_new, yhat_new, zhat_new, this_Q;
 
 	// load from arrays
@@ -122,21 +127,16 @@ All neutrons need these things done, so these routines all live in the same rout
 	float 		e0 				= energy_grid[dex];
 	float 		e1 				= energy_grid[dex+1];
 
-	//printf("tid %d this_E %6.4E e0 %6.4E e1 %6.4E matnum %u cellnum %u talnum %d\n",tid,this_E,e0,e1,this_mat,cellnum[tid],tally_index);
-
+	// check
 	if(this_mat>=n_materials){
 		printf("MACRO - tid %u this_mat %u > n_materials %u!!!!!\n",tid,this_mat,n_materials);
-        rxn[tid_in]   = 1001;  
-        isonum[tid]   = 0;
 		return;
 	}
-
-	if (this_rxn>801)printf("multiplicity %u entered macro at E %10.8E\n",this_rxn,this_E);
 
 	// compute the total macroscopic cross section for this material
 	macro_t_total = sum_cross_section(	n_isotopes,
 										e0, e1, this_E,
-										&d_number_density_matrix[this_mat],  
+										&s_number_density_matrix[this_mat],  
 										&xs[ dex   *n_columns],  
 										&xs[(dex+1)*n_columns] 				);
 
@@ -146,10 +146,9 @@ All neutrons need these things done, so these routines all live in the same rout
 	// determine the isotope in the material for this cell
 	this_tope = sample_cross_section(	n_isotopes, macro_t_total, get_rand(&rn),
 										e0, e1, this_E,
-										&d_number_density_matrix[this_mat],  
+										&s_number_density_matrix[this_mat],  
 										&xs[ dex   *n_columns],  
 										&xs[(dex+1)*n_columns]					);
-
 
 	// do surf/samp compare
 	diff = surf_dist - samp_dist;
@@ -213,17 +212,21 @@ All neutrons need these things done, so these routines all live in the same rout
 			this_rxn = 0;
 	}
 
+	// return if leaked or resampled
+	if (this_rxn>0){
+		return;
+	}
 
 	//
 	//
 	//
 	//  TALLY SECTION
 	//  -- score tally if valid
-	//
+	//  -- only reachable if collided!
 	//
 
-	// only score tally if not leaked/resampled (collision estimator) and flagged for a tally. 
-	if( this_rxn==0 & tally_index>=0 ){
+	// only score tally if flagged for a tally. 
+	if( tally_index>=0 ){
 
 		// check
 		tally_data	this_tally	= d_tally[tally_index];
@@ -253,54 +256,49 @@ All neutrons need these things done, so these routines all live in the same rout
 	//
 	//  MICROSCOPIC SECTION
 	//  -- find reaction type
+	//  -- only reachable if collided!
 	//
-	//
 
-	// only find isotope if not leaked/resampled.
-	if(this_rxn==0){
+	unsigned	col_start	=	0;
+	unsigned	col_end		=	0;
+	unsigned	this_col	=	0;
+	float		micro_t		=	0.0;
 
-		unsigned	col_start	=	0;
-		unsigned	col_end		=	0;
-		unsigned	this_col	=	0;
-		float		micro_t		=	0.0;
+	// compute the index ranges 
+	if(this_tope>=n_isotopes){
+		printf("micro - ISOTOPE NUMBER FROM MACRO > NUMBER OF ISOTOPES!  n_isotopes %u tope %u\n",n_isotopes,this_tope);
+		return;
+	}
+	else{
+		col_start	=	n_isotopes + rxn_numbers_total[this_tope];
+		col_end		=	n_isotopes + rxn_numbers_total[this_tope+1];
+	}
 
-		// compute the index ranges 
-		if(this_tope>=n_isotopes){
-			printf("micro - ISOTOPE NUMBER FROM MACRO > NUMBER OF ISOTOPES!  n_isotopes %u tope %u\n",n_isotopes,this_tope);
-			return;
-		}
-		else{
-			col_start	=	n_isotopes + rxn_numbers_total[this_tope];
-			col_end		=	n_isotopes + rxn_numbers_total[this_tope+1];
-		}
-
+	// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
+	micro_t = sum_cross_section(	1,
+									e0, e1, this_E,
+									&xs[ dex   *n_columns + this_tope],  
+									&xs[(dex+1)*n_columns + this_tope] );
 	
-		// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
-		micro_t = sum_cross_section(	1,
-										e0, e1, this_E,
-										&xs[ dex   *n_columns + this_tope],  
-										&xs[(dex+1)*n_columns + this_tope] );
-	
-		// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
-		this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
-														e0, e1, this_E,
-														&xs[ dex   *n_columns + col_start],  
-														&xs[(dex+1)*n_columns + col_start]	);
-		// the the numbers for this column
-		this_rxn	=	rxn_numbers[this_col];
-		this_Q		=	rxn_Q[      this_col];
-		array_dex	=	dex*n_columns + this_col; 
+	// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
+	this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
+													e0, e1, this_E,
+													&xs[ dex   *n_columns + col_start],  
+													&xs[(dex+1)*n_columns + col_start]	);
+	// the the numbers for this column
+	this_rxn	=	rxn_numbers[this_col];
+	this_Q		=	rxn_Q[      this_col];
+	array_dex	=	dex*n_columns + this_col; 
 
-		//printf("this_tope %u this_E %6.4E micro_t %6.4E col_start %u col_end %u \n",this_tope,this_E,micro_t,col_start,col_end);
+	//printf("this_tope %u this_E %6.4E micro_t %6.4E col_start %u col_end %u \n",this_tope,this_E,micro_t,col_start,col_end);
 	
-		// errors?
-		if(this_rxn == 999999999){ // there is a gap in between the last MT and the total cross section, remap the rn to fit into the available data (effectively rescales the total cross section so everything adds up to it, if things aren't samples the first time around)
-			printf("micro - REACTION NOT SAMPLED CORRECTLY! tope=%u E=%10.8E dex=%u rxn=%u\n",this_tope, this_E, dex, this_rxn); //most likely becasue rn1=1.0
-		}
-		if(this_rxn == 3 | this_rxn==4 | this_rxn ==5 | this_rxn ==10 | this_rxn ==27){
-			printf("MT=%u!!!, changing to 1102...\n",this_rxn);
-			this_rxn = 1102;
-		}
+	// errors?
+	if(this_rxn == 999999999){ 
+		printf("micro - REACTION NOT SAMPLED CORRECTLY! tope=%u E=%10.8E dex=%u rxn=%u\n",this_tope, this_E, dex, this_rxn); //most likely becasue rn1=1.0
+	}
+	if(this_rxn == 3 | this_rxn==4 | this_rxn ==5 | this_rxn ==10 | this_rxn ==27){
+		printf("MT=%u!!!, changing to 1102...\n",this_rxn);
+		this_rxn = 1102;
 	}
 
 	//
@@ -313,12 +311,8 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	if(this_rxn==0){printf("rxn for tid_in %d / tid %d is still ZERO at end of macro_micro!\n", tid_in, tid);}
 
-	//if(tid==9469){
-	//	printf("tid_in %u tid %u:  rxn %u xyz %6.4E %6.4E %6.4E\n",tid_in,tid,this_rxn,x,y,z);
-	//}
-
 	rxn[    tid_in]			=	this_rxn;			// rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
-	Q[      tid]			=	this_Q;
+	Q[      tid]			=	this_Q; 			// put reaction Q value into particle Q value
 	rn_bank[tid]			=	rn;
 	index[  tid]			=	array_dex;			// write MT array index to dex instead of energy vector index
 	isonum[ tid]			=	this_tope;
