@@ -92,8 +92,7 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	float		this_temp		=	temp[this_tope];
 
 	// internal kernel variables
-	float  		E_target     		=   0;
-	float 		speed_target     	=   sqrtf(2.0*E_target/(this_awr*m_n));
+	float 		speed_target;     	
 	float  		speed_n          	=   sqrtf(2.0*this_E/m_n);
 	float 		E_new				=   0.0;
 	wfloat3 	v_n_cm, v_t_cm, v_n_lf, v_t_lf, v_cm, hats_new, hats_target, rotation_hat;

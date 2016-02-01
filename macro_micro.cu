@@ -214,9 +214,9 @@ All neutrons need these things done, so these routines all live in the same rout
 	}
 
 	// return if leaked or resampled
-	if (this_rxn>0){
-		return;
-	}
+	//if (this_rxn>0){
+	//	return;
+	//}
 
 	//
 	//
@@ -227,7 +227,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	//
 
 	// only score tally if flagged for a tally. 
-	if( tally_index>=0 ){
+	if( tally_index>=0 & this_rxn==0 ){
 
 		// check
 		tally_data	this_tally	= d_tally[tally_index];
@@ -259,47 +259,49 @@ All neutrons need these things done, so these routines all live in the same rout
 	//  -- find reaction type
 	//  -- only reachable if collided!
 	//
-
-	unsigned	col_start	=	0;
-	unsigned	col_end		=	0;
-	unsigned	this_col	=	0;
-	float		micro_t		=	0.0;
-
-	// compute the index ranges 
-	if(this_tope>=n_isotopes){
-		printf("micro - ISOTOPE NUMBER FROM MACRO > NUMBER OF ISOTOPES!  n_isotopes %u tope %u\n",n_isotopes,this_tope);
-		return;
-	}
-	else{
-		col_start	=	n_isotopes + rxn_numbers_total[this_tope];
-		col_end		=	n_isotopes + rxn_numbers_total[this_tope+1];
-	}
-
-	// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
-	micro_t = sum_cross_section(	1,
-									e0, e1, this_E,
-									&xs[ dex   *n_columns + this_tope],  
-									&xs[(dex+1)*n_columns + this_tope] );
+	if(this_rxn==0){
+		
+		unsigned	col_start	=	0;
+		unsigned	col_end		=	0;
+		unsigned	this_col	=	0;
+		float		micro_t		=	0.0;
 	
-	// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
-	this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
-													e0, e1, this_E,
-													&xs[ dex   *n_columns + col_start],  
-													&xs[(dex+1)*n_columns + col_start]	);
-	// the the numbers for this column
-	this_rxn	=	rxn_numbers[this_col];
-	this_Q		=	rxn_Q[      this_col];
-	array_dex	=	dex*n_columns + this_col; 
-
-	//printf("this_tope %u this_E %6.4E micro_t %6.4E col_start %u col_end %u \n",this_tope,this_E,micro_t,col_start,col_end);
+		// compute the index ranges 
+		if(this_tope>=n_isotopes){
+			printf("micro - ISOTOPE NUMBER FROM MACRO > NUMBER OF ISOTOPES!  n_isotopes %u tope %u\n",n_isotopes,this_tope);
+			return;
+		}
+		else{
+			col_start	=	n_isotopes + rxn_numbers_total[this_tope];
+			col_end		=	n_isotopes + rxn_numbers_total[this_tope+1];
+		}
 	
-	// errors?
-	if(this_rxn == 999999999){ 
-		printf("micro - REACTION NOT SAMPLED CORRECTLY! tope=%u E=%10.8E dex=%u rxn=%u\n",this_tope, this_E, dex, this_rxn); //most likely becasue rn1=1.0
-	}
-	if(this_rxn == 3 | this_rxn==4 | this_rxn ==5 | this_rxn ==10 | this_rxn ==27){
-		printf("MT=%u!!!, changing to 1102...\n",this_rxn);
-		this_rxn = 1102;
+		// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
+		micro_t = sum_cross_section(	1,
+										e0, e1, this_E,
+										&xs[ dex   *n_columns + this_tope],  
+										&xs[(dex+1)*n_columns + this_tope] );
+		
+		// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
+		this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
+														e0, e1, this_E,
+														&xs[ dex   *n_columns + col_start],  
+														&xs[(dex+1)*n_columns + col_start]	);
+		// the the numbers for this column
+		this_rxn	=	rxn_numbers[this_col];
+		this_Q		=	rxn_Q[      this_col];
+		array_dex	=	dex*n_columns + this_col; 
+	
+		//printf("this_tope %u this_E %6.4E micro_t %6.4E col_start %u col_end %u \n",this_tope,this_E,micro_t,col_start,col_end);
+		
+		// errors?
+		if(this_rxn == 999999999){ 
+			printf("micro - REACTION NOT SAMPLED CORRECTLY! tope=%u E=%10.8E dex=%u rxn=%u\n",this_tope, this_E, dex, this_rxn); //most likely becasue rn1=1.0
+		}
+		if(this_rxn == 3 | this_rxn==4 | this_rxn ==5 | this_rxn ==10 | this_rxn ==27){
+			printf("MT=%u!!!, changing to 1102...\n",this_rxn);
+			this_rxn = 1102;
+		}
 	}
 
 	//

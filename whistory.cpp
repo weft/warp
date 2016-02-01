@@ -81,6 +81,7 @@ void whistory::init(){
 	for (int i = 0; i < 4; ++i){
 		check_cuda(cudaStreamCreate(&stream[i]));
 	}
+	//check_cuda(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
 	//
 	// OPTIX 

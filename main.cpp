@@ -153,79 +153,79 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 	
 		//godiva geom
-		type=3;
-		material=1;
-		mins[0]= -1.1;
-		mins[1]= -1.1;
-		mins[2]= -1.1;
-		maxs[0]=  1.1;
-		maxs[1]=  1.1;
-		maxs[2]=  1.1;
-		origin[0]=0.0;
-		origin[1]=0.0;
-		origin[2]=0.0;
-		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.add_transform(prim_id,1,0,0,0,0,0);
-
-		//godiva geom
-		type=3;
-		material=1;
-		mins[0]= -2.1;
-		mins[1]= -2.1;
-		mins[2]= -2.1;
-		maxs[0]=  2.1;
-		maxs[1]=  2.1;
-		maxs[2]=  2.1;
-		origin[0]=0.0;
-		origin[1]=0.0;
-		origin[2]=0.0;
-		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.add_transform(prim_id,200,0,0,0,0,0);
-
-		//godiva geom
-		type=3;
-		material=1;
-		mins[0]= -3.1;
-		mins[1]= -3.1;
-		mins[2]= -3.1;
-		maxs[0]=  3.1;
-		maxs[1]=  3.1;
-		maxs[2]=  3.1;
-		origin[0]=0.0;
-		origin[1]=0.0;
-		origin[2]=0.0;
-		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.add_transform(prim_id,300,0,0,0,0,0);
-
-		//godiva geom
-		type=3;
-		material=1;
-		mins[0]= -4.1;
-		mins[1]= -4.1;
-		mins[2]= -4.1;
-		maxs[0]=  4.1;
-		maxs[1]=  4.1;
-		maxs[2]=  4.1;
-		origin[0]=0.0;
-		origin[1]=0.0;
-		origin[2]=0.0;
-		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.add_transform(prim_id,400,0,0,0,0,0);
-
-		//godiva geom
-		type=0;
-		material=1;
-		mins[0]= -0.1;
-		mins[1]= -0.1;
-		mins[2]= -0.1;
-		maxs[0]=  0.4;
-		maxs[1]=  0.1;
-		maxs[2]=  0.1;
-		origin[0]=0.0;
-		origin[1]=0.0;
-		origin[2]=0.0;
-		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.add_transform(prim_id,500,0,0,4.5,0,0);
+//		type=3;
+//		material=1;
+//		mins[0]= -1.1;
+//		mins[1]= -1.1;
+//		mins[2]= -1.1;
+//		maxs[0]=  1.1;
+//		maxs[1]=  1.1;
+//		maxs[2]=  1.1;
+//		origin[0]=0.0;
+//		origin[1]=0.0;
+//		origin[2]=0.0;
+//		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+//		geom.add_transform(prim_id,1,0,0,0,0,0);
+//
+//		//godiva geom
+//		type=3;
+//		material=1;
+//		mins[0]= -2.1;
+//		mins[1]= -2.1;
+//		mins[2]= -2.1;
+//		maxs[0]=  2.1;
+//		maxs[1]=  2.1;
+//		maxs[2]=  2.1;
+//		origin[0]=0.0;
+//		origin[1]=0.0;
+//		origin[2]=0.0;
+//		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+//		geom.add_transform(prim_id,200,0,0,0,0,0);
+//
+//		//godiva geom
+//		type=3;
+//		material=1;
+//		mins[0]= -3.1;
+//		mins[1]= -3.1;
+//		mins[2]= -3.1;
+//		maxs[0]=  3.1;
+//		maxs[1]=  3.1;
+//		maxs[2]=  3.1;
+//		origin[0]=0.0;
+//		origin[1]=0.0;
+//		origin[2]=0.0;
+//		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+//		geom.add_transform(prim_id,300,0,0,0,0,0);
+//
+//		//godiva geom
+//		type=3;
+//		material=1;
+//		mins[0]= -4.1;
+//		mins[1]= -4.1;
+//		mins[2]= -4.1;
+//		maxs[0]=  4.1;
+//		maxs[1]=  4.1;
+//		maxs[2]=  4.1;
+//		origin[0]=0.0;
+//		origin[1]=0.0;
+//		origin[2]=0.0;
+//		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+//		geom.add_transform(prim_id,400,0,0,0,0,0);
+//
+//		//godiva geom
+//		type=0;
+//		material=1;
+//		mins[0]= -0.1;
+//		mins[1]= -0.1;
+//		mins[2]= -0.1;
+//		maxs[0]=  0.4;
+//		maxs[1]=  0.1;
+//		maxs[2]=  0.1;
+//		origin[0]=0.0;
+//		origin[1]=0.0;
+//		origin[2]=0.0;
+//		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
+//		geom.add_transform(prim_id,500,0,0,4.5,0,0);
 
 
 		//godiva geom
