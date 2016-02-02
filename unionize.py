@@ -259,7 +259,7 @@ class cross_section_data:
 		for n in range(0,len(MT_num_array)):
 			if MT_num_array[n] == 2:
 				MT_num_array[n] = 50
-			elif (MT_num_array[n] >= 18 and MT_num_array[n] <= 22) or MT_num_array[n] == 38 :
+			elif (MT_num_array[n] >= 18 and MT_num_array[n] <= 21) or MT_num_array[n] == 38 :
 				MT_num_array[n] = MT_num_array[n]+800
 			elif MT_num_array[n] > 100:
 				MT_num_array[n] = MT_num_array[n]+1000
