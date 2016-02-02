@@ -378,7 +378,7 @@ int main(int argc, char* argv[]){
 
 	whistory hist ( N , geom );
 	hist.set_print_level(4);
-	hist.set_dump_level(3);
+	hist.set_dump_level(0);
 	hist.set_device(0);
 	hist.init();
 	hist.print_xs_data();
@@ -391,7 +391,7 @@ int main(int argc, char* argv[]){
 	hist.set_run_type("criticality");
 	hist.set_run_param(40,20);  //run, skip
 	hist.set_filename(filename);
-	hist.plot_geom("cell");  // **MUST** be called after init.
+	//hist.plot_geom("cell");  // **MUST** be called after init.
 	hist.run();
 	hist.write_tally();
 	//hist.write_xs_data("xsdata");

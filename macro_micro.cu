@@ -318,7 +318,6 @@ All neutrons need these things done, so these routines all live in the same rout
 				dex = 0;
 				e0	= energy_grid[dex];
 				e1	= 0.0;
-	
 			}
 			else{
 				// out of bounds above data
@@ -326,11 +325,12 @@ All neutrons need these things done, so these routines all live in the same rout
 				e0	= energy_grid[dex];
 				e1	= 0.0;
 			}
-	
-			// outside data, pass one array
-			// don't have to interpolate
-			micro_t = xs[ dex   *n_columns + this_tope];
-			
+
+			// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
+			micro_t = sum_cross_section(	1,
+											e0, this_E,
+											&xs[ dex   *n_columns + this_tope]	);
+
 			// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
 			this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
 															e0, this_E,
