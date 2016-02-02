@@ -35,25 +35,36 @@ __global__ void find_E_grid_index_kernel(unsigned N, cross_section_data* d_xsdat
 	unsigned powtwo = 2;
 	int dex  = (energy_grid_len-1) / 2;  // N_energies starts at 1, duh
 
-
-	for(cnt=0;cnt<=30;cnt++){
-		powtwo = powtwo * 2;
-		if      ( 	energy_grid[dex]   <= value && 
-				energy_grid[dex+1] >  value ) { break; }
-		else if ( 	energy_grid[dex]   >  value ) { dex  = dex - ((energy_grid_len / powtwo) + 1) ;}  // +1's are to do a ceiling instead of a floor on integer division
-		else if ( 	energy_grid[dex]   <  value ) { dex  = dex + ((energy_grid_len / powtwo) + 1) ;}
-
-		if(cnt==30){
-			printf("binary search iteration overflow! %p len %d val % 10.8f tid=%u rxn=%u\n",energy_grid,energy_grid_len,value,tid,this_rxn);
-			dex=0;
-		}
-
-		// edge checks... fix later???
-		if(dex<0){
-			dex=0;
-		}
-		if(dex>=energy_grid_len){
-			dex=energy_grid_len-1;
+	// check edges
+	float	grid_max = energy_grid[energy_grid_len-1];
+	float	grid_min = energy_grid[0];
+	if (value < grid_min){
+		dex=-2;   // encoding for under min interpolation (2^32-2, or -2)
+	}
+	else if (value > grid_max){
+		dex=-1;   // encoding for over max interpolation (2^32-1, or -1)
+	}
+	else{
+		// do the search
+		for(cnt=0;cnt<=30;cnt++){
+			powtwo = powtwo * 2;
+			if      ( 	energy_grid[dex]   <= value && 
+					energy_grid[dex+1] >  value ) { break; }
+			else if ( 	energy_grid[dex]   >  value ) { dex  = dex - ((energy_grid_len / powtwo) + 1) ;}  // +1's are to do a ceiling instead of a floor on integer division
+			else if ( 	energy_grid[dex]   <  value ) { dex  = dex + ((energy_grid_len / powtwo) + 1) ;}
+	
+			if(cnt==30){
+				printf("binary search iteration overflow! %p len %d val % 6.4E tid=%u rxn=%u\n",energy_grid,energy_grid_len,value,tid,this_rxn);
+				dex=0;
+			}
+	
+			// edge checks... fix later???
+			if(dex<0){
+				dex=0;
+			}
+			if(dex>=energy_grid_len){
+				dex=energy_grid_len-1;
+			}
 		}
 	}
 

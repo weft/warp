@@ -19,7 +19,7 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	// declare shared variables
 	__shared__ 	unsigned			n_isotopes;				
-	//__shared__ 	unsigned			energy_grid_len;		
+	__shared__ 	unsigned			energy_grid_len;		
 	__shared__ 	unsigned			total_reaction_channels;
 	__shared__ 	unsigned*			rxn_numbers;			
 	__shared__ 	unsigned*			rxn_numbers_total;		
@@ -49,7 +49,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
 		n_isotopes					= d_xsdata[0].n_isotopes;								
-		//energy_grid_len				= d_xsdata[0].energy_grid_len;				
+		energy_grid_len				= d_xsdata[0].energy_grid_len;				
 		total_reaction_channels		= d_xsdata[0].total_reaction_channels;
 		rxn_numbers 				= d_xsdata[0].rxn_numbers;						
 		rxn_numbers_total			= d_xsdata[0].rxn_numbers_total;					
@@ -125,8 +125,7 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	// compute some things
 	unsigned 	n_columns 		= n_isotopes + total_reaction_channels;
-	float 		e0 				= energy_grid[dex];
-	float 		e1 				= energy_grid[dex+1];
+	float 		e0, e1;
 
 	// check
 	if(this_mat>=n_materials){
@@ -134,22 +133,61 @@ All neutrons need these things done, so these routines all live in the same rout
 		return;
 	}
 
-	// compute the total macroscopic cross section for this material
-	macro_t_total = sum_cross_section(	n_isotopes,
-										e0, e1, this_E,
-										&s_number_density_matrix[this_mat],  
-										&xs[ dex   *n_columns],  
-										&xs[(dex+1)*n_columns] 				);
+	if (dex>=4294967294){
+
+		if(dex==4294967294){
+			// out of bounds below data
+			dex = 0;
+			e0	= energy_grid[dex];
+			e1	= 0.0;
+
+		}
+		else{
+			// out of bounds above data
+			dex = energy_grid_len-1;
+			e0	= energy_grid[dex];
+			e1	= 0.0;
+		}
+
+		// outside data, pass one array
+		// compute the total macroscopic cross section for this material
+		macro_t_total = sum_cross_section(	n_isotopes,
+											e0, this_E,
+											&s_number_density_matrix[this_mat],  
+											&xs[ dex   *n_columns]				);
+	
+		// determine the isotope in the material for this cell
+		this_tope = sample_cross_section(	n_isotopes, macro_t_total, get_rand(&rn),
+											e0, this_E,
+											&s_number_density_matrix[this_mat],  
+											&xs[ dex   *n_columns]	 			);
+
+	}
+	else{
+
+		// energy edges
+		e0 = energy_grid[dex];
+		e1 = energy_grid[dex+1];
+
+		// inside the data, pass two arrays
+		// compute the total macroscopic cross section for this material
+		macro_t_total = sum_cross_section(	n_isotopes,
+											e0, e1, this_E,  
+											&s_number_density_matrix[this_mat],
+											&xs[ dex   *n_columns],  
+											&xs[(dex+1)*n_columns] 				);
+	
+		// determine the isotope in the material for this cell
+		this_tope = sample_cross_section(	n_isotopes, macro_t_total, get_rand(&rn),
+											e0, e1, this_E,
+											&s_number_density_matrix[this_mat],  
+											&xs[ dex   *n_columns],  
+											&xs[(dex+1)*n_columns]					);
+
+	}
 
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;
-
-	// determine the isotope in the material for this cell
-	this_tope = sample_cross_section(	n_isotopes, macro_t_total, get_rand(&rn),
-										e0, e1, this_E,
-										&s_number_density_matrix[this_mat],  
-										&xs[ dex   *n_columns],  
-										&xs[(dex+1)*n_columns]					);
 
 	// do surf/samp compare
 	diff = surf_dist - samp_dist;
@@ -272,18 +310,48 @@ All neutrons need these things done, so these routines all live in the same rout
 			col_start	=	n_isotopes + rxn_numbers_total[this_tope];
 			col_end		=	n_isotopes + rxn_numbers_total[this_tope+1];
 		}
+
+		if (dex>=4294967294){
+
+			if(dex==4294967294){
+				// out of bounds below data
+				dex = 0;
+				e0	= energy_grid[dex];
+				e1	= 0.0;
+	
+			}
+			else{
+				// out of bounds above data
+				dex = energy_grid_len-1;
+				e0	= energy_grid[dex];
+				e1	= 0.0;
+			}
+	
+			// outside data, pass one array
+			// don't have to interpolate
+			micro_t = xs[ dex   *n_columns + this_tope];
+			
+			// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
+			this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
+															e0, this_E,
+															&xs[ dex   *n_columns + col_start]			);
+	
+		}
+		else{
 		
-		// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
-		micro_t = sum_cross_section(	1,
-										e0, e1, this_E,
-										&xs[ dex   *n_columns + this_tope],  
-										&xs[(dex+1)*n_columns + this_tope] );
-		
-		// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
-		this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
-														e0, e1, this_E,
-														&xs[ dex   *n_columns + col_start],  
-														&xs[(dex+1)*n_columns + col_start]	);
+			// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
+			micro_t = sum_cross_section(	1,
+											e0, e1, this_E,
+											&xs[ dex   *n_columns + this_tope],  
+											&xs[(dex+1)*n_columns + this_tope] );
+			
+			// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
+			this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
+															e0, e1, this_E,
+															&xs[ dex   *n_columns + col_start],  
+															&xs[(dex+1)*n_columns + col_start]			);
+		}
+
 		// the the numbers for this column
 		this_rxn	=	rxn_numbers[this_col];
 		this_Q		=	rxn_Q[      this_col];

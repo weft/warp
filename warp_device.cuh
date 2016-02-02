@@ -22,12 +22,12 @@ since 32-bit math is being used, 30 bits are used here
 
 inline __device__ float sum_cross_section( unsigned length , float energy0, float energy1, float this_E, float* multiplier, float* array0, float* array1){
 /*
-Calculates the sum of a cross section range.  This routine HAS a multiplier array.  Returns sum.
+Calculates the sum of a cross section range.  This routine has a multiplier array and two arrays  / two energy_ins for inside the data.  Returns sum.
 */
 	float macro_t_total = 0.0;
 
 	for( int k=0; k<length; k++ ){
-		//linearly interpolate and accumulate
+		// interpolate and accumulate
 		macro_t_total += ( (array1[k]-array0[k])/(energy1-energy0)*(this_E-energy0) + array0[k] ) * multiplier[k];
 	}
 
@@ -35,9 +35,30 @@ Calculates the sum of a cross section range.  This routine HAS a multiplier arra
 
 }
 
+inline __device__ float sum_cross_section( unsigned length , float energy0, float this_E, float* multiplier, float* array0){
+/*
+Calculates the sum of a cross section range.  This routine has a multiplier array and one array / one energy_in for outside the data.  Returns sum.
+*/
+	float macro_t_total = 0.0;
+
+	// multiply and accumuate at the end
+	for( int k=0; k<length; k++ ){
+		macro_t_total += array0[k] * multiplier[k];
+	}
+
+	// if below, scale as 1/v
+	if (this_E < energy0){
+		return macro_t_total * sqrtf(energy0/this_E);
+	}
+	else{
+		return macro_t_total;
+	}
+
+}
+
 inline __device__ float sum_cross_section( unsigned length , float energy0, float energy1, float this_E, float* array0, float* array1){
 /*
-Calculates the sum of a cross section range.  Returns sum.
+Calculates the sum of a cross section range.  This routine has no multiplier array, and two arrays / two energy_ins for inside the data.  Returns sum.
 */
 	float macro_t_total = 0.0;
 
@@ -69,6 +90,33 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 }
 
+inline __device__ unsigned sample_cross_section( unsigned length , float normalize, float rn, float energy0, float this_E, float* multiplier, float* array0){
+/*
+Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  This routine HAS a multiplier array and one energy_in / array for ouside of data.  Returns array index.
+*/
+	unsigned	index				= 0;
+	float		cumulative_value	= 0.0;
+
+	// if below, remove 1/v scaling since it is applied uniformly and would be devided out anyway
+	if (this_E < energy0){
+		normalize = normalize / sqrtf(energy0/this_E);
+	}
+
+	// sample
+	for( index=0; index<length; index++ ){
+		//linearly interpolate and accumulate
+		cumulative_value +=  array0[index] * multiplier[index] / normalize;
+		if ( rn <= cumulative_value ){
+			break;
+		}
+	}
+
+	return index;
+
+}
+
+
+
 inline __device__ unsigned sample_cross_section( unsigned length , float normalize, float rn, float energy0, float energy1, float this_E, float* array0, float* array1){
 /*
 Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  Returns array index.
@@ -79,6 +127,26 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 	for( index=0; index<length; index++ ){
 		//linearly interpolate and accumulate
 		cumulative_value += ( (array1[index]-array0[index])/(energy1-energy0)*(this_E-energy0) + array0[index] ) / normalize;
+		if ( rn <= cumulative_value ){
+			break;
+		}
+	}
+
+	return index;
+
+}
+
+
+inline __device__ unsigned sample_cross_section( unsigned length , float normalize, float rn, float energy0, float this_E, float* array0){
+/*
+Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  One energy_in / array for outside data.  Returns array index.
+*/
+	unsigned	index				= 0;
+	float		cumulative_value	= 0.0;
+
+	for( index=0; index<length; index++ ){
+		//linearly interpolate and accumulate
+		cumulative_value += array0[index] / normalize;
 		if ( rn <= cumulative_value ){
 			break;
 		}
