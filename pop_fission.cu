@@ -37,8 +37,6 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 	//constants
 	const float  	pi			=   3.14159265359;
-	const float  	Emin		=   1e-11;				// MeV
-	const float  	Emax		=   20.0;				// MeV
 
 	// load history data
 	spatial_data	this_space		=	space[   tid];
@@ -112,10 +110,6 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		else{
 			printf("LAW %u NOT HANDLED IN FISSION POP!  rxn %u\n",this_law,this_rxn);
 		}
-	
-		//check limits
-		if (sampled_E >= Emax){sampled_E = Emax * 0.9;}
-		if (sampled_E <= Emin){sampled_E = Emin * 1.1;}
 
 		// set data
 		d_fissile_energy[ data_dex ] 				= sampled_E;

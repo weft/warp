@@ -83,8 +83,6 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	//constants
 	//const float  	pi			=   3.14159265359;
 	const float  	m_n			=   1.00866491600;		// u
-	const float  	E_cutoff	=   1e-11;				// MeV
-	const float  	E_max		=   20.0;				// MeV
 	//const float		kb			=	8.617332478e-11;	// MeV/k
 
 	// load history data
@@ -219,12 +217,6 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	// calculate energy in lab frame
 	E_new = 0.5 * m_n * v_n_lf.dot(v_n_lf);
 
-	// enforce limits
-	if ( E_new <= E_cutoff | E_new > E_max ){
-		this_rxn = 998;  // ecutoff code
-		printf("c CUTOFF, E = %10.8E\n",E_new);
-	}
-
 	// multiply weight by multiplicity
 	if(     this_rxn == 22 | this_rxn == 23 | this_rxn == 28 | this_rxn == 29 | this_rxn == 32 | this_rxn == 33 | this_rxn == 34 | this_rxn == 35 | this_rxn == 36 | this_rxn == 44 | this_rxn == 45){
 		this_weight = this_weight * 1.0;
@@ -244,7 +236,6 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 
 
 	//printf("tid %d law %u sampled_E %6.4E mu %6.4E weight %6.4E\n",tid,this_law,sampled_E,mu,this_weight);
-	if(E_new<1e-20){printf("multi %6.4E\n",E_new);}
 	
 	// write results
 	E[      tid]	=	E_new;
