@@ -75,8 +75,8 @@ def get_warp_data(filepath):
 
 
 
-warpdata   = get_warp_data('godiva.tally')
-serpdata   = get_serpent_det('godiva_det0.m')
+warpdata   = get_warp_data(  sys.argv[1]+'.tally')
+serpdata   = get_serpent_det(sys.argv[1]+'_det0.m')
 
 tallybins = warpdata[0]
 tally     = warpdata[1]
@@ -123,7 +123,7 @@ ax0.legend(handles,labels,loc=2)
 ax0.set_xlim([1e-11,20])
 ax0.grid(True)
 
-ax2.semilogx(serp_avg,numpy.divide(newflux-serpF,serpF),'b',linestyle='steps-mid',label='Flux Relative Error vs. Serpent')
+#ax2.semilogx(serp_avg,numpy.divide(newflux-serpF,serpF),'b',linestyle='steps-mid',label='Flux Relative Error vs. Serpent')
 ax2.set_xlim([1e-11,20])
 ax2.set_ylim([-err_range,err_range])
 ax2.fill_between(serp_avg,-2.0*serpErr,2.0*serpErr,color='black',facecolor='green', alpha=0.5)

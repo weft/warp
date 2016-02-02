@@ -186,10 +186,11 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	E_new = 0.5 * m_n * v_n_lf.dot(v_n_lf);
 
 	// enforce limits
-	if ( E_new <= E_cutoff | E_new > E_max ){
-		this_rxn = 998;  // ecutoff code
-		printf("i CUTOFF, E = %10.8E\n",E_new);
-	}
+	//if ( E_new <= E_cutoff | E_new > E_max ){
+	//	this_rxn = 998;  // ecutoff code
+	//	printf("level CUTOFF, E = %10.8E\n",E_new);
+	//}
+	if(E_new<1e-20){printf("level %6.4E\n",E_new);}
 
 	//printf("tid %d E_new %6.4E xhat %6.4E yhat %6.4E zhat %6.4E\n",tid,this_E,hats_new.x,hats_new.y,hats_new.z);
 

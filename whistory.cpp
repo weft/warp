@@ -24,6 +24,8 @@ optix_stuff optix_obj;
 
 // whistory class
 whistory::~whistory(){
+	//clear device
+	check_cuda(cudaDeviceReset());
 }
 void whistory::print_banner(){
 	using namespace std;

@@ -33,7 +33,7 @@ __global__ void find_E_grid_index_kernel(unsigned N, cross_section_data* d_xsdat
 	// init local
 	unsigned cnt  = 0;
 	unsigned powtwo = 2;
-	int dex  = (energy_grid_len-1) / 2;  //N_energiesgth starts at 1, duh
+	int dex  = (energy_grid_len-1) / 2;  // N_energies starts at 1, duh
 
 
 	for(cnt=0;cnt<=30;cnt++){
@@ -44,7 +44,7 @@ __global__ void find_E_grid_index_kernel(unsigned N, cross_section_data* d_xsdat
 		else if ( 	energy_grid[dex]   <  value ) { dex  = dex + ((energy_grid_len / powtwo) + 1) ;}
 
 		if(cnt==30){
-			printf("binary search iteration overflow! %p %d % 10.8f tid=%u\n",energy_grid,energy_grid_len,value,tid);
+			printf("binary search iteration overflow! %p len %d val % 10.8f tid=%u rxn=%u\n",energy_grid,energy_grid_len,value,tid,this_rxn);
 			dex=0;
 		}
 

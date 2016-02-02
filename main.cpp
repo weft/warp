@@ -16,12 +16,12 @@ int main(int argc, char* argv[]){
 	std::string homfuelname  = "homfuel";
 	std::string godivaname   = "godiva";
 	std::string pincellname  = "pincell";
-	std::string pincellname2  = "pincell-square";
+	std::string testname     = "test";
 
 
 	// check
 	if(argc<=2){
-		printf("MUST ENTER A RUN TYPE : %s, %s, %s, or %s; and a number of particles to run!\n",assemblyname.c_str(),homfuelname.c_str(), godivaname.c_str(),  pincellname.c_str() );
+		printf("MUST ENTER A RUN TYPE : %s, %s, %s, %s, or %s; and a number of particles to run!\n",assemblyname.c_str(),homfuelname.c_str(), godivaname.c_str(),  pincellname.c_str(), testname.c_str() );
 		exit(0);
 	}
 
@@ -303,24 +303,21 @@ int main(int argc, char* argv[]){
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
 		geom.add_transform(prim_id,999,0,0,0,0,0);
 	}
-	else if(pincellname2.compare(argv[1])==0){
-		// pincell mats
-		n_topes = 4;
+	else if(testname.compare(argv[1])==0){
+		// test mats
+		n_topes = 3;
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
-		topes[0] = "92235.03c";
-		topes[1] = "92238.03c";
-		topes[2] =  "8016.03c" ;
-		topes[3] =  "1001.03c" ;
-		fracs_fuel[0] = 0.1;  
-		fracs_fuel[1] = 0.9;   
-		fracs_fuel[2] = 2;   
-		fracs_fuel[3] = 0;
+		topes[0] = "92238.03c";
+		topes[1] =  "8016.03c" ;
+		topes[2] =  "1001.03c" ;
+		fracs_fuel[0] = 1;  
+		fracs_fuel[1] = 2;   
+		fracs_fuel[2] = 0;
 		fracs_water[0] = 0;  
-		fracs_water[1] = 0;   
-		fracs_water[2] = 1;   
-		fracs_water[3] = 2;
+		fracs_water[1] = 1;   
+		fracs_water[2] = 2;
 		float    dens_fuel = 15;
 		float 	 dens_water = 3;
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
@@ -328,8 +325,8 @@ int main(int argc, char* argv[]){
 		
 		// run stuff
 		tallycell = 1;
-		filename = pincellname2;
-		tallyname = pincellname2;
+		filename = testname;
+		tallyname = testname;
 		tallyname.append(".tally");
 	
 		//pin cell
