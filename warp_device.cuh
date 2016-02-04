@@ -191,7 +191,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 
 	// scan the CDF,
 	for( index=0; index<length-1; index++ ){
-		if ( rn <= cdf[index+1] ){
+		if ( rn < cdf[index+1] ){
 			break;
 		}
 	}
@@ -199,7 +199,13 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	// calculate sampled value
 	if(intt==1){
 		// histogram interpolation
-		out = var[index] + (rn - cdf[index])/pdf[index];
+		// out = var[index] + (rn - cdf[index])/pdf[index];
+		// out = var[index] + (rn - cdf[index])/(cdf[index+1]-cdf[index])*(var[index+1]-var[index]);
+		out = var[index] + (rn - cdf[index])/(pdf[index]+pdf[index+1])*2.0;
+		// out = var[index+1] + (rn - cdf[index+1])/pdf[index+1];
+		// float f = (rn - cdf[index])/(cdf[index+1]-cdf[index]);
+		// float pdf_avg = f*pdf[index+1] + (1-f)*pdf[index];
+		// out = var[index] + (rn - cdf[index])/pdf_avg;
 	}
 	else if(intt==2){
 		// lin-lin interpolation

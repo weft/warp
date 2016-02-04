@@ -130,6 +130,7 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	// sample new azimuthal phi, always isotropic
 	phi = 2.0*pi*get_rand(&rn);
 
+
 	// sample polar cosine mu
 	if(dist_scatter == 0x0){
 		// isotropic scatter if null
@@ -148,8 +149,9 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		else{
 			this_dist = dist_upper;
 		}
-
 		// sample the distribution
+		if(this_tope==2 & this_rxn==50 & this_dist.len==3 & this_E>0.26){printf("len 3 in O16, E %6.4E\n",this_E);}
+		if(this_E < dist_lower.erg | this_E > dist_upper.erg){printf("NOT BETWEEN DISTS! lower %6.4E this %6.4E upper %6.4E\n",dist_lower.erg,this_E,dist_upper.erg);}
 		this_law = this_dist.law;
 		if (this_law == 3 ){
 			mu = sample_continuous_tablular( 	this_dist.len , 

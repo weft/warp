@@ -619,7 +619,8 @@ class cross_section_data:
 
 			# next index
 			next_dex = len(self.MT_E_grid)
-
+		
+		#print "unionize.py:   erg ",lower_erg," len ", lower_len, " var ", lower_var, " pdf ", lower_pdf , " cdf ",lower_cdf
 
 		# return values in order as float32 arrays
 		return [numpy.ascontiguousarray(lower_erg,	dtype=numpy.float32),
