@@ -157,10 +157,17 @@ void whistory::init(){
 	//test_function( NUM_THREADS, N, d_xsdata, d_particles, d_tally, d_remap);
 	//check_cuda(cudaPeekAtLastError());
 
+	// get total memory usage and print if asked
+	check_cuda(cudaMemGetInfo(&mem_free, &mem_total));
+
 	// set inititalized flag, print done if flagged
 	is_initialized = 1;
 	if(print_flag >= 2){
 		printf("\e[1;31mDone with init\e[m\n");
+		printf("\e[1;32m--- Total Memory Usage ---\e[m\n");
+		printf("  Total: %8.2f MB\n",         (mem_total)/(1024.0*1024.0));	
+		printf("   Used: %8.2f MB\n",(mem_total-mem_free)/(1024.0*1024.0));
+		printf("   Free: %8.2f MB\n",          (mem_free)/(1024.0*1024.0));
 	}
 }
 void whistory::init_host(){
@@ -1398,111 +1405,16 @@ void whistory::init_cross_sections(){
 	std::cout << "Done." << "\e[m \n";
 
 }
-void whistory::print_xs_data(){  // 0=isotopes, 1=main E points, 2=total numer of reaction channels, 3=matrix E points, 4=angular cosine points, 5=outgoing energy points
-//	unsigned dsum = 0;
-//	printf("\e[1;32m%-6s\e[m \n","Cross section data info:");
-//	std::cout << "--- Bytes ---" << "\n";
-//	std::cout << "  xs_length_numbers:        " << 6*sizeof(unsigned) << "\n";			  dsum += (6*sizeof(unsigned) );
-//	std::cout << "  xs_MT_numbers_total:      " << xs_length_numbers[0]*sizeof(unsigned) 	<< "\n";  dsum += (xs_length_numbers[0]*sizeof(unsigned) );
-//	std::cout << "  xs_MT_numbers:            " << (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(unsigned)<< "\n";
-//	dsum += (xs_length_numbers[2]*sizeof(unsigned) );
-//	std::cout << "  xs_data_main_E_grid:      " << xs_length_numbers[1]	*sizeof(float)	<< "\n";  dsum += (xs_length_numbers[1]*sizeof(float)	  );
-//	std::cout << "  xs_data_MT:               " << MT_rows*MT_columns*sizeof(float)		<< "\n";  dsum += (MT_rows*MT_columns)*sizeof(float);
-//	std::cout << "  xs_data_scatter_pointers: " << MT_rows*MT_columns*sizeof(float*)		<< "\n";  dsum += (MT_rows*MT_columns)*sizeof(float*);
-//	std::cout << "  xs_data_energy_pointers:  " << MT_rows*MT_columns*sizeof(float*)		<< "\n";  dsum += (MT_rows*MT_columns)*sizeof(float*);
-//	std::cout << "  scatter data:             " << total_bytes_scatter				<< "\n";  dsum += (total_bytes_scatter);
-//	std::cout << "  energy data:              " << total_bytes_energy				<< "\n";  dsum += (total_bytes_energy);
-//	std::cout << "  TOTAL:                    " << dsum << " bytes \n";
-//	std::cout << "  TOTAL:                    " << dsum/1048576 << " MB \n";
+void whistory::print_xs_data(){  
+
 }
 void whistory::write_xs_data(std::string filename){
 
-//	std::cout << "\e[1;32m" << "Writing xs_data to " << filename << "... ";
-//
-//	std::string this_name;
-//	// write MT array
-//	this_name = filename + ".MTarray";
-//	FILE* xsfile = fopen(this_name.c_str(),"w");
-//	this_name = filename + ".scatterptr";
-//	FILE* scatterfile = fopen(this_name.c_str(),"w");
-//	this_name = filename + ".energyptr";
-//	FILE* energyfile = fopen(this_name.c_str(),"w");
-//	for (int k=0;k<MT_rows;k++){
-//		for(int j=0;j<MT_columns;j++){
-//			fprintf(xsfile,"% 10.8E ",xs_data_MT[k*MT_columns+j]);
-//			fprintf(scatterfile,"%p ",xs_data_scatter_host[k*MT_columns+j]);
-//			fprintf(energyfile,"%p ",xs_data_energy_host[k*MT_columns+j]);
-//		}
-//		fprintf(xsfile,"\n");
-//		fprintf(scatterfile,"\n");
-//		fprintf(energyfile,"\n");
-//	}
-//	fclose(xsfile);
-//	fclose(scatterfile);
-//	fclose(energyfile);
-//
-//	// write unionized E grid
-//	this_name = filename + ".Egrid";
-//	xsfile = fopen(this_name.c_str(),"w");
-//	for (int k=0;k<MT_rows;k++){
-//		fprintf(xsfile,"%10.8E\n",xs_data_main_E_grid[k]);
-//	}
-//	fclose(xsfile);
-//
-//	// write MT number array
-//	this_name = filename + ".MTnums";
-//	xsfile = fopen(this_name.c_str(),"w");
-//	for(int j=0;j<MT_columns;j++){
-//		fprintf(xsfile,"%u\n",xs_MT_numbers[j]);
-//	}
-//	fclose(xsfile);
-//
-//	// write (hopefully) covnerged fission source
-//	cudaMemcpy(space, d_fissile_points, Ndataset*sizeof(spatial_data), cudaMemcpyDeviceToHost);
-//	cudaMemcpy(E,     d_fissile_energy, Ndataset*sizeof(float),        cudaMemcpyDeviceToHost);
-//	this_name = filename + ".fission_source";
-//	xsfile = fopen(this_name.c_str(),"w");
-//	for(int j=0;j<Ndataset;j++){
-//		fprintf(xsfile,"% 6.4E % 6.4E % 6.4E %6.4E\n",space[j].x,space[j].y,space[j].z,E[j]);
-//	}
-//	fclose(xsfile); 
 
 
 }
 void whistory::print_pointers(){
-//	std::cout << "\e[1;32m" << "Pointer Info:" << "\e[m \n";
-//	std::cout << "--- HOST ---" << "\n";
-//	std::cout << "  space:               " <<   space   << "\n";
-//	std::cout << "  E:                   " <<   E       << "\n";
-//	std::cout << "  Q:                   " <<   Q       << "\n";
-//	std::cout << "  rn_bank:             " <<   rn_bank << "\n";
-//	std::cout << "  cellnum:             " <<   cellnum << "\n";
-//	std::cout << "  matnum:              " <<   matnum  << "\n";
-//	std::cout << "  isonum:              " <<   isonum  << "\n";
-//	std::cout << "  rxn:                 " <<   rxn     << "\n";
-//	std::cout << "  done:                " <<   done    << "\n";
-//	std::cout << "  yield:               " <<   yield   << "\n";
-//	std::cout << "  xs_length_numbers:   " << xs_length_numbers   << "\n"; 
-//	std::cout << "  xs_MT_numbers_total: " << xs_MT_numbers_total << "\n";
-//	std::cout << "  xs_MT_numbers:       " << xs_MT_numbers       << "\n";
-//	std::cout << "  xs_data_MT:          " << xs_data_MT          << "\n";
-//	std::cout << "  xs_data_main_E_grid: " << xs_data_main_E_grid << "\n";
-//	std::cout << "--- DEVICE ---" << "\n";
-//	std::cout << "d_space:               " << d_space   << "\n";
-//	std::cout << "d_E:                   " << d_E       << "\n";
-//	std::cout << "d_Q:                   " << d_Q       << "\n";
-//	std::cout << "h_particles.rn_bank:             " << h_particles.rn_bank << "\n";
-//	std::cout << "d_cellnum:             " << d_cellnum << "\n";
-//	std::cout << "d_matnum:              " << d_matnum  << "\n";
-//	std::cout << "d_isonum:              " << d_isonum  << "\n";
-//	std::cout << "d_rxn:                 " << d_rxn     << "\n";
-//	std::cout << "d_done:                " << d_done    << "\n";
-//	std::cout << "d_yield:               " << d_yield   << "\n";
-//	std::cout << "d_xs_length_numbers:   " << d_xs_length_numbers   << "\n"; 
-//	std::cout << "d_xs_MT_numbers_total: " << d_xs_MT_numbers_total << "\n";
-//	std::cout << "d_xs_MT_numbers:       " << d_xs_MT_numbers       << "\n";
-//	std::cout << "d_xs_data_MT:          " << d_xs_data_MT          << "\n";
-//	std::cout << "d_xs_data_main_E_grid: " << d_xs_data_main_E_grid << "\n";
+
 }
 void whistory::trace(unsigned type){
 
@@ -2060,15 +1972,6 @@ void whistory::remap_active(unsigned* num_active, unsigned* lscatter_N, unsigned
 		res = cudppRadixSort(radixplan, dh_particles.rxn, d_remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
 		if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
 	}
-
-	//copy back and print
-	//printf("(index,rxn,remap:\n");
-	//check_cuda(cudaMemcpy(remap,d_remap,Ndataset*sizeof(unsigned),cudaMemcpyDeviceToHost));
-	//check_cuda(cudaMemcpy(h_particles.rxn,dh_particles.rxn,Ndataset*sizeof(unsigned),cudaMemcpyDeviceToHost));
-	//for (int g=0;g<Ndataset;g++){
-	//	printf("(%d,%u,%u)  ",g,h_particles.rxn[g],remap[g]);
-	//}
-	//printf("\n");
 
 	// launch edge detection kernel, writes mapped d_edges array
 	reaction_edges(NUM_THREADS, *num_active, d_edges, dh_particles.rxn);

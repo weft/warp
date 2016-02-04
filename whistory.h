@@ -97,6 +97,8 @@ class whistory {
 	unsigned					is_initialized;			/**< init flag */
 	unsigned					print_flag;				/**< print verbosity level*/
 	unsigned					dump_flag;				/**< dump level*/
+	size_t	 					mem_free;				/**< device memory free*/
+	size_t	 					mem_total;				/**< device memory total*/
 
 	// device-only variables
 	unsigned*					d_valid_result;			/**< valid result pointer */
