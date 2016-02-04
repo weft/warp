@@ -505,7 +505,8 @@ class cross_section_data:
 				# have energies
 				lower_erg = rxn.ang_energy_in[lower_index]
 				upper_erg = rxn.ang_energy_in[upper_index]
-	
+				#if this_E > 1.0 and this_E<2.0:
+				#	print "law",law,"this_E",this_E,upper_erg, lower_erg	
 				# get angular distribution values, else write zeros
 				lower_var = rxn.ang_cos[lower_index]
 				upper_var = rxn.ang_cos[upper_index]
@@ -598,26 +599,27 @@ class cross_section_data:
 
 		else:
 			# no distributions
-			# set all to zero (except law if there is one)
+			# set all to isotropic and write law if there is one
 			if hasattr(rxn,"energy_dist"):
 				law = rxn.energy_dist.law
 			else:
-				law			= 0
-			lower_intt	= 0
-			upper_intt	= 0
-			lower_erg	= 0
-			upper_erg	= 0
-			lower_len	= 0
-			upper_len	= 0
-			lower_var 	= numpy.array([0.0])
-			upper_var 	= numpy.array([0.0])
-			lower_pdf 	= numpy.array([0.0])
-			upper_pdf 	= numpy.array([0.0])
-			lower_cdf 	= numpy.array([0.0])
-			upper_cdf 	= numpy.array([0.0])
+				law			= 3
+			lower_intt	= 1
+			upper_intt	= 1
+			lower_erg	= self.MT_E_grid[0]
+			upper_erg	= self.MT_E_grid[-1]
+			lower_len	= 3
+			upper_len	= 3
+			lower_var 	= numpy.array([-1.0,0.0,1.0])
+			upper_var 	= numpy.array([-1.0,0.0,1.0])
+			lower_pdf 	= numpy.array([0.5,0.5,0.5])
+			upper_pdf 	= numpy.array([0.5,0.5,0.5])
+			lower_cdf 	= numpy.array([0.0,0.5,1.0])
+			upper_cdf 	= numpy.array([0.0,0.5,1.0])
 
 			# next index
 			next_dex = len(self.MT_E_grid)
+
 
 		# return values in order as float32 arrays
 		return [numpy.ascontiguousarray(lower_erg,	dtype=numpy.float32),

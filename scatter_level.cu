@@ -77,7 +77,7 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	//constants
 	const float  	pi			=   3.14159265359;
 	const float  	m_n			=   1.00866491600;		// u
-	const float		kb			=	8.617332478e-11;	// MeV/k
+	//const float		kb			=	8.617332478e-11;	// MeV/k
 
 	// load history data
 	wfloat3		hats_old(space[tid].xhat,space[tid].yhat,space[tid].zhat);
@@ -107,14 +107,14 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	hats_target.z	=	mu;
 
 	//sample therm dist if low E
-	if(this_E <= 600*kb*this_temp ){
+	if(this_E <= 600*this_temp ){
 		sample_therm(&rn,&mu,&speed_target,this_temp,this_E,this_awr);
 		hats_target = hats_old.rotate(mu, get_rand(&rn));
 	}
 	else{
 		speed_target = 0.0;
 	}
-	__syncthreads();
+	//__syncthreads();
 	
 	// make speed vectors
 	v_n_lf = hats_old    * speed_n;
