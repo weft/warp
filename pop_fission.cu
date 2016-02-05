@@ -107,6 +107,12 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 				sampled_E = E1 + E0;
 			}
 
+			// check errors
+			if (!isfinite(sampled_E)){
+				printf("Fission pop mis-sampled tid %i data_dex %u E %6.4E... setting to 2.5\n",tid,data_dex,sampled_E);
+				sampled_E = 2.5;
+			}
+
 			// sample mu/phi isotropically
 			mu  = 2.0*get_rand(&rn)-1.0;
 			phi = 2.0*pi*get_rand(&rn);
