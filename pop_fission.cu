@@ -52,7 +52,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	unsigned	data_dex 			=	0;
 	unsigned	this_law			=	0;
 	float 		sampled_E			=	0.0;
-	float 		phi, mu, E0, E1, Ek, f;
+	float 		phi, mu, E0, f;
 
 	// check yield
 	if (yield[tid]==0){
@@ -100,7 +100,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 												this_edist.cdf );
 			//scale it to bins 
 			sampled_E = scale_to_bins(	f, E0, 
-										this_edist.var[0],  this_edist.var[this_edist.len-1], 
+										 this_edist.var[0],  this_edist.var[ this_edist.len-1], 
 										edist_lower.var[0], edist_lower.var[edist_lower.len-1], 
 										edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
 

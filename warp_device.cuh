@@ -351,7 +351,7 @@ inline __device__ float scale_to_bins(float f, float this_E, float this_erg_min,
 	if( f>0.0 & f<1.0){ 
 		float E1 = lower_erg_min + f*( upper_erg_min - lower_erg_min );
 		float Ek = lower_erg_max + f*( upper_erg_max - lower_erg_max );
-		return E1 + (E0 -this_erg_min)*(Ek-E1)/(this_erg_max-this_erg_min);
+		return E1 + (this_E -this_erg_min)*(Ek-E1)/(this_erg_max-this_erg_min);
 	}
 	else{  
 	// return without scaling, since mixing hasn't been used!  Should only happen when above or below the tabular data.
