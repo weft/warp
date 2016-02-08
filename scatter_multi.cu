@@ -180,7 +180,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 
 		//scale it to bins 
 		sampled_E = scale_to_bins(	f, E0, 
-									this_edist.var[0],  this_edist.var[this_edist.len-1], 
+									 this_edist.var[0],  this_edist.var[ this_edist.len-1], 
 									edist_lower.var[0], edist_lower.var[edist_lower.len-1], 
 									edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
 

@@ -72,18 +72,20 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	dist_data	edist_lower	=	dist_energy[ this_dex].lower[0];
 	dist_data	edist_upper	=	dist_energy[ this_dex].upper[0];
 	f			=	(this_E - edist_lower.erg) / (edist_upper.erg - edist_lower.erg);
-	if( get_rand(&rn)>f ){
-		this_edist	=	edist_lower;
-		this_sdist	=	sdist_lower;
-	}
-	else{
-		this_edist = edist_upper;
-		this_sdist = sdist_upper;
-	}
-	this_law	=	this_edist.law;
 
 	// write new histories for this yield number
 	for(unsigned k=0 ; k < this_yield ; k++ ){
+
+		// do seperate stochastic mixing for each neutron
+		if( get_rand(&rn)>f ){
+		this_edist	=	edist_lower;
+		this_sdist	=	sdist_lower;
+		}
+		else{
+			this_edist = edist_upper;
+			this_sdist = sdist_upper;
+		}
+		this_law	=	this_edist.law;
 		
 		//get proper data index
 		data_dex = position+k ;

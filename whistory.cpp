@@ -1600,13 +1600,6 @@ void whistory::reset_cycle(float keff_cycle){
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
 	check_cuda(cudaPeekAtLastError());
 
-	// swap the key/values to sort the rxn vector by tid to align the rest of data with the right reactions, done so 18 doesn't have to be assumed.  Sorting is necessary for prefix sum to work (order-dependent)
-	res = cudppRadixSort(radixplan, d_remap, dh_particles.rxn, N);  
-	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
-	check_cuda(cudaPeekAtLastError());
-
-	cudaMemcpy(d_fissile_energy,zeros,Ndataset*sizeof(float), cudaMemcpyHostToDevice);
-
 	//pop them in!  should be the right size now due to keff rebasing  
 	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_fissile_points, d_fissile_energy, d_scanned );
 	check_cuda(cudaPeekAtLastError());
@@ -1618,7 +1611,7 @@ void whistory::reset_cycle(float keff_cycle){
 	cudaMemcpy(h_particles.space, d_fissile_points, Ndataset*sizeof(spatial_data), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_particles.E,     d_fissile_energy, Ndataset*sizeof(float),        cudaMemcpyDeviceToHost);
 	for(int g=0;g<N;g++){
-		printf("%d E=%6.4E xyz % 6.4E % 6.4E % 6.4E\n",g,h_particles.E[g],h_particles.space[g].x,h_particles.space[g].y,h_particles.space[g].z);
+		printf("%7d E = %6.4E xyz % 6.4E % 6.4E % 6.4E\n",g,h_particles.E[g],h_particles.space[g].x,h_particles.space[g].y,h_particles.space[g].z);
 	}
 
  	// rest run arrays
