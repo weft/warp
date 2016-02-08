@@ -7,6 +7,9 @@
 
 __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* scanned){
 
+	// get tid
+	int tid = threadIdx.x+blockIdx.x*blockDim.x;
+
 	// declare shared variables					
 	__shared__ 	dist_container*		dist_scatter;			
 	__shared__ 	dist_container*		dist_energy; 
@@ -37,11 +40,10 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	float			this_y			=	space[   tid].y;
 	float			this_z			=	space[   tid].z;
 
-	// make sure shared loads happen before anything else
+	// make sure shared loads happen before anything else (epecially returns)
 	__syncthreads();
 
 	// return immediately if out of bounds
-	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid >= N){return;}
 
 	// check yield
