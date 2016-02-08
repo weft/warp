@@ -1791,9 +1791,12 @@ void whistory::run(){
 			scatter_level(	stream[0], NUM_THREADS, lscatter_N, lscatter_start, d_xsdata, d_particles, d_remap );
 			scatter_conti(	stream[1], NUM_THREADS, cscatter_N, cscatter_start, d_xsdata, d_particles, d_remap );
 			scatter_multi(	stream[2], NUM_THREADS, mscatter_N, mscatter_start, d_xsdata, d_particles, d_remap );
-			fission ( 		stream[3], NUM_THREADS, fission_N,  fission_start,  d_xsdata, d_particles, d_remap );  
+			fission( 		stream[3], NUM_THREADS, fission_N,  fission_start,  d_xsdata, d_particles, d_remap );  
 			check_cuda(cudaDeviceSynchronize());
 			check_cuda(cudaPeekAtLastError());
+
+			// do safety check (if flagged)
+			safety_check(	NUM_THREADS, lscatter_N, lscatter_start, d_xsdata, d_particles, d_remap );
 
 			//if(RUN_FLAG==0){  //fixed source
 			//	// pop secondaries back in

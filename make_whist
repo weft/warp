@@ -36,7 +36,7 @@ g++ -O3 -m64 -fPIC -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/lo
 
 /usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c pop_fission.cu
 
-
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c safety_check.cu
 
 
 
@@ -63,4 +63,4 @@ g++ -O3 -m64 -fPIC -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/lo
 
 
 
-/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -lpng -lpython2.7 -loptix -lcudpp -lcurand wgeometry.o whistory.o optix_stuff.o wprimitive.o copy_points.o test_function.o sample_fissile_energy.o set_positions_rand.o find_E_grid_index.o macro_micro.o scatter_level.o scatter_conti.o scatter_multi.o reaction_edges3.o fission.o rebase_yield.o pop_fission.o main.cpp
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -lpng -lpython2.7 -loptix -lcudpp -lcurand wgeometry.o whistory.o optix_stuff.o wprimitive.o copy_points.o test_function.o sample_fissile_energy.o set_positions_rand.o find_E_grid_index.o macro_micro.o scatter_level.o scatter_conti.o scatter_multi.o reaction_edges3.o fission.o rebase_yield.o pop_fission.o safety_check.o main.cpp
