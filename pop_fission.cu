@@ -11,7 +11,6 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	__shared__ 	dist_container*		dist_scatter;			
 	__shared__ 	dist_container*		dist_energy; 
 	__shared__	spatial_data*		space;	
-	__shared__	unsigned*			rxn;	
 	__shared__	float*				E;		
 	__shared__	unsigned*			rn_bank;
 	__shared__	unsigned*			yield;	
@@ -22,7 +21,6 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		dist_scatter 				= d_xsdata[0].dist_scatter;						
 		dist_energy 				= d_xsdata[0].dist_energy; 
 		space						= d_particles[0].space;
-		rxn							= d_particles[0].rxn;
 		E							= d_particles[0].E;
 		rn_bank						= d_particles[0].rn_bank;
 		yield						= d_particles[0].yield;
@@ -41,7 +39,6 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 	// load history data
 	spatial_data	this_space		=	space[   tid];
-	unsigned		this_rxn		=	rxn[     tid];
 	unsigned		this_dex		=	index[   tid];
 	float			this_E			=	E[       tid];
 	unsigned		this_yield		=	yield[   tid];
@@ -61,7 +58,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 	// check E data pointers
 	if(dist_energy == 0x0){
-		printf("null pointer, energy array in continuum scatter!,tid %u rxn %u\n",tid,this_rxn);
+		printf("null pointer, energy array in continuum scatter!,tid %u rxn %u\n",tid);
 		return;
 	}
 
@@ -88,7 +85,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		this_law	=	this_edist.law;
 		
 		//get proper data index
-		data_dex = position+k ;
+		data_dex = position+k;
 		
 		// sample dist
 		if (this_law ==4 ){
@@ -120,6 +117,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		else{
 			printf("LAW %u NOT HANDLED IN FISSION POP!  rxn %u\n",this_law,this_rxn);
 		}
+		
 		// set data
 		d_fissile_energy[ data_dex ] 				= sampled_E;
 		d_fissile_points[ data_dex ].x 				= this_space.x;

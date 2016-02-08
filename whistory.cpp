@@ -1600,6 +1600,15 @@ void whistory::reset_cycle(float keff_cycle){
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
 	check_cuda(cudaPeekAtLastError());
 
+	FILE* ftemp = fopen("cumsum","w");
+	unsigned* h_scanned = new unsigned[Ndataset];
+	cudaMemcpy(h_scanned,d_scanned,Ndataset*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	for(int g=0;g<N;g++){
+		fprintf(ftemp,"scanned[%7d] = %7d\n",g,h_scanned);
+	}
+	delete h_scanned;
+	fclose(ftemp);
+
 	//pop them in!  should be the right size now due to keff rebasing  
 	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_fissile_points, d_fissile_energy, d_scanned );
 	check_cuda(cudaPeekAtLastError());
