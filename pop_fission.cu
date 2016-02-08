@@ -123,15 +123,15 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		}
 
 		// set data
-		d_fissile_energy[ data_dex ] 				= sampled_E;
-		d_fissile_points[ data_dex ].x 				= this_x;
-		d_fissile_points[ data_dex ].y 				= this_y;
-		d_fissile_points[ data_dex ].z 				= this_z;
-		d_fissile_points[ data_dex ].xhat 			= sqrtf(1.0-(mu*mu))*cosf(phi);
-		d_fissile_points[ data_dex ].yhat 			= sqrtf(1.0-(mu*mu))*sinf(phi); 
-		d_fissile_points[ data_dex ].zhat 			= mu;
-		d_fissile_points[ data_dex ].enforce_BC 	= 0;
-		d_fissile_points[ data_dex ].surf_dist 		= 999999.0;
+		E[     data_dex ] 				= sampled_E;
+		space[ data_dex ].x				= this_x;
+		space[ data_dex ].y				= this_y;
+		space[ data_dex ].z				= this_z;
+		space[ data_dex ].xhat			= sqrtf(1.0-(mu*mu))*cosf(phi);
+		space[ data_dex ].yhat			= sqrtf(1.0-(mu*mu))*sinf(phi); 
+		space[ data_dex ].zhat			= mu;
+		space[ data_dex ].enforce_BC	= 0;
+		space[ data_dex ].surf_dist		= 999999.0;
 		
 		if(data_dex<=9){printf("array index %u, E = % 6.4E d_fissile_energy[ data_dex ] = % 6.4E\n",data_dex,sampled_E,d_fissile_energy[ data_dex ]);}
 
