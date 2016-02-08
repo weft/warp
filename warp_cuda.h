@@ -28,5 +28,6 @@ void check_remap( unsigned , unsigned , unsigned* , unsigned* , unsigned* );
 void print_data( cudaStream_t , unsigned , unsigned , spatial_data* , float* , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* );
 void test_function(unsigned ,  unsigned , cross_section_data*, particle_data*, tally_data*, unsigned*);
 void sample_fissile_energy(unsigned ,  unsigned , float , float , unsigned * , float*);
+void safety_check( unsigned , unsigned, unsigned, cross_section_data* , particle_data* , unsigned* );
 
 #endif
