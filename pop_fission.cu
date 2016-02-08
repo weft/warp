@@ -99,14 +99,10 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 												this_edist.pdf, 
 												this_edist.cdf );
 			//scale it to bins 
-			E1 = edist_lower.var[0]                 + f*( edist_upper.var[0]                 - edist_lower.var[0] );
-			Ek = edist_lower.var[edist_lower.len-1] + f*( edist_upper.var[edist_upper.len-1] - edist_lower.var[edist_lower.len-1] );
-			if(this_edist.len>1){
-				sampled_E = E1 +(E0-this_edist.var[0])/(this_edist.var[this_edist.len-1]-this_edist.var[0])*(Ek-E1);
-			}
-			else{
-				sampled_E = E1 + E0;
-			}
+			sampled_E = scale_to_bins(	f, E0, 
+										this_edist.var[0],  this_edist.var[this_edist.len-1], 
+										edist_lower.var[0], edist_lower.var[edist_lower.len-1], 
+										edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
 
 			// check errors
 			if (!isfinite(sampled_E) | sampled_E<=0.0){

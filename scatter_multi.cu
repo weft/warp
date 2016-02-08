@@ -179,14 +179,10 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 											this_edist.cdf );
 
 		//scale it to bins 
-		E1 = edist_lower.var[0]                 + f*( edist_upper.var[0]                 - edist_lower.var[0] );
-		Ek = edist_lower.var[edist_lower.len-1] + f*( edist_upper.var[edist_upper.len-1] - edist_lower.var[edist_lower.len-1] );
-		if(this_edist.len>1){
-			sampled_E = E1 +(E0-this_edist.var[0])/(this_edist.var[this_edist.len-1]-this_edist.var[0])*(Ek-E1);
-		}
-		else{
-			sampled_E = E1 + E0;
-		}
+		sampled_E = scale_to_bins(	f, E0, 
+									this_edist.var[0],  this_edist.var[this_edist.len-1], 
+									edist_lower.var[0], edist_lower.var[edist_lower.len-1], 
+									edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
 
 		// find correlated mu
 		float A 	= this_sdist.var[dist_index];
@@ -226,7 +222,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	if (!isfinite(sampled_E) | sampled_E < 0.0){
 		printf("Multiplicity scatter mis-sampled tid %i data_dex %u E %6.4E... \n",tid_in,tid,sampled_E);
 	}
-	if (!isfinite(mu) | mu >= -1.0 | mu <= 1.0){
+	if (!isfinite(mu) | mu < -1.0 | mu > 1.0){
 		printf("Multiplicity scatter mis-sampled tid %i data_dex %u mu %6.4E... \n",tid_in,tid,mu);
 	}
 

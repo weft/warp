@@ -344,3 +344,18 @@ inline __device__ void sample_therm(unsigned* rn, float* muout, float* vt, const
 	//printf("%6.4E %6.4E\n",vt[0],mu);
 
 }
+
+inline __device__ float scale_to_bins(float f, float this_E, float this_erg_min, float this_erg_max, float lower_erg_min, float lower_erg_max, float upper_erg_min, float upper_erg_max){
+
+	// do scaled interpolation
+	if( f>0.0 & f<1.0){ 
+		float E1 = lower_erg_min + f*( upper_erg_min - lower_erg_min );
+		float Ek = lower_erg_max + f*( upper_erg_max - lower_erg_max );
+		return E1 + (E0 -this_erg_min)*(Ek-E1)/(this_erg_max-this_erg_min);
+	}
+	else{  
+	// return without scaling, since mixing hasn't been used!  Should only happen when above or below the tabular data.
+		return this_E;
+	}
+
+}
