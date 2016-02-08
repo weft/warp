@@ -35,10 +35,12 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	float			this_E			=	E[       tid];
 	unsigned		this_yield		=	yield[   tid];
 	unsigned		rn				=	rn_bank[ tid];
-	unsigned		position		=	scanned[ tid];
 	float			this_x			=	space[   tid].x;
 	float			this_y			=	space[   tid].y;
 	float			this_z			=	space[   tid].z;
+
+	// get array position from prefix scan
+	unsigned		position		=	scanned[ tid];
 
 	// make sure shared loads happen before anything else (epecially returns)
 	__syncthreads();
