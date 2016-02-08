@@ -133,7 +133,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		space[ data_dex ].enforce_BC	= 0;
 		space[ data_dex ].surf_dist		= 999999.0;
 		
-		if(data_dex<=9){printf("array index %u, E = % 6.4E d_fissile_energy[ data_dex ] = % 6.4E\n",data_dex,sampled_E,d_fissile_energy[ data_dex ]);}
+		if(data_dex<=9){printf("array index %u, E = % 6.4E d_fissile_energy[ data_dex ] = % 6.4E\n",data_dex,sampled_E,E[ data_dex ]);}
 
 	}
 
