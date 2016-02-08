@@ -67,8 +67,8 @@ __global__ void safety_check_kernel(unsigned N, cross_section_data* d_xsdata, pa
 	if (tid_in >= N){return;} 
 
 	//remap to active
-	int tid				=	d_remap[starting_index + tid_in];
-	unsigned this_rxn 	=	rxn[    starting_index + tid_in];
+	int tid				=	d_remap[tid_in];
+	unsigned this_rxn 	=	rxn[    tid_in];
 
 	// check energy
 	float 	this_E = E[tid];
