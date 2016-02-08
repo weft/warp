@@ -217,6 +217,15 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	// calculate energy in lab frame
 	E_new = 0.5 * m_n * v_n_lf.dot(v_n_lf);
 
+	// check errors
+	if (!isfinite(sampled_E) & sampled_E > 0.0){
+		printf("Multiplicity sactter mis-sampled tid %i data_dex %u E %6.4E... setting to 2.5\n",tid,data_dex,sampled_E);
+		sampled_E = 2.5;
+	}
+	if (!isfinite(mu) & mu >= -1.0 & mu <= 1.0){
+		printf("Multiplicity sactter mis-sampled tid %i data_dex %u mu %6.4E... setting to 2.5\n",tid,data_dex,mu);
+	}
+
 	// multiply weight by multiplicity
 	if(     this_rxn == 22 | this_rxn == 23 | this_rxn == 28 | this_rxn == 29 | this_rxn == 32 | this_rxn == 33 | this_rxn == 34 | this_rxn == 35 | this_rxn == 36 | this_rxn == 44 | this_rxn == 45){
 		this_weight = this_weight * 1.0;
