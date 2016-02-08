@@ -8,10 +8,6 @@
 
 __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
-	// return immediately if out of bounds
-	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
-	if (tid_in >= N){return;}       
-
 	// declare shared variables
 	__shared__ 	dist_container*		dist_scatter;			
 	__shared__	unsigned*			rxn;	
@@ -32,6 +28,10 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 
 	// make sure shared loads happen before anything else
 	__syncthreads();
+
+	// return immediately if out of bounds
+	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
+	if (tid_in >= N){return;}
 
 	//remap to active
 	int tid				=	d_remap[starting_index + tid_in];

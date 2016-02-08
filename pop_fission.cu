@@ -32,7 +32,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	// make sure shared loads happen before anything else
 	__syncthreads();
 
-	// return after sync
+	// return immediately if out of bounds
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid >= N){return;}
 

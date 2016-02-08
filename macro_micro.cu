@@ -14,9 +14,6 @@ This kernel does a lot.  It does all the total interaction processes:
 All neutrons need these things done, so these routines all live in the same routine.
 */
 
-	int tid_in = threadIdx.x+blockIdx.x*blockDim.x; 
-	if (tid_in >= N){return;}
-
 	// declare shared variables
 	__shared__ 	unsigned			n_isotopes;				
 	__shared__ 	unsigned			energy_grid_len;		
@@ -78,6 +75,10 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	// make sure shared loads happen before anything else
 	__syncthreads();
+
+	// return immediately if out of bounds
+	int tid_in = threadIdx.x+blockIdx.x*blockDim.x; 
+	if (tid_in >= N){return;}
 
 	// return if terminated
 	unsigned this_rxn = rxn[tid_in];
