@@ -1605,6 +1605,8 @@ void whistory::reset_cycle(float keff_cycle){
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
 	check_cuda(cudaPeekAtLastError());
 
+        //cudaMemcpy(zeros,d_fissile_energy,Ndataset*sizeof(float), cudaMemcpyHostToDevice);
+
 	//pop them in!  should be the right size now due to keff rebasing  
 	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_fissile_points, d_fissile_energy, d_scanned );
 	check_cuda(cudaPeekAtLastError());
@@ -1612,6 +1614,12 @@ void whistory::reset_cycle(float keff_cycle){
 	// sync
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
+
+	cudaMemcpy(h_particles.space,d_fissile_points,N*sizeof(spatial_data), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_particles.E,d_fissile_energy,N*sizeof(float), cudaMemcpyDeviceToHost);
+	for(int g=0;g<N;g++){
+		printf("%d E=%6.4E xyz % 6.4E % 6.4E % 6.4E\n",g,h_particles.E[g],h_particles.space[g].x,h_particles.space[g].y,h_particles.space[g].z);
+	}
 
  	// rest run arrays
 	check_cuda(cudaMemcpy( dh_particles.space,		d_fissile_points,	N*sizeof(spatial_data),	cudaMemcpyDeviceToDevice ));

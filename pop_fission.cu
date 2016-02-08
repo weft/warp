@@ -7,9 +7,6 @@
 
 __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, spatial_data* d_fissile_points, float* d_fissile_energy, unsigned* scanned){
 
-	int tid = threadIdx.x+blockIdx.x*blockDim.x;
-	if (tid >= N){return;}
-
 	// declare shared variables					
 	__shared__ 	dist_container*		dist_scatter;			
 	__shared__ 	dist_container*		dist_energy; 
@@ -34,6 +31,10 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 	// make sure shared loads happen before anything else
 	__syncthreads();
+
+	// return after sync
+	int tid = threadIdx.x+blockIdx.x*blockDim.x;
+	if (tid >= N){return;}
 
 	//constants
 	const float  	pi			=   3.14159265359;
@@ -108,11 +109,11 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 			}
 
 			// check errors
-			if (!isfinite(sampled_E)){
+			if (!isfinite(sampled_E) | sampled_E<=0.0){
 				printf("Fission pop mis-sampled tid %i data_dex %u E %6.4E... setting to 2.5\n",tid,data_dex,sampled_E);
 				sampled_E = 2.5;
 			}
-
+			
 			// sample mu/phi isotropically
 			mu  = 2.0*get_rand(&rn)-1.0;
 			phi = 2.0*pi*get_rand(&rn);
@@ -121,7 +122,6 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		else{
 			printf("LAW %u NOT HANDLED IN FISSION POP!  rxn %u\n",this_law,this_rxn);
 		}
-
 		// set data
 		d_fissile_energy[ data_dex ] 				= sampled_E;
 		d_fissile_points[ data_dex ].x 				= this_space.x;
@@ -132,6 +132,8 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		d_fissile_points[ data_dex ].zhat 			= mu;
 		d_fissile_points[ data_dex ].enforce_BC 	= 0;
 		d_fissile_points[ data_dex ].surf_dist 		= 999999.0;
+		
+		if(data_dex<=9){printf("array index %u, E = % 6.4E d_fissile_energy[ data_dex ] = % 6.4E\n",data_dex,sampled_E,d_fissile_energy[ data_dex ]);}
 
 	}
 

@@ -8,17 +8,14 @@
 
 __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
-	// return immediately if out of bounds
-	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
-	if (tid_in >= N){return;}       
 
 	// declare shared variables
 	//__shared__ 	unsigned			n_isotopes;				
-	//__shared__ 	unsigned			energy_grid_len;		
+	__shared__ 	unsigned			energy_grid_len;		
 	//__shared__ 	unsigned			total_reaction_channels;
 	//__shared__ 	unsigned*			rxn_numbers;			
 	//__shared__ 	unsigned*			rxn_numbers_total;		
-	//__shared__ 	float*				energy_grid;			
+	__shared__ 	float*				energy_grid;			
 	//__shared__ 	float*				rxn_Q;						
 	//__shared__ 	float*				xs;						
 	__shared__ 	float*				awr;					
@@ -40,11 +37,11 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
 		//n_isotopes					= d_xsdata[0].n_isotopes;								
-		//energy_grid_len				= d_xsdata[0].energy_grid_len;				
+		energy_grid_len				= d_xsdata[0].energy_grid_len;				
 		//total_reaction_channels		= d_xsdata[0].total_reaction_channels;
 		//rxn_numbers 				= d_xsdata[0].rxn_numbers;						
 		//rxn_numbers_total			= d_xsdata[0].rxn_numbers_total;					
-		//energy_grid 				= d_xsdata[0].energy_grid;						
+		energy_grid 				= d_xsdata[0].energy_grid;						
 		//rxn_Q 						= d_xsdata[0].Q;												
 		//xs 							= d_xsdata[0].xs;												
 		awr 						= d_xsdata[0].awr;										
@@ -67,6 +64,10 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	// make sure shared loads happen before anything else
 	__syncthreads();
 
+	// return immediately if out of bounds
+	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
+	if (tid_in >= N){return;}       
+	
 	//remap to active
 	int tid				=	d_remap[starting_index + tid_in];
 	unsigned this_rxn 	=	rxn[    starting_index + tid_in];
@@ -151,7 +152,7 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		}
 		// sample the distribution
 		if(this_tope==2 & this_rxn==50 & this_dist.len==3 & this_E>0.26){printf("len 3 in O16, E %6.4E\n",this_E);}
-		if(this_E < dist_lower.erg | this_E > dist_upper.erg){printf("NOT BETWEEN DISTS! lower %6.4E this %6.4E upper %6.4E\n",dist_lower.erg,this_E,dist_upper.erg);}
+		if((this_E < dist_lower.erg | this_E > dist_upper.erg) & (this_E<energy_grid[energy_grid_len-1] & this_E>energy_grid[0])){printf("NOT BETWEEN DISTS! lower %6.4E this %6.4E upper %6.4E\n",dist_lower.erg,this_E,dist_upper.erg);}
 		this_law = this_dist.law;
 		if (this_law == 3 ){
 			mu = sample_continuous_tablular( 	this_dist.len , 
