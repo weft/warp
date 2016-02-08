@@ -8,10 +8,6 @@
 
 __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
-	// return immediately if out of bounds
-	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
-	if (tid_in >= N){return;}       
-
 	// declare shared variables
 	//__shared__ 	unsigned			n_isotopes;				
 	//__shared__ 	unsigned			energy_grid_len;		
@@ -66,6 +62,10 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 
 	// make sure shared loads happen before anything else
 	__syncthreads();
+
+	// return immediately if out of bounds
+	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
+	if (tid_in >= N){return;}
 
 	//remap to active
 	int tid				=	d_remap[starting_index + tid_in];
