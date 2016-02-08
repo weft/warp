@@ -1,9 +1,11 @@
 #include <cuda.h>
 #include <stdio.h>
 #include "datadef.h"
+#include "warp_device.cuh"
+#include "check_cuda.h"
+#include "wfloat3.h"
 
-
-_global__ void safety_check_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){   
+__global__ void safety_check_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){   
 
 	// declare shared variables
 	__shared__ 	unsigned			n_isotopes;				
@@ -69,13 +71,22 @@ _global__ void safety_check_kernel(unsigned N, unsigned starting_index, cross_se
 	unsigned this_rxn 	=	rxn[    starting_index + tid_in];
 
 	// check energy
-	float this_E = E[tid];
+	float 	this_E = E[tid];
 	if (!isfinite(this_E) | this_E < 0.0){
-		printf("INVALID ENERGY % 6.4E   tid %u tid_in %u rxn %u\n", this_E,tid,tid_in,this_rxn);
+		printf("INVALID ENERGY, tid %u tid_in %u rxn %u, E % 6.4E\n",tid,tid_in,this_rxnthis_E);
 	}
 
-	
+	// check directions
+	wfloat3		hats(space[tid].xhat,space[tid].yhat,space[tid].zhat);
+	if (!isfinite(hats.x+hats.y+hats.z)){
+		printf("INVALID DIRECTIONS, tid %u tid_in %u rxn %u, xhat % 6.4E yhat % 6.4E zhat % 6.4E\n",tid,tid_in,this_rxn,hats.x,hats.y,hats.z);
+	}
 
+	// check position
+	wfloat3		pos(space[tid].x,space[tid].y,space[tid].z);
+	if (!isfinite(pos.x+pos.y+pos.z)){
+		printf("INVALID POSITIONS, tid %u tid_in %u rxn %u, x % 6.4E y % 6.4E z % 6.4E\n",tid,tid_in,this_rxn,pos.x,pos.y,pos.z);
+	}
 
 }
 
