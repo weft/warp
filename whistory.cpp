@@ -1590,7 +1590,7 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 void whistory::reset_cycle(float keff_cycle){
 
 	// re-base the yield so keff is 1
-	rebase_yield( NUM_THREADS, N,  keff_cycle, d_particles );
+	rebase_yield( NUM_THREADS, N,  keff_cycle*0.98, d_particles );
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
 	check_cuda(cudaPeekAtLastError());
@@ -1608,11 +1608,11 @@ void whistory::reset_cycle(float keff_cycle){
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
 
-	cudaMemcpy(h_particles.space, dh_particles.space, Ndataset*sizeof(spatial_data), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_particles.E,     dh_particles.E,     Ndataset*sizeof(float),        cudaMemcpyDeviceToHost);
-	for(int g=0;g<10;g++){
-		printf("%7d E = %6.4E xyz % 6.4E % 6.4E % 6.4E\n",g,h_particles.E[g],h_particles.space[g].x,h_particles.space[g].y,h_particles.space[g].z);
-	}
+	//cudaMemcpy(h_particles.space, dh_particles.space, Ndataset*sizeof(spatial_data), cudaMemcpyDeviceToHost);
+	//cudaMemcpy(h_particles.E,     dh_particles.E,     Ndataset*sizeof(float),        cudaMemcpyDeviceToHost);
+	//for(int g=0;g<10;g++){
+	//	printf("%7d E = %6.4E xyz % 6.4E % 6.4E % 6.4E\n",g,h_particles.E[g],h_particles.space[g].x,h_particles.space[g].y,h_particles.space[g].z);
+	//}
 
  	// rest run arrays
 	check_cuda(cudaMemcpy( dh_particles.cellnum,	zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));

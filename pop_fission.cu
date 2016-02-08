@@ -5,7 +5,7 @@
 #include "check_cuda.h"
 
 
-__global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* scanned){
+__global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_scanned){
 
 	// get tid
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
@@ -30,32 +30,43 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		index						= d_particles[0].index;
 	}
 
-	// load history data
-	unsigned		this_dex		=	index[   tid];
-	float			this_E			=	E[       tid];
-	unsigned		this_yield		=	yield[   tid];
-	unsigned		rn				=	rn_bank[ tid];
-	float			this_x			=	space[   tid].x;
-	float			this_y			=	space[   tid].y;
-	float			this_z			=	space[   tid].z;
-
-	// get array position from prefix scan
-	unsigned		position		=	scanned[ tid];
-
 	// make sure shared loads happen before anything else (epecially returns)
 	__syncthreads();
+
+	// load history data
+	unsigned		this_dex		=	index[    tid];
+	float			this_E			=	E[        tid];
+	unsigned		this_yield		=	yield[    tid];
+	unsigned		rn				=	rn_bank[  tid];
+	float			this_x			=	space[    tid].x;
+	float			this_y			=	space[    tid].y;
+	float			this_z			=	space[    tid].z;
+
+	// get array position from prefix scan
+	unsigned		position		=	d_scanned[tid];
+
+	// make sure individual loads happen before anything else?
+	__syncthreads();
+
+	//printf("WTF yield %u\n",this_yield);
 
 	// return immediately if out of bounds
 	if (tid >= N){return;}
 
 	// check yield
-	if (yield[tid]==0){
+	if (this_yield==0){
+		return;
+	}
+
+	// another yield check
+	if((d_scanned[tid+1]-d_scanned[tid]) == 0){
+		printf("NOT RIGHT! \n");
 		return;
 	}
 
 	// check E data pointers
 	if(dist_energy == 0x0){
-		printf("null pointer, energy array in continuum scatter!,tid %u rxn %u\n",tid);
+		printf("null pointer, energy array in continuum scatter!,tid %u\n",tid);
 		return;
 	}
 
@@ -79,10 +90,13 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	// write new histories for this yield number
 	for(unsigned k=0 ; k < this_yield ; k++ ){
 
+		//get proper data index
+		data_dex = position+k;
+
 		// do seperate stochastic mixing for each neutron
-		if( get_rand(&rn)>f ){
-		this_edist	=	edist_lower;
-		this_sdist	=	sdist_lower;
+		if( get_rand(&rn) > f ){
+			this_edist	=	edist_lower;
+			this_sdist	=	sdist_lower;
 		}
 		else{
 			this_edist = edist_upper;
@@ -90,12 +104,9 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		}
 		this_law	=	this_edist.law;
 		
-		//get proper data index
-		data_dex = position+k;
-		
 		// sample dist
 		if (this_law ==4 ){
-	
+
 			// sample continuous tabular
 			E0 = sample_continuous_tablular( 	this_edist.len , 
 												this_edist.intt , 
@@ -108,7 +119,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 										 this_edist.var[0],  this_edist.var[ this_edist.len-1], 
 										edist_lower.var[0], edist_lower.var[edist_lower.len-1], 
 										edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
-
+	
 			// check errors
 			if (!isfinite(sampled_E) | sampled_E<=0.0){
 				printf("Fission pop mis-sampled tid %i data_dex %u E %6.4E... setting to 2.5\n",tid,data_dex,sampled_E);
@@ -135,7 +146,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		space[ data_dex ].enforce_BC	= 0;
 		space[ data_dex ].surf_dist		= 999999.0;
 		
-		if(data_dex<=9){printf("array index %u, E = % 6.4E d_fissile_energy[ data_dex ] = % 6.4E\n",data_dex,sampled_E,E[ data_dex ]);}
+		//if(data_dex<=9){printf("array index %u, E = % 6.4E d_fissile_energy[ data_dex ] = % 6.4E\n",data_dex,sampled_E,E[ data_dex ]);}
 
 	}
 
