@@ -5,7 +5,7 @@
 #include "check_cuda.h"
 #include "wfloat3.h"
 
-__global__ void safety_check_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){   
+__global__ void safety_check_kernel(unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){   
 
 	// declare shared variables
 	__shared__ 	unsigned			n_isotopes;				
@@ -73,7 +73,7 @@ __global__ void safety_check_kernel(unsigned N, unsigned starting_index, cross_s
 	// check energy
 	float 	this_E = E[tid];
 	if (!isfinite(this_E) | this_E < 0.0){
-		printf("INVALID ENERGY, tid %u tid_in %u rxn %u, E % 6.4E\n",tid,tid_in,this_rxnthis_E);
+		printf("INVALID ENERGY, tid %u tid_in %u rxn %u, E % 6.4E\n",tid,tid_in,this_rxn,this_E);
 	}
 
 	// check directions
@@ -90,12 +90,12 @@ __global__ void safety_check_kernel(unsigned N, unsigned starting_index, cross_s
 
 }
 
-void safety_check(unsigned NUM_THREADS, unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
+void safety_check(unsigned NUM_THREADS, unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
 	if(N<1){return;}
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	safety_check_kernel <<< blks, NUM_THREADS >>> (  N, starting_index, d_xsdata, d_particles, d_remap);
+	safety_check_kernel <<< blks, NUM_THREADS >>> (  N, d_xsdata, d_particles, d_remap);
 	check_cuda(cudaThreadSynchronize());
 
 }

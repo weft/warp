@@ -1796,7 +1796,7 @@ void whistory::run(){
 			check_cuda(cudaPeekAtLastError());
 
 			// do safety check (if flagged)
-			safety_check(	NUM_THREADS, lscatter_N, lscatter_start, d_xsdata, d_particles, d_remap );
+			safety_check(	NUM_THREADS, Nrun, lscatter_start, d_xsdata, d_particles, d_remap );
 
 			//if(RUN_FLAG==0){  //fixed source
 			//	// pop secondaries back in
