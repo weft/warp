@@ -1600,32 +1600,21 @@ void whistory::reset_cycle(float keff_cycle){
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
 	check_cuda(cudaPeekAtLastError());
 
-	FILE* ftemp = fopen("cumsum","w");
-	unsigned* h_scanned = new unsigned[Ndataset];
-	cudaMemcpy(h_scanned,d_scanned,Ndataset*sizeof(unsigned),cudaMemcpyDeviceToHost);
-	for(int g=0;g<N;g++){
-		fprintf(ftemp,"scanned[%7d] = %7d\n",g,h_scanned);
-	}
-	delete h_scanned;
-	fclose(ftemp);
-
 	//pop them in!  should be the right size now due to keff rebasing  
-	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_fissile_points, d_fissile_energy, d_scanned );
+	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_scanned );
 	check_cuda(cudaPeekAtLastError());
 
 	// sync
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
 
-	cudaMemcpy(h_particles.space, d_fissile_points, Ndataset*sizeof(spatial_data), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_particles.E,     d_fissile_energy, Ndataset*sizeof(float),        cudaMemcpyDeviceToHost);
-	for(int g=0;g<N;g++){
+	cudaMemcpy(h_particles.space, dh_particles.space, Ndataset*sizeof(spatial_data), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_particles.E,     dh_particles.E,     Ndataset*sizeof(float),        cudaMemcpyDeviceToHost);
+	for(int g=0;g<10;g++){
 		printf("%7d E = %6.4E xyz % 6.4E % 6.4E % 6.4E\n",g,h_particles.E[g],h_particles.space[g].x,h_particles.space[g].y,h_particles.space[g].z);
 	}
 
  	// rest run arrays
-	check_cuda(cudaMemcpy( dh_particles.space,		d_fissile_points,	Ndataset*sizeof(spatial_data),	cudaMemcpyDeviceToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.E,			d_fissile_energy,	Ndataset*sizeof(float),		cudaMemcpyDeviceToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.cellnum,	zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.matnum,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.isonum,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
@@ -1634,8 +1623,8 @@ void whistory::reset_cycle(float keff_cycle){
 	check_cuda(cudaMemcpy( dh_particles.rxn,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( d_remap,					remap,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.index,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.weight,		fones,				Ndataset*sizeof(float),		cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.Q,			zeros,				Ndataset*sizeof(float),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.weight,		fones,				Ndataset*sizeof(float),			cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.Q,			zeros,				Ndataset*sizeof(float),			cudaMemcpyHostToDevice ));
 	check_cuda(cudaPeekAtLastError());
 
 	// update RNG seeds

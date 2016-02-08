@@ -5,7 +5,7 @@
 #include "check_cuda.h"
 
 
-__global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, spatial_data* d_fissile_points, float* d_fissile_energy, unsigned* scanned){
+__global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* scanned){
 
 	// declare shared variables					
 	__shared__ 	dist_container*		dist_scatter;			
@@ -27,29 +27,22 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		index						= d_particles[0].index;
 	}
 
+	// load history data
+	unsigned		this_dex		=	index[   tid];
+	float			this_E			=	E[       tid];
+	unsigned		this_yield		=	yield[   tid];
+	unsigned		rn				=	rn_bank[ tid];
+	unsigned		position		=	scanned[ tid];
+	float			this_x			=	space[   tid].x;
+	float			this_y			=	space[   tid].y;
+	float			this_z			=	space[   tid].z;
+
 	// make sure shared loads happen before anything else
 	__syncthreads();
 
 	// return immediately if out of bounds
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid >= N){return;}
-
-	//constants
-	const float  	pi			=   3.14159265359;
-
-	// load history data
-	spatial_data	this_space		=	space[   tid];
-	unsigned		this_dex		=	index[   tid];
-	float			this_E			=	E[       tid];
-	unsigned		this_yield		=	yield[   tid];
-	unsigned		rn				=	rn_bank[ tid];
-	unsigned		position		=	scanned[ tid];
-
-	// internal kernel variables
-	unsigned	data_dex 			=	0;
-	unsigned	this_law			=	0;
-	float 		sampled_E			=	0.0;
-	float 		phi, mu, E0, f;
 
 	// check yield
 	if (yield[tid]==0){
@@ -61,6 +54,15 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		printf("null pointer, energy array in continuum scatter!,tid %u rxn %u\n",tid);
 		return;
 	}
+
+	//constants
+	const float  	pi			=   3.14159265359;
+
+	// internal kernel variables
+	unsigned	data_dex 			=	0;
+	unsigned	this_law			=	0;
+	float 		sampled_E			=	0.0;
+	float 		phi, mu, E0, f;
 
 	// pick upper or lower via stochastic mixing
 	dist_data	this_edist, this_sdist;
@@ -115,14 +117,14 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 		}
 		else{
-			printf("LAW %u NOT HANDLED IN FISSION POP!  rxn %u\n",this_law,this_rxn);
+			printf("LAW %u NOT HANDLED IN FISSION POP!\n",this_law);
 		}
-		
+
 		// set data
 		d_fissile_energy[ data_dex ] 				= sampled_E;
-		d_fissile_points[ data_dex ].x 				= this_space.x;
-		d_fissile_points[ data_dex ].y 				= this_space.y;
-		d_fissile_points[ data_dex ].z 				= this_space.z;
+		d_fissile_points[ data_dex ].x 				= this_x;
+		d_fissile_points[ data_dex ].y 				= this_y;
+		d_fissile_points[ data_dex ].z 				= this_z;
 		d_fissile_points[ data_dex ].xhat 			= sqrtf(1.0-(mu*mu))*cosf(phi);
 		d_fissile_points[ data_dex ].yhat 			= sqrtf(1.0-(mu*mu))*sinf(phi); 
 		d_fissile_points[ data_dex ].zhat 			= mu;
@@ -138,11 +140,11 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 }
 
-void pop_fission( unsigned NUM_THREADS, unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, spatial_data* d_fissile_points, float* d_fissile_energy, unsigned* scanned){
+void pop_fission( unsigned NUM_THREADS, unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_scanned ){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	pop_fission_kernel <<< blks, NUM_THREADS >>> ( N, d_xsdata, d_particles, d_fissile_points, d_fissile_energy, scanned);
+	pop_fission_kernel <<< blks, NUM_THREADS >>> ( N, d_xsdata, d_particles, d_scanned);
 	check_cuda(cudaThreadSynchronize());
 
 }
