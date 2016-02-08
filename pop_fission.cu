@@ -109,7 +109,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 			}
 
 			// check errors
-			if (!isfinite(sampled_E)){
+			if (!isfinite(sampled_E) | sampled_E < 0.0){
 				printf("Fission pop mis-sampled tid %i data_dex %u E %6.4E... setting to 2.5\n",tid,data_dex,sampled_E);
 				sampled_E = 2.5;
 			}
