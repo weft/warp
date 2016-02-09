@@ -156,13 +156,13 @@ All neutrons need these things done, so these routines all live in the same rout
 		// compute the total macroscopic cross section for this material
 		macro_t_total = sum_cross_section(	n_isotopes,
 											e0, this_E,
-											&s_number_density_matrix[this_mat],  
+											&s_number_density_matrix[this_mat*n_isotopes],  
 											&xs[ dex   *n_columns]					);
 	
 		// determine the isotope in the material for this cell
 		this_tope = sample_cross_section(	n_isotopes, macro_t_total, rn1,
 											e0, this_E,
-											&s_number_density_matrix[this_mat],  
+											&s_number_density_matrix[this_mat*n_isotopes],  
 											&xs[ dex   *n_columns]					);
 
 	}
@@ -176,14 +176,14 @@ All neutrons need these things done, so these routines all live in the same rout
 		// compute the total macroscopic cross section for this material
 		macro_t_total = sum_cross_section(	n_isotopes,
 											e0, e1, this_E,  
-											&s_number_density_matrix[this_mat],
+											&s_number_density_matrix[this_mat*n_isotopes],
 											&xs[ dex   *n_columns],  
 											&xs[(dex+1)*n_columns]				);
 	
 		// determine the isotope in the material for this cell
 		this_tope = sample_cross_section(	n_isotopes, macro_t_total, rn1,
 											e0, e1, this_E,
-											&s_number_density_matrix[this_mat],  
+											&s_number_density_matrix[this_mat*n_isotopes],  
 											&xs[ dex   *n_columns],  
 											&xs[(dex+1)*n_columns]				);
 
