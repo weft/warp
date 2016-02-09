@@ -1018,7 +1018,7 @@ void whistory::copy_scatter_data(){
 				check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
 				check_cuda(cudaPeekAtLastError());
-				if(h_lower_dist.len==3 & h_lower_dist.erg>0.26){printf("len 3 dist in scatter:  E %6.4E mu % 6.4E % 6.4E % 6.4E\n",h_lower_dist.erg,h_lower_dist.var[0],h_lower_dist.var[1],h_lower_dist.var[2]);}
+
 				// copy vals in structure
 				dh_lower_dist.erg	=	h_lower_dist.erg;
 				dh_lower_dist.len	=	h_lower_dist.len;
