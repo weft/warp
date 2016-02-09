@@ -120,7 +120,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	float 		E_new				=   0.0;
 	float 		sampled_E			=	0.0;
 	wfloat3 	v_n_cm, v_t_cm, v_n_lf, v_t_lf, v_cm, hats_new, hats_target, rotation_hat;
-	float 		mu, E0, E1, Ek;
+	float 		mu, E0;
 
 	// ensure normalization
 	hats_old = hats_old / hats_old.norm2();

@@ -126,13 +126,15 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	// compute some things
 	unsigned 	n_columns 		= n_isotopes + total_reaction_channels;
-	float 		e0, e1;
+	float 		e0, e1, rn1;
 
 	// check
 	if(this_mat>=n_materials){
 		printf("MACRO - tid %u this_mat %u > n_materials %u!!!!!\n",tid,this_mat,n_materials);
 		return;
 	}
+
+	rn1 = get_rand(&rn);
 
 	if (dex>=4294967294){
 
@@ -155,13 +157,13 @@ All neutrons need these things done, so these routines all live in the same rout
 		macro_t_total = sum_cross_section(	n_isotopes,
 											e0, this_E,
 											&s_number_density_matrix[this_mat],  
-											&xs[ dex   *n_columns]				);
+											&xs[ dex   *n_columns]					);
 	
 		// determine the isotope in the material for this cell
-		this_tope = sample_cross_section(	n_isotopes, macro_t_total, get_rand(&rn),
+		this_tope = sample_cross_section(	n_isotopes, macro_t_total, rn1,
 											e0, this_E,
 											&s_number_density_matrix[this_mat],  
-											&xs[ dex   *n_columns]	 			);
+											&xs[ dex   *n_columns]					);
 
 	}
 	else{
@@ -176,18 +178,18 @@ All neutrons need these things done, so these routines all live in the same rout
 											e0, e1, this_E,  
 											&s_number_density_matrix[this_mat],
 											&xs[ dex   *n_columns],  
-											&xs[(dex+1)*n_columns] 				);
+											&xs[(dex+1)*n_columns]				);
 	
 		// determine the isotope in the material for this cell
-		this_tope = sample_cross_section(	n_isotopes, macro_t_total, get_rand(&rn),
+		this_tope = sample_cross_section(	n_isotopes, macro_t_total, rn1,
 											e0, e1, this_E,
 											&s_number_density_matrix[this_mat],  
 											&xs[ dex   *n_columns],  
-											&xs[(dex+1)*n_columns]					);
+											&xs[(dex+1)*n_columns]				);
 
 	}
 
-	if (this_tope==n_isotopes) {printf("this_tope==n_isotopes, tid %d E %6.4E macro_t %6.4E\n",tid,this_E,macro_t_total);}
+	if (this_tope==n_isotopes) {printf("this_tope==n_isotopes, tid %d E %6.4E macro_t %6.4E rn %6.4E\n",tid,this_E,macro_t_total,rn1);}
 
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;

@@ -114,7 +114,6 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	else{
 		speed_target = 0.0;
 	}
-	//__syncthreads();
 	
 	// make speed vectors
 	v_n_lf = hats_old    * speed_n;
