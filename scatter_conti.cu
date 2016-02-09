@@ -226,13 +226,11 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 											this_edist.var , 
 											this_edist.pdf, 
 											this_edist.cdf );
-		//printf("this_E %6.4E lower_E %6.4E upper_E %6.4E\n",this_E,edist_lower.erg,edist_upper.erg);
-		//printf("E0 %6.4E dist_index %u len %u intt %u\n",E0,dist_index,this_edist.len,this_edist.intt);
-
 		//scale it to bins 
-		E1 = edist_lower.var[0]                 + f*( edist_upper.var[0]                 - edist_lower.var[0] );
-		Ek = edist_lower.var[edist_lower.len-1] + f*( edist_upper.var[edist_upper.len-1] - edist_lower.var[edist_lower.len-1] );
-		sampled_E = E1 +(E0-this_edist.var[0])/(this_edist.var[this_edist.len-1]-this_edist.var[0])*(Ek-E1);
+		sampled_E = scale_to_bins(	f, E0, 
+									 this_edist.var[0],  this_edist.var[ this_edist.len-1], 
+									edist_lower.var[0], edist_lower.var[edist_lower.len-1], 
+									edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
 
 		// find correlated mu
 		float A 	= this_sdist.var[dist_index];

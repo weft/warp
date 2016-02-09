@@ -48,8 +48,6 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	// make sure individual loads happen before anything else?
 	__syncthreads();
 
-	//printf("WTF yield %u\n",this_yield);
-
 	// return immediately if out of bounds
 	if (tid >= N){return;}
 
