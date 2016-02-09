@@ -109,7 +109,7 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 	if( index == length ){
 		index--;
-		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_e,rn,normalize);
+		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
 	}
 
 	return index;
@@ -139,7 +139,7 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 	if( index == length ){
 		index--;
-		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_e,rn,normalize);
+		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
 	}
 
 	return index;
@@ -165,7 +165,7 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 	if( index == length ){
 		index--;
-		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_e,rn,normalize);
+		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
 	}
 
 	return index;
@@ -195,7 +195,7 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 	if( index == length ){
 		index--;
-		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_e,rn,normalize);
+		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
 	}
 
 	return index;
