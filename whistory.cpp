@@ -1590,7 +1590,7 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 void whistory::reset_cycle(float keff_cycle){
 
 	// re-base the yield so keff is 1
-	rebase_yield( NUM_THREADS, N,  keff_cycle*0.98, d_particles );
+	rebase_yield( NUM_THREADS, N,  keff_cycle, d_particles );
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
 	check_cuda(cudaPeekAtLastError());

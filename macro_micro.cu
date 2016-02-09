@@ -266,7 +266,9 @@ All neutrons need these things done, so these routines all live in the same rout
 		//  -- score tally if valid
 		//  
 		//
-	
+		if(tally_index==-1 & cellnum[tid]==1){
+			printf("missed cell??? tally_index %d cellnum %u\n",tally_index,cellnum[tid]);
+		}
 		// only score if converged and if cell flagged for a tally. 
 		if( tally_index>=0 & converged==1){
 	
