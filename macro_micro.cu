@@ -189,7 +189,7 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	}
 
-	if (this_tope==n_isotopes) {printf("this_tope==n_isotopes, tid %d E %6.4E macro_t %6.4E rn %6.4E\n",tid,this_E,macro_t_total,rn1);}
+	if (this_tope==n_isotopes) {printf("this_tope==n_isotopes, tid %d E %6.4E macro_t %6.4E rn %12.10E dex %u\n",tid,this_E,macro_t_total,rn1,dex);}
 
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;
