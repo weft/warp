@@ -56,6 +56,7 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	Ndataset = Nin * 1.5;
 	reduced_yields_total = 0;
 	reduced_weight_total = 0;
+	initial_weight_total = 0;
 	accel_type = "Sbvh";
 	// default device to 0
 	compute_device = 0;
@@ -1934,7 +1935,7 @@ void whistory::write_tally(){
 			else{					
 				tally_err = 0.0;
 			}
-			fprintf(tfile,"% 10.8E           % 10.8E           % 10.8E           % 10.8E           %lu\n", edge0, edge1, this_mean/reduced_weight_total, tally_err, h_tally[i].count_total[k]);
+			fprintf(tfile,"% 10.8E           % 10.8E           % 10.8E           % 10.8E           %lu\n", edge0, edge1, this_mean/initial_weight_total, tally_err, h_tally[i].count_total[k]);
 		}
 
 		fprintf(tfile,"\n--------------------------------------------------------------------------------------------------------------\n");

@@ -60,6 +60,7 @@ class whistory {
 	// 
     long unsigned				reduced_yields_total;   /**< long unsigned for accumulating yield numbers accurately on the host */
     double						reduced_weight_total;   /**< double for accumulating weight numbers accurately on the host */
+    double						initial_weight_total;   /**< double for accumulating the starting weight numbers accurately on the host */
 
 	// materials data
 	unsigned*					material_list;			/**< material list */
