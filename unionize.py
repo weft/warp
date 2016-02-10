@@ -484,23 +484,23 @@ class cross_section_data:
 			else:
 
 				# law
-				if hasattr(rxn,"energy_dist"):
-					law  = rxn.energy_dist.law 
-				else:
-					law  = 3
+				#if hasattr(rxn,"energy_dist"):
+				#	law  = rxn.energy_dist.law 
+				#else:
+				law  = 3
 
 
 				#intt
-				if hasattr(rxn,"energy_dist"):
-					if hasattr(rxn.energy_dist,"intt"):
-						lower_intt = rxn.energy_dist.intt[lower_index]
-						upper_intt = rxn.energy_dist.intt[upper_index]
-					else:
-						lower_intt = 2 # is this always right?
-						upper_intt = 2
-				else:
-					lower_intt = 2
-					upper_intt = 2
+				#if hasattr(rxn,"energy_dist"):
+				#	if hasattr(rxn.energy_dist,"intt"):
+				#		lower_intt = rxn.energy_dist.intt[lower_index]
+				#		upper_intt = rxn.energy_dist.intt[upper_index]
+				#	else:
+				#		lower_intt = 2 # is this always right?
+				#		upper_intt = 2
+				#else:
+				lower_intt = rxn.ang_intt[lower_index]
+				upper_intt = rxn.ang_intt[upper_index]
 
 				# have energies
 				lower_erg = rxn.ang_energy_in[lower_index]

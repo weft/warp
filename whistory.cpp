@@ -1797,8 +1797,8 @@ void whistory::run(){
 			//}
 			//check_cuda(cudaPeekAtLastError());
 
-			//std::cout << "press enter to continue...\n";
-			//std::cin.ignore();
+			std::cout << "press enter to continue...\n";
+			std::cin.ignore();
 
 		}
 

@@ -165,6 +165,8 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		}
 	}
 
+	if(mu<=-1 |mu>=1){printf("MU MISSAMPLED IN LEVEL:  % 6.4E\n",mu);}
+
 	// pre rotation directions
 	hats_old = v_n_cm / v_n_cm.norm2();
 	hats_old = hats_old.rotate(mu, get_rand(&rn));
