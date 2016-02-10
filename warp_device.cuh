@@ -109,7 +109,7 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 	if( index == length ){
 		index--;
-		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
+		printf("SAMPLED GAP IN sample_cross_section: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
 	}
 
 	return index;
@@ -139,7 +139,7 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 	if( index == length ){
 		index--;
-		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
+		printf("SAMPLED GAP IN sample_cross_section: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
 	}
 
 	return index;
@@ -165,7 +165,7 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 	if( index == length ){
 		index--;
-		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
+		printf("SAMPLED GAP IN sample_cross_section: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
 	}
 
 	return index;
@@ -195,7 +195,7 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 	if( index == length ){
 		index--;
-		printf("SAMPLED GAP: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
+		printf("SAMPLED GAP IN sample_cross_section: E %6.4E rn %12.10E normalize %10.12E\n",this_E,rn,normalize);
 	}
 
 	return index;
@@ -219,6 +219,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	// calculate sampled value
 	if(intt==1){
 		if( index == length ){
+			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn,);
 			index--;
 		}
 		// histogram interpolation
@@ -226,6 +227,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	}
 	else if(intt==2){
 		if( index == length-1 ){
+			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn,);
 			index--;
 		}
 		// lin-lin interpolation
@@ -260,6 +262,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	// calculate sampled value
 	if(intt==1){
 		if( index == length ){
+			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn,);
 			index--;
 		}
 		// histogram interpolation
@@ -267,6 +270,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	}
 	else if(intt==2){
 		if( index == length-1 ){
+			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn,);
 			index--;
 		}
 		// lin-lin interpolation

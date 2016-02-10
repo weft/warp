@@ -156,11 +156,11 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		if((this_E < dist_lower.erg | this_E > dist_upper.erg) & (this_E<energy_grid[energy_grid_len-1] & this_E>energy_grid[0])){printf("NOT BETWEEN DISTS! lower %6.4E this %6.4E upper %6.4E\n",dist_lower.erg,this_E,dist_upper.erg);}
 		this_law = this_dist.law;
 		if (this_law == 3 ){
-			mu = sample_continuous_tablular( 	this_dist.len , 
+			mu = sample_continuous_tablular(	this_dist.len , 
 												this_dist.intt , 
 												rn1 , 
 												this_dist.var , 
-												this_dist.pdf, 
+												this_dist.pdf , 
 												this_dist.cdf );
 		}
 		else{
@@ -168,7 +168,7 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		}
 	}
 
-	if(!isfinite(mu) | mu<=-1 | mu>=1){printf("MU MISSAMPLED IN LEVEL:  % 6.4E  rn %12.10E\n",mu,rn1);}
+	if(!isfinite(mu) | mu<=-1 | mu>=1){printf("MU MISSAMPLED IN LEVEL:  % 6.4E  rn %12.10E E %6.4E len %u \n",mu,rn1,this_E,this_dist.len);}
 
 	// pre rotation directions
 	hats_old = v_n_cm / v_n_cm.norm2();
