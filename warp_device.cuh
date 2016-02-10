@@ -232,17 +232,12 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 		}
 		// lin-lin interpolation
 		float m = (pdf[index+1]-pdf[index])/(var[index+1]-var[index]);
-		if (m>0.0){
+		if (m!=0.0){
 			out = var[index] + (sqrtf(pdf[index]*pdf[index]+2.0*m*(rn-cdf[index]))-pdf[index])/m;
 		}
-		else if (m==0.0){
+		else{
 			// limit at m=0 is histogram interpolation
 			out = var[index] + (rn - cdf[index])/pdf[index];
-		}
-		else{
-			// error
-			printf("ERROR in lin-lin interpolation!  m=% 6.4E\n", m);
-			out=-2;
 		}
 	}
 	else{
@@ -286,18 +281,14 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 		}
 		// lin-lin interpolation
 		float m = (pdf[index+1]-pdf[index])/(var[index+1]-var[index]);
-		if (m>0.0){
+		if (m!=0.0){
 			out = var[index] + (sqrtf(pdf[index]*pdf[index]+2.0*m*(rn-cdf[index]))-pdf[index])/m;
 		}
-		else if (m==0.0){
+		else{
 			// limit at m=0 is histogram interpolation
 			out = var[index] + (rn - cdf[index])/pdf[index];
 		}
-		else{
-			// error
-			printf("ERROR in lin-lin interpolation!  m=% 6.4E\n", m);
-			out=-2;
-		}
+
 	}
 	else{
 		// return invalid mu, like -2
