@@ -496,11 +496,11 @@ class cross_section_data:
 						lower_intt = rxn.energy_dist.intt[lower_index]
 						upper_intt = rxn.energy_dist.intt[upper_index]
 					else:
-						lower_intt = 1
-						upper_intt = 1
+						lower_intt = 2 # is this always right?
+						upper_intt = 2
 				else:
-					lower_intt = 1
-					upper_intt = 1
+					lower_intt = 2
+					upper_intt = 2
 
 				# have energies
 				lower_erg = rxn.ang_energy_in[lower_index]
