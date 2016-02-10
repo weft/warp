@@ -218,10 +218,16 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	
 	// calculate sampled value
 	if(intt==1){
+		if( index == length ){
+			index--;
+		}
 		// histogram interpolation
 		out = var[index] + (rn - cdf[index])/pdf[index];
 	}
 	else if(intt==2){
+		if( index == length-1 ){
+			index--;
+		}
 		// lin-lin interpolation
 		float m = (pdf[index+1]-pdf[index])/(var[index+1]-var[index]);
 		out = var[index] + (sqrtf(pdf[index]*pdf[index]+2.0*m*(rn-cdf[index]))-pdf[index])/m;
@@ -253,10 +259,16 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	
 	// calculate sampled value
 	if(intt==1){
+		if( index == length ){
+			index--;
+		}
 		// histogram interpolation
 		out = var[index] + (rn - cdf[index])/pdf[index];
 	}
 	else if(intt==2){
+		if( index == length-1 ){
+			index--;
+		}
 		// lin-lin interpolation
 		float m = (pdf[index+1]-pdf[index])/(var[index+1]-var[index]);
 		out = var[index] + (sqrtf(pdf[index]*pdf[index]+2.0*m*(rn-cdf[index]))-pdf[index])/m;
