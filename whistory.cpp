@@ -455,7 +455,7 @@ void whistory::accumulate_keff(unsigned converged, unsigned iteration, double* k
 	if(converged){
 		reduced_yields_total += reduced_yields;
 		reduced_weight_total += reduced_weight;
-		initial_weight_total += initial weight;
+		initial_weight_total += initial_weight;
 		*keff       = reduced_yields_total / initial_weight_total;
 		keff_sum   += *keff_cycle; 
 		keff2_sum  += (*keff_cycle)*(*keff_cycle);
