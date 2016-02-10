@@ -467,8 +467,8 @@ class cross_section_data:
 			if lower_index < 0:
 
 				# set all to zero
-				lower_law	= 0
-				upper_law	= 0
+				lower_law	= -2
+				upper_law	= -2
 				lower_intt	= 0
 				upper_intt	= 0
 				lower_erg	= 0
@@ -542,8 +542,8 @@ class cross_section_data:
 			if lower_index < 0:
 
 				# set all to zero
-				lower_law	= 0
-				upper_law	= 0
+				lower_law	= -2
+				upper_law	= -2
 				lower_intt	= 0
 				upper_intt	= 0
 				lower_erg	= 0

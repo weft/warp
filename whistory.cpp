@@ -909,7 +909,7 @@ void whistory::copy_scatter_data(){
 
 
 			// decide what to put in the array according to length reported
-			if(h_lower_dist.law==0){   
+			if(h_lower_dist.law==-2){   
 
 				// below threshold, do nothing except go to where the threshold is
 				row = next_dex;

@@ -96,8 +96,6 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 	wfloat3 	v_n_cm, v_t_cm, v_n_lf, v_t_lf, v_cm, hats_new, hats_target, rotation_hat;
 	float 		mu, phi, arg;
 
-	unsigned col = this_dex;
-
 	// ensure normalization
 	hats_old = hats_old / hats_old.norm2();
 
@@ -136,8 +134,8 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 
 
 	// sample polar cosine mu
+	// isotropic scatter if null
 	if(dist_scatter == 0x0){
-		// isotropic scatter if null
 		mu= 2.0*get_rand(&rn)-1.0;
 	}
 	else{  
@@ -153,6 +151,7 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		else{
 			this_dist = dist_upper;
 		}
+		
 		// sample the distribution
 		if(this_tope==2 & this_rxn==50 & this_dist.len==3 & this_E>0.26){printf("len 3 in O16, E %6.4E\n",this_E);}
 		if((this_E < dist_lower.erg | this_E > dist_upper.erg) & (this_E<energy_grid[energy_grid_len-1] & this_E>energy_grid[0])){printf("NOT BETWEEN DISTS! lower %6.4E this %6.4E upper %6.4E\n",dist_lower.erg,this_E,dist_upper.erg);}
