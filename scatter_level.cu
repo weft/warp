@@ -9,11 +9,11 @@
 __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
 	// declare shared variables
-	__shared__ 	unsigned			n_isotopes;				
+	//__shared__ 	unsigned			n_isotopes;				
 	__shared__ 	unsigned			energy_grid_len;		
-	__shared__ 	unsigned			total_reaction_channels;
-	__shared__ 	unsigned*			rxn_numbers;			
-	__shared__ 	unsigned*			rxn_numbers_total;		
+	//__shared__ 	unsigned			total_reaction_channels;
+	//__shared__ 	unsigned*			rxn_numbers;			
+	//__shared__ 	unsigned*			rxn_numbers_total;		
 	__shared__ 	float*				energy_grid;			
 	//__shared__ 	float*				rxn_Q;						
 	//__shared__ 	float*				xs;						
@@ -35,11 +35,11 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 
 	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
-		n_isotopes					= d_xsdata[0].n_isotopes;								
+		//n_isotopes					= d_xsdata[0].n_isotopes;								
 		energy_grid_len				= d_xsdata[0].energy_grid_len;				
-		total_reaction_channels		= d_xsdata[0].total_reaction_channels;
-		rxn_numbers 				= d_xsdata[0].rxn_numbers;						
-		rxn_numbers_total			= d_xsdata[0].rxn_numbers_total;					
+		//total_reaction_channels		= d_xsdata[0].total_reaction_channels;
+		//rxn_numbers 				= d_xsdata[0].rxn_numbers;						
+		//rxn_numbers_total			= d_xsdata[0].rxn_numbers_total;					
 		energy_grid 				= d_xsdata[0].energy_grid;						
 		//rxn_Q 						= d_xsdata[0].Q;												
 		//xs 							= d_xsdata[0].xs;												
