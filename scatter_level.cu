@@ -159,10 +159,10 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		this_law = this_dist.law;
 
 		if ( this_law == 0 ){
-			// isotropic scatter if null
+			// isotropic scatter if flagged
 			mu= 2.0*get_rand(&rn)-1.0;
 		}
-		if ( this_law == 3 ){
+		else if ( this_law == 3 ){
 			mu = sample_continuous_tablular(	this_dist.len , 
 												this_dist.intt , 
 												rn1 , 
