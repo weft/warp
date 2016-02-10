@@ -444,16 +444,18 @@ void whistory::accumulate_keff(unsigned converged, unsigned iteration, double* k
 
 	float this_count, this_square, this_mean, keff_err2;
 
-	long unsigned reduced_yields	=	reduce_yield();
-	double        reduced_weight	=	reduce_weight();
-	printf("reduce_yield %lu reduce_weight %6.4E\n",reduced_yields,reduced_weight);
+	long unsigned 	reduced_yields	=	reduce_yield();
+	double 	      	reduced_weight	=	reduce_weight();
+	double			initial_weight  =	N;
+	printf("reduce_yield %lu reduce_weight %6.4E starting weight %6.4E\n",reduced_yields,reduced_weight,);
 
 	*keff_cycle = reduced_yields / reduced_weight;
 
 	if(converged){
 		reduced_yields_total += reduced_yields;
 		reduced_weight_total += reduced_weight;
-		*keff       = reduced_yields_total / reduced_weight_total;
+		initial_weight_total += initial weight;
+		*keff       = reduced_yields_total / initial_weight_total;
 		keff_sum   += *keff_cycle; 
 		keff2_sum  += (*keff_cycle)*(*keff_cycle);
 		this_count  = iteration + 1; 
