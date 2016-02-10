@@ -167,7 +167,7 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 			printf("law %u not yet implemented in level scttering!\n",this_law);
 		}
 
-		if(!isfinite(mu) | mu<=-1 | mu>=1){printf("MU MISSAMPLED IN LEVEL:  % 6.4E  rn %12.10E E %6.4E len %u \n",mu,rn1,this_E,this_dist.len);}
+		if(!isfinite(mu) | mu<=-1 | mu>=1){printf("MU MISSAMPLED IN LEVEL:  % 6.4E  rn %12.10E E %6.4E erg %6.4E len %u tope %u \n",mu,rn1,this_E,this_dist.erg,this_dist.len,this_tope);}
 	}
 
 	// pre rotation directions
