@@ -50,6 +50,8 @@ class cross_section_data:
 		self.MT_array	      = numpy.array([],dtype=numpy.float32,order='C')
 		## Last valid table loaded 
 		self.last_loaded 	 = 0
+		## isotropic tolerance
+		self.isotropic_tol = 1e-5
 
 	##
 	# \brief initializes material from isotope list string
@@ -385,7 +387,8 @@ class cross_section_data:
 			if nu_t_lower_index < 0:
 
 				# set all to zero
-				law			= 0
+				lower_law	= 0
+				upper_law	= 0
 				lower_intt	= 0
 				upper_intt	= 0
 				lower_erg	= 0
@@ -431,7 +434,8 @@ class cross_section_data:
 					nu_p = (v1-v0)/(e1-e0)*(e1-this_E) + v0
 
 				# set values in vars
-				law			= -1
+				lower_law	= -1
+				upper_law	= -1
 				lower_intt	= 0
 				upper_intt	= 0
 				lower_erg	= nu_t
@@ -463,7 +467,8 @@ class cross_section_data:
 			if lower_index < 0:
 
 				# set all to zero
-				law			= 0
+				lower_law	= 0
+				upper_law	= 0
 				lower_intt	= 0
 				upper_intt	= 0
 				lower_erg	= 0
@@ -484,7 +489,8 @@ class cross_section_data:
 			else:
 
 				# law
-				law  = 3
+				lower_law  = 3
+				upper_law  = 3
 
 				#intt
 				lower_intt = rxn.ang_intt[lower_index]
@@ -505,6 +511,13 @@ class cross_section_data:
 				# len
 				lower_len = len(lower_var)
 				upper_len = len(upper_var)
+
+				# check if basically isotropic, then mark law=0 to save warp checking.  
+				# short distirbutions cause numerical roundoff errors without double precision
+				if lower_len == 3 and abs(lower_cdf[1]-0.5)<=self.isotropic_tol:
+					lower_law = 0
+				if upper_len == 3 and abs(upper_cdf[1]-0.5)<=self.isotropic_tol:
+					upper_law = 0
 
 				# next index
 				if upper_index == lower_index == len(rxn.ang_energy_in)-1:  # above last dist energy bin
@@ -529,7 +542,8 @@ class cross_section_data:
 			if lower_index < 0:
 
 				# set all to zero
-				law			= 0
+				lower_law	= 0
+				upper_law	= 0
 				lower_intt	= 0
 				upper_intt	= 0
 				lower_erg	= 0
@@ -550,7 +564,8 @@ class cross_section_data:
 			else:
 
 				# law
-				law  = rxn.energy_dist.law
+				lower_law  = rxn.energy_dist.law
+				upper_law  = rxn.energy_dist.law
 
 				# interpolation type
 				lower_intt = rxn.energy_dist.intt[lower_index]
@@ -588,9 +603,11 @@ class cross_section_data:
 			# no distributions
 			# set all to isotropic and write law if there is one
 			if hasattr(rxn,"energy_dist"):
-				law = rxn.energy_dist.law
+				lower_law = rxn.energy_dist.law
+				upper_law = rxn.energy_dist.law
 			else:
-				law			= 3
+				lower_law	= 0
+				upper_law	= 0
 			lower_intt	= 1
 			upper_intt	= 1
 			lower_erg	= self.MT_E_grid[0]
@@ -612,14 +629,14 @@ class cross_section_data:
 		# return values in order as float32 arrays
 		return [numpy.ascontiguousarray(lower_erg,	dtype=numpy.float32),
 				numpy.ascontiguousarray(lower_len,	dtype=numpy.float32),
-				numpy.ascontiguousarray(law,		dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_law,	dtype=numpy.float32),
 				numpy.ascontiguousarray(lower_intt,	dtype=numpy.float32),
 				numpy.ascontiguousarray(lower_var,	dtype=numpy.float32),
 				numpy.ascontiguousarray(lower_pdf,	dtype=numpy.float32),
 				numpy.ascontiguousarray(lower_cdf,	dtype=numpy.float32),
 				numpy.ascontiguousarray(upper_erg,	dtype=numpy.float32),
 				numpy.ascontiguousarray(upper_len,	dtype=numpy.float32),
-				numpy.ascontiguousarray(law,		dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_law,	dtype=numpy.float32),
 				numpy.ascontiguousarray(upper_intt,	dtype=numpy.float32),
 				numpy.ascontiguousarray(upper_var,	dtype=numpy.float32),
 				numpy.ascontiguousarray(upper_pdf,	dtype=numpy.float32),
@@ -665,7 +682,8 @@ class cross_section_data:
 			if lower_index < 0:
 
 				# set all to zero
-				law			= 0
+				lower_law	= 0
+				upper_law	= 0
 				lower_intt	= 0
 				upper_intt	= 0
 				lower_erg	= 0
@@ -686,7 +704,8 @@ class cross_section_data:
 			else:
 
 				# law
-				law  = rxn.energy_dist.law
+				lower_law  = rxn.energy_dist.law
+				upper_law  = rxn.energy_dist.law
 
 				# interpolation type
 				lower_intt = rxn.energy_dist.intt[lower_index]
@@ -718,9 +737,11 @@ class cross_section_data:
 			# no distributions
 			# set all to zero (except law if there is one)
 			if hasattr(rxn,"energy_dist"):
-				law = rxn.energy_dist.law
+				lower_law = rxn.energy_dist.law
+				upper_law = rxn.energy_dist.law
 			else:
-				law			= 0
+				lower_law = 0
+				upper_law = 0
 			lower_intt	= 0
 			upper_intt	= 0
 			lower_erg	= 0
@@ -740,14 +761,14 @@ class cross_section_data:
 		# return values in order as float32 arrays
 		return [numpy.ascontiguousarray(lower_erg,	dtype=numpy.float32),
 				numpy.ascontiguousarray(lower_len,	dtype=numpy.float32),
-				numpy.ascontiguousarray(law,		dtype=numpy.float32),
+				numpy.ascontiguousarray(lower_law,	dtype=numpy.float32),
 				numpy.ascontiguousarray(lower_intt,	dtype=numpy.float32),
 				numpy.ascontiguousarray(lower_var,	dtype=numpy.float32),
 				numpy.ascontiguousarray(lower_pdf,	dtype=numpy.float32),
 				numpy.ascontiguousarray(lower_cdf,	dtype=numpy.float32),
 				numpy.ascontiguousarray(upper_erg,	dtype=numpy.float32),
 				numpy.ascontiguousarray(upper_len,	dtype=numpy.float32),
-				numpy.ascontiguousarray(law,		dtype=numpy.float32),
+				numpy.ascontiguousarray(upper_law,	dtype=numpy.float32),
 				numpy.ascontiguousarray(upper_intt,	dtype=numpy.float32),
 				numpy.ascontiguousarray(upper_var,	dtype=numpy.float32),
 				numpy.ascontiguousarray(upper_pdf,	dtype=numpy.float32),

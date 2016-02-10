@@ -158,11 +158,11 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		if((this_E < dist_lower.erg | this_E > dist_upper.erg) & (this_E<energy_grid[energy_grid_len-1] & this_E>energy_grid[0])){printf("NOT BETWEEN DISTS! lower %6.4E this %6.4E upper %6.4E\n",dist_lower.erg,this_E,dist_upper.erg);}
 		this_law = this_dist.law;
 
-		if (this_law == 3 & this_dist.len==3){
-			// isotropic scatter if not length 3
+		if ( this_law == 0 ){
+			// isotropic scatter if null
 			mu= 2.0*get_rand(&rn)-1.0;
 		}
-		else if (this_law == 3 & this_dist.len>3){
+		if ( this_law == 3 ){
 			mu = sample_continuous_tablular(	this_dist.len , 
 												this_dist.intt , 
 												rn1 , 
