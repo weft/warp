@@ -484,29 +484,16 @@ class cross_section_data:
 			else:
 
 				# law
-				#if hasattr(rxn,"energy_dist"):
-				#	law  = rxn.energy_dist.law 
-				#else:
 				law  = 3
 
-
 				#intt
-				#if hasattr(rxn,"energy_dist"):
-				#	if hasattr(rxn.energy_dist,"intt"):
-				#		lower_intt = rxn.energy_dist.intt[lower_index]
-				#		upper_intt = rxn.energy_dist.intt[upper_index]
-				#	else:
-				#		lower_intt = 2 # is this always right?
-				#		upper_intt = 2
-				#else:
 				lower_intt = rxn.ang_intt[lower_index]
 				upper_intt = rxn.ang_intt[upper_index]
 
 				# have energies
 				lower_erg = rxn.ang_energy_in[lower_index]
 				upper_erg = rxn.ang_energy_in[upper_index]
-				#if this_E > 1.0 and this_E<2.0:
-				#	print "law",law,"this_E",this_E,upper_erg, lower_erg	
+
 				# get angular distribution values, else write zeros
 				lower_var = rxn.ang_cos[lower_index]
 				upper_var = rxn.ang_cos[upper_index]
