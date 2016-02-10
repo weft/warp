@@ -1041,6 +1041,7 @@ void whistory::copy_scatter_data(){
 
 				// replicate pointers until next index
 				for (int i=row ; i<next_dex; i++){
+					if(h_lower_dist.len==3){printf("len 3:  col %u array_index %u lower_dist.erg %6.4E\n",col,array_index,h_lower_dist.erg);}
 					array_index = i*total_cols + col;
 					h_xsdata.dist_scatter[array_index].upper = &h_upper_dist;
 					h_xsdata.dist_scatter[array_index].lower = &h_lower_dist;
