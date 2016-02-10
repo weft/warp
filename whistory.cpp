@@ -861,7 +861,7 @@ void whistory::copy_scatter_data(){
 					break;
 				}
 			}
-			printf("   Getting scattering data for isotope %s - reaction %u\n",isotopes[this_isotope].c_str(),h_xsdata.rxn_numbers[col]);
+			printf("   Getting scatter data for isotope %s - reaction %u\n",isotopes[this_isotope].c_str(),h_xsdata.rxn_numbers[col]);
 		}
 
 		while(row<total_rows){
@@ -1797,8 +1797,8 @@ void whistory::run(){
 			//}
 			//check_cuda(cudaPeekAtLastError());
 
-			std::cout << "press enter to continue...\n";
-			std::cin.ignore();
+			//std::cout << "press enter to continue...\n";
+			//std::cin.ignore();
 
 		}
 
