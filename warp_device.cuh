@@ -219,7 +219,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	// calculate sampled value
 	if(intt==1){
 		if( index == length ){
-			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn,);
+			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn);
 			index--;
 		}
 		// histogram interpolation
@@ -227,7 +227,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	}
 	else if(intt==2){
 		if( index == length-1 ){
-			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn,);
+			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn);
 			index--;
 		}
 		// lin-lin interpolation
@@ -262,7 +262,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	// calculate sampled value
 	if(intt==1){
 		if( index == length ){
-			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn,);
+			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn);
 			index--;
 		}
 		// histogram interpolation
@@ -270,7 +270,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 	}
 	else if(intt==2){
 		if( index == length-1 ){
-			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn,);
+			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",intt,length,rn);
 			index--;
 		}
 		// lin-lin interpolation
