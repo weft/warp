@@ -68,7 +68,7 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	}
 	
 	// interpolate nu
-	float	f	=	(this_E - dist_lower[this_dex]) / (dist_lower[this_dex+1] - dist_lower[this_dex]);
+	float	f	=	(this_E - energy_grid[this_dex]) / (energy_grid[this_dex+1] - energy_grid[this_dex]);
 	nu	=	f*(nu1 - nu0) + nu0;
 
 	//  multiply nu by weight
