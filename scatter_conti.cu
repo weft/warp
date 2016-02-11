@@ -384,9 +384,9 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 
 	}
 
-	float m = (this_edist.pdf[dist_index[0]+1]-this_edist.pdf[dist_index[0]])/(this_edist.var[dist_index[0]+1]-this_edist.var[dist_index[0]]);
-	float remu = this_edist.var[dist_index[0]] + 
-	(sqrtf(this_edist.pdf[dist_index[0]]*this_edist.pdf[dist_index[0]]+2.0*m*(rn2-this_edist.cdf[dist_index[0]]))-this_edist.pdf[dist_index[0]])/m;
+	//float m = (this_edist.pdf[dist_index[0]+1]-this_edist.pdf[dist_index[0]])/(this_edist.var[dist_index[0]+1]-this_edist.var[dist_index[0]]);
+	//float remu = this_edist.var[dist_index[0]] + 
+	//(sqrtf(this_edist.pdf[dist_index[0]]*this_edist.pdf[dist_index[0]]+2.0*m*(rn2-this_edist.cdf[dist_index[0]]))-this_edist.pdf[dist_index[0]])/m;
 
 	// check errors
 	if (!isfinite(sampled_E) | sampled_E < 0.0){
