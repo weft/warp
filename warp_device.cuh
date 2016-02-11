@@ -31,7 +31,7 @@ linearly interpolates between energy points
 }
 
 
-inline __device__ float interpolate_histogram( float rn , float var , float cdf , float pdf ){
+inline __device__ float interpolate_continuous_tablular_histogram( float rn , float var , float cdf , float pdf ){
 /*
 histogram interpolation for angular data
 */
@@ -40,7 +40,7 @@ histogram interpolation for angular data
 
 }
 
-inline __device__ float interpolate_linlin( float rn , float var0 , float var1 , float cdf0 , float cdf1 , float pdf0 , float pdf1 ){
+inline __device__ float interpolate_continuous_tablular_linlin( float rn , float var0 , float var1 , float cdf0 , float cdf1 , float pdf0 , float pdf1 ){
 /*
 linear-linear interpolation for angular data
 */
@@ -51,7 +51,7 @@ linear-linear interpolation for angular data
 	}
 	else{
 		// limit at m=0 is histogram interpolation
-		return interpolate_histogram( var0, rn, cdf0, pdf0 );
+		return interpolate_continuous_tablular_histogram( var0, rn, cdf0, pdf0 );
 	}
 
 }
@@ -260,7 +260,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 			index--;
 		}
 		// histogram interpolation
-		out = interpolate_histogram( rn, var[index], cdf[index], pdf[index] );
+		out = interpolate_continuous_tablular_histogram( rn, var[index], cdf[index], pdf[index] );
 	}
 	else if(intt==2){
 		if( index == length-1 ){
@@ -268,7 +268,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 			index--;
 		}
 		// lin-lin interpolation
-		out = interpolate_linlin( rn, var[index], var[index+1], cdf[index], cdf[index+1], pdf[index], pdf[index+1] );
+		out = interpolate_continuous_tablular_linlin( rn, var[index], var[index+1], cdf[index], cdf[index+1], pdf[index], pdf[index+1] );
 	}
 	else{
 		// return invalid mu, like -2
@@ -302,7 +302,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 			index--;
 		}
 		// histogram interpolation
-		out = interpolate_histogram( rn, var[index], cdf[index], pdf[index] );
+		out = interpolate_continuous_tablular_histogram( rn, var[index], cdf[index], pdf[index] );
 	}
 	else if(intt==2){
 		if( index == length-1 ){
@@ -310,7 +310,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 			index--;
 		}
 		// lin-lin interpolation
-		out = interpolate_linlin( rn, var[index], var[index+1], cdf[index], cdf[index+1], pdf[index], pdf[index+1] );
+		out = interpolate_continuous_tablular_linlin( rn, var[index], var[index+1], cdf[index], cdf[index+1], pdf[index], pdf[index+1] );
 	}
 	else{
 		// return invalid mu, like -2
