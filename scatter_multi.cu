@@ -186,8 +186,23 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 									edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
 
 		// find correlated mu
-		float A 	= this_sdist.var[dist_index];
-		float R 	= this_sdist.cdf[dist_index];
+		float A, R;
+		if (this_sdist.intt==1){
+			A	=	this_sdist.var[dist_index];
+			R	=	this_sdist.cdf[dist_index];
+		}
+		else if (this_sdist.intt==2){
+			A	=	interpolate_linear_energy(	E0,
+												this_edist.var[dist_index],
+												this_edist.var[dist_index+1],
+												this_sdist.var[dist_index],
+												this_sdist.var[dist_index+1]);
+			R	=	interpolate_linear_energy(	E0,
+												this_edist.var[dist_index],
+												this_edist.var[dist_index+1],
+												this_sdist.cdf[dist_index],
+												this_sdist.cdf[dist_index+1]);
+		}
 		float rn1 	= get_rand(&rn);
 		if( get_rand(&rn)>R ){
 			float T = (2.0*rn1-1.0)*sinhf(A);
