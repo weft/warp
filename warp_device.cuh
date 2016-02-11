@@ -51,7 +51,7 @@ linear-linear interpolation for angular data
 	}
 	else{
 		// limit at m=0 is histogram interpolation
-		return interpolate_continuous_tablular_histogram( var0, rn, cdf0, pdf0 );
+		return interpolate_continuous_tablular_histogram( rn, var0, cdf0, pdf0 );
 	}
 
 }
