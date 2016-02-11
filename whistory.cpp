@@ -988,7 +988,6 @@ void whistory::copy_scatter_data(){
 				assert(upper_cdf_buff_bytes==upper_var_buff_bytes);
 
 				// make sure len corresponds to float32!
-				//printf("buffer bytes %u elements %u float bytes %lu caluclated bytes %lu\n",lower_var_buff_bytes,(lower_var_buff_rows*lower_var_buff_columns),sizeof(float),(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
 				assert(lower_var_buff_bytes==(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
 				assert(lower_pdf_buff_bytes==(lower_pdf_buff_rows*lower_pdf_buff_columns)*sizeof(float));
 				assert(lower_cdf_buff_bytes==(lower_cdf_buff_rows*lower_cdf_buff_columns)*sizeof(float));
@@ -1053,8 +1052,6 @@ void whistory::copy_scatter_data(){
 
 				// go to where the next index starts
 				row = next_dex;
-
-				//printf("next dex %u\n",next_dex);
 
 			}
 
@@ -1256,7 +1253,6 @@ void whistory::copy_energy_data(){
 				assert(upper_cdf_buff_bytes==upper_var_buff_bytes);
 
 				// make sure len corresponds to float32!
-				//printf("buffer bytes %u elements %u float bytes %lu caluclated bytes %lu\n",lower_var_buff_bytes,(lower_var_buff_rows*lower_var_buff_columns),sizeof(float),(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
 				assert(lower_var_buff_bytes==(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
 				assert(lower_pdf_buff_bytes==(lower_pdf_buff_rows*lower_pdf_buff_columns)*sizeof(float));
 				assert(lower_cdf_buff_bytes==(lower_cdf_buff_rows*lower_cdf_buff_columns)*sizeof(float));
@@ -1321,8 +1317,6 @@ void whistory::copy_energy_data(){
 
 				// go to where the next index starts
 				row = next_dex;
-
-				//printf("next dex %u\n",next_dex);
 
 			}
 
