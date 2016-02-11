@@ -222,7 +222,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		// sample tabular on energy, but get index as well as value
 		E0 = sample_continuous_tablular( 	dist_index ,
 											this_edist.len , 
-											this_edist.intt , 
+											2 , 
 											get_rand(&rn) , 
 											this_edist.var , 
 											this_edist.pdf, 
@@ -410,7 +410,6 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	//printf("tid %d law %u sampled_E %6.4E mu %6.4E\n",tid,this_law,sampled_E,mu);
 	
 	// write universal results
-	printf("E_old %6.4E E_new %6.4E\n",this_E,E_new);
 	E[tid]			=	E_new;
 	space[tid].xhat	=	hats_new.x;
 	space[tid].yhat	=	hats_new.y;
