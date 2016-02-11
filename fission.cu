@@ -9,6 +9,7 @@
 __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
 	// declare shared variables
+	__shared__ 	float*				energy_grid;
 	__shared__ 	dist_container*		dist_scatter;			
 	__shared__	unsigned*			rxn;	
 	__shared__	unsigned*			rn_bank;
@@ -17,7 +18,8 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	__shared__	unsigned*			index;	
 
 	// have thread 0 of block copy all pointers and static info into shared memory
-	if (threadIdx.x == 0){											
+	if (threadIdx.x == 0){
+		energy_grid 				= d_xsdata[0].energy_grid;
 		dist_scatter 				= d_xsdata[0].dist_scatter;						
 		rxn							= d_particles[0].rxn;
 		rn_bank						= d_particles[0].rn_bank;
@@ -49,18 +51,25 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	if (dist_scatter[this_dex].lower==0x0){
 		printf("scatter pointer for rxn %d is null!\n",this_rxn);
 	}
+	float		nu0			=	0.0;
+	float		nu1			=	0.0;
 	float		nu			=	0.0;
 	unsigned	inu			=	0;
 	unsigned	this_yield	=	0;
 
 	// copy nu from array, lower erg is nu_t, upper erg is nu_p
-	memcpy(&nu, &dist_scatter[this_dex].lower, 1*sizeof(float));
+	memcpy(&nu0, &dist_scatter[this_dex].lower, 1*sizeof(float));
+	memcpy(&nu1, &dist_scatter[this_dex+1].lower, 1*sizeof(float));
 
 	// check nu
 	if (nu==0.0){
 		nu=2.8;
 		printf("something is wrong with fission yields, nu = %6.4E, guessing %4.2f, rxn %u\n",0.0,nu,this_rxn); 
 	}
+	
+	// interpolate nu
+	float	f	=	(this_E - dist_lower[this_dex]) / (dist_lower[this_dex+1] - dist_lower[this_dex]);
+	nu	=	f*(nu1 - nu0) + nu0;
 
 	//  multiply nu by weight
 	nu = this_weight * nu;
