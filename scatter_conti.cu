@@ -251,6 +251,9 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 												this_sdist.cdf[dist_index],
 												this_sdist.cdf[dist_index+1]);
 		}
+		else{
+			printf("INTT=%u NOT HANDLED in law %u of continuum scatter!",this_sdist.law,this_sdist.intt);
+		}
 		float rn1 	= get_rand(&rn);
 		if( get_rand(&rn)>R ){
 			float T = (2.0*rn1-1.0)*sinhf(A);
