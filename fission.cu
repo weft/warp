@@ -64,15 +64,15 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	memcpy(&nu0, &dist_scatter[this_dex].lower, 1*sizeof(float));
 	memcpy(&nu1, &dist_scatter[this_dex+1].lower, 1*sizeof(float));
 
+	// interpolate nu
+	float	f	=	(this_E - energy_grid[this_dex]) / (energy_grid[this_dex+1] - energy_grid[this_dex]);
+	nu	=	f*(nu1 - nu0) + nu0;
+
 	// check nu
 	if (nu==0.0){
 		nu=2.8;
 		printf("something is wrong with fission yields, nu = %6.4E, guessing %4.2f, rxn %u\n",0.0,nu,this_rxn); 
 	}
-
-	// interpolate nu
-	float	f	=	(this_E - energy_grid[this_dex]) / (energy_grid[this_dex+1] - energy_grid[this_dex]);
-	nu	=	f*(nu1 - nu0) + nu0;
 
 	//  multiply nu by weight
 	nu = this_weight * nu;
