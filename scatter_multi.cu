@@ -121,7 +121,8 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	float 		E_new				=   0.0;
 	float 		sampled_E			=	0.0;
 	wfloat3 	v_n_cm, v_t_cm, v_n_lf, v_t_lf, v_cm, hats_new, hats_target, rotation_hat;
-	float 		mu, E0;
+	float 		mu, E0, A, R;
+	unsigned 	dist_index[1];
 
 	// ensure normalization
 	hats_old = hats_old / hats_old.norm2();
@@ -170,8 +171,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 		}
 
 		// sample tabular on energy, but get index as well as value
-		unsigned dist_index = 0;
-		E0 = sample_continuous_tablular( 	&dist_index ,
+		E0 = sample_continuous_tablular( 	dist_index ,
 											this_edist.len , 
 											this_edist.intt , 
 											get_rand(&rn) , 
@@ -186,22 +186,21 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 									edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
 
 		// find correlated mu
-		float A, R;
 		if (this_sdist.intt==1){
-			A	=	this_sdist.var[dist_index];
-			R	=	this_sdist.cdf[dist_index];
+			A	=	this_sdist.var[dist_index[0]];
+			R	=	this_sdist.cdf[dist_index[0]];
 		}
 		else if (this_sdist.intt==2){
 			A	=	interpolate_linear_energy(	E0,
-												this_edist.var[dist_index],
-												this_edist.var[dist_index+1],
-												this_sdist.var[dist_index],
-												this_sdist.var[dist_index+1]);
+												this_edist.var[dist_index[0]],
+												this_edist.var[dist_index[0]+1],
+												this_sdist.var[dist_index[0]],
+												this_sdist.var[dist_index[0]+1]);
 			R	=	interpolate_linear_energy(	E0,
-												this_edist.var[dist_index],
-												this_edist.var[dist_index+1],
-												this_sdist.cdf[dist_index],
-												this_sdist.cdf[dist_index+1]);
+												this_edist.var[dist_index[0]],
+												this_edist.var[dist_index[0]+1],
+												this_sdist.cdf[dist_index[0]],
+												this_sdist.cdf[dist_index[0]+1]);
 		}
 		else{
 			printf("INTT=%u NOT HANDLED in law %u of multiplicity scatter!",this_sdist.law,this_sdist.intt);
