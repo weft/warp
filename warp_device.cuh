@@ -46,8 +46,9 @@ linear-linear interpolation for angular data
 */
 	// check
 	float m = (pdf1-pdf0)/(var1-var0);
-	if (m!=0.0){
-		return var0  +  (sqrtf( pdf0*pdf0 - 2.0*m*(rn-cdf0) ) - pdf0  ) / m;
+	float arg =  pdf0*pdf0 + 2.0*m*(rn-cdf0);
+	if (m!=0.0 & arg>0.0){
+		return var0  +  (sqrtf( arg ) - pdf0  ) / m;
 	}
 	else{
 		// limit at m=0 is histogram interpolation
