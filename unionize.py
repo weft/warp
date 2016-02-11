@@ -583,11 +583,17 @@ class cross_section_data:
 					lower_var = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
 					upper_var = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
 	
-				# cdf and pdf should be zeros
+				# cdf can be law 44 fractions
+				if hasattr(rxn.energy_dist,"frac"):
+					lower_cdf = rxn.energy_dist.frac[lower_index]
+					upper_cdf = rxn.energy_dist.frac[upper_index]
+				else:
+					lower_cdf = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
+					upper_cdf = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
+
+				# pdf zeros
 				lower_pdf = numpy.zeros(rxn.energy_dist.pdf[lower_index].shape)
 				upper_pdf = numpy.zeros(rxn.energy_dist.pdf[upper_index].shape)
-				lower_cdf = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
-				upper_cdf = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
 
 				# len
 				lower_len = len(lower_var)

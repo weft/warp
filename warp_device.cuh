@@ -20,6 +20,43 @@ since 32-bit math is being used, 30 bits are used here
 	return randout;   						// return normalized float
 }
 
+inline __device__ float interpolate_linear_energy(float this_E, float e0, float e1, float var0, float var1){
+/*
+linearly interpolates between energy points
+*/
+
+	float	f	=	(this_E - e0) / (e1 - e0);
+	return  var0 + f*(var1 - var0);
+
+}
+
+
+inline __device__ float interpolate_histogram( float rn , float var , float cdf , float pdf ){
+/*
+histogram interpolation for angular data
+*/
+
+	return var + (rn - cdf)/pdf;
+
+}
+
+inline __device__ float interpolate_linlin( float rn , float var0 , float var1 , float cdf0 , float cdf1 , float pdf0 , float pdf1 ){
+/*
+linear-linear interpolation for angular data
+*/
+	// check
+	float m = (pdf1-pdf0)/(var1-var0);
+	if (m!=0.0){
+		return var0 + (sqrtf(pdf0*pdf0+2.0*m*(rn-cdf0))-pdf0)/m;
+	}
+	else{
+		// limit at m=0 is histogram interpolation
+		return interpolate_histogram( var0, rn, cdf0, pdf0 );
+	}
+
+}
+
+
 inline __device__ float sum_cross_section( unsigned length , float energy0, float energy1, float this_E, float* multiplier, float* array0, float* array1){
 /*
 Calculates the sum of a cross section range.  This routine has a multiplier array and two arrays  / two energy_ins for inside the data.  Returns sum.
@@ -223,7 +260,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 			index--;
 		}
 		// histogram interpolation
-		out = var[index] + (rn - cdf[index])/pdf[index];
+		out = interpolate_histogram( rn, var[index], cdf[index], pdf[index] );
 	}
 	else if(intt==2){
 		if( index == length-1 ){
@@ -231,14 +268,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 			index--;
 		}
 		// lin-lin interpolation
-		float m = (pdf[index+1]-pdf[index])/(var[index+1]-var[index]);
-		if (m!=0.0){
-			out = var[index] + (sqrtf(pdf[index]*pdf[index]+2.0*m*(rn-cdf[index]))-pdf[index])/m;
-		}
-		else{
-			// limit at m=0 is histogram interpolation
-			out = var[index] + (rn - cdf[index])/pdf[index];
-		}
+		out = interpolate_linlin( rn, var[index], var[index+1], cdf[index], cdf[index+1], pdf[index], pdf[index+1] );
 	}
 	else{
 		// return invalid mu, like -2
@@ -272,7 +302,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 			index--;
 		}
 		// histogram interpolation
-		out = var[index] + (rn - cdf[index])/pdf[index];
+		out = interpolate_histogram( rn, var[index], cdf[index], pdf[index] );
 	}
 	else if(intt==2){
 		if( index == length-1 ){
@@ -280,15 +310,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 			index--;
 		}
 		// lin-lin interpolation
-		float m = (pdf[index+1]-pdf[index])/(var[index+1]-var[index]);
-		if (m!=0.0){
-			out = var[index] + (sqrtf(pdf[index]*pdf[index]+2.0*m*(rn-cdf[index]))-pdf[index])/m;
-		}
-		else{
-			// limit at m=0 is histogram interpolation
-			out = var[index] + (rn - cdf[index])/pdf[index];
-		}
-
+		out = interpolate_linlin( rn, var[index], var[index+1], cdf[index], cdf[index+1], pdf[index], pdf[index+1] );
 	}
 	else{
 		// return invalid mu, like -2

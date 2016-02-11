@@ -187,7 +187,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 
 		// find correlated mu
 		float A 	= this_sdist.var[dist_index];
-		float R 	= this_sdist.var[dist_index];
+		float R 	= this_sdist.cdf[dist_index];
 		float rn1 	= get_rand(&rn);
 		if( get_rand(&rn)>R ){
 			float T = (2.0*rn1-1.0)*sinhf(A);

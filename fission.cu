@@ -76,8 +76,7 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	memcpy(&nu1, &dist_scatter[this_dex+n_columns].upper, 1*sizeof(float));
 
 	// interpolate nu
-	float	f	=	(this_E - e0) / (e1 - e0);
-	nu	=	f*(nu1 - nu0) + nu0;
+	nu	=	interpolate_linear_energy( this_E, e0, e1, nu0, n1 );
 
 	// check nu
 	if (nu==0.0){
