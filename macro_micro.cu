@@ -125,7 +125,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	//
 
 	// compute some things
-	unsigned 	n_columns 		= n_isotopes + total_reaction_channels;
+	unsigned	n_columns 		= n_isotopes + total_reaction_channels;
 	float 		e0, e1, rn1;
 
 	// check
