@@ -14,7 +14,8 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	__shared__	unsigned*			rxn;	
 	__shared__	unsigned*			rn_bank;
 	__shared__	unsigned*			yield;	
-	__shared__	float*				weight;	
+	__shared__	float*				weight;
+	__shared__	float*				E;	
 	__shared__	unsigned*			index;	
 
 	// have thread 0 of block copy all pointers and static info into shared memory
