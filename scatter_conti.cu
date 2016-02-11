@@ -238,21 +238,21 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	}
 	
 	// calculate sampled value
-	if(intt==1){
+	if(this_edist.intt==1){
 		if( dist_index == this_edist.len ){
 			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",this_edist.intt,this_edist.len,rn1);
 			index--;
 		}
 		// histogram interpolation
-		E0 = interpolate_continuous_tablular_histogram( rn1, var[dist_index], cdf[dist_index], pdf[dist_index] );
+		E0 = interpolate_continuous_tablular_histogram( rn1, this_edist.var[dist_index], this_edist.cdf[dist_index], this_edist.pdf[dist_index] );
 	}
-	else if(intt==2){
+	else if(this_edist.intt==2){
 		if( dist_index == this_edist.len-1 ){
 			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",this_edist.intt,this_edist.len,rn1);
 			index--;
 		}
 		// lin-lin interpolation
-		E0 = interpolate_continuous_tablular_linlin( rn1, var[dist_index], var[dist_index+1], cdf[dist_index], cdf[dist_index+1], pdf[dist_index], pdf[dist_index+1] );
+		E0 = interpolate_continuous_tablular_linlin( rn1, this_edist.var[dist_index], this_edist.var[dist_index+1], this_edist.cdf[dist_index], this_edist.cdf[dist_index+1], this_edist.pdf[dist_index], this_edist.pdf[dist_index+1] );
 	}
 	else{
 		// return invalid mu, like -2
@@ -268,20 +268,20 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 
 		// find correlated mu
 		if (this_sdist.intt==1){
-			A	=	this_sdist.var[dist_index[0]];
-			R	=	this_sdist.cdf[dist_index[0]];
+			A	=	this_sdist.var[dist_index];
+			R	=	this_sdist.cdf[dist_index];
 		}
 		else if (this_sdist.intt==2){
 			A	=	interpolate_linear_energy(	E0,
-												this_edist.var[dist_index[0]],
-												this_edist.var[dist_index[0]+1],
-												this_sdist.var[dist_index[0]],
-												this_sdist.var[dist_index[0]+1]);
+												this_edist.var[dist_index],
+												this_edist.var[dist_index+1],
+												this_sdist.var[dist_index],
+												this_sdist.var[dist_index+1]);
 			R	=	interpolate_linear_energy(	E0,
-												this_edist.var[dist_index[0]],
-												this_edist.var[dist_index[0]+1],
-												this_sdist.cdf[dist_index[0]],
-												this_sdist.cdf[dist_index[0]+1]);
+												this_edist.var[dist_index],
+												this_edist.var[dist_index+1],
+												this_sdist.cdf[dist_index],
+												this_sdist.cdf[dist_index+1]);
 		}
 		else{<
 			printf("INTT=%u NOT HANDLED in law %u of continuum scatter!",this_sdist.law,this_sdist.intt);
