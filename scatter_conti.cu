@@ -121,7 +121,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	float 		sampled_E			=	0.0;
 	wfloat3 	v_n_cm, v_t_cm, v_n_lf, v_t_lf, v_cm, hats_new, hats_target, rotation_hat;
 	float 		mu, E0, A, R;
-	unsigned 	dist_index=0;    // must be declared this way in order to write to passed pointer, why??
+	unsigned 	dist_index[1];    // must be declared this way in order to write to passed pointer, why??
 
 	// ensure normalization
 	hats_old = hats_old / hats_old.norm2();
@@ -220,46 +220,13 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		}
 
 		// sample tabular on energy, but get index as well as value
-		//E0 = sample_continuous_tablular( 	dist_index ,
-		//									this_edist.len , 
-		//									2 , 
-		//									get_rand(&rn) , 
-		//									this_edist.var , 
-		//									this_edist.pdf, 
-		//									this_edist.cdf );
-
-		// scan the CDF,
-		dist_index=0;
-		float rn1 = get_rand(&rn);
-	for( dist_index=0; dist_index<this_edist.len-1; dist_index++ ){
-		if ( rn1 <= this_edist.cdf[dist_index+1] ){
-			break;
-		}
-	}
-	
-	// calculate sampled value
-	if(this_edist.intt==1){
-		if( dist_index == this_edist.len ){
-			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",this_edist.intt,this_edist.len,rn1);
-			index--;
-		}
-		// histogram interpolation
-		E0 = interpolate_continuous_tablular_histogram( rn1, this_edist.var[dist_index], this_edist.cdf[dist_index], this_edist.pdf[dist_index] );
-	}
-	else if(this_edist.intt==2){
-		if( dist_index == this_edist.len-1 ){
-			printf("SAMPLED GAP IN TABULAR: intt %u len %u rn %12.10E\n",this_edist.intt,this_edist.len,rn1);
-			index--;
-		}
-		// lin-lin interpolation
-		E0 = interpolate_continuous_tablular_linlin( rn1, this_edist.var[dist_index], this_edist.var[dist_index+1], this_edist.cdf[dist_index], this_edist.cdf[dist_index+1], this_edist.pdf[dist_index], this_edist.pdf[dist_index+1] );
-	}
-	else{
-		// return invalid mu, like -2
-		printf("INTT=%u NOT HANDLED!\n",his_edist.intt);
-		E0 = -2;		
-	}
-
+		E0 = sample_continuous_tablular( 	dist_index ,
+											this_edist.len , 
+											2 , 
+											get_rand(&rn) , 
+											this_edist.var , 
+											this_edist.pdf, 
+											this_edist.cdf );
 		//scale it to bins 
 		sampled_E = scale_to_bins(	f, E0, 
 									 this_edist.var[0],  this_edist.var[ this_edist.len-1], 
@@ -268,25 +235,25 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 
 		// find correlated mu
 		if (this_sdist.intt==1){
-			A	=	this_sdist.var[dist_index];
-			R	=	this_sdist.cdf[dist_index];
+			A	=	this_sdist.var[dist_index[0]];
+			R	=	this_sdist.cdf[dist_index[0]];
 		}
 		else if (this_sdist.intt==2){
 			A	=	interpolate_linear_energy(	E0,
-												this_edist.var[dist_index],
-												this_edist.var[dist_index+1],
-												this_sdist.var[dist_index],
-												this_sdist.var[dist_index+1]);
+												this_edist.var[dist_index[0]],
+												this_edist.var[dist_index[0]+1],
+												this_sdist.var[dist_index[0]],
+												this_sdist.var[dist_index[0]+1]);
 			R	=	interpolate_linear_energy(	E0,
-												this_edist.var[dist_index],
-												this_edist.var[dist_index+1],
-												this_sdist.cdf[dist_index],
-												this_sdist.cdf[dist_index+1]);
+												this_edist.var[dist_index[0]],
+												this_edist.var[dist_index[0]+1],
+												this_sdist.cdf[dist_index[0]],
+												this_sdist.cdf[dist_index[0]+1]);
 		}
 		else{
 			printf("INTT=%u NOT HANDLED in law %u of continuum scatter!",this_sdist.law,this_sdist.intt);
 		}
-		rn1 	= get_rand(&rn);
+		float rn1 	= get_rand(&rn);
 		if( get_rand(&rn)>R ){
 			float T = (2.0*rn1-1.0)*sinhf(A);
 			mu		= logf(T+sqrtf(T*T+1.0))/A;
@@ -418,7 +385,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 
 	// check errors
 	if (!isfinite(sampled_E) | sampled_E < 0.0){
-		printf("continuum scatter mis-sampled tid %i data_dex %u E %6.4E dist len %u index %u... \n",tid_in,tid,sampled_E,this_sdist.len,dist_index);
+		printf("continuum scatter mis-sampled tid %i data_dex %u E %6.4E... \n",tid_in,tid,sampled_E,this_sdist.len,dist_index[0]);
 	}
 	if (!isfinite(mu) | mu < -1.0 | mu > 1.0){
 		printf("continuum scatter mis-sampled tid %i data_dex %u mu %6.4E... \n",tid_in,tid,mu);
