@@ -385,7 +385,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 
 	// check errors
 	if (!isfinite(sampled_E) | sampled_E < 0.0){
-		printf("continuum scatter mis-sampled tid %i data_dex %u E0 %6.4E sampled_E %6.4E dist len %u dist_index %u pdf0 %6.4E pdf1 %6.4E... \n",tid_in,tid,E0,sampled_E,this_sdist.len,dist_index[0],this_sdist.pdf[dist_index[0]],this_sdist.pdf[dist_index[0]+1]);
+		printf("continuum scatter mis-sampled tid %i data_dex %u E0 %6.4E sampled_E %6.4E dist len %u dist_index %u pdf0 %6.4E pdf1 %6.4E... \n",tid_in,tid,E0,sampled_E,this_edist.len,dist_index[0],this_edist.pdf[dist_index[0]],this_edist.pdf[dist_index[0]+1]);
 	}
 	if (!isfinite(mu) | mu < -1.0 | mu > 1.0){
 		printf("continuum scatter mis-sampled tid %i data_dex %u mu %6.4E dist len %u dist_index %u... \n",tid_in,tid,mu,this_sdist.len,dist_index[0]);
