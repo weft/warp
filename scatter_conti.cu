@@ -223,7 +223,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		rn2=get_rand(&rn);
 		E0 = sample_continuous_tablular( 	dist_index ,
 											this_edist.len , 
-											2 , 
+											this_edist.intt , 
 											rn2 , 
 											this_edist.var , 
 											this_edist.cdf, 
