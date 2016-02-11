@@ -26,6 +26,7 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 		yield						= d_particles[0].yield;
 		weight						= d_particles[0].weight;
 		index						= d_particles[0].index;
+		E							= d_particles[0].E;
 	}
 
 	// make sure shared loads happen before anything else
@@ -46,6 +47,7 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	unsigned	this_dex		=	index[  tid];
 	unsigned	rn				=	rn_bank[tid];
 	float		this_weight		=	weight[ tid];
+	float		this_E			=	E[      tid];
 
 	// local variables, load nu from scattering dist variables
 	if (dist_scatter[this_dex].lower==0x0){
@@ -66,7 +68,7 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 		nu=2.8;
 		printf("something is wrong with fission yields, nu = %6.4E, guessing %4.2f, rxn %u\n",0.0,nu,this_rxn); 
 	}
-	
+
 	// interpolate nu
 	float	f	=	(this_E - energy_grid[this_dex]) / (energy_grid[this_dex+1] - energy_grid[this_dex]);
 	nu	=	f*(nu1 - nu0) + nu0;
