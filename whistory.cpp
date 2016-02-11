@@ -38,7 +38,7 @@ void whistory::print_banner(){
 	cout << "__ |/ |/ / _  ___ |  _, _/_  ____/ " 	<< "\n";
 	cout << "____/|__/  /_/  |_/_/ |_| /_/      " 	<< "\n";
 	cout << "\e[m \n";
-	cout << "\e[1;32m" << "Monte Carlo Neutron Transport at WARP speed!  Err... hopefully :)" << "\e[m \n";
+	cout << "\e[1;32m" << "Monte Carlo Neutron Transport at WARP speed!" << "\e[m \n";
 	cout << "\n";
 }
 whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
