@@ -10,9 +10,9 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 
 	// declare shared variables
 	__shared__ 	unsigned			n_isotopes;				
-	__shared__ 	unsigned			energy_grid_len;		
+	//__shared__ 	unsigned			energy_grid_len;		
 	__shared__ 	unsigned			total_reaction_channels;
-	__shared__ 	float*				energy_grid;
+	//__shared__ 	float*				energy_grid;
 	__shared__ 	dist_container*		dist_scatter;			
 	__shared__	unsigned*			rxn;	
 	__shared__	unsigned*			rn_bank;
@@ -24,9 +24,9 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
 		n_isotopes					= d_xsdata[0].n_isotopes;								
-		energy_grid_len				= d_xsdata[0].energy_grid_len;				
+		//energy_grid_len				= d_xsdata[0].energy_grid_len;				
 		total_reaction_channels		= d_xsdata[0].total_reaction_channels;
-		energy_grid 				= d_xsdata[0].energy_grid;
+		//energy_grid 				= d_xsdata[0].energy_grid;
 		dist_scatter 				= d_xsdata[0].dist_scatter;						
 		rxn							= d_particles[0].rxn;
 		rn_bank						= d_particles[0].rn_bank;
@@ -62,17 +62,21 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	}
 	float		nu0			=	0.0;
 	float		nu1			=	0.0;
+	float		e0			=	0.0;
+	float		e1			=	0.0;
 	float		nu			=	0.0;
 	unsigned	inu			=	0;
 	unsigned	this_yield	=	0;
 	unsigned 	n_columns	= n_isotopes + total_reaction_channels;
 
 	// copy nu from array, lower erg is nu_t, upper erg is nu_p
-	memcpy(&nu0, &dist_scatter[this_dex          ].lower, 1*sizeof(float));
-	memcpy(&nu1, &dist_scatter[this_dex+n_columns].lower, 1*sizeof(float));
+	memcpy(&e0,  &dist_scatter[this_dex          ].lower, 1*sizeof(float));
+	memcpy(&nu0, &dist_scatter[this_dex          ].upper, 1*sizeof(float));
+	memcpy(&e0,  &dist_scatter[this_dex+n_columns].lower, 1*sizeof(float));
+	memcpy(&nu1, &dist_scatter[this_dex+n_columns].upper, 1*sizeof(float));
 
 	// interpolate nu
-	float	f	=	(this_E - energy_grid[this_dex]) / (energy_grid[this_dex+1] - energy_grid[this_dex]);
+	float	f	=	(this_E - e0) / (e1 - e0);
 	nu	=	f*(nu1 - nu0) + nu0;
 
 	// check nu

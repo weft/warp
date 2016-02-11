@@ -345,7 +345,7 @@ class cross_section_data:
 	# @param[in] self - isotope
 	# @param[in] row - point in energy grid
 	# @param[in] col - MT number
-	def _get_scattering_data(self,row,col):
+	def _get_scatter_data(self,row,col):
 		# scatter table returned in this form
 		# returns [nextDex, length, mu, cdf] if scattering data exists
 
@@ -438,8 +438,8 @@ class cross_section_data:
 				upper_law	= -1
 				lower_intt	= 0
 				upper_intt	= 0
-				lower_erg	= nu_t
-				upper_erg	= nu_p
+				lower_erg	= this_E
+				upper_erg	= nu_t
 				lower_len	= 0
 				upper_len	= 0
 				lower_var 	= numpy.array([0.0])

@@ -876,7 +876,7 @@ void whistory::copy_scatter_data(){
 			// and the main e grid index that it needs to be replicated to
 			row_obj     = PyInt_FromLong     (row);
 			col_obj     = PyInt_FromLong     (col);
-			call_string = PyString_FromString("_get_scattering_data");
+			call_string = PyString_FromString("_get_scatter_data");
 			obj_list    = PyObject_CallMethodObjArgs(xsdat_instance, call_string, row_obj, col_obj, NULL);
 			PyErr_Print();
 
