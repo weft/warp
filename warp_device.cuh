@@ -239,7 +239,7 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 }
 
-inline __device__ float sample_continuous_tablular( unsigned length , unsigned intt , float rn , float* var , float* pdf, float* cdf ){
+inline __device__ float sample_continuous_tablular( unsigned length , unsigned intt , float rn , float* var , float* cdf, float* pdf ){
 /*
 Samples a law 3 probability distribution with historgram or lin-lin interpolation.  Returns sampled value (not array index).
 */
@@ -281,7 +281,7 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 
 }
 
-inline __device__ float sample_continuous_tablular( unsigned* index_out, unsigned length , unsigned intt , float rn , float* var , float* pdf, float* cdf ){
+inline __device__ float sample_continuous_tablular( unsigned* index_out, unsigned length , unsigned intt , float rn , float* var , float* cdf, float* pdf ){
 /*
 Samples a law 3 probability distribution with historgram or lin-lin interpolation.  Returns sampled value and writes array index to passed in pointer.
 */

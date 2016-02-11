@@ -110,8 +110,8 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 												this_edist.intt , 
 												get_rand(&rn) , 
 												this_edist.var , 
-												this_edist.pdf, 
-												this_edist.cdf );
+												this_edist.cdf, 
+												this_edist.pdf );
 			//scale it to bins 
 			sampled_E = scale_to_bins(	f, E0, 
 										 this_edist.var[0],  this_edist.var[ this_edist.len-1], 

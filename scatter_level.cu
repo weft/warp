@@ -166,8 +166,8 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 												this_dist.intt , 
 												rn1 , 
 												this_dist.var , 
-												this_dist.pdf , 
-												this_dist.cdf );
+												this_dist.cdf , 
+												this_dist.pdf );
 		}
 		else{
 			printf("law %u not yet implemented in level scttering!\n",this_law);

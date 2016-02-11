@@ -145,8 +145,8 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 											this_edist.intt , 
 											get_rand(&rn) , 
 											this_edist.var , 
-											this_edist.pdf, 
-											this_edist.cdf );
+											this_edist.cdf, 
+											this_edist.pdf );
 		//scale it to bins 
 		sampled_E = scale_to_bins(	f, E0, 
 									 this_edist.var[0],  this_edist.var[ this_edist.len-1], 
@@ -226,8 +226,8 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 											2 , 
 											rn2 , 
 											this_edist.var , 
-											this_edist.pdf, 
-											this_edist.cdf );
+											this_edist.cdf, 
+											this_edist.pdf );
 		//scale it to bins 
 		sampled_E = scale_to_bins(	f, E0, 
 									 this_edist.var[0],  this_edist.var[ this_edist.len-1], 
@@ -384,9 +384,12 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 
 	}
 
+	float m = (this_edist.pdf[dist_index[0]+1]-this_edist.pdf[dist_index[0]])/(this_edist.var[dist_index[0]+1]-this_edist.var[dist_index[0]]);
+	float remu = this_edist.var[dist_index[0]] + (sqrtf(this_edist.pdf[dist_index[0]]*this_edist.pdf[dist_index[0]]+2.0*m*(rn2-this_edist.cdf[dist_index[0]]))-this_edist.pdf[dist_index[0]])/m;
+
 	// check errors
 	if (!isfinite(sampled_E) | sampled_E < 0.0){
-		printf("continuum scatter mis-sampled tid %i data_dex %u E0 %6.4E sampled_E %6.4E dist len %u dist_index %u rn %6.4E var0 %6.4E var1 %6.4E cdf0 %6.4E cdf1 %6.4E pdf0 %6.4E pdf1 %6.4E... \n",tid_in,tid,E0,sampled_E,this_edist.len,dist_index[0],rn2,this_edist.var[dist_index[0]],this_edist.var[dist_index[0]+1],this_edist.cdf[dist_index[0]],this_edist.cdf[dist_index[0]+1],this_edist.pdf[dist_index[0]],this_edist.pdf[dist_index[0]+1]);
+		printf("continuum scatter mis-sampled recal %6.4E tid %i data_dex %u E0 %6.4E sampled_E %6.4E dist len %u dist_index %u rn %6.4E var0 %6.4E var1 %6.4E cdf0 %6.4E cdf1 %6.4E pdf0 %6.4E pdf1 %6.4E... \n",remu,tid_in,tid,E0,sampled_E,this_edist.len,dist_index[0],rn2,this_edist.var[dist_index[0]],this_edist.var[dist_index[0]+1],this_edist.cdf[dist_index[0]],this_edist.cdf[dist_index[0]+1],this_edist.pdf[dist_index[0]],this_edist.pdf[dist_index[0]+1]);
 	}
 	if (!isfinite(mu) | mu < -1.0 | mu > 1.0){
 		printf("continuum scatter mis-sampled tid %i data_dex %u mu %6.4E dist len %u dist_index %u... \n",tid_in,tid,mu,this_sdist.len,dist_index[0]);
