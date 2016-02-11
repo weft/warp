@@ -383,6 +383,15 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 
 	}
 
+	// check errors
+	if (!isfinite(sampled_E) | sampled_E < 0.0){
+		printf("continuum scatter mis-sampled tid %i data_dex %u E %6.4E... \n",tid_in,tid,sampled_E);
+	}
+	if (!isfinite(mu) | mu < -1.0 | mu > 1.0){
+		printf("continuum scatter mis-sampled tid %i data_dex %u mu %6.4E... \n",tid_in,tid,mu);
+	}
+
+
 	// rotate direction vector
 	hats_old = v_n_cm / v_n_cm.norm2();
 	hats_old = hats_old.rotate(mu, get_rand(&rn));
