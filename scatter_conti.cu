@@ -228,6 +228,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 											this_edist.var , 
 											this_edist.cdf, 
 											this_edist.pdf );
+		
 		//scale it to bins 
 		sampled_E = scale_to_bins(	f, E0, 
 									 this_edist.var[0],  this_edist.var[ this_edist.len-1], 
@@ -254,6 +255,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		else{
 			printf("INTT=%u NOT HANDLED in law %u of continuum scatter!",this_sdist.law,this_sdist.intt);
 		}
+
 		float rn1 	= get_rand(&rn);
 		if( get_rand(&rn)>R ){
 			float T = (2.0*rn1-1.0)*sinhf(A);
@@ -396,17 +398,9 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	// rotate direction vector
 	hats_old = v_n_cm / v_n_cm.norm2();
 	hats_old = hats_old.rotate(mu, get_rand(&rn));
-
-
-	// check arg to make sure not negative
-	float arg = v_n_cm.dot(v_n_cm) + 2.0*this_awr*this_Q/((this_awr+1.0)*m_n);
-	if(arg < 0.0) { 
-		arg=0.0;
-	}
-	v_n_cm = hats_old * sqrtf( arg );
 	
 	//  scale to sampled energy
-	//v_n_cm = hats_old * sqrtf(2.0*sampled_E/m_n);
+	v_n_cm = hats_old * sqrtf(2.0*sampled_E/m_n);
 	
 	// transform back to L
 	v_n_lf = v_n_cm + v_cm;
