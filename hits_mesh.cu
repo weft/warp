@@ -8,6 +8,7 @@ rtDeclareVariable(intersection_point, payload, rtPayload, );
 rtDeclareVariable(float, int_dist, rtIntersectionDistance, );
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(unsigned,  cellnum,     attribute cell_num, );
+rtDeclareVariable(int,       celltal,     attribute cell_tal, );
 rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
 rtDeclareVariable(unsigned,  sense,       attribute cell_sense, );
@@ -32,8 +33,9 @@ RT_PROGRAM void closest_hit()
 	if (sense == 0){rtPrintf("sense of closest_hit is 0!\n");}
 
 	//update mat, cell, fiss
-	payload.mat  = cellmat;
-	payload.cell = cellnum;
-	payload.fiss = cellfissile;
+	payload.mat			= cellmat;
+	payload.cell		= cellnum;
+	payload.tally_index	= celltal;
+	payload.fiss		= cellfissile;
 
 }

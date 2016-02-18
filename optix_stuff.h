@@ -70,6 +70,7 @@ public:
 	CUdeviceptr 	      rxn_ptr; /**< CUDA reactions pointer */
 	CUdeviceptr 	     done_ptr; /**< CUDA done flags pointer */
 	CUdeviceptr 	  cellnum_ptr; /**< CUDA cell numbers pointer */
+	CUdeviceptr 	   talnum_ptr; /**< CUDA tally numbers pointer */
 	CUdeviceptr 	   matnum_ptr; /**< CUDA material numbers pointer */
 	CUdeviceptr 	    remap_ptr; /**< CUDA remaps pointer */
 	unsigned 		stack_size_multiplier; /**< stack size multiplier */

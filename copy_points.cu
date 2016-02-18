@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "datadef.h"
 
-__global__ void copy_points_kernel( unsigned Nout, unsigned * Nvalid , unsigned current_index , unsigned * to_valid, source_point * positions_out , source_point * positions_in, float*E_out, float*E_in  ){
+__global__ void copy_points_kernel( unsigned Nout, unsigned * Nvalid , unsigned current_index , unsigned * to_valid, spatial_data * positions_out , spatial_data * positions_in, float*E_out, float*E_in  ){
 
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid >= Nvalid[0]){return;}
@@ -21,7 +21,7 @@ __global__ void copy_points_kernel( unsigned Nout, unsigned * Nvalid , unsigned 
 	positions_out[index_out].zhat 			= positions_in[index_in].zhat;
 	positions_out[index_out].enforce_BC 	= positions_in[index_in].enforce_BC;
 	positions_out[index_out].surf_dist 		= positions_in[index_in].surf_dist ;
-	positions_out[index_out].macro_t 		= positions_in[index_in].macro_t ;
+	//positions_out[index_out].macro_t 		= positions_in[index_in].macro_t ;
 	E_out[index_out] 						= E_in[index_in];
 
 	//printf("good point %6.4E %6.4E %6.4E\n",positions_out[index_out].x,positions_out[index_out].y,positions_out[index_out].z);
@@ -29,7 +29,7 @@ __global__ void copy_points_kernel( unsigned Nout, unsigned * Nvalid , unsigned 
 
 }
 
-void copy_points( unsigned NUM_THREADS,  unsigned Nout , unsigned * Nvalid,  unsigned current_index , unsigned * to_valid , source_point * positions_out , source_point * positions_in, float*E_out, float*E_in){
+void copy_points( unsigned NUM_THREADS,  unsigned Nout , unsigned * Nvalid,  unsigned current_index , unsigned * to_valid , spatial_data * positions_out , spatial_data * positions_in, float*E_out, float*E_in){
 
 	unsigned blks = ( Nout + NUM_THREADS - 1 ) / NUM_THREADS;
 

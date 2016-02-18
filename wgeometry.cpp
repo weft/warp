@@ -7,7 +7,7 @@
 #include <time.h>
 #include <string.h>
 #include "datadef.h"
-#include "primitive.h"
+#include "wprimitive.h"
 #include "wgeometry.h"
 
 wgeometry::wgeometry(){
@@ -17,6 +17,7 @@ wgeometry::wgeometry(){
 	n_sph		 = 0;
 	n_primitives = 0;
 	n_transforms = 0;
+	n_tallies	 = 0;
 	outer_cell   = 0;
 	n_materials  = 0;
 	n_isotopes   = 0;
@@ -32,6 +33,37 @@ wgeometry::~wgeometry(){
 	//}
 	//delete cell_num_list;
 	//delete material_num_list;
+}
+void wgeometry::add_tally(unsigned cellnum_in){
+
+	bool notfound = true;
+
+	// checks if already in list
+	for (int i=0; i<tally_cells.size(); i++){
+		if (tally_cells[i]==cellnum_in){
+			printf("cell %u already marked for tally.\n",cellnum_in);
+			return;
+		}
+	}
+
+	// check if valid cell
+	for( int k=0;k<n_primitives;k++ ){
+		for(int i=0; i<primitives[k].n_transforms; i++){
+			if(primitives[k].transforms[i].cellnum==cellnum_in){
+				notfound = false;
+			}
+		}
+	}
+
+	// add number and increment count if found 
+	if(notfound){
+		return;
+	}
+	else{
+		n_tallies = n_tallies + 1;
+		tally_cells.push_back(cellnum_in);
+	}
+
 }
 unsigned wgeometry::add_primitive(){
 
@@ -52,11 +84,14 @@ unsigned wgeometry::add_primitive(int ptype, unsigned cellmat , std::vector<floa
 
 }
 void wgeometry::update(){
+	// null shape and transform totals
 	n_box        = 0;
 	n_cyl        = 0;
 	n_hex        = 0;
 	n_sph 	     = 0;
 	n_transforms = 0;
+
+	// count the numbers of transforms
 	for(unsigned k=0;k<n_primitives;k++){
 		if (primitives[k].n_transforms==0){
 			std::cout << "No transforms for primitive id = " << primitives[k].primitive_id << ", it will not be included in problem geometry" << "\n";
@@ -91,6 +126,7 @@ void wgeometry::update(){
 			all_isotopes.push_back(materials[this_mat].isotopes[k]);
 		}
 	}
+
 	// go through list, get rid of extra copies
 	n_isotopes = 0;
 	unsigned notfound=0;
@@ -114,6 +150,17 @@ void wgeometry::update(){
 		isotope_list += isotopes[k];
 		if(k<n_isotopes-1){
 			isotope_list += ",";
+		}
+	}
+
+	// set tally index of transform to list index if cell number is in tally list
+	for( int k=0;k<n_primitives;k++ ){
+		for(int i=0; i<primitives[k].n_transforms; i++){
+			for(int t=0 ; t<n_tallies; t++){
+				if(primitives[k].transforms[i].cellnum==tally_cells[t]){
+					primitives[k].transforms[i].tally_index = t;
+				}
+			}
 		}
 	}
 
@@ -454,7 +501,7 @@ void wgeometry::make_material_table(){
 		//  multiply normalized fractions by average number density to get topes number density
 		for(unsigned k=0;k<n_isotopes;k++){
 			concentrations_matrix[j*n_isotopes+k] = concentrations_matrix[j*n_isotopes+k] * N_avg;
-			printf("material = %d, isotope %d, dens = %6.5E\n",j,k,concentrations_matrix[j*n_isotopes+k]);
+			printf("   material = %3d, isotope %3d, dens (at/bn-cm) = %6.5E\n",j,k,concentrations_matrix[j*n_isotopes+k]);
 		}
 	}
 }

@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include "datadef.h"
 #include "LCRNG.cuh"
+#include "check_cuda.h"
 
-__global__ void sample_fixed_source_kernel(unsigned N, unsigned RNUM_PER_THREAD, unsigned* active, unsigned* rn_bank , float * E, source_point* space){
+
+__global__ void sample_fixed_source_kernel(unsigned N, unsigned* active, unsigned* rn_bank , float * E, source_point* space){
 
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid >= N){return;}
@@ -35,12 +37,12 @@ __global__ void sample_fixed_source_kernel(unsigned N, unsigned RNUM_PER_THREAD,
 
 }
 
-void sample_fixed_source( unsigned NUM_THREADS, unsigned N, unsigned RNUM_PER_THREAD, unsigned* active, unsigned* rn_bank, float * E, source_point* space){
+void sample_fixed_source( unsigned NUM_THREADS, unsigned N, unsigned* active, unsigned* rn_bank, float * E, source_point* space){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	sample_fixed_source_kernel <<< blks, NUM_THREADS >>> (  N, RNUM_PER_THREAD, active, rn_bank, E , space );
-	cudaThreadSynchronize();
+	sample_fixed_source_kernel <<< blks, NUM_THREADS >>> (  N, active, rn_bank, E , space );
+	check_cuda(cudaThreadSynchronize());
 
 }
 

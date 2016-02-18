@@ -8,36 +8,43 @@
 #include <string.h>
 #include <cuda.h>
 #include <curand.h>
-#include <cudpp_hash.h>
+#include <cudpp.h>
 #include <Python.h>
 #include <png++/png.hpp>
 #include "datadef.h"
-#include "primitive.h"
+#include "wprimitive.h"
 #include "wgeometry.h"
 #include "optix_stuff.h"
 #include "warp_cuda.h"
 #include "whistory.h"
-
-// CUDA error check wrapper
-inline void check_cuda(cudaError_t code, const char *file, int line, bool abort=true)
-{
-   if (code != cudaSuccess)
-   {
-      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
-      if (abort) exit(code);
-   }
-}
-#define check_cuda(ans) { check_cuda((ans), __FILE__, __LINE__); }
+#include "check_cuda.h"
 
 // instantiate single, global optix object
 optix_stuff optix_obj;
 
 // whistory class
+whistory::~whistory(){
+	//clear device
+	check_cuda(cudaDeviceReset());
+}
+void whistory::print_banner(){
+	using namespace std;
+	cout << "\n"; 
+	cout << "\e[1;32m" << "-- Weaving All the Random Particles ---" << "\e[m \n";
+	cout << "\e[1;31m";
+	cout << "___       ________________________ " 	<< "\n";
+	cout << "__ |     / /__    |__  __ \\__  __ \\"	<< "\n";
+	cout << "__ | /| / /__  /| |_  /_/ /_  /_/ /" 	<< "\n";
+	cout << "__ |/ |/ / _  ___ |  _, _/_  ____/ " 	<< "\n";
+	cout << "____/|__/  /_/  |_/_/ |_| /_/      " 	<< "\n";
+	cout << "\e[m \n";
+	cout << "\e[1;32m" << "Monte Carlo Neutron Transport at WARP speed!" << "\e[m \n";
+	cout << "\n";
+}
 whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	// do problem gemetry stuff first
 	problem_geom = problem_geom_in;
-	// set tally vector length
-	n_tally = 1024;
+	// set run flag
 	RUN_FLAG = 1;
 	// keff stuff
 	keff_sum = 0.0;
@@ -46,10 +53,10 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	// device data stuff
 	N = Nin;
 	// 3 should be more than enough for criticality, might not be for fixed
-	Ndataset = Nin * 3;
-	n_qnodes = 0;
+	Ndataset = Nin * 1.5;
 	reduced_yields_total = 0;
 	reduced_weight_total = 0;
+	initial_weight_total = 0;
 	accel_type = "Sbvh";
 	// default device to 0
 	compute_device = 0;
@@ -60,29 +67,46 @@ whistory::whistory(unsigned Nin, wgeometry problem_geom_in){
 	dump_flag = 0;
 }
 void whistory::init(){
+
+	//
+	// WELCOME!
+	//
+	print_banner();
+
+	//
+	// EARLY DEVICE SETUP
+	//
 	// device must be set BEFORE an CUDA creation (streams included)
 	check_cuda(cudaSetDevice(compute_device));
 	//clear device
-	cudaDeviceReset();
+	check_cuda(cudaDeviceReset());
 	// create streams
 	for (int i = 0; i < 4; ++i){
-		cudaStreamCreate(&stream[i]);
+		check_cuda(cudaStreamCreate(&stream[i]));
 	}
-	// init optix stuff 
+	//check_cuda(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
+
+	//
+	// OPTIX 
+	//
 	optix_obj.N=Ndataset;
 	optix_obj.stack_size_multiplier=1;
 	optix_obj.init(problem_geom,compute_device,accel_type);
 	if(print_flag >= 1){
 		optix_obj.print();
 	}
-	// CUDA stuff
-	// need to set again after optix sometimes... 
+	check_cuda(cudaPeekAtLastError());
+
+	//
+	// CUDA 
+	//
+	// set device, need to set again after optix sometimes... 
 	check_cuda(cudaSetDevice(compute_device));
 	if(print_flag >= 1){
 		std::cout << "\e[1;32m" << "Dataset size is "<< N << "\e[m \n";
 	}
-	NUM_THREADS = 256;
-	RNUM_PER_THREAD = 1;
+	// block/thread structure
+	NUM_THREADS		= 256;
 	blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 	if(print_flag >= 1){
 		std::cout << "\e[1;32m" << "Compute device set to "<< compute_device << "\e[m \n";
@@ -90,219 +114,229 @@ void whistory::init(){
 	if(print_flag >= 2){
 		device_report();
 	}
-	cudaDeviceSetLimit(cudaLimitPrintfFifoSize, (size_t) 10*1048576 );
-	//device data
-	d_space 	= (source_point*) optix_obj.positions_ptr;
-	d_cellnum 	= (unsigned*)     optix_obj.cellnum_ptr;
-	d_matnum 	= (unsigned*)     optix_obj.matnum_ptr;
-	d_rxn 		= (unsigned*)     optix_obj.rxn_ptr;
-	d_done 		= (unsigned*)     optix_obj.done_ptr;
-	d_remap 	= (unsigned*)     optix_obj.remap_ptr;
-	cudaMalloc( &d_xs_length_numbers	, 6*sizeof(unsigned) );		 
-	cudaMalloc( &d_E 			, Ndataset*sizeof(float) );
-	cudaMalloc( &d_Q 			, Ndataset*sizeof(float) );
-	cudaMalloc( &d_rn_bank  		, Ndataset*RNUM_PER_THREAD*sizeof(float) );
-	cudaMalloc( &d_isonum   		, Ndataset*sizeof(unsigned) );
-	cudaMalloc( &d_yield			, Ndataset*sizeof(unsigned) );
-	cudaMalloc( &d_weight			, Ndataset*sizeof(float) );
-	cudaMalloc( &d_index			, Ndataset*sizeof(unsigned) );
-	cudaMalloc( &d_tally_score  		, n_tally*sizeof(float));
-	cudaMalloc( &d_tally_square  		, n_tally*sizeof(float));
-	cudaMalloc( &d_tally_count  		, n_tally*sizeof(unsigned));
-	cudaMalloc( &d_reduced_yields 		, 1*sizeof(unsigned));
-	cudaMalloc( &d_reduced_weight 		, 1*sizeof(float));
-	cudaMalloc( &d_reduced_done 		, 1*sizeof(unsigned));
-	cudaMalloc( &d_valid_result		, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_valid_N			, 1*sizeof(unsigned));
-	//cudaMalloc( &d_remap			, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_fissile_points		, Ndataset*sizeof(source_point));
-	cudaMalloc( &d_fissile_energy       	, Ndataset*sizeof(float));
-	cudaMalloc( &d_mask 			, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_completed 		, Ndataset*sizeof(unsigned));	
-	cudaMalloc( &d_scanned 			, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_num_completed 		, 1*sizeof(unsigned));
-	cudaMalloc( &d_active 			, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_rxn_remap		, Ndataset*sizeof(unsigned));
-	cudaMalloc( &d_num_active 		, 1*sizeof(unsigned));
-	cudaMalloc( &d_zeros			, Ndataset*sizeof(unsigned));
-	// host data stuff
-	//xs_length_numbers 	= new unsigned [6];
-	space 			= new source_point 	[Ndataset];
-	E 				= new float 		[Ndataset];
-	Q 				= new float 		[Ndataset];
-	rn_bank  		= new unsigned 		[Ndataset*RNUM_PER_THREAD];
-	tally_score 		= new float 		[n_tally];
-	tally_square 		= new float 		[n_tally];
-	tally_count 		= new unsigned 		[n_tally];
-	tally_score_total	= new double 		[n_tally];
-	tally_square_total	= new double 		[n_tally];
-	tally_count_total	= new long unsigned	[n_tally];
-	index     		= new unsigned 		[Ndataset];
-	cellnum 		= new unsigned 		[Ndataset];
-	matnum 			= new unsigned 		[Ndataset];
-	rxn 			= new unsigned 		[Ndataset];
-	done 			= new unsigned 		[Ndataset];
-	isonum   		= new unsigned 		[Ndataset];
-	yield	   		= new unsigned 		[Ndataset];
-	remap 			= new unsigned 		[Ndataset];
-	zeros 			= new unsigned 		[Ndataset];
-	ones 			= new unsigned 		[Ndataset];
-	fones 			= new float  		[Ndataset];
-	weight	   		= new float  		[Ndataset];
+
+	// set print buffer size
+	check_cuda(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, (size_t) 10*1048576 ));
+
 	// fission points array
 	fiss_img  =  new long unsigned [300*300]; for(int i=0;i<300*300;i++){fiss_img[i]=0;}
 	// init counters to 0
 	total_bytes_scatter = 0;
 	total_bytes_energy  = 0;
-	//copy any info needed
+
+	//copy any info needed from the geometry read
 	memcpy(outer_cell_dims,optix_obj.outer_cell_dims,6*sizeof(float));
-	outer_cell = optix_obj.get_outer_cell();
+	outer_cell 		= optix_obj.get_outer_cell();
 	outer_cell_type = optix_obj.get_outer_cell_type();
-	isotopes = problem_geom.isotopes;
-	n_isotopes = problem_geom.n_isotopes;
-	n_materials = problem_geom.n_materials;
-	//  map edge array
+	isotopes		= problem_geom.isotopes;
+	n_isotopes 		= problem_geom.n_isotopes;
+	n_materials		= problem_geom.n_materials;
+	n_tallies 		= problem_geom.n_tallies;
+
+	// map edge array and reduced values
 	n_edges = 11;
-	cudaHostAlloc(&edges,n_edges*sizeof(unsigned),cudaHostAllocMapped);
-	cudaHostGetDevicePointer(&d_edges,edges,0);
-	// init host values
+	check_cuda(cudaHostAlloc( &edges          , n_edges*sizeof(unsigned), cudaHostAllocMapped));
+	check_cuda(cudaHostAlloc( &reduced_yields ,       1*sizeof(unsigned), cudaHostAllocMapped));
+	check_cuda(cudaHostAlloc( &reduced_weight ,       1*sizeof(float)   , cudaHostAllocMapped));
+	check_cuda(cudaHostGetDevicePointer(&d_edges          ,  edges          , 0));
+	check_cuda(cudaHostGetDevicePointer(&d_reduced_yields ,  reduced_yields , 0));
+	check_cuda(cudaHostGetDevicePointer(&d_reduced_weight ,  reduced_weight , 0));
+
+	// set anything else
 	filename = "warp";
+
+	//
+	// init/copy the rest not done previously or in OptiX
+	//
+	init_cross_sections();
 	init_host();
+	init_device();
 	init_RNG();
 	init_CUDPP();
-	load_cross_sections();
-	//create_quad_tree();
-	copy_data_to_device();
+
+	// launch a test kernel...
+	//test_function( NUM_THREADS, N, d_xsdata, d_particles, d_tally, d_remap);
+	//check_cuda(cudaPeekAtLastError());
+
+	// get total memory usage and print if asked
+	check_cuda(cudaMemGetInfo(&mem_free, &mem_total));
+
+	// set inititalized flag, print done if flagged
 	is_initialized = 1;
 	if(print_flag >= 2){
 		printf("\e[1;31mDone with init\e[m\n");
+		printf("\e[1;32m--- Total Memory Usage ---\e[m\n");
+		printf("  Total: %8.2f MB\n",         (mem_total)/(1024.0*1024.0));	
+		printf("   Used: %8.2f MB\n",(mem_total-mem_free)/(1024.0*1024.0));
+		printf("   Free: %8.2f MB\n",          (mem_free)/(1024.0*1024.0));
 	}
 }
-whistory::~whistory(){
-	//cudaFree( d_xs_length_numbers 	);
-	//cudaFree( d_xs_MT_numbers_total );
-	//cudaFree( d_xs_MT_numbers 		);
-	//cudaFree( d_xs_data_MT 			);
-	//cudaFree( d_xs_data_main_E_grid );
-	//cudaFree( d_xs_data_scatter     );
-	//cudaFree( d_xs_data_energy      );
-	//cudaFree( d_tally_score 		);
-    //cudaFree( d_tally_count 		);
-    //cudaFree( d_xs_data_Q    		);
-	//cudaFree( d_index   );
-	//cudaFree( d_E         );
-	//cudaFree( d_Q         );
-	//cudaFree( d_rn_bank   );
-	//cudaFree( d_isonum    );
-	//cudaFree( d_yield     );
-	//cudaFree( d_awr_list);
-/*	delete xs_length_numbers; 
-	delete xs_MT_numbers_total;
-	delete xs_MT_numbers;
-	delete xs_data_MT;
-	delete xs_data_main_E_grid;
-	delete xs_data_Q;
-	delete space;
-	delete index;
-	delete awr_list;
-	delete E;
-	delete Q;
-	delete rn_bank;
-	delete cellnum;
-	delete matnum;
-	delete rxn;
-	delete done;
-	delete isonum;
-	delete yield; 
-	delete tally_count;
-	delete tally_score;
-	delete zeros;
-	delete ones;
-	// for loops to deallocate everything in the pointer arrays
-	for (int j=0 ; j < MT_columns ; j++){  //start after the total xs and total abs vectors
-		for (int k=0 ; k < MT_rows ; k++){
-			// scatter
-			//std::cout << "j,k = " << j << ", " << k << " colums,rows = " << MT_columns << ", " << MT_rows << "\n";
-			float * this_pointer =   xs_data_scatter     [k*MT_columns + j];
-			float * cuda_pointer =   xs_data_scatter_host[k*MT_columns + j];
-			if(this_pointer!=NULL){
-				while(xs_data_scatter[(k+1)*MT_columns + j ]==this_pointer){
-					k++; //push k to the end of the copies so don't try to free it twice
-				}
-				//std::cout << "j,k " << j << ", " << k << " - " ;
-				//std::cout << "freeing " << this_pointer << " " << cuda_pointer << "\n";
-				delete this_pointer;
-				//cudaFree(cuda_pointer);
-			}
-		}
-	}
-	//delete pointer arrays themselves
-	delete xs_data_scatter;
-	delete xs_data_energy;
-	delete xs_data_scatter_host;
-	delete xs_data_energy_host;
-*/}
 void whistory::init_host(){
 
-	for(int k=0;k<N;k++){
-		remap[k]		= k;
-		zeros[k]		= 0;
-		ones[k]			= 1;
-		fones[k]		= 1.0;
-		space[k].x 		= 0.0;
-		space[k].y 		= 0.0;
-		space[k].z 		= 0.0;
-		space[k].xhat 		= 0.0;
-		space[k].yhat 		= 0.0;
-		space[k].zhat 		= 0.0;
-		space[k].surf_dist 	= 10000.0;
-		space[k].macro_t 	= 0.0;
-		space[k].enforce_BC     = 0;
-		space[k].norm[0]     = 0;
-		space[k].norm[1]     = 0;
-		space[k].norm[2]     = 0;
-		E[k]			= 2.5;
-		Q[k]			= 0.0;
-		cellnum[k]		= 0;
-		matnum[k]		= 0;
-		rxn[k]			= 0;
-		done[k]			= 0;
-		isonum[k]		= 0;
-		yield[k]		= 0;
-		weight[k]		= 1;
+	// init tally arrays
+	dh_tally	=	new tally_data[     n_tallies];
+	 h_tally	=	new tally_data_host[n_tallies];
+
+	// compute minumum size, incase dataset is shorter than tally, etc...
+	unsigned minumum_size = Ndataset;
+	for( int i=0 ; i<n_tallies ; i++ ){
+		if (h_tally[i].length > minumum_size){
+			minumum_size = h_tally[i].length;
+		}
 	}
-	for(int k=N;k<Ndataset;k++){
-		remap[k]		= k;
-		zeros[k]		= 0;
-		ones[k]			= 1;
-		fones[k]		= 1.0;
-		space[k].x 		= 0.0;
-		space[k].y 		= 0.0;
-		space[k].z 		= 0.0;
-		space[k].xhat 		= 0.0;
-		space[k].yhat 		= 0.0;
-		space[k].zhat 		= 0.0;
-		space[k].surf_dist 	= 10000.0;
-		space[k].macro_t 	= 0.0;
-		space[k].enforce_BC = 0;
-		space[k].norm[0]     = 0;
-		space[k].norm[1]     = 0;
-		space[k].norm[2]     = 0;
-		E[k]			= 0.0;
-		Q[k]			= 0.0;
-		cellnum[k]		= 0;
-		matnum[k]		= 0;
-		rxn[k]			= 0;
-		done[k]			= 1;
-		isonum[k]		= 0;
-		yield[k]		= 0;
-		weight[k]		= 0;
+
+	// allocate
+	h_particles.space	= new spatial_data 	[Ndataset];
+	h_particles.E		= new float 		[Ndataset];
+	h_particles.Q		= new float 		[Ndataset];
+	h_particles.rn_bank	= new unsigned 		[Ndataset];
+	h_particles.index	= new unsigned 		[Ndataset];
+	h_particles.cellnum	= new unsigned 		[Ndataset];
+	h_particles.matnum	= new unsigned 		[Ndataset];
+	h_particles.rxn		= new unsigned 		[Ndataset];
+	h_particles.isonum	= new unsigned 		[Ndataset];
+	h_particles.talnum	= new int 			[Ndataset];
+	h_particles.yield	= new unsigned 		[Ndataset];
+	h_particles.weight	= new float  		[Ndataset];
+	remap				= new unsigned 		[Ndataset];
+	zeros				= new unsigned 		[minumum_size];
+	ones				= new unsigned 		[minumum_size];
+	fones				= new float  		[minumum_size];
+	mones				= new int			[minumum_size];
+
+	//  init dataset lengths
+	for(int k=0;k<Ndataset;k++){
+		h_particles.space[k].x				= 0.0;
+		h_particles.space[k].y				= 0.0;
+		h_particles.space[k].z				= 0.0;
+		h_particles.space[k].xhat			= 0.0;
+		h_particles.space[k].yhat			= 0.0;
+		h_particles.space[k].zhat			= 0.0;
+		h_particles.space[k].surf_dist		= 10000.0;
+		h_particles.space[k].enforce_BC		= 0;
+		h_particles.space[k].norm[0]		= 1;
+		h_particles.space[k].norm[1]		= 0;
+		h_particles.space[k].norm[2]		= 0;
+		h_particles.E[k]					= 2.5;
+		h_particles.Q[k]					= 0.0;
+		h_particles.cellnum[k]				= 0;
+		h_particles.talnum[k]				= -1;
+		h_particles.matnum[k]				= 0;
+		h_particles.rxn[k]					= 0;
+		h_particles.isonum[k]				= 0;
+		h_particles.yield[k]				= 0;
+		h_particles.weight[k]				= 1;
+		remap[k]							= k;
 	}
-	for(int k=0;k<n_tally;k++){
-		tally_score_total[k]=0.0;
-		tally_square_total[k]=0.0;
-		tally_count_total[k]=0;
+
+	// init minimum lengths
+	for(int k=0;k<minumum_size;k++){
+		zeros[k]							= 0;
+		ones[k]								= 1;
+		fones[k]							= 1.0;
+		mones[k]							= -1;
 	}
+
+	// set host tally size, bounds, allocate, and zero out all tallies
+	for(int i=0;i<n_tallies;i++){
+		h_tally[i].cell			=	problem_geom.tally_cells[i];
+		h_tally[i].length		=	1024;
+		h_tally[i].E_min		=	1e-11;
+		h_tally[i].E_max		=	20;
+		h_tally[i].score		=	new float			[h_tally[i].length];
+		h_tally[i].square		=	new float			[h_tally[i].length];
+		h_tally[i].count		=	new unsigned		[h_tally[i].length];
+		h_tally[i].score_total	=	new double			[h_tally[i].length];
+		h_tally[i].square_total	=	new double			[h_tally[i].length];
+		h_tally[i].count_total	=	new long unsigned	[h_tally[i].length];
+		for(int k=0;k<h_tally[i].length;k++){
+			h_tally[i].score[       k]	=	0.0;
+			h_tally[i].square[      k]	=	0.0;
+			h_tally[i].count[       k]	=	0.0;
+			h_tally[i].score_total[ k]	=	0.0;
+			h_tally[i].square_total[k]	=	0.0;
+			h_tally[i].count_total[ k]	=	0.0;
+		}
+	}
+
+}
+void whistory::init_device(){
+
+	// copy pointers initialized by optix
+	dh_particles.space		= (spatial_data*)	optix_obj.positions_ptr;
+	dh_particles.cellnum	= (unsigned*)		optix_obj.cellnum_ptr;
+	dh_particles.talnum		= (int*)			optix_obj.talnum_ptr;
+	dh_particles.matnum		= (unsigned*)		optix_obj.matnum_ptr;
+	dh_particles.rxn		= (unsigned*)		optix_obj.rxn_ptr;
+	d_remap					= (unsigned*)		optix_obj.remap_ptr;
+
+	// compute minumum size, incase dataset is shorter than tally, etc...
+	unsigned minumum_size = Ndataset;
+	for( int i=0 ; i<n_tallies ; i++ ){
+		if (h_tally[i].length > minumum_size){
+			minumum_size = h_tally[i].length;
+		}
+	}
+
+	// init others only used on CUDA side
+	check_cuda(cudaMalloc( &d_tally					,    n_tallies*sizeof(tally_data)			));
+	check_cuda(cudaMalloc( &d_particles				,    		 1*sizeof(particle_data)		));
+	check_cuda(cudaMalloc( &dh_particles.E			,     Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.Q			,     Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.rn_bank	,     Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.isonum		,     Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &dh_particles.yield		,     Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &dh_particles.weight		,     Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &dh_particles.index		,     Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_valid_result			,     Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_valid_N				,            1*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_fissile_points		,     Ndataset*sizeof(spatial_data)			));
+	check_cuda(cudaMalloc( &d_fissile_energy		,     Ndataset*sizeof(float)				));
+	check_cuda(cudaMalloc( &d_scanned 				,     Ndataset*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_num_completed 		,            1*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_num_active 			,            1*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_zeros					, minumum_size*sizeof(unsigned)				));
+
+	// copy values from initialized host arrays
+	check_cuda(cudaMemcpy( dh_particles.space		, h_particles.space			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.cellnum		, h_particles.cellnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.talnum		, h_particles.talnum		, Ndataset*sizeof(int)			, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.matnum		, h_particles.matnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.rxn			, h_particles.rxn			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.E			, h_particles.E				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.Q			, h_particles.Q				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.rn_bank		, h_particles.rn_bank		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.isonum		, h_particles.isonum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.yield		, h_particles.yield			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.weight		, h_particles.weight		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.index		, h_particles.index			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_valid_result			, zeros						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_remap					, remap						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_zeros					, zeros						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+
+	// init tally containers
+	for( int i=0 ; i<n_tallies ; i++ ){
+		// allocate
+		check_cuda(cudaMalloc( &dh_tally[i].score 			, h_tally[i].length*sizeof(float*)        ));
+		check_cuda(cudaMalloc( &dh_tally[i].square 			, h_tally[i].length*sizeof(float*)        ));
+		check_cuda(cudaMalloc( &dh_tally[i].count 			, h_tally[i].length*sizeof(unsigned*)     ));
+		// copy initialized values
+		dh_tally[i].cell		=	h_tally[i].cell;
+		dh_tally[i].length		=	h_tally[i].length;
+		dh_tally[i].E_min		=	h_tally[i].E_min;
+		dh_tally[i].E_max		=	h_tally[i].E_max;
+		check_cuda(cudaMemcpy(  dh_tally[i].score	    	, h_tally[i].score	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice ));
+		check_cuda(cudaMemcpy(  dh_tally[i].square	    	, h_tally[i].square	       , h_tally[i].length*sizeof(float)			,  cudaMemcpyHostToDevice ));
+		check_cuda(cudaMemcpy(  dh_tally[i].count	    	, h_tally[i].count	       , h_tally[i].length*sizeof(unsigned)			,  cudaMemcpyHostToDevice ));
+	}
+
+	// copy host structures (containing the device pointers) to the device structure
+	check_cuda(cudaMemcpy(  d_particles, 	&dh_particles	,		  1*sizeof(particle_data),		cudaMemcpyHostToDevice));
+	check_cuda(cudaMemcpy(  d_tally,		dh_tally		, n_tallies*sizeof(tally_data),			cudaMemcpyHostToDevice));
+
+	// check errors
+	check_cuda(cudaThreadSynchronize());
+	check_cuda(cudaPeekAtLastError());
 
 }
 void whistory::init_RNG(){
@@ -312,12 +346,14 @@ void whistory::init_RNG(){
 	}
 	curandCreateGenerator( &rand_gen , CURAND_RNG_PSEUDO_MTGP32 );  //mersenne twister type
 	curandSetPseudoRandomGeneratorSeed( rand_gen , 123456789ULL );
-	curandGenerate( rand_gen , d_rn_bank , Ndataset * RNUM_PER_THREAD );
-	cudaMemcpy(rn_bank , d_rn_bank , Ndataset * RNUM_PER_THREAD *sizeof(unsigned) , cudaMemcpyDeviceToHost); // copy bank back to keep seeds
+	curandGenerate( rand_gen , dh_particles.rn_bank , Ndataset  );
+	cudaMemcpy(h_particles.rn_bank , dh_particles.rn_bank , Ndataset*sizeof(unsigned) , cudaMemcpyDeviceToHost); // copy bank back to keep seeds
+	check_cuda(cudaPeekAtLastError());
 }
 void whistory::update_RNG(){
 
-	curandGenerate( rand_gen , d_rn_bank , Ndataset * RNUM_PER_THREAD );
+	curandGenerate( rand_gen , dh_particles.rn_bank , Ndataset );
+	check_cuda(cudaPeekAtLastError());
 
 }
 void whistory::init_CUDPP(){
@@ -380,14 +416,16 @@ void whistory::init_CUDPP(){
 	res = cudppPlan(theCudpp, &radixplan, radix_config, Ndataset, 1, 0);
 	if (CUDPP_SUCCESS != res){printf("Error creating CUDPPPlan for radix sort\n");exit(-1);}
 
+	check_cuda(cudaPeekAtLastError());
+
 }
 unsigned whistory::reduce_yield(){
 
 	unsigned reduced_yields;
 
-	res = cudppReduce(reduplan_int, d_reduced_yields, d_yield, N);
+	res = cudppReduce(reduplan_int, d_reduced_yields, dh_particles.yield, N);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing yield values\n");exit(-1);}
-	cudaMemcpy(&reduced_yields, d_reduced_yields, 1*sizeof(unsigned), cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(&reduced_yields, d_reduced_yields, 1*sizeof(unsigned), cudaMemcpyDeviceToHost));
 
 	return reduced_yields;
 
@@ -396,9 +434,9 @@ float whistory::reduce_weight(){
 
 	float reduced_weight;
 
-	res = cudppReduce(reduplan_float, d_reduced_weight, d_weight, N);
+	res = cudppReduce(reduplan_float, d_reduced_weight, dh_particles.weight, N);
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing weight values\n");exit(-1);}
-	cudaMemcpy(&reduced_weight, d_reduced_weight, 1*sizeof(float), cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(&reduced_weight, d_reduced_weight, 1*sizeof(float), cudaMemcpyDeviceToHost));
 
 	return reduced_weight;
 
@@ -407,15 +445,18 @@ void whistory::accumulate_keff(unsigned converged, unsigned iteration, double* k
 
 	float this_count, this_square, this_mean, keff_err2;
 
-	long unsigned reduced_yields = reduce_yield();
-	double        reduced_weight  = reduce_weight();
+	long unsigned 	reduced_yields	=	reduce_yield();
+	double 	      	reduced_weight	=	reduce_weight();
+	double			initial_weight  =	N;
+	printf("reduce_yield %lu reduce_weight %6.4E starting weight %6.4E\n",reduced_yields,reduced_weight,initial_weight);
 
 	*keff_cycle = reduced_yields / reduced_weight;
 
 	if(converged){
 		reduced_yields_total += reduced_yields;
 		reduced_weight_total += reduced_weight;
-		*keff       = reduced_yields_total / reduced_weight_total;
+		initial_weight_total += initial_weight;
+		*keff       = reduced_yields_total / initial_weight_total;
 		keff_sum   += *keff_cycle; 
 		keff2_sum  += (*keff_cycle)*(*keff_cycle);
 		this_count  = iteration + 1; 
@@ -434,196 +475,248 @@ void whistory::accumulate_keff(unsigned converged, unsigned iteration, double* k
 }
 void whistory::accumulate_tally(){
 
-	//copy data to host
-	cudaMemcpy(tally_score,  d_tally_score,  n_tally*sizeof(float),    cudaMemcpyDeviceToHost);
-	cudaMemcpy(tally_square, d_tally_square, n_tally*sizeof(float),    cudaMemcpyDeviceToHost);
-	cudaMemcpy(tally_count,  d_tally_count,  n_tally*sizeof(unsigned), cudaMemcpyDeviceToHost);
+	for(int i=0;i<n_tallies;i++){
 
-	//zero out vectors
-	cudaMemcpy(d_tally_score,  d_zeros, n_tally*sizeof(float),    cudaMemcpyDeviceToDevice);
-	cudaMemcpy(d_tally_square, d_zeros, n_tally*sizeof(float),    cudaMemcpyDeviceToDevice);
-	cudaMemcpy(d_tally_count,  d_zeros, n_tally*sizeof(unsigned), cudaMemcpyDeviceToDevice);
+		//copy data to host
+		check_cuda(cudaMemcpy(h_tally[i].score,  dh_tally[i].score,  h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToHost));
+		check_cuda(cudaMemcpy(h_tally[i].square, dh_tally[i].square, h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToHost));
+		check_cuda(cudaMemcpy(h_tally[i].count,  dh_tally[i].count,  h_tally[i].length*sizeof(unsigned), cudaMemcpyDeviceToHost));
+		check_cuda(cudaThreadSynchronize());
+		check_cuda(cudaDeviceSynchronize());
+	
+		//zero out vectors
+		check_cuda(cudaMemcpy(dh_tally[i].score,  d_zeros, h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToDevice));
+		check_cuda(cudaMemcpy(dh_tally[i].square, d_zeros, h_tally[i].length*sizeof(float),    cudaMemcpyDeviceToDevice));
+		check_cuda(cudaMemcpy(dh_tally[i].count,  d_zeros, h_tally[i].length*sizeof(unsigned), cudaMemcpyDeviceToDevice));
+		check_cuda(cudaThreadSynchronize());
+		check_cuda(cudaDeviceSynchronize());
+	
+		//perform sums on 64bit host side values, zero 32bit arrays
+		for(unsigned k=0 ; k<h_tally[i].length; k++){
+			h_tally[i].score_total[ k] 	+=  h_tally[i].score[ k];
+			h_tally[i].square_total[k]	+=  h_tally[i].square[k];
+			h_tally[i].count_total[ k] 	+=  h_tally[i].count[ k];
+			h_tally[i].score[ k]	= 	0.0;
+			h_tally[i].square[k]	=	0.0;
+			h_tally[i].count[ k]	=	0;
+		}
 
-	//perform sums on 64bit host side values
-	for(unsigned k=0 ; k<n_tally ; k++){
-		tally_score_total[k] 	+=  tally_score[k];
-		tally_square_total[k]	+=  tally_square[k];
-		tally_count_total[k] 	+=  tally_count[k];
-		//printf("score %10.8E %10.8E\n",tally_score[k],tally_score_total[k]);
 	}
 
 	
 }
-unsigned whistory::reduce_done(){
+void whistory::copy_python_buffer(float** device_pointer,float** host_pointer,std::string function_name){
+	// version for two float pointers
 
-	unsigned reduced_done = 0;
+	// misc variables for maths
+	unsigned bytes,rows,columns,ndim;
 
-	printf("reducing done\n");
-	res = cudppReduce(reduplan_int, d_reduced_done, d_done, Ndataset);
-	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in reducing done values\n");exit(-1);}
-	cudaMemcpy(&reduced_done, d_reduced_done, 1*sizeof(unsigned), cudaMemcpyDeviceToHost);
+	// python variables
+	PyObject *pName, *pModule, *pDict, *pFunc;
+	PyObject *pArgs, *pValue, *pString, *pBuffObj, *pObjList;
+	PyObject *call_result;
+	PyObject *call_string,*arg_string;
+	PyObject *pClass;
+	Py_buffer pBuff;
 
-	return reduced_done;
+	// get the MT array buffer from Python
+	call_string = PyString_FromString(function_name.c_str());
+	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
+	Py_DECREF(call_string);
+	if (PyObject_CheckBuffer(call_result)){
+		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
+	}
+	else{
+		PyErr_Print();
+	    fprintf(stderr, "Returned object does not support buffer interface\n");
+	    return;
+	}
+
+	// get array size info
+	get_Py_buffer_dims(&rows,&columns,&bytes,&pBuff);
+
+	// allocate xs_data pointer arrays
+	*host_pointer = new float [rows*columns];
+	// check to make sure bytes *= elements
+	assert(bytes==rows*columns*sizeof(float));
+	// copy python buffer contents to pointer
+	memcpy( *host_pointer,   pBuff.buf , bytes );
+	// allocate device memory now that we know the size!
+	cudaMalloc(device_pointer,bytes);
+	// copy the xs data to device
+	cudaMemcpy(*device_pointer, *host_pointer, bytes, cudaMemcpyHostToDevice);
+	// release python variable to free memory
+	Py_DECREF(call_result);
 
 }
-void whistory::copy_data_to_device(){
+void whistory::copy_python_buffer(unsigned** device_pointer,unsigned** host_pointer,std::string function_name){
+	// version for two unsigned pointers
 
-	float * this_pointer;
-	float * cuda_pointer;
-	int vlen, next_vlen;
-	float * temp = new float [128];
-	for(int g=0;g<128;g++){temp[g]=123456789;}
-
-	if(print_flag >= 2){
-		std::cout << "\e[1;32m" << "Copying data to device "<<  compute_device << "\e[m \n";
-	}
-
-	// copy history data
-	if(print_flag >= 2){
-		std::cout << "  History data... ";
-	}
-	cudaMemcpy( d_space,		space,		Ndataset*sizeof(source_point),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_E,			E,			Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_Q,    		Q,			Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_weight,    	weight,		Ndataset*sizeof(float),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_done,			done,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_cellnum,		cellnum,	Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_matnum,		matnum,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_isonum,		isonum,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_yield,		yield,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_rxn,			rxn,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    cudaMemcpy( d_remap, 		remap,    	Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    cudaMemcpy( d_zeros,		zeros,		Ndataset*sizeof(unsigned),	cudaMemcpyHostToDevice );
-    if(print_flag >= 2){
-    	std::cout << "Done.\n";
-    	std::cout << "  Unionized cross sections... ";
-	}
-    // copy xs_data,  0=isotopes, 1=main E points, 2=total numer of reaction channels
-    cudaMemcpy( d_xs_length_numbers,     xs_length_numbers,     3*sizeof(unsigned),						  cudaMemcpyHostToDevice );
-    cudaMemcpy( d_xs_MT_numbers_total,   xs_MT_numbers_total,   xs_length_numbers[0]*sizeof(unsigned),			  cudaMemcpyHostToDevice );
-    cudaMemcpy( d_xs_MT_numbers,	     xs_MT_numbers,	    (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(unsigned), cudaMemcpyHostToDevice );
-    cudaMemcpy( d_xs_data_MT,	     xs_data_MT,	    MT_rows*MT_columns *sizeof(float), 				  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_xs_data_main_E_grid,   xs_data_main_E_grid,   xs_length_numbers[1]*sizeof(float),				  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_awr_list, 	     awr_list,   	    xs_length_numbers[0]*sizeof(float),				  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_temp_list, 	     temp_list,   	    xs_length_numbers[0]*sizeof(float),				  cudaMemcpyHostToDevice );
-	//cudaMemcpy( d_material_list,         material_list,         n_materials*sizeof(unsigned), 				  cudaMemcpyHostToDevice );
-	//cudaMemcpy( d_isotope_list,          isotope_list,          xs_length_numbers[0]*sizeof(unsigned), 			  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_number_density_matrix, number_density_matrix, n_materials*xs_length_numbers[0]*sizeof(float),    		  cudaMemcpyHostToDevice );
-	cudaMemcpy( d_xs_data_Q,	     xs_data_Q, 	    (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(float),    cudaMemcpyHostToDevice );
-	if(print_flag >= 2){
-		std::cout << "Done.\n";
-	}
-	// copy device pointer array to device array
-	if(print_flag >= 2){
-		std::cout << "  Linked pointer arrays... ";
-	}
-	cudaMemcpy( d_xs_data_scatter, 	xs_data_scatter_host,	MT_rows*MT_columns*sizeof(float*), cudaMemcpyHostToDevice); 	
-	cudaMemcpy( d_xs_data_energy, 	xs_data_energy_host,	MT_rows*MT_columns*sizeof(float*), cudaMemcpyHostToDevice); 	
-	if(print_flag >= 2){
-		std::cout << "Done.\n";
-	}
-	// copy scattering data to device array pointers
-	//std::cout << "  Scattering data... ";
-	//for (int j=0 ; j < MT_columns ; j++){  //start after the total xs and total abs vectors
-	//	for (int k=0 ; k < MT_rows ; k++){
-	//		// scatter
-	//		this_pointer =   xs_data_scatter     [k*MT_columns + j];
-	//		cuda_pointer =   xs_data_scatter_host[k*MT_columns + j];
-	//		printf("cpu=%p gpu=%p\n",this_pointer,cuda_pointer);
-	//		if (this_pointer != NULL & k<MT_rows-1) {
-	//			memcpy(&vlen,     &this_pointer[2],1*sizeof(int));
-	//			memcpy(&next_vlen,&this_pointer[3],1*sizeof(int));
-	//			while(xs_data_scatter[(k+1)*MT_columns + j ]==this_pointer){
-	//				k++; //push k to the end of the copies so don't try to free it twice
-	//			}
-	//			cudaMemcpy(cuda_pointer,this_pointer,(2*vlen+2*next_vlen+4)*sizeof(float),cudaMemcpyHostToDevice);
-	//		}
-	//	}
-	//}
-	//std::cout << " Done.\n";
-	// zero out tally arrays
-	if(print_flag >= 2){
-		std::cout << "  Zeroing tally arrays... ";
-	}
-	cudaMemcpy( d_tally_score, 	d_zeros,	n_tally*sizeof(float),    cudaMemcpyDeviceToDevice); 	
-	cudaMemcpy( d_tally_square, d_zeros,	n_tally*sizeof(float),    cudaMemcpyDeviceToDevice); 	
-	cudaMemcpy( d_tally_count,	d_zeros,	n_tally*sizeof(unsigned), cudaMemcpyDeviceToDevice); 	
-	if(print_flag >= 2){
-		std::cout << "Done.\n";
-	}
-
-
-}
-void whistory::load_cross_sections(){
-	
-	if(print_flag >= 2){
-		std::cout << "\e[1;32m" << "Loading cross sections and unionizing..." << "\e[m \n";
-	}
-
-	// set the string, make ints list
-	//std::istringstream ss(xs_isotope_string);
-	//std::string token;
-	//unsigned utoken;
+	// misc variables for maths
 	unsigned bytes,rows,columns;
 
-	//while(std::getline(ss, token, ',')) {
-	//	utoken = std::atoi(token.c_str());
-   // 		xs_isotope_ints.push_back(utoken);
-	//}
-
-	// get data from python
-	/* 	 need to do
-	xs = unionize.cross_section_data()
-	xs._init_from_string(this_string)
-	xs._read_tables()
-	xs._unionize()
-	xs._insert_reactions()
-	xs._allocate_arrays()
-	xs._interpolate() */
-
-	// variables
+	// python variables
 	PyObject *pName, *pModule, *pDict, *pFunc;
-    PyObject *pArgs, *pValue, *pString, *pBuffObj, *pObjList;
-    PyObject *call_result;
-    PyObject *call_string,*arg_string;
-    PyObject *xsdat_instance;
-    PyObject *pClass;
-    Py_buffer pBuff;
-    int i, do_final;
+	PyObject *pArgs, *pValue, *pString, *pBuffObj, *pObjList;
+	PyObject *call_result;
+	PyObject *call_string,*arg_string;
+	PyObject *pClass;
+	Py_buffer pBuff;
 
-    if (Py_IsInitialized()){
-    	if(print_flag >= 2){
-    		printf("Python interpreter already initialized\n");
-    	}
-    	do_final=0;
-    }
-    else{
-    	Py_Initialize();
-    	do_final=1;
-  	}
+	// get the MT array buffer from Python
+	call_string = PyString_FromString(function_name.c_str());
+	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
+	Py_DECREF(call_string);
+	if (PyObject_CheckBuffer(call_result)){
+		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
+	}
+	else{
+		PyErr_Print();
+	    fprintf(stderr, "Returned object does not support buffer interface\n");
+	    return;
+	}
 
-    	pName = PyString_FromString("unionize");
-    	pModule = PyImport_Import(pName);
-    	Py_DECREF(pName);
+	// get array size info
+	get_Py_buffer_dims(&rows,&columns,&bytes,&pBuff);
 
-    	if ( pModule==NULL ){
-        	PyErr_Print();
-        	fprintf(stderr, "Failed to import \"%s\"\n", "unionize");
-        	return;	
-    	}
+	// allocate xs_data pointer arrays
+	*host_pointer = new unsigned [rows*columns];
+	// check to make sure bytes *= elements
+	assert(bytes==rows*columns*sizeof(unsigned));
+	// copy python buffer contents to pointer
+	memcpy( *host_pointer,   pBuff.buf , bytes );
+	// allocate device memory now that we know the size!
+	cudaMalloc(device_pointer,bytes);
+	// copy the xs data to device
+	cudaMemcpy(*device_pointer, *host_pointer, bytes, cudaMemcpyHostToDevice);
+	// release python variable to free memory
+	Py_DECREF(call_result);
 
-    	pName = PyString_FromString("cross_section_data");
-    	xsdat_instance = PyObject_CallMethodObjArgs(pModule,pName,NULL);
-    	PyErr_Print();
-    	Py_DECREF(pName);
+}
+void whistory::copy_python_buffer(float** host_pointer,std::string function_name){
+	// version for one (host) float pointer
+
+	// misc variables for maths
+	unsigned bytes,rows,columns;
+
+	// python variables
+	PyObject *pName, *pModule, *pDict, *pFunc;
+	PyObject *pArgs, *pValue, *pString, *pBuffObj, *pObjList;
+	PyObject *call_result;
+	PyObject *call_string,*arg_string;
+	PyObject *pClass;
+	Py_buffer pBuff;
+
+	// get the MT array buffer from Python
+	call_string = PyString_FromString(function_name.c_str());
+	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
+	Py_DECREF(call_string);
+	if (PyObject_CheckBuffer(call_result)){
+		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
+	}
+	else{
+		PyErr_Print();
+	    fprintf(stderr, "Returned object does not support buffer interface\n");
+	    return;
+	}
+
+	// get array size info
+	get_Py_buffer_dims(&rows,&columns,&bytes,&pBuff);
+
+	// allocate xs_data pointer arrays
+	*host_pointer = new float [rows*columns];
+	// check to make sure bytes *= elements
+	assert(bytes==rows*columns*sizeof(float));
+	// copy python buffer contents to pointer
+	memcpy( *host_pointer,   pBuff.buf , bytes );
+	// release python variable to free memory
+	Py_DECREF(call_result);
+
+}
+void whistory::copy_python_buffer(unsigned** host_pointer,std::string function_name){
+	// version for one (host) unsigned pointer
+
+	// misc variables for maths
+	unsigned bytes,rows,columns;
+
+	// python variables
+	PyObject *pName, *pModule, *pDict, *pFunc;
+	PyObject *pArgs, *pValue, *pString, *pBuffObj, *pObjList;
+	PyObject *call_result;
+	PyObject *call_string,*arg_string;
+	PyObject *pClass;
+	Py_buffer pBuff;
+
+	// get the MT array buffer from Python
+	call_string = PyString_FromString(function_name.c_str());
+	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
+	Py_DECREF(call_string);
+	if (PyObject_CheckBuffer(call_result)){
+		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
+	}
+	else{
+		PyErr_Print();
+	    fprintf(stderr, "Returned object does not support buffer interface\n");
+	    return;
+	}
+
+	// get array size info
+	get_Py_buffer_dims(&rows,&columns,&bytes,&pBuff);
+
+	// allocate xs_data pointer arrays
+	*host_pointer = new unsigned [rows*columns];
+	// check to make sure bytes *= elements
+	assert(bytes==rows*columns*sizeof(unsigned));
+	// copy python buffer contents to pointer
+	memcpy( *host_pointer,   pBuff.buf , bytes );
+	// release python variable to free memory
+	Py_DECREF(call_result);
+
+}
+int whistory::init_python(){
+
+	// misc variables
+	int do_final;
+
+	// python variables
+	PyObject *pName, *pModule, *pDict, *pFunc;
+	PyObject *pArgs, *pValue, *pString, *pBuffObj, *pObjList;
+	PyObject *call_result;
+	PyObject *call_string,*arg_string;
+	PyObject *pClass;
+	Py_buffer pBuff;
+
+	if (Py_IsInitialized()){
+		if(print_flag >= 2){
+			printf("Python interpreter already initialized\n");
+		}
+		do_final=0;
+	}
+	else{
+		Py_Initialize();
+		do_final=1;
+	}
+
+	pName = PyString_FromString("unionize");
+	pModule = PyImport_Import(pName);
+	Py_DECREF(pName);
+
+	if ( pModule==NULL ){
+		PyErr_Print();
+		fprintf(stderr, "Failed to import \"%s\"\n", "unionize");
+		return 0;	
+	}
+
+	pName = PyString_FromString("cross_section_data");
+	xsdat_instance = PyObject_CallMethodObjArgs(pModule,pName,NULL);
+	PyErr_Print();
+	Py_DECREF(pName);
 
 
-    	if (xsdat_instance != NULL) {
+	if (xsdat_instance != NULL) {
 
 		// init the libraries wanted
-		//char tope_string_c[256];
-    	for (int i=0; i<n_isotopes; i++){
+		for (int i=0; i<n_isotopes; i++){
 			call_string = PyString_FromString("_add_isotope");
 			arg_string  = PyString_FromString(isotopes[i].c_str());
 			call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, arg_string, NULL);
@@ -671,808 +764,659 @@ void whistory::load_cross_sections(){
 		Py_DECREF(call_result);
 
 	}
-    	else {
-        	PyErr_Print();
-        	fprintf(stderr, "Failed to instanciate \"%s\"\n", "unionize.cross_section_data");
-        	return;
-    	}
-
-    	// get the MT array buffer
-    	call_string = PyString_FromString("_get_MT_array_pointer");
-	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
-	Py_DECREF(call_string);
-	if (PyObject_CheckBuffer(call_result)){
-		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
-	}
-	else{
+	else {
 		PyErr_Print();
-        fprintf(stderr, "Returned object does not support buffer interface\n");
-        return;
+		fprintf(stderr, "Failed to instanciate \"%s\"\n", "unionize.cross_section_data");
 	}
 
-    //
-    // get and copy the unionized MT array
-    //
-	MT_rows    = pBuff.shape[0];
-	MT_columns = pBuff.shape[1];
-	bytes   = pBuff.len;
-	//std::cout << "unionized MT array " << MT_rows << " " << MT_columns << " " << bytes << "\n";
-    // allocate xs_data pointer arrays
-    xs_data_MT       = new float  [MT_rows*MT_columns];
-    // check to make sure bytes *= elements
-    assert(bytes==MT_rows*MT_columns*4);
-    // copy python buffer contents to pointer
-    memcpy( xs_data_MT,   pBuff.buf , bytes );
-    // cudaallocate device memory now that we know the size!
-    cudaMalloc(&d_xs_data_MT,bytes);
-    // release python variable to free memory
-	Py_DECREF(call_result);
+	return do_final;
 
-    // get the unionized main energy grid buffer
-    call_string = PyString_FromString("_get_main_Egrid_pointer");
-	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
-	Py_DECREF(call_string);
-	if (PyObject_CheckBuffer(call_result)){
-		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
+}
+void whistory::get_Py_buffer_dims(unsigned* rows, unsigned* columns, unsigned* bytes, Py_buffer* pBuff){
+
+	// get size
+	bytes[0]	=	pBuff[0].len;
+
+	// get dimensions
+	if (pBuff[0].ndim == 0){
+		rows[0]		=	1;
+		columns[0]	=	1;
 	}
-	else{
-		PyErr_Print();
-        fprintf(stderr, "Returned object does not support buffer interface\n");
-        return;
+	else if (pBuff[0].ndim == 1){
+		rows[0]		=	pBuff[0].shape[0];
+		columns[0]	=	1;
+	}
+	else if (pBuff[0].ndim == 2){
+		rows[0]		=	pBuff[0].shape[0];
+		columns[0]	=	pBuff[0].shape[1];
+	}
+	else {
+		fprintf(stderr, "Python buffer returned array with dimension > 2!!!\n");
 	}
 
-    //
-    // get and copy unionized main energy grid
-    //
-	rows    = pBuff.shape[0];
-	columns = pBuff.shape[1];
-	bytes   = pBuff.len;
-	//std::cout << "main e grid " << rows << " " << columns << " " << bytes << "\n";
-    	// allocate xs_data pointer arrays
-    xs_data_main_E_grid  = new float  [rows];
-    // check to make sure bytes *= elements
-    assert(bytes==rows*4);
-    // copy python buffer contents to pointer
-    memcpy( xs_data_main_E_grid,   pBuff.buf , bytes );
-    // cudaallocate device memory now that we know the size!
-    cudaMalloc(&d_xs_data_main_E_grid,bytes);
-    // release python variable to free memory
-    Py_DECREF(call_result);
-
-    // mt number vector
-    call_string = PyString_FromString("_get_MT_numbers_pointer");
-	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
-	Py_DECREF(call_string);
-	if (PyObject_CheckBuffer(call_result)){
-		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
-	}
-	else{
-		PyErr_Print();
-        fprintf(stderr, "Returned object does not support buffer interface\n");
-        return;
-	}
-
-    //
-    // get and copy mt number vector
-    //
-	rows    = pBuff.shape[0];
-	columns = pBuff.shape[1];
-	bytes   = pBuff.len;
-	//std::cout << "mt nums " << rows << " " << columns << " " << bytes << "\n";
-    // allocate xs_data pointer arrays
-    xs_MT_numbers      = new unsigned  [rows];
-    // check to make sure bytes *= elements
-    assert(bytes==rows*4);
-    // copy python buffer contents to pointer
-    memcpy( xs_MT_numbers,   pBuff.buf , bytes );
-    // cudaallocate device memory now that we know the size!
-    cudaMalloc(&d_xs_MT_numbers,bytes);
-    // release python variable to free memory
-    Py_DECREF(call_result);
-
-    // mt number total vector
-    call_string = PyString_FromString("_get_MT_numbers_total_pointer");
-	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
-	Py_DECREF(call_string);
-	if (PyObject_CheckBuffer(call_result)){
-		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
-	}
-	else{
-		PyErr_Print();
-        fprintf(stderr, "Returned object does not support buffer interface\n");
-        return;
-	}
-
-    //
-    // get and copy unionized totals vector
-    //
-	rows    = pBuff.shape[0];
-	columns = pBuff.shape[1];
-	bytes   = pBuff.len;
-	//std::cout << "totals " << rows << " " << columns << " " << bytes << "\n";
-    // allocate xs_data pointer arrays
-    xs_MT_numbers_total      = new unsigned  [rows];
-    // check to make sure bytes *= elements
-    assert(bytes==rows*4);
-    // copy python buffer contents to pointer
-    memcpy( xs_MT_numbers_total,   pBuff.buf , bytes );
-    // cudaallocate device memory now that we know the size!
-    cudaMalloc(&d_xs_MT_numbers_total,bytes);
-    // release python variable to free memory
-    Py_DECREF(call_result);
-
-    // lengths vector
-    call_string = PyString_FromString("_get_length_numbers_pointer");
-	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
-	Py_DECREF(call_string);
-	if (PyObject_CheckBuffer(call_result)){
-		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
-	}
-	else{
-		PyErr_Print();
-        fprintf(stderr, "Returned object does not support buffer interface\n");
-        return;
-	}
-
-	//
-	// get and copy lengths vector
-	//
-	rows    = pBuff.shape[0];
-	columns = pBuff.shape[1];
-	bytes   = pBuff.len;
-	//std::cout << "lengths " << rows << " " << columns << " " << bytes << "\n";
-	// allocate xs_data pointer arrays
-	xs_length_numbers     = new unsigned  [rows];
-	// check to make sure bytes *= elements
-	assert(bytes==rows*4);
-	// copy python buffer contents to pointer
-	memcpy( xs_length_numbers,   pBuff.buf , bytes );
-	// cudaallocate device memory now that we know the size!
-	cudaMalloc(&d_xs_length_numbers,bytes);
-	// release python variable to free memory
-	Py_DECREF(call_result);
-
-	// AWR vector
-	call_string = PyString_FromString("_get_awr_pointer");
-	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
-	Py_DECREF(call_string);
-	if (PyObject_CheckBuffer(call_result)){
-		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
-	}
-	else{
-		PyErr_Print();
-	    fprintf(stderr, "Returned object does not support buffer interface\n");
-	    return;
-	}
-
-	//
-	// get and copy AWR vector
-	//
-	rows    = pBuff.shape[0];
-	columns = pBuff.shape[1];
-	bytes   = pBuff.len;
-	//std::cout << "lengths " << rows << " " << columns << " " << bytes << "\n";
-	// allocate xs_data pointer arrays
-	awr_list     = new float  [rows];
-	// check to make sure bytes *= elements
-	assert(bytes==rows*4);
-	// copy python buffer contents to pointer
-	memcpy( awr_list,   pBuff.buf , bytes );
-	// cudaallocate device memory now that we know the size!
-	cudaMalloc(&d_awr_list,bytes);
-	// release python variable to free memory
-	Py_DECREF(call_result);
-
-
-	// TEMP vector
-	call_string = PyString_FromString("_get_temp_pointer");
-	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
-	Py_DECREF(call_string);
-	if (PyObject_CheckBuffer(call_result)){
-		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
-	}
-	else{
-		PyErr_Print();
-	    fprintf(stderr, "Returned object does not support buffer interface\n");
-	    return;
-	}
-
-	//
-	// get and copy TEMP vector
-	//
-	rows    = pBuff.shape[0];
-	columns = pBuff.shape[1];
-	bytes   = pBuff.len;
-	//std::cout << "lengths " << rows << " " << columns << " " << bytes << "\n";
-	// allocate xs_data pointer arrays
-	temp_list     = new float  [rows];
-	// check to make sure bytes *= elements
-	assert(bytes==rows*4);
-	// copy python buffer contents to pointer
-	memcpy( temp_list,   pBuff.buf , bytes );
-	// cudaallocate device memory now that we know the size!
-	cudaMalloc(&d_temp_list,bytes);
-	// release python variable to free memory
-	Py_DECREF(call_result);
-
-
-	// Q vector
-	call_string = PyString_FromString("_get_Q_pointer");
-	call_result = PyObject_CallMethodObjArgs(xsdat_instance, call_string, NULL);
-	Py_DECREF(call_string);
-	if (PyObject_CheckBuffer(call_result)){
-		PyObject_GetBuffer(call_result, &pBuff,PyBUF_ND);
-	}
-	else{
-		PyErr_Print();
-	    fprintf(stderr, "Returned object does not support buffer interface\n");
-	    return;
-	}
-
-	//
-	// get and copy Q vector
-	//
-	rows    = pBuff.shape[0];
-	columns = pBuff.shape[1];
-	bytes   = pBuff.len;
-	//std::cout << "lengths " << rows << " " << columns << " " << bytes << "\n";
-	// allocate xs_data pointer arrays
-	xs_data_Q     = new float  [rows];
-	// check to make sure bytes *= elements
-	assert(bytes==rows*4);
-	// copy python buffer contents to pointer
-	memcpy( xs_data_Q,   pBuff.buf , bytes );
-	// cudaallocate device memory now that we know the size!
-	cudaMalloc(&d_xs_data_Q,bytes);
-	// release python variable to free memory
-	Py_DECREF(call_result);
+}
+void whistory::copy_scatter_data(){
+	// get scattering ditributions from PyNE and set up data heirarchy on host and device 
 
 	if(print_flag >= 2){
 		std::cout << "\e[1;32m" << "Loading/copying scattering data and linking..." << "\e[m \n";
 	}
 
-	////////////////////////////////////
-	// S&E DATA ARRAYS
-	////////////////////////////////////
+	// python variables for arguments
+	PyObject	*row_obj, *col_obj, *call_string, *obj_list;
+	PyObject	*lower_erg_obj, *lower_len_obj, *lower_law_obj, *lower_intt_obj, *lower_var_obj, *lower_pdf_obj, *lower_cdf_obj; 
+	PyObject	*upper_erg_obj, *upper_len_obj, *upper_law_obj, *upper_intt_obj, *upper_var_obj, *upper_pdf_obj, *upper_cdf_obj, *next_dex_obj; 
+	Py_buffer	lower_var_buff, lower_pdf_buff, lower_cdf_buff, upper_var_buff, upper_pdf_buff, upper_cdf_buff;
+	
+	// local temp variables
+	int				row, col;
+	float			nu_t, nu_p;
+	int				this_isotope;
+	unsigned		array_index, next_dex, lower_rows;
+	unsigned		lower_var_buff_bytes,	lower_pdf_buff_bytes,	lower_cdf_buff_bytes;
+	unsigned		lower_var_buff_rows,	lower_pdf_buff_rows,	lower_cdf_buff_rows;
+	unsigned		lower_var_buff_columns,	lower_pdf_buff_columns,	lower_cdf_buff_columns;
+	unsigned		upper_var_buff_bytes,	upper_pdf_buff_bytes,	upper_cdf_buff_bytes;
+	unsigned		upper_var_buff_rows,	upper_pdf_buff_rows,	upper_cdf_buff_rows;
+	unsigned		upper_var_buff_columns,	upper_pdf_buff_columns,	upper_cdf_buff_columns;
+	dist_data		 h_lower_dist,  h_upper_dist;
+	dist_data		dh_lower_dist, dh_upper_dist;
+	dist_data		*d_lower_dist, *d_upper_dist;
+	dist_container	*dh_dist_scatter;
 
-    float * temp = new float [128];
-	for(int g=0;g<128;g++){temp[g]=123456789;}
-	unsigned vlen;
+	// compute some sizes
+	unsigned total_rows = h_xsdata.energy_grid_len;
+	unsigned total_cols = h_xsdata.total_reaction_channels + h_xsdata.n_isotopes;
 
-    //ALLOCATE THE ARRAYS.
-    xs_data_scatter      = new float* [MT_rows*MT_columns];
-    xs_data_energy       = new float* [MT_rows*MT_columns];
-    xs_data_scatter_host = new float* [MT_rows*MT_columns];
-    xs_data_energy_host  = new float* [MT_rows*MT_columns];
-    cudaMalloc(&d_xs_data_scatter,MT_rows*MT_columns*sizeof(float*));
-    cudaMalloc(&d_xs_data_energy, MT_rows*MT_columns*sizeof(float*));
-    // nu container
-    float * nuBuff 	     = new float [MT_rows];
-    // python variables for arguments
-    PyObject 	*E_obj, *row_obj, *col_obj;
-    PyObject 	*cdf_vector_obj, *pdf_vector_obj, *mu_vector_obj , *vector_length_obj, *nextDex_obj, *nextE_obj, *lastE_obj; 
-    PyObject 	*next_cdf_vector_obj, *next_pdf_vector_obj, *next_mu_vector_obj , *next_vector_length_obj;
-    PyObject 	*obj_list, *law_obj, *intt_obj;
-    Py_buffer 	muBuff, cdfBuff, pdfBuff, next_muBuff, next_cdfBuff, next_pdfBuff;
-    float 		*this_pointer,*cuda_pointer;
-    float  		nextE, lastE;
-    float       this_energy;
-    float 		nu_test;
-    unsigned	this_MT, this_tope, vector_length_L, law, intt, array_elements;
-    int 		vector_length,next_vector_length;
-    int 		minusone = -1;
-    unsigned 	muRows,  muColumns,  muBytes;
-    unsigned 	cdfRows, cdfColumns, cdfBytes;
-    unsigned 	pdfRows, pdfColumns, pdfBytes;
-    unsigned 	next_muRows,  next_muColumns,  next_muBytes;
-    unsigned 	next_cdfRows, next_cdfColumns, next_cdfBytes;
-    unsigned 	next_pdfRows, next_pdfColumns, next_pdfBytes;
-    unsigned 	nextDex;
+	// allocate host arrays
+	h_xsdata.dist_scatter	= new dist_container [total_rows * total_cols];
+	dh_dist_scatter			= new dist_container [total_rows * total_cols];
 
-	////////////////////////////////////
-	// do scattering stuff
-	////////////////////////////////////
-
-	//set total cross sections to NULL
-    for (int j=0 ; j<1*xs_length_numbers[0] ; j++){  //start after the total xs vectors
-    		for (int k=0 ; k<MT_rows ; k++){
-    			xs_data_scatter     [k*MT_columns + j] = 0;//NULL;
-			xs_data_scatter_host[k*MT_columns + j] = 0;//NULL;
+	// init to null pointers
+	for (row=0 ; row<h_xsdata.energy_grid_len; row++){  //start after the total xs vectors
+			for (col=0 ; col<h_xsdata.total_reaction_channels ; col++){
+				array_index = row*total_cols + col;
+				 h_xsdata.dist_scatter[array_index].upper = 0x0;
+				 h_xsdata.dist_scatter[array_index].lower = 0x0;
+				       dh_dist_scatter[array_index].upper = 0x0;
+				       dh_dist_scatter[array_index].lower = 0x0;
 		}
 	}
 
-    // do the rest of the MT numbers
-    for (int j=1*xs_length_numbers[0] ; j<MT_columns ; j++){  //start after the total xs vectors
-    	for (int k=0 ; k<MT_rows ; k++){
-    		// call cross_section_data instance to get buffer
-    		row_obj     = PyInt_FromLong     (k);
-    		col_obj     = PyInt_FromLong     (j);
-    		call_string = PyString_FromString("_get_scattering_data");
+	// scan through the scattering array, copying the scattering distributions and replicating pointers to 
+	// them for each main energy grid points within the distribution's grid points
+	//
+	//  --- The current method copies the scattering distributions twice.  
+	//  --- This can be eliminated via copying pointers instead of reiniting ditributions, 
+	//  --- but this has been left for now for simplicity.
+	//
+	for( col=h_xsdata.n_isotopes ; col<total_cols ; col++ ){ // going down column to stay within to same isotope, not effcient for caching, but OK here since only done at init
+		
+		// rest row index
+		row = 0;
+
+		// print some nice info if flagged
+		if(print_flag >= 2){
+			this_isotope = -1;
+			for (int i=0;i<h_xsdata.n_isotopes+1;i++){
+				if(col>=(h_xsdata.rxn_numbers_total[i]+h_xsdata.n_isotopes) & col<(h_xsdata.rxn_numbers_total[i+1]+h_xsdata.n_isotopes)){
+					this_isotope = i;
+					break;
+				}
+			}
+			printf("   Getting scatter data for isotope %s - reaction %u\n",isotopes[this_isotope].c_str(),h_xsdata.rxn_numbers[col]);
+		}
+
+		while(row<total_rows){
+
+			// compute array index
+			array_index = row*total_cols + col;
+
+			// call python object, which returns the two buffers 
+			// and the main e grid index that it needs to be replicated to
+			row_obj     = PyInt_FromLong     (row);
+			col_obj     = PyInt_FromLong     (col);
+			call_string = PyString_FromString("_get_scatter_data");
 			obj_list    = PyObject_CallMethodObjArgs(xsdat_instance, call_string, row_obj, col_obj, NULL);
 			PyErr_Print();
 
-			// get objects in the returned list  [nextDex,next_E,vlen,nextvlen,mu,cdf,nextmu,nextcdf]
-			nextDex_obj  			= PyList_GetItem(obj_list,0); // values
-			lastE_obj  				= PyList_GetItem(obj_list,1);
-			nextE_obj 				= PyList_GetItem(obj_list,2);
-			vector_length_obj 		= PyList_GetItem(obj_list,3);
-			next_vector_length_obj 	= PyList_GetItem(obj_list,4);
-			law_obj 				= PyList_GetItem(obj_list,5);
-			intt_obj 				= PyList_GetItem(obj_list,6);
-			mu_vector_obj 			= PyList_GetItem(obj_list,7); // vectors
-			cdf_vector_obj 			= PyList_GetItem(obj_list,8);
-			pdf_vector_obj 			= PyList_GetItem(obj_list,9);
-			next_mu_vector_obj 		= PyList_GetItem(obj_list,10);
-			next_cdf_vector_obj 	= PyList_GetItem(obj_list,11);
-			next_pdf_vector_obj 	= PyList_GetItem(obj_list,12);
-			PyErr_Print();
-
-			// expand list to c variables
-			nextDex 	  		= PyInt_AsLong 	  (nextDex_obj);
-			lastE 		  		= PyFloat_AsDouble(lastE_obj);
-			nextE 		  		= PyFloat_AsDouble(nextE_obj);
-			vector_length 		= PyInt_AsLong    (vector_length_obj);
-			next_vector_length 	= PyInt_AsLong    (next_vector_length_obj);
-			law 				= PyInt_AsLong    (law_obj);
-			intt 				= PyInt_AsLong    (intt_obj);
-			PyErr_Print();
-
-			// set this pointer
-			if(vector_length==0){   // EMPTY
-				//printf("(%u,%u) empty\n",k,j);
-				xs_data_scatter     [k*MT_columns + j] = NULL;
-				xs_data_scatter_host[k*MT_columns + j] = NULL;
-				PyErr_Print();
-			}
-			else if (vector_length==-1){  // NU!!!!!!!
-				//printf("(%u,%u) nu\n",k,j);
-				// this nu, not scatter, copy the entire column.
-				// get data buffer from numpy array
-				if (PyObject_CheckBuffer(mu_vector_obj) & PyObject_CheckBuffer(cdf_vector_obj)){
-					PyObject_GetBuffer( mu_vector_obj,  &muBuff, PyBUF_ND);
-					PyErr_Print();
-				}
-				else{
-					PyErr_Print();
-				    	fprintf(stderr, "Returned object does not support buffer interface\n");
-				    	return;
-				}
-			
-				// shape info
-				muRows     =  muBuff.shape[0];
-				muColumns  =  muBuff.shape[1];
-				muBytes    =  muBuff.len;
-			
-				//make sure every is ok
-				assert(muRows==MT_rows);
-			
-				// copy to regular array
-				memcpy(nuBuff, muBuff.buf , MT_rows*sizeof(float));
-			
-				//write the returned values into the array, byte-copy into 64bit pointer
-				for(;k<MT_rows;k++){
-					//std::cout << "copying nu value "<< nuBuff[k] <<" at energy "<< xs_data_main_E_grid[k]<< " MeV\n";
-					memcpy( &xs_data_scatter_host[ k*MT_columns + j ] , &nuBuff[k] , 1*sizeof(float) );
-					//memcpy( &nu_test , &xs_data_scatter_host[ k*MT_columns + j ], 1*sizeof(float) );
-					//std::cout << "copying nu value "<< nu_test <<" at energy "<< xs_data_main_E_grid[k]<< " MeV\n";
-				}
-			
-				PyErr_Print();
-			
-				break;
-			
-			}
-			else{
-				// get data buffer from numpy array
-				if(law!=61){
-					if (PyObject_CheckBuffer(mu_vector_obj) & PyObject_CheckBuffer(cdf_vector_obj) & PyObject_CheckBuffer(next_mu_vector_obj) & PyObject_CheckBuffer(next_cdf_vector_obj) ){
-						PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
-						PyObject_GetBuffer(     cdf_vector_obj,      &cdfBuff, PyBUF_ND);
-						PyObject_GetBuffer(     pdf_vector_obj,      &pdfBuff, PyBUF_ND);
-						PyObject_GetBuffer( next_mu_vector_obj,  &next_muBuff, PyBUF_ND);
-						PyObject_GetBuffer(next_cdf_vector_obj, &next_cdfBuff, PyBUF_ND);
-						PyObject_GetBuffer(next_pdf_vector_obj, &next_pdfBuff, PyBUF_ND);
-						PyErr_Print();
-					}
-					else{
-						PyErr_Print();
-    				    fprintf(stderr, "Returned object does not support buffer interface\n");
-    				    return;
-					}
-		
-					// shape info
-					muRows     =  muBuff.shape[0];
-					muColumns  =  muBuff.shape[1];
-					muBytes    =  muBuff.len;
-					cdfRows    = cdfBuff.shape[0];
-					cdfColumns = cdfBuff.shape[1];
-					cdfBytes   = cdfBuff.len;
-					pdfRows    = pdfBuff.shape[0];
-					pdfColumns = pdfBuff.shape[1];
-					pdfBytes   = pdfBuff.len;
-					next_muRows     = next_muBuff.shape[0];
-					next_muColumns  = next_muBuff.shape[1];
-					next_muBytes    = next_muBuff.len;
-					next_cdfRows    = next_cdfBuff.shape[0];
-					next_cdfColumns = next_cdfBuff.shape[1];
-					next_cdfBytes   = next_cdfBuff.len;
-					next_pdfRows    = next_pdfBuff.shape[0];
-					next_pdfColumns = next_pdfBuff.shape[1];
-					next_pdfBytes   = next_pdfBuff.len;
-		
-					//make sure every is ok
-					assert(muRows==   cdfRows);
-					assert(muColumns==cdfColumns);
-					assert(muBytes==  cdfBytes);
-					assert(muRows==   pdfRows);
-					assert(muColumns==pdfColumns);
-					assert(muBytes==  pdfBytes);
-					assert(next_muRows==   next_cdfRows);
-					assert(next_muColumns==next_cdfColumns);
-					assert(next_muBytes==  next_cdfBytes);
-					assert(next_muRows==   next_pdfRows);
-					assert(next_muColumns==next_pdfColumns);
-					assert(next_muBytes==  next_pdfBytes);
-		
-					//allocate pointer, write into array
-					//for cuda too
-					array_elements = muRows+cdfRows+pdfRows+next_muRows+next_cdfRows+next_pdfRows+6;
-					this_pointer = new float [array_elements];
-					cudaMalloc(&cuda_pointer,array_elements*sizeof(float));
-					total_bytes_scatter += array_elements*sizeof(float);  // add to total count
-					xs_data_scatter     [k*MT_columns + j] = this_pointer;
-					xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
-		
-					//copy data from python buffer to pointer in array
-					memcpy(&this_pointer[0], 						&lastE,   	  		sizeof(float));
-					memcpy(&this_pointer[1], 						&nextE,   	  		sizeof(float));    // nextE   to first position
-					memcpy(&this_pointer[2], 						&muRows,   	  		sizeof(unsigned)); // len to third position
-					memcpy(&this_pointer[3], 						&next_muRows, 	  	sizeof(unsigned));
-					memcpy(&this_pointer[4],						&law,		  	  	sizeof(unsigned));
-					memcpy(&this_pointer[5],						&intt,		  	  	sizeof(unsigned));
-					memcpy(&this_pointer[6],						muBuff.buf,  	  	muRows*sizeof(float));     // mu  to len bytes after
-					memcpy(&this_pointer[6+   muRows],				cdfBuff.buf, 		cdfRows*sizeof(float));     // cdf to len bytes after that
-					memcpy(&this_pointer[6+ 2*muRows],				pdfBuff.buf, 		pdfRows*sizeof(float));
-					memcpy(&this_pointer[6+ 3*muRows],				next_muBuff.buf,	next_muRows*sizeof(float));
-					memcpy(&this_pointer[6+ 3*muRows+  next_muRows],next_cdfBuff.buf, 	next_cdfRows*sizeof(float));
-					memcpy(&this_pointer[6+ 3*muRows+2*next_muRows],next_pdfBuff.buf, 	next_pdfRows*sizeof(float));
-					PyErr_Print();
-	
-					cudaMemcpy(cuda_pointer,this_pointer,array_elements*sizeof(float),cudaMemcpyHostToDevice);
-				}
-				else{
-					// get flattened matrix for law 61
-					if (PyObject_CheckBuffer(mu_vector_obj)){
-						PyObject_GetBuffer(      mu_vector_obj,       &muBuff, PyBUF_ND);
-					}
-					else{
-						PyErr_Print();
-    				    fprintf(stderr, "Returned object does not support buffer interface\n");
-    				    return;
-					}
-	
-					//  get the buffers
-					muRows     =  muBuff.shape[0];
-					muColumns  =  muBuff.shape[1];
-					muBytes    =  muBuff.len;
-					//assert( muRows==1 | muColumns==1);  // make sure 1d
-	
-					this_pointer = new float [muBytes/sizeof(float)];
-					cudaMalloc(&cuda_pointer,muBytes);
-					total_bytes_scatter +=   muBytes;  // add to total count
-					xs_data_scatter     [k*MT_columns + j] = this_pointer;
-					xs_data_scatter_host[k*MT_columns + j] = cuda_pointer;
-					PyErr_Print();
-	
-					// copy to cuda pointer and host pointer
-					memcpy(this_pointer,muBuff.buf,muBytes);
-					cudaMemcpy(cuda_pointer,this_pointer,muBytes,cudaMemcpyHostToDevice);
-	
-				}	
-
-			}
-
-			// replicate this pointer into array until nextE
-			// for cuda too
-			if (k < (MT_rows-1) ){
-				while(k<nextDex-1){
-					xs_data_scatter     [(k+1)*MT_columns + j] = this_pointer;
-					xs_data_scatter_host[(k+1)*MT_columns + j] = cuda_pointer;
-					k++;
-				}
-			}
-	
-			this_pointer = NULL;
-			cuda_pointer = NULL;
-
-		}
-	}
-
-
-	if(print_flag >= 2){
-		std::cout << "\e[1;32m" << "Loading/copying energy distribution data and linking..." << "\e[m \n";
-	}
-
-
-    ////////////////////////////////////
-    // do energy stuff
-    ////////////////////////////////////
-
-    //set total cross sections to NULL
-    for (int j=0 ; j<1*xs_length_numbers[0] ; j++){  //start after the total xs vectors
-    	for (int k=0 ; k<MT_rows ; k++){
-    		xs_data_energy     [k*MT_columns + j] = NULL;
-			xs_data_energy_host[k*MT_columns + j] = NULL;
-		}
-	}
-
-    // do the rest of the MT numbers
-    for (int j=1*xs_length_numbers[0] ; j<MT_columns ; j++){  //start after the total xs vectors
-    	//std::cout << "  at energy column " << j+1 << " of " << MT_columns<< "\n";
-    	for (int k=0 ; k<MT_rows ; k++){
-
-    		// call cross_section_data instance to get buffer
-    		row_obj     = PyInt_FromLong     (k);
-    		col_obj     = PyInt_FromLong     (j);
-    		call_string = PyString_FromString("_get_energy_data");
-			obj_list    = PyObject_CallMethodObjArgs(xsdat_instance, call_string, row_obj, col_obj, NULL);
-			PyErr_Print();
-	
 			// get objects in the returned list
-			nextDex_obj  			= PyList_GetItem(obj_list,0);
-			lastE_obj  				= PyList_GetItem(obj_list,1);
-			nextE_obj 				= PyList_GetItem(obj_list,2);
-			vector_length_obj 		= PyList_GetItem(obj_list,3);
-			next_vector_length_obj 	= PyList_GetItem(obj_list,4);
-			law_obj					= PyList_GetItem(obj_list,5);
-			intt_obj 				= PyList_GetItem(obj_list,6);
-			mu_vector_obj 			= PyList_GetItem(obj_list,7);
-			cdf_vector_obj 			= PyList_GetItem(obj_list,8);
-			pdf_vector_obj 			= PyList_GetItem(obj_list,9);
-			next_mu_vector_obj 		= PyList_GetItem(obj_list,10);
-			next_cdf_vector_obj 	= PyList_GetItem(obj_list,11);
-			next_pdf_vector_obj 	= PyList_GetItem(obj_list,12);
+			lower_erg_obj	= PyList_GetItem(obj_list,0);
+			lower_len_obj	= PyList_GetItem(obj_list,1);
+			lower_law_obj	= PyList_GetItem(obj_list,2);
+			lower_intt_obj	= PyList_GetItem(obj_list,3);
+			lower_var_obj	= PyList_GetItem(obj_list,4);
+			lower_pdf_obj	= PyList_GetItem(obj_list,5);
+			lower_cdf_obj	= PyList_GetItem(obj_list,6);
+			upper_erg_obj	= PyList_GetItem(obj_list,7);
+			upper_len_obj	= PyList_GetItem(obj_list,8);
+			upper_law_obj	= PyList_GetItem(obj_list,9);
+			upper_intt_obj	= PyList_GetItem(obj_list,10);
+			upper_var_obj	= PyList_GetItem(obj_list,11);
+			upper_pdf_obj	= PyList_GetItem(obj_list,12);
+			upper_cdf_obj	= PyList_GetItem(obj_list,13);
+			next_dex_obj	= PyList_GetItem(obj_list,14);
 			PyErr_Print();
 
-			// expand list to c variables
-			nextDex 	  		= PyInt_AsLong 	  (nextDex_obj);
-			lastE 		  		= PyFloat_AsDouble(lastE_obj);
-			nextE 		  		= PyFloat_AsDouble(nextE_obj);
-			vector_length 		= PyInt_AsLong    (vector_length_obj);
-			next_vector_length 	= PyInt_AsLong    (next_vector_length_obj);
-			law 				= PyInt_AsLong    (law_obj);
-			intt 				= PyInt_AsLong    (intt_obj);
+			// copy single values to temp objects
+			h_lower_dist.erg	=	PyFloat_AsDouble(	lower_erg_obj);
+			h_lower_dist.len	=	PyInt_AsLong(		lower_len_obj);
+			h_lower_dist.law	=	PyInt_AsLong(		lower_law_obj);
+			h_lower_dist.intt	=	PyInt_AsLong(		lower_intt_obj);
+			h_upper_dist.erg	=	PyFloat_AsDouble(	upper_erg_obj);
+			h_upper_dist.len	=	PyInt_AsLong(		upper_len_obj);
+			h_upper_dist.law	=	PyInt_AsLong(		upper_law_obj);
+			h_upper_dist.intt	=	PyInt_AsLong(		upper_intt_obj);
+			next_dex			=	PyInt_AsLong(		next_dex_obj);
+			PyErr_Print();
 
-			// set this pointer
-			if(vector_length==0){
-				xs_data_energy     [k*MT_columns + j] = NULL;
-				xs_data_energy_host[k*MT_columns + j] = NULL;
-				PyErr_Print();
+
+			// decide what to put in the array according to length reported
+			if(h_lower_dist.law==-2){   
+
+				// below threshold, do nothing except go to where the threshold is
+				row = next_dex;
+
+			}
+			else if (h_lower_dist.law==-1){  
+
+				// this is a fission reaction and this is nu_t, nu_p
+				// python routine linearly interpolates them, write current values
+
+				// encode values directly to pointer positions on host arrays
+				memcpy(&h_xsdata.dist_scatter[array_index].upper, &h_upper_dist.erg , 1*sizeof(float));
+				memcpy(&h_xsdata.dist_scatter[array_index].lower, &h_lower_dist.erg , 1*sizeof(float));
+				memcpy(      &dh_dist_scatter[array_index].upper, &h_upper_dist.erg , 1*sizeof(float));
+				memcpy(      &dh_dist_scatter[array_index].lower, &h_lower_dist.erg , 1*sizeof(float));
+
+				// go to next dex so python can do interpolation
+				row++;
+
 			}
 			else{
-				// get data buffer from numpy array
-				if (PyObject_CheckBuffer(mu_vector_obj) & PyObject_CheckBuffer(cdf_vector_obj)){
-					PyObject_GetBuffer( mu_vector_obj,  &muBuff, PyBUF_ND);
-					PyObject_GetBuffer(cdf_vector_obj, &cdfBuff, PyBUF_ND);
-					PyObject_GetBuffer(pdf_vector_obj, &pdfBuff, PyBUF_ND);
-					PyObject_GetBuffer( next_mu_vector_obj,    &next_muBuff, PyBUF_ND);
-					PyObject_GetBuffer( next_cdf_vector_obj,  &next_cdfBuff, PyBUF_ND);
-					PyObject_GetBuffer( next_pdf_vector_obj,  &next_pdfBuff, PyBUF_ND);
+				// normal scattering distributions
+				// get new pointers for temp arrays according to length reported
+				h_lower_dist.var	=	new 	float[h_lower_dist.len];
+				h_lower_dist.pdf	=	new 	float[h_lower_dist.len];
+				h_lower_dist.cdf	=	new 	float[h_lower_dist.len];
+				h_upper_dist.var	=	new 	float[h_upper_dist.len];
+				h_upper_dist.pdf	=	new 	float[h_upper_dist.len];
+				h_upper_dist.cdf	=	new 	float[h_upper_dist.len];
+
+				// get buffers from python
+				if (PyObject_CheckBuffer(lower_var_obj) &
+					PyObject_CheckBuffer(lower_pdf_obj) &
+					PyObject_CheckBuffer(lower_cdf_obj) &
+					PyObject_CheckBuffer(upper_var_obj) &
+					PyObject_CheckBuffer(upper_pdf_obj) &
+					PyObject_CheckBuffer(upper_cdf_obj) )
+					{
+					PyObject_GetBuffer( lower_var_obj, &lower_var_buff, PyBUF_ND);
+					PyObject_GetBuffer( lower_pdf_obj, &lower_pdf_buff, PyBUF_ND);
+					PyObject_GetBuffer( lower_cdf_obj, &lower_cdf_buff, PyBUF_ND);
+					PyObject_GetBuffer( upper_var_obj, &upper_var_buff, PyBUF_ND);
+					PyObject_GetBuffer( upper_pdf_obj, &upper_pdf_buff, PyBUF_ND);
+					PyObject_GetBuffer( upper_cdf_obj, &upper_cdf_buff, PyBUF_ND);
 					PyErr_Print();
 				}
 				else{
 					PyErr_Print();
-    			    		fprintf(stderr, "Returned object does not support buffer interface\n");
-    			    		return;
+				    fprintf(stderr, "Returned object does not support buffer interface\n");
+				    return;
 				}
 	
-				// shape info
-				muRows     		=  muBuff.shape[0];
-				muColumns  		=  muBuff.shape[1];
-				muBytes    		=  muBuff.len;
-				cdfRows    		= cdfBuff.shape[0];
-				cdfColumns 		= cdfBuff.shape[1];
-				cdfBytes   		= cdfBuff.len;
-				next_muRows     = next_muBuff.shape[0];
-				next_muColumns  = next_muBuff.shape[1];
-				next_muBytes    = next_muBuff.len;
-				next_cdfRows    = next_cdfBuff.shape[0];
-				next_cdfColumns = next_cdfBuff.shape[1];
-				next_cdfBytes   = next_cdfBuff.len;
+				// get array size info 
+				get_Py_buffer_dims(&lower_var_buff_rows, &lower_var_buff_columns, &lower_var_buff_bytes, &lower_var_buff);
+				get_Py_buffer_dims(&lower_pdf_buff_rows, &lower_pdf_buff_columns, &lower_pdf_buff_bytes, &lower_pdf_buff);
+				get_Py_buffer_dims(&lower_cdf_buff_rows, &lower_cdf_buff_columns, &lower_cdf_buff_bytes, &lower_cdf_buff);
+				get_Py_buffer_dims(&upper_var_buff_rows, &upper_var_buff_columns, &upper_var_buff_bytes, &upper_var_buff);
+				get_Py_buffer_dims(&upper_pdf_buff_rows, &upper_pdf_buff_columns, &upper_pdf_buff_bytes, &upper_pdf_buff);
+				get_Py_buffer_dims(&upper_cdf_buff_rows, &upper_cdf_buff_columns, &upper_cdf_buff_bytes, &upper_cdf_buff);
 
-				//std::cout << "C++ vlen/next " << muRows << " " << next_muRows << "\n";
-	
-				//make sure every is ok
-				assert(muRows==   cdfRows);
-				assert(muColumns==cdfColumns);
-				assert(muBytes==  cdfBytes);
-				assert(next_muRows==   next_cdfRows);
-				assert(next_muColumns==next_cdfColumns);
-				assert(next_muBytes==  next_cdfBytes);
-	
-				//allocate pointer, write into array
-				//for cuda too
-				array_elements = muRows + 2*cdfRows + next_muRows + 2*next_cdfRows + 6;
-				this_pointer = new float [array_elements];
-				cudaMalloc(&cuda_pointer,(array_elements)*sizeof(float));
-				total_bytes_energy +=    (array_elements)*sizeof(float);    // add to total count
-				xs_data_energy     [k*MT_columns + j] = this_pointer;
-				xs_data_energy_host[k*MT_columns + j] = cuda_pointer;
-	
-				//copy data from python buffer to pointer in array
-				memcpy(&this_pointer[0], 							&lastE,   	  		sizeof(float));
-				memcpy(&this_pointer[1], 							&nextE,   	  		sizeof(float));    // nextE   to first position
-				memcpy(&this_pointer[2], 							&muRows,   	  		sizeof(unsigned)); // len to third position
-				memcpy(&this_pointer[3], 							&next_muRows, 	  	sizeof(unsigned));
-				memcpy(&this_pointer[4], 							&law, 		  		sizeof(unsigned));
-				memcpy(&this_pointer[5], 							&intt, 		  		sizeof(unsigned));
-				memcpy(&this_pointer[6],							muBuff.buf,  		muRows*sizeof(float));     // mu  to len bytes after
-				memcpy(&this_pointer[6+   muRows],					cdfBuff.buf, 		cdfRows*sizeof(float));
-				memcpy(&this_pointer[6+ 2*muRows],					pdfBuff.buf, 		cdfRows*sizeof(float));
-				memcpy(&this_pointer[6+ 3*muRows],					next_muBuff.buf,	next_muRows*sizeof(float));
-				memcpy(&this_pointer[6+ 3*muRows +   next_muRows],	next_cdfBuff.buf, 	next_cdfRows*sizeof(float));
-				memcpy(&this_pointer[6+ 3*muRows + 2*next_muRows],	next_pdfBuff.buf, 	next_cdfRows*sizeof(float));
+				//make shapes and lengths are all the same
+				assert(lower_pdf_buff_rows		==	lower_var_buff_rows		); // shape is in elements
+				assert(lower_pdf_buff_columns	==	lower_var_buff_columns	);
+				assert(lower_cdf_buff_rows		==	lower_var_buff_rows		);
+				assert(lower_cdf_buff_columns	==	lower_var_buff_columns	);
+				assert(upper_pdf_buff_rows		==	upper_var_buff_rows		);
+				assert(upper_pdf_buff_columns	==	upper_var_buff_columns	);
+				assert(upper_cdf_buff_rows		==	upper_var_buff_rows		);
+				assert(upper_cdf_buff_columns	==	upper_var_buff_columns	);
+				assert(lower_pdf_buff_bytes==lower_var_buff_bytes); // len is in BYTES
+				assert(lower_cdf_buff_bytes==lower_var_buff_bytes);
+				assert(upper_pdf_buff_bytes==upper_var_buff_bytes);
+				assert(upper_cdf_buff_bytes==upper_var_buff_bytes);
 
-				cudaMemcpy(cuda_pointer,this_pointer,(array_elements)*sizeof(float),cudaMemcpyHostToDevice);
+				// make sure len corresponds to float32!
+				assert(lower_var_buff_bytes==(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
+				assert(lower_pdf_buff_bytes==(lower_pdf_buff_rows*lower_pdf_buff_columns)*sizeof(float));
+				assert(lower_cdf_buff_bytes==(lower_cdf_buff_rows*lower_cdf_buff_columns)*sizeof(float));
+				assert(upper_var_buff_bytes==(upper_var_buff_rows*upper_var_buff_columns)*sizeof(float));
+				assert(upper_pdf_buff_bytes==(upper_pdf_buff_rows*upper_pdf_buff_columns)*sizeof(float));
+				assert(upper_cdf_buff_bytes==(upper_cdf_buff_rows*upper_cdf_buff_columns)*sizeof(float));
 
-				//for(unsigned n=0;n<(muRows+2*cdfRows+next_muRows+2*next_cdfRows+5);n++){
-				//	printf("%6.4E\n",this_pointer[n]);
-				//}
+				// allocate device distribution arrays
+				check_cuda(cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes));   // len has been verified
+				check_cuda(cudaMalloc(&dh_lower_dist.pdf, lower_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_lower_dist.cdf, lower_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes));
+				check_cuda(cudaPeekAtLastError());
 
+				// copy data from python buffer to host pointer in array
+				memcpy(h_lower_dist.var, lower_var_buff.buf, lower_var_buff_bytes);  
+				memcpy(h_lower_dist.pdf, lower_pdf_buff.buf, lower_var_buff_bytes);
+				memcpy(h_lower_dist.cdf, lower_cdf_buff.buf, lower_var_buff_bytes);
+				memcpy(h_upper_dist.var, upper_var_buff.buf, upper_var_buff_bytes);
+				memcpy(h_upper_dist.pdf, upper_pdf_buff.buf, upper_var_buff_bytes);
+				memcpy(h_upper_dist.cdf, upper_cdf_buff.buf, upper_var_buff_bytes);
 
-				PyErr_Print();
+				// copy data from host arrays to device arrays
+				check_cuda(cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff_bytes, cudaMemcpyHostToDevice));  
+				check_cuda(cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaPeekAtLastError());
+
+				// copy vals in structure
+				dh_lower_dist.erg	=	h_lower_dist.erg;
+				dh_lower_dist.len	=	h_lower_dist.len;
+				dh_lower_dist.law	=	h_lower_dist.law;
+				dh_lower_dist.intt	=	h_lower_dist.intt;
+				dh_upper_dist.erg	=	h_upper_dist.erg;
+				dh_upper_dist.len	=	h_upper_dist.len;
+				dh_upper_dist.law	=	h_upper_dist.law;
+				dh_upper_dist.intt	=	h_upper_dist.intt;
+
+				// allocate container
+				check_cuda(cudaMalloc(&d_lower_dist, 1*sizeof(dist_data)));
+				check_cuda(cudaMalloc(&d_upper_dist, 1*sizeof(dist_data)));
+				check_cuda(cudaPeekAtLastError());
+
+				// copy device pointers to device container
+				check_cuda(cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaPeekAtLastError());
+
+				// replicate pointers until next index
+				for (int i=row ; i<next_dex; i++){
+					array_index = i*total_cols + col;
+					h_xsdata.dist_scatter[array_index].upper = &h_upper_dist;
+					h_xsdata.dist_scatter[array_index].lower = &h_lower_dist;
+					      dh_dist_scatter[array_index].upper =  d_upper_dist;
+					      dh_dist_scatter[array_index].lower =  d_lower_dist;
+				}
+
+				// go to where the next index starts
+				row = next_dex;
 
 			}
 
-			// replicate this pointer into array until nextE
-			// for cuda too
-			if (k < (MT_rows-1) ){
-				while(k<nextDex-1){
-					xs_data_energy     [(k+1)*MT_columns + j] = this_pointer;
-					xs_data_energy_host[(k+1)*MT_columns + j] = cuda_pointer;
-					k++;
-				}
-			}
-	
-			this_pointer = NULL;
-			cuda_pointer = NULL;
-
+			PyErr_Print();
 		}
 	}
 
-	if(do_final){
-    	Py_Finalize();
-    }
+	// copy host array containing device pointers to device array
+	check_cuda(cudaMalloc(&dh_xsdata.dist_scatter,                total_rows*total_cols*sizeof(dist_container)));
+	check_cuda(cudaMemcpy( dh_xsdata.dist_scatter,dh_dist_scatter,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
+	check_cuda(cudaPeekAtLastError());
+
+	// free host array containing device pointers, not needed anymore
+	delete dh_dist_scatter;
+
+}
+void whistory::copy_energy_data(){
+	// get scattering ditributions from PyNE and set up data heirarchy on host and device 
 
 	if(print_flag >= 2){
-		std::cout << "\e[1;32m" << "Making material table..." << "\e[m \n";
+		std::cout << "\e[1;32m" << "Loading/copying energy data and linking..." << "\e[m \n";
 	}
 
-    	//pass awr pointer to geometry object, make the number density table, copy pointers back
-    	problem_geom.awr_list = awr_list;
-    	problem_geom.make_material_table();
-    	//problem_geom.get_material_table(&n_materials,&n_isotopes,&material_list,&isotope_list,&number_density_matrix);  
-    	problem_geom.get_material_table(&n_materials,&n_isotopes,&number_density_matrix);  
+	// python variables for arguments
+	PyObject	*row_obj, *col_obj, *call_string, *obj_list;
+	PyObject	*lower_erg_obj, *lower_len_obj, *lower_law_obj, *lower_intt_obj, *lower_var_obj, *lower_pdf_obj, *lower_cdf_obj; 
+	PyObject	*upper_erg_obj, *upper_len_obj, *upper_law_obj, *upper_intt_obj, *upper_var_obj, *upper_pdf_obj, *upper_cdf_obj, *next_dex_obj; 
+	Py_buffer	lower_var_buff, lower_pdf_buff, lower_cdf_buff, upper_var_buff, upper_pdf_buff, upper_cdf_buff;
+	
+	// local temp variables
+	int				row, col;
+	float			nu_t, nu_p;
+	int				this_isotope;
+	unsigned		array_index, next_dex, lower_rows;
+	unsigned		lower_var_buff_bytes,	lower_pdf_buff_bytes,	lower_cdf_buff_bytes;
+	unsigned		lower_var_buff_rows,	lower_pdf_buff_rows,	lower_cdf_buff_rows;
+	unsigned		lower_var_buff_columns,	lower_pdf_buff_columns,	lower_cdf_buff_columns;
+	unsigned		upper_var_buff_bytes,	upper_pdf_buff_bytes,	upper_cdf_buff_bytes;
+	unsigned		upper_var_buff_rows,	upper_pdf_buff_rows,	upper_cdf_buff_rows;
+	unsigned		upper_var_buff_columns,	upper_pdf_buff_columns,	upper_cdf_buff_columns;
+	dist_data		 h_lower_dist,  h_upper_dist;
+	dist_data		dh_lower_dist, dh_upper_dist;
+	dist_data		*d_lower_dist, *d_upper_dist;
+	dist_container	*dh_dist_energy;
 
-    	assert(n_isotopes == xs_length_numbers[0]);
+	// compute some sizes
+	unsigned total_rows = h_xsdata.energy_grid_len;
+	unsigned total_cols = h_xsdata.total_reaction_channels + h_xsdata.n_isotopes;
 
-    	//do cudamalloc for these arrays
-    	//cudaMalloc(&d_material_list , 			n_materials*sizeof(unsigned) );
-    	//cudaMalloc(&d_isotope_list , 			n_isotopes*sizeof(unsigned) );
-    	cudaMalloc(&d_number_density_matrix , 	n_materials*n_isotopes*sizeof(float) );
+	// allocate host arrays
+	h_xsdata.dist_energy	= new dist_container [total_rows * total_cols];
+	dh_dist_energy			= new dist_container [total_rows * total_cols];
 
-}
-void whistory::print_xs_data(){  // 0=isotopes, 1=main E points, 2=total numer of reaction channels, 3=matrix E points, 4=angular cosine points, 5=outgoing energy points
-	unsigned dsum = 0;
-	printf("\e[1;32m%-6s\e[m \n","Cross section data info:");
-	std::cout << "--- Bytes ---" << "\n";
-	std::cout << "  xs_length_numbers:        " << 6*sizeof(unsigned) << "\n";			  dsum += (6*sizeof(unsigned) );
-	std::cout << "  xs_MT_numbers_total:      " << xs_length_numbers[0]*sizeof(unsigned) 	<< "\n";  dsum += (xs_length_numbers[0]*sizeof(unsigned) );
-	std::cout << "  xs_MT_numbers:            " << (xs_length_numbers[2]+xs_length_numbers[0])*sizeof(unsigned)<< "\n";
-	dsum += (xs_length_numbers[2]*sizeof(unsigned) );
-	std::cout << "  xs_data_main_E_grid:      " << xs_length_numbers[1]	*sizeof(float)	<< "\n";  dsum += (xs_length_numbers[1]*sizeof(float)	  );
-	std::cout << "  xs_data_MT:               " << MT_rows*MT_columns*sizeof(float)		<< "\n";  dsum += (MT_rows*MT_columns)*sizeof(float);
-	std::cout << "  xs_data_scatter_pointers: " << MT_rows*MT_columns*sizeof(float*)		<< "\n";  dsum += (MT_rows*MT_columns)*sizeof(float*);
-	std::cout << "  xs_data_energy_pointers:  " << MT_rows*MT_columns*sizeof(float*)		<< "\n";  dsum += (MT_rows*MT_columns)*sizeof(float*);
-	std::cout << "  scatter data:             " << total_bytes_scatter				<< "\n";  dsum += (total_bytes_scatter);
-	std::cout << "  energy data:              " << total_bytes_energy				<< "\n";  dsum += (total_bytes_energy);
-	std::cout << "  TOTAL:                    " << dsum << " bytes \n";
-	std::cout << "  TOTAL:                    " << dsum/1048576 << " MB \n";
-}
-void whistory::write_xs_data(std::string filename){
-
-	std::cout << "\e[1;32m" << "Writing xs_data to " << filename << "... ";
-
-	std::string this_name;
-	// write MT array
-	this_name = filename + ".MTarray";
-	FILE* xsfile = fopen(this_name.c_str(),"w");
-	this_name = filename + ".scatterptr";
-	FILE* scatterfile = fopen(this_name.c_str(),"w");
-	this_name = filename + ".energyptr";
-	FILE* energyfile = fopen(this_name.c_str(),"w");
-	for (int k=0;k<MT_rows;k++){
-		for(int j=0;j<MT_columns;j++){
-			fprintf(xsfile,"% 10.8E ",xs_data_MT[k*MT_columns+j]);
-			fprintf(scatterfile,"%p ",xs_data_scatter_host[k*MT_columns+j]);
-			fprintf(energyfile,"%p ",xs_data_energy_host[k*MT_columns+j]);
+	// init to null pointers
+	for (row=0 ; row<h_xsdata.energy_grid_len; row++){  //start after the total xs vectors
+			for (col=0 ; col<h_xsdata.total_reaction_channels ; col++){
+				array_index = row*total_cols + col;
+				 h_xsdata.dist_energy[array_index].upper = 0x0;
+				 h_xsdata.dist_energy[array_index].lower = 0x0;
+				       dh_dist_energy[array_index].upper = 0x0;
+				       dh_dist_energy[array_index].lower = 0x0;
 		}
-		fprintf(xsfile,"\n");
-		fprintf(scatterfile,"\n");
-		fprintf(energyfile,"\n");
 	}
-	fclose(xsfile);
-	fclose(scatterfile);
-	fclose(energyfile);
 
-	// write unionized E grid
-	this_name = filename + ".Egrid";
-	xsfile = fopen(this_name.c_str(),"w");
-	for (int k=0;k<MT_rows;k++){
-		fprintf(xsfile,"%10.8E\n",xs_data_main_E_grid[k]);
-	}
-	fclose(xsfile);
+	// scan through the scattering array, copying the scattering distributions and replicating pointers to 
+	// them for each main energy grid points within the distribution's grid points
+	//
+	//  --- The current method copies the scattering distributions twice.  
+	//  --- This can be eliminated via copying pointers instead of reiniting ditributions, 
+	//  --- but this has been left for now for simplicity.
+	//
+	for( col=h_xsdata.n_isotopes ; col<total_cols ; col++ ){ // going down column to stay within to same isotope, not effcient for caching, but OK here since only done at init
+		
+		// rest row index
+		row = 0;
 
-	// write MT number array
-	this_name = filename + ".MTnums";
-	xsfile = fopen(this_name.c_str(),"w");
-	for(int j=0;j<MT_columns;j++){
-		fprintf(xsfile,"%u\n",xs_MT_numbers[j]);
-	}
-	fclose(xsfile);
+		// print some nice info if flagged
+		if(print_flag >= 2){
+			this_isotope = -1;
+			for (int i=0;i<h_xsdata.n_isotopes+1;i++){
+				if(col>=(h_xsdata.rxn_numbers_total[i]+h_xsdata.n_isotopes) & col<(h_xsdata.rxn_numbers_total[i+1]+h_xsdata.n_isotopes)){
+					this_isotope = i;
+					break;
+				}
+			}
+			printf("   Getting energy data for isotope %s - reaction %u\n",isotopes[this_isotope].c_str(),h_xsdata.rxn_numbers[col]);
+		}
 
-	// write (hopefully) covnerged fission source
-	cudaMemcpy(space, d_fissile_points, Ndataset*sizeof(source_point), cudaMemcpyDeviceToHost);
-	cudaMemcpy(E,     d_fissile_energy, Ndataset*sizeof(float),        cudaMemcpyDeviceToHost);
-	this_name = filename + ".fission_source";
-	xsfile = fopen(this_name.c_str(),"w");
-	for(int j=0;j<Ndataset;j++){
-		fprintf(xsfile,"% 6.4E % 6.4E % 6.4E %6.4E\n",space[j].x,space[j].y,space[j].z,E[j]);
+		while(row<total_rows){
+
+			// compute array index
+			array_index = row*total_cols + col;
+
+			// call python object, which returns the two buffers 
+			// and the main e grid index that it needs to be replicated to
+			row_obj     = PyInt_FromLong     (row);
+			col_obj     = PyInt_FromLong     (col);
+			call_string = PyString_FromString("_get_energy_data");
+			obj_list    = PyObject_CallMethodObjArgs(xsdat_instance, call_string, row_obj, col_obj, NULL);
+			PyErr_Print();
+
+			// get objects in the returned list
+			lower_erg_obj	= PyList_GetItem(obj_list,0);
+			lower_len_obj	= PyList_GetItem(obj_list,1);
+			lower_law_obj	= PyList_GetItem(obj_list,2);
+			lower_intt_obj	= PyList_GetItem(obj_list,3);
+			lower_var_obj	= PyList_GetItem(obj_list,4);
+			lower_pdf_obj	= PyList_GetItem(obj_list,5);
+			lower_cdf_obj	= PyList_GetItem(obj_list,6);
+			upper_erg_obj	= PyList_GetItem(obj_list,7);
+			upper_len_obj	= PyList_GetItem(obj_list,8);
+			upper_law_obj	= PyList_GetItem(obj_list,9);
+			upper_intt_obj	= PyList_GetItem(obj_list,10);
+			upper_var_obj	= PyList_GetItem(obj_list,11);
+			upper_pdf_obj	= PyList_GetItem(obj_list,12);
+			upper_cdf_obj	= PyList_GetItem(obj_list,13);
+			next_dex_obj	= PyList_GetItem(obj_list,14);
+			PyErr_Print();
+
+			// copy single values to temp objects
+			h_lower_dist.erg	=	PyFloat_AsDouble(	lower_erg_obj);
+			h_lower_dist.len	=	PyInt_AsLong(		lower_len_obj);
+			h_lower_dist.law	=	PyInt_AsLong(		lower_law_obj);
+			h_lower_dist.intt	=	PyInt_AsLong(		lower_intt_obj);
+			h_upper_dist.erg	=	PyFloat_AsDouble(	upper_erg_obj);
+			h_upper_dist.len	=	PyInt_AsLong(		upper_len_obj);
+			h_upper_dist.law	=	PyInt_AsLong(		upper_law_obj);
+			h_upper_dist.intt	=	PyInt_AsLong(		upper_intt_obj);
+			next_dex			=	PyInt_AsLong(		next_dex_obj);
+			PyErr_Print();
+
+
+			// decide what to put in the array according to length reported
+			if(h_lower_dist.len==0){   
+
+				// below threshold, do nothing except go to where the threshold is
+				row = next_dex;
+
+			}
+			else if (h_lower_dist.len==-1){  
+
+				// this is a fission reaction and this is nu_t, nu_p
+				// go to the end.  nu encoding was done in scattering array.
+				row = total_rows;
+
+			}
+			else{
+				// normal scattering distributions
+				// get new pointers for temp arrays according to length reported
+				h_lower_dist.var	=	new 	float[h_lower_dist.len];
+				h_lower_dist.pdf	=	new 	float[h_lower_dist.len];
+				h_lower_dist.cdf	=	new 	float[h_lower_dist.len];
+				h_upper_dist.var	=	new 	float[h_upper_dist.len];
+				h_upper_dist.pdf	=	new 	float[h_upper_dist.len];
+				h_upper_dist.cdf	=	new 	float[h_upper_dist.len];
+
+				// get buffers from python
+				if (PyObject_CheckBuffer(lower_var_obj) &
+					PyObject_CheckBuffer(lower_pdf_obj) &
+					PyObject_CheckBuffer(lower_cdf_obj) &
+					PyObject_CheckBuffer(upper_var_obj) &
+					PyObject_CheckBuffer(upper_pdf_obj) &
+					PyObject_CheckBuffer(upper_cdf_obj) )
+					{
+					PyObject_GetBuffer( lower_var_obj, &lower_var_buff, PyBUF_ND);
+					PyObject_GetBuffer( lower_pdf_obj, &lower_pdf_buff, PyBUF_ND);
+					PyObject_GetBuffer( lower_cdf_obj, &lower_cdf_buff, PyBUF_ND);
+					PyObject_GetBuffer( upper_var_obj, &upper_var_buff, PyBUF_ND);
+					PyObject_GetBuffer( upper_pdf_obj, &upper_pdf_buff, PyBUF_ND);
+					PyObject_GetBuffer( upper_cdf_obj, &upper_cdf_buff, PyBUF_ND);
+					PyErr_Print();
+				}
+				else{
+					PyErr_Print();
+				    fprintf(stderr, "Returned object does not support buffer interface\n");
+				    return;
+				}
+	
+				// get array size info 
+				get_Py_buffer_dims(&lower_var_buff_rows, &lower_var_buff_columns, &lower_var_buff_bytes, &lower_var_buff);
+				get_Py_buffer_dims(&lower_pdf_buff_rows, &lower_pdf_buff_columns, &lower_pdf_buff_bytes, &lower_pdf_buff);
+				get_Py_buffer_dims(&lower_cdf_buff_rows, &lower_cdf_buff_columns, &lower_cdf_buff_bytes, &lower_cdf_buff);
+				get_Py_buffer_dims(&upper_var_buff_rows, &upper_var_buff_columns, &upper_var_buff_bytes, &upper_var_buff);
+				get_Py_buffer_dims(&upper_pdf_buff_rows, &upper_pdf_buff_columns, &upper_pdf_buff_bytes, &upper_pdf_buff);
+				get_Py_buffer_dims(&upper_cdf_buff_rows, &upper_cdf_buff_columns, &upper_cdf_buff_bytes, &upper_cdf_buff);
+
+				//make shapes and lengths are all the same
+				assert(lower_pdf_buff_rows		==	lower_var_buff_rows		); // shape is in elements
+				assert(lower_pdf_buff_columns	==	lower_var_buff_columns	);
+				assert(lower_cdf_buff_rows		==	lower_var_buff_rows		);
+				assert(lower_cdf_buff_columns	==	lower_var_buff_columns	);
+				assert(upper_pdf_buff_rows		==	upper_var_buff_rows		);
+				assert(upper_pdf_buff_columns	==	upper_var_buff_columns	);
+				assert(upper_cdf_buff_rows		==	upper_var_buff_rows		);
+				assert(upper_cdf_buff_columns	==	upper_var_buff_columns	);
+				assert(lower_pdf_buff_bytes==lower_var_buff_bytes); // len is in BYTES
+				assert(lower_cdf_buff_bytes==lower_var_buff_bytes);
+				assert(upper_pdf_buff_bytes==upper_var_buff_bytes);
+				assert(upper_cdf_buff_bytes==upper_var_buff_bytes);
+
+				// make sure len corresponds to float32!
+				assert(lower_var_buff_bytes==(lower_var_buff_rows*lower_var_buff_columns)*sizeof(float));
+				assert(lower_pdf_buff_bytes==(lower_pdf_buff_rows*lower_pdf_buff_columns)*sizeof(float));
+				assert(lower_cdf_buff_bytes==(lower_cdf_buff_rows*lower_cdf_buff_columns)*sizeof(float));
+				assert(upper_var_buff_bytes==(upper_var_buff_rows*upper_var_buff_columns)*sizeof(float));
+				assert(upper_pdf_buff_bytes==(upper_pdf_buff_rows*upper_pdf_buff_columns)*sizeof(float));
+				assert(upper_cdf_buff_bytes==(upper_cdf_buff_rows*upper_cdf_buff_columns)*sizeof(float));
+
+				// allocate device distribution arrays
+				check_cuda(cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes));   // len has been verified
+				check_cuda(cudaMalloc(&dh_lower_dist.pdf, lower_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_lower_dist.cdf, lower_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes));
+				check_cuda(cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes));
+				check_cuda(cudaPeekAtLastError());
+
+				// copy data from python buffer to host pointer in array
+				memcpy(h_lower_dist.var, lower_var_buff.buf, lower_var_buff_bytes);  
+				memcpy(h_lower_dist.pdf, lower_pdf_buff.buf, lower_var_buff_bytes);
+				memcpy(h_lower_dist.cdf, lower_cdf_buff.buf, lower_var_buff_bytes);
+				memcpy(h_upper_dist.var, upper_var_buff.buf, upper_var_buff_bytes);
+				memcpy(h_upper_dist.pdf, upper_pdf_buff.buf, upper_var_buff_bytes);
+				memcpy(h_upper_dist.cdf, upper_cdf_buff.buf, upper_var_buff_bytes);
+
+				// copy data from host arrays to device arrays
+				check_cuda(cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff_bytes, cudaMemcpyHostToDevice));  
+				check_cuda(cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaPeekAtLastError());
+
+				// copy vals in structure
+				dh_lower_dist.erg	=	h_lower_dist.erg;
+				dh_lower_dist.len	=	h_lower_dist.len;
+				dh_lower_dist.law	=	h_lower_dist.law;
+				dh_lower_dist.intt	=	h_lower_dist.intt;
+				dh_upper_dist.erg	=	h_upper_dist.erg;
+				dh_upper_dist.len	=	h_upper_dist.len;
+				dh_upper_dist.law	=	h_upper_dist.law;
+				dh_upper_dist.intt	=	h_upper_dist.intt;
+
+				// allocate container
+				check_cuda(cudaMalloc(&d_lower_dist, 1*sizeof(dist_data)));
+				check_cuda(cudaMalloc(&d_upper_dist, 1*sizeof(dist_data)));
+				check_cuda(cudaPeekAtLastError());
+
+				// copy device pointers to device container
+				check_cuda(cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaPeekAtLastError());
+
+				// replicate pointers until next index
+				for (int i=row ; i<next_dex; i++){
+					array_index = i*total_cols + col;
+					h_xsdata.dist_energy[array_index].upper = &h_upper_dist;
+					h_xsdata.dist_energy[array_index].lower = &h_lower_dist;
+					      dh_dist_energy[array_index].upper =  d_upper_dist;
+					      dh_dist_energy[array_index].lower =  d_lower_dist;
+				}
+
+				// go to where the next index starts
+				row = next_dex;
+
+			}
+
+			PyErr_Print();
+		}
 	}
-	fclose(xsfile); 
+
+	// copy host array containing device pointers to device array
+	check_cuda(cudaMalloc(&dh_xsdata.dist_energy,               total_rows*total_cols*sizeof(dist_container)));
+	check_cuda(cudaMemcpy( dh_xsdata.dist_energy,dh_dist_energy,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
+	check_cuda(cudaPeekAtLastError());
+
+	// free host array containing device pointers, not needed anymore
+	delete dh_dist_energy;
+
+}
+void whistory::init_cross_sections(){
+	
+	if(print_flag >= 2){
+		std::cout << "\e[1;32m" << "Loading cross sections and unionizing..." << "\e[m \n";
+	}
+
+	// Python variables
+	int i, do_final;
+	unsigned* length_numbers = new unsigned [3];
+
+	// Make python object ready for queries - init python, load cross sections, etc.
+	do_final = init_python();
+
+	// copy various cross section arrays from python
+	copy_python_buffer(&dh_xsdata.xs,         			&h_xsdata.xs,         			"_get_MT_array_pointer");
+	copy_python_buffer(&dh_xsdata.energy_grid,			&h_xsdata.energy_grid,			"_get_main_Egrid_pointer");
+	copy_python_buffer(&dh_xsdata.rxn_numbers,			&h_xsdata.rxn_numbers,			"_get_MT_numbers_pointer");
+	copy_python_buffer(&dh_xsdata.rxn_numbers_total,	&h_xsdata.rxn_numbers_total,	"_get_MT_numbers_total_pointer");
+	copy_python_buffer(&dh_xsdata.awr,					&h_xsdata.awr,					"_get_awr_pointer");
+	copy_python_buffer(&dh_xsdata.temp,					&h_xsdata.temp,					"_get_temp_pointer");
+	copy_python_buffer(&dh_xsdata.Q,					&h_xsdata.Q,					"_get_Q_pointer");
+	copy_python_buffer(									&length_numbers,				"_get_length_numbers_pointer");
+	dh_xsdata.n_isotopes				= h_xsdata.n_isotopes				= length_numbers[0];				
+	dh_xsdata.energy_grid_len			= h_xsdata.energy_grid_len			= length_numbers[1];	
+	dh_xsdata.total_reaction_channels	= h_xsdata.total_reaction_channels	= length_numbers[2];
+
+	// init device container
+	check_cuda(cudaMalloc( &d_xsdata,	1*sizeof(cross_section_data)));
+	check_cuda(cudaPeekAtLastError());
+
+	// copy scattering data
+	copy_scatter_data();
+	check_cuda(cudaPeekAtLastError());
+
+	// copy energy data
+	copy_energy_data();
+	check_cuda(cudaPeekAtLastError());
+
+	// intialization complete, copy host structure (containing device pointers) to device structure
+	check_cuda(cudaMemcpy( d_xsdata,	&dh_xsdata,	1*sizeof(cross_section_data),	cudaMemcpyHostToDevice));
+	check_cuda(cudaPeekAtLastError());
+
+	// finalize python if initialized by warp
+	if(do_final){
+		Py_Finalize();
+	}
+
+	if(print_flag >= 2){//
+
+	}
 
 	std::cout << "Done." << "\e[m \n";
 
+	std::cout << "\e[1;32m" << "Making material table..." << "\e[m \n";
+
+	//pass awr pointer to geometry object, make the number density table, copy pointers back
+	problem_geom.awr_list = h_xsdata.awr;
+	problem_geom.make_material_table();
+	problem_geom.get_material_table(&n_materials,&n_isotopes,&number_density_matrix);  
+	assert(n_isotopes == h_xsdata.n_isotopes);
+
+	// allocate material matrix (now that we have n_materials) and copy to device
+	check_cuda(cudaMalloc(&d_number_density_matrix,                        n_materials*n_isotopes*sizeof(float)));
+	check_cuda(cudaMemcpy( d_number_density_matrix, number_density_matrix, n_materials*n_isotopes*sizeof(float), cudaMemcpyHostToDevice));
+	check_cuda(cudaPeekAtLastError());
+	
+	std::cout << "Done." << "\e[m \n";
+
+}
+void whistory::print_xs_data(){  
+
+}
+void whistory::write_xs_data(std::string filename){
+
+
+
 }
 void whistory::print_pointers(){
-	std::cout << "\e[1;32m" << "Pointer Info:" << "\e[m \n";
-	std::cout << "--- HOST ---" << "\n";
-	std::cout << "  space:               " <<   space   << "\n";
-	std::cout << "  E:                   " <<   E       << "\n";
-	std::cout << "  Q:                   " <<   Q       << "\n";
-	std::cout << "  rn_bank:             " <<   rn_bank << "\n";
-	std::cout << "  cellnum:             " <<   cellnum << "\n";
-	std::cout << "  matnum:              " <<   matnum  << "\n";
-	std::cout << "  isonum:              " <<   isonum  << "\n";
-	std::cout << "  rxn:                 " <<   rxn     << "\n";
-	std::cout << "  done:                " <<   done    << "\n";
-	std::cout << "  yield:               " <<   yield   << "\n";
-	std::cout << "  xs_length_numbers:   " << xs_length_numbers   << "\n"; 
-	std::cout << "  xs_MT_numbers_total: " << xs_MT_numbers_total << "\n";
-	std::cout << "  xs_MT_numbers:       " << xs_MT_numbers       << "\n";
-	std::cout << "  xs_data_MT:          " << xs_data_MT          << "\n";
-	std::cout << "  xs_data_main_E_grid: " << xs_data_main_E_grid << "\n";
-	std::cout << "--- DEVICE ---" << "\n";
-	std::cout << "d_space:               " << d_space   << "\n";
-	std::cout << "d_E:                   " << d_E       << "\n";
-	std::cout << "d_Q:                   " << d_Q       << "\n";
-	std::cout << "d_rn_bank:             " << d_rn_bank << "\n";
-	std::cout << "d_cellnum:             " << d_cellnum << "\n";
-	std::cout << "d_matnum:              " << d_matnum  << "\n";
-	std::cout << "d_isonum:              " << d_isonum  << "\n";
-	std::cout << "d_rxn:                 " << d_rxn     << "\n";
-	std::cout << "d_done:                " << d_done    << "\n";
-	std::cout << "d_yield:               " << d_yield   << "\n";
-	std::cout << "d_xs_length_numbers:   " << d_xs_length_numbers   << "\n"; 
-	std::cout << "d_xs_MT_numbers_total: " << d_xs_MT_numbers_total << "\n";
-	std::cout << "d_xs_MT_numbers:       " << d_xs_MT_numbers       << "\n";
-	std::cout << "d_xs_data_MT:          " << d_xs_data_MT          << "\n";
-	std::cout << "d_xs_data_main_E_grid: " << d_xs_data_main_E_grid << "\n";
+
 }
 void whistory::trace(unsigned type){
 
 	//make sure device is ready
-	cudaDeviceSynchronize();
+	check_cuda(cudaDeviceSynchronize());
 
 	//trace
 	optix_obj.trace(type);
@@ -1481,7 +1425,7 @@ void whistory::trace(unsigned type){
 void whistory::trace(unsigned type, unsigned n_active){
 
 	//make sure device is ready
-	cudaDeviceSynchronize();
+	check_cuda(cudaDeviceSynchronize());
 
 	//trace
 	optix_obj.trace(type,n_active);
@@ -1495,7 +1439,7 @@ void whistory::print_materials_table(){
 	//print temperatures:
 	printf("  --------------   \n");
 	for (int i=0; i<n_isotopes;i++){
-		printf("  Isotope %3d = %10s , temp: %7.2F K\n",i,isotopes[i].c_str(),temp_list[i]/8.617332478e-11);
+		printf("  Isotope %3d = %10s , temp: %7.2F K\n",i,isotopes[i].c_str(),h_xsdata.temp[i]/8.617332478e-11);
 	}
 
 }
@@ -1515,21 +1459,21 @@ void whistory::sample_fissile_points(){
 		update_RNG();
 
 		// set uniformly random positions on GPU
-		set_positions_rand ( NUM_THREADS, N , outer_cell_type, d_space , d_rn_bank, outer_cell_dims);
+		set_positions_rand ( NUM_THREADS, N , outer_cell_type, dh_particles.space , dh_particles.rn_bank, outer_cell_dims);
 		
 		//run OptiX to get cell number, set as a hash run for fissile, writes 1/0 to matnum
 		trace(3, N);
 
 		// compact
-		res = cudppCompact(compactplan, d_valid_result, (size_t*)d_valid_N , d_remap , d_matnum , N);
+		res = cudppCompact(compactplan, d_valid_result, (size_t*)d_valid_N , d_remap , dh_particles.matnum , N);
 		if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in compacting\n");exit(-1);}
 
 		// copy back and add
-		cudaMemcpy( &valid_N, d_valid_N, 1*sizeof(unsigned), cudaMemcpyDeviceToHost);
+		check_cuda(cudaMemcpy( &valid_N, d_valid_N, 1*sizeof(unsigned), cudaMemcpyDeviceToHost));
 		current_index += valid_N;
 
 		//copy in new values, keep track of index, copies positions and direction
-		copy_points( NUM_THREADS, valid_N, d_valid_N, current_index, d_valid_result, d_fissile_points, d_space, d_fissile_energy, d_E); 
+		copy_points( NUM_THREADS, valid_N, d_valid_N, current_index, d_valid_result, d_fissile_points, dh_particles.space, d_fissile_energy, dh_particles.E); 
 		
 		// print how far along we are
 		std::cout << (float)current_index/(float)N*100.0 <<" \% done\r";
@@ -1541,13 +1485,23 @@ void whistory::sample_fissile_points(){
 		} 
 	}
 
+	float a=0.7;
+	float b=1.0;
+
+	if(print_flag >= 2){
+		printf("  Sampling Watt fission spectrum with a=%6.4f and b=%6.4f...\n",a,b);
+	}
+
+	sample_fissile_energy(NUM_THREADS, N, a, b, dh_particles.rn_bank, d_fissile_energy);
+
+
 	if(print_flag >= 2){
 		std::cout << "  Copying to starting points...\n";
 	}
 
-	cudaMemcpy(d_space,	d_fissile_points	,N*sizeof(source_point),	cudaMemcpyDeviceToDevice);
-	cudaMemcpy(d_E,    	d_fissile_energy	,N*sizeof(float),		cudaMemcpyDeviceToDevice);
-	cudaMemcpy(d_rxn,  	rxn 			    ,N*sizeof(unsigned),		cudaMemcpyHostToDevice);
+	check_cuda(cudaMemcpy(dh_particles.space,	d_fissile_points	,	N*sizeof(spatial_data),	cudaMemcpyDeviceToDevice));
+	check_cuda(cudaMemcpy(dh_particles.E,		d_fissile_energy	,	N*sizeof(float),		cudaMemcpyDeviceToDevice));
+	check_cuda(cudaMemcpy(dh_particles.rxn,		zeros 				,	N*sizeof(unsigned),		cudaMemcpyHostToDevice));
 	//cudaFree(d_fissile_points);
 
 	if(print_flag >= 2){
@@ -1556,10 +1510,10 @@ void whistory::sample_fissile_points(){
 
 	//write starting positions to file
 	if(dump_flag >= 3){
-		cudaMemcpy(space,d_space,N*sizeof(source_point),cudaMemcpyDeviceToHost);
+		check_cuda(cudaMemcpy(h_particles.space,dh_particles.space,N*sizeof(spatial_data),cudaMemcpyDeviceToHost));
 		FILE* positionsfile = fopen("starting_positions","w");
 		for(int k=0;k<N;k++){
-			fprintf(positionsfile,"% 10.8E % 10.8E % 10.8E % 10.8E % 10.8E % 10.8E\n",space[k].x,space[k].y,space[k].z,space[k].xhat,space[k].yhat,space[k].zhat);
+			fprintf(positionsfile,"% 10.8E % 10.8E % 10.8E % 10.8E % 10.8E % 10.8E\n",h_particles.space[k].x,h_particles.space[k].y,h_particles.space[k].z,h_particles.space[k].xhat,h_particles.space[k].yhat,h_particles.space[k].zhat);
 		}
 		fclose(positionsfile);
 	}
@@ -1568,11 +1522,11 @@ void whistory::sample_fissile_points(){
 	update_RNG();
 
 }
-void whistory::write_to_file(source_point* array_in , unsigned N , std::string filename, std::string opentype){
+void whistory::write_to_file(spatial_data* array_in , unsigned N , std::string filename, std::string opentype){
 
 	FILE* f  = fopen(filename.c_str(),opentype.c_str());
-	source_point * hostdata = new source_point [N];
-	cudaMemcpy(hostdata,array_in,N*sizeof(source_point),cudaMemcpyDeviceToHost);
+	spatial_data * hostdata = new spatial_data [N];
+	check_cuda(cudaMemcpy(hostdata,array_in,N*sizeof(spatial_data),cudaMemcpyDeviceToHost));
 
 	for(unsigned k = 0;  k<N ;k++){
 		fprintf(f,"% 6.4E % 6.4E % 6.4E\n",hostdata[k].x,hostdata[k].y,hostdata[k].z);
@@ -1582,13 +1536,13 @@ void whistory::write_to_file(source_point* array_in , unsigned N , std::string f
 	fclose(f);
 
 }
-void whistory::write_to_file(source_point* array_in , float* array_in2, unsigned N , std::string filename, std::string opentype){
+void whistory::write_to_file(spatial_data* array_in , float* array_in2, unsigned N , std::string filename, std::string opentype){
 
 	FILE* f  = fopen(filename.c_str(),opentype.c_str());
-	source_point * hostdata = new source_point [N];
+	spatial_data * hostdata = new spatial_data [N];
 	float * hostdata2 = new float [N];
-	cudaMemcpy(hostdata,array_in,N*sizeof(source_point),cudaMemcpyDeviceToHost);
-	cudaMemcpy(hostdata2,array_in2,N*sizeof(float),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(hostdata,array_in,N*sizeof(spatial_data),cudaMemcpyDeviceToHost));
+	check_cuda(cudaMemcpy(hostdata2,array_in2,N*sizeof(float),cudaMemcpyDeviceToHost));
 
 	for(unsigned k = 0;  k<N ;k++){
 		fprintf(f,"% 6.4E % 6.4E % 6.4E % 6.4E\n",hostdata[k].x,hostdata[k].y,hostdata[k].z,hostdata2[k]);
@@ -1603,7 +1557,7 @@ void whistory::write_to_file(unsigned* array_in , unsigned N , std::string filen
 
 	FILE* f  = fopen(filename.c_str(),opentype.c_str());
 	unsigned * hostdata = new unsigned [N];
-	cudaMemcpy(hostdata,array_in,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(hostdata,array_in,N*sizeof(unsigned),cudaMemcpyDeviceToHost));
 
 	for(unsigned k = 0;  k<N ;k++){
 		fprintf(f,"%u\n",hostdata[k]);
@@ -1618,8 +1572,8 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 	FILE* f  = fopen(filename.c_str(),opentype.c_str());
 	unsigned * hostdata = new unsigned [N];
 	unsigned * hostdata2 = new unsigned [N];
-	cudaMemcpy(hostdata,array_in,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-	cudaMemcpy(hostdata2,array_in2,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(hostdata,array_in,N*sizeof(unsigned),cudaMemcpyDeviceToHost));
+	check_cuda(cudaMemcpy(hostdata2,array_in2,N*sizeof(unsigned),cudaMemcpyDeviceToHost));
 
 	for(unsigned k = 0;  k<N ;k++){
 		fprintf(f,"%u %u\n",hostdata[k],hostdata2[k]);
@@ -1633,35 +1587,41 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 void whistory::reset_cycle(float keff_cycle){
 
 	// re-base the yield so keff is 1
-	rebase_yield( NUM_THREADS, N,  keff_cycle, d_rn_bank, d_yield);
+	rebase_yield( NUM_THREADS, N,  keff_cycle, d_particles );
+	check_cuda(cudaThreadSynchronize());
+	check_cuda(cudaDeviceSynchronize());
 	check_cuda(cudaPeekAtLastError());
 
 	// prefix sum scan (non-inclusive) yields to see where to write
-	res = cudppScan( scanplan_int, d_scanned,  d_yield,  Ndataset );
+	res = cudppScan( scanplan_int, d_scanned,  dh_particles.yield,  Ndataset );
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
 	check_cuda(cudaPeekAtLastError());
 
-	// swap the key/values to sort the rxn vector by tid to align the rest of data with the right reactions, done so 18 doesn't have to be assumed.  Sorting is necessary for prefix sum to work (order-dependent)
-	res = cudppRadixSort(radixplan, d_remap, d_rxn, N);  
-	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
+	//pop them in!  should be the right size now due to keff rebasing  
+	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_scanned );
 	check_cuda(cudaPeekAtLastError());
 
-	//pop them in!  should be the right size now due to keff rebasing  
-	pop_source( NUM_THREADS, N,  d_remap, d_isonum, d_scanned, d_yield, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy, d_xs_data_scatter, d_fissile_points, d_fissile_energy, d_awr_list, d_weight);
-	check_cuda(cudaPeekAtLastError());
+	// sync
+	check_cuda(cudaThreadSynchronize());
+	check_cuda(cudaDeviceSynchronize());
+
+	//cudaMemcpy(h_particles.space, dh_particles.space, Ndataset*sizeof(spatial_data), cudaMemcpyDeviceToHost);
+	//cudaMemcpy(h_particles.E,     dh_particles.E,     Ndataset*sizeof(float),        cudaMemcpyDeviceToHost);
+	//for(int g=0;g<10;g++){
+	//	printf("%7d E = %6.4E xyz % 6.4E % 6.4E % 6.4E\n",g,h_particles.E[g],h_particles.space[g].x,h_particles.space[g].y,h_particles.space[g].z);
+	//}
 
  	// rest run arrays
-	cudaMemcpy( d_space,	d_fissile_points,	N*sizeof(source_point),	cudaMemcpyDeviceToDevice );
-	cudaMemcpy( d_E,		d_fissile_energy,	N*sizeof(unsigned),		cudaMemcpyDeviceToDevice );
-	cudaMemcpy( d_done,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_cellnum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_matnum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_isonum,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_yield,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_rxn,		zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_remap,	remap,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_index,	zeros,				N*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_weight,	fones,				N*sizeof(float),		cudaMemcpyHostToDevice );
+	check_cuda(cudaMemcpy( dh_particles.cellnum,	zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.matnum,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.isonum,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.talnum,		mones,				Ndataset*sizeof(int),			cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.yield,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.rxn,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_remap,					remap,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.index,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.weight,		fones,				Ndataset*sizeof(float),			cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.Q,			zeros,				Ndataset*sizeof(float),			cudaMemcpyHostToDevice ));
 	check_cuda(cudaPeekAtLastError());
 
 	// update RNG seeds
@@ -1669,30 +1629,31 @@ void whistory::reset_cycle(float keff_cycle){
 	check_cuda(cudaPeekAtLastError());
 
 	// sync, these H2D and D2D copies aren't strictly synchronous
-	cudaDeviceSynchronize();
+	check_cuda(cudaThreadSynchronize());
+	check_cuda(cudaDeviceSynchronize());
 	check_cuda(cudaPeekAtLastError());
 
 }
 void whistory::reset_fixed(){
 
-	// rest read-in run arrays (ie not ones that are written to in-between)
-	cudaMemcpy( d_space,		space,		Ndataset*sizeof(source_point),	cudaMemcpyHostToDevice );
-	cudaMemcpy( d_done,			done,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_cellnum,		cellnum,	Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_matnum,		matnum,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_isonum,		isonum,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_yield,		zeros,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_rxn,			zeros,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
-	cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
-
-	//set position, direction, energy
-	sample_fixed_source( NUM_THREADS, N, RNUM_PER_THREAD, d_active, d_rn_bank, d_E, d_space);
-
-	// update RNG seeds
-	update_RNG();
-
-	// sync, these H2D and D2D copies aren't strictly synchronous
-	cudaDeviceSynchronize();
+//	// rest read-in run arrays (ie not ones that are written to in-between)
+//	cudaMemcpy( d_space,		space,		Ndataset*sizeof(spatial_data),	cudaMemcpyHostToDevice );
+//	cudaMemcpy( d_done,			done,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+//	cudaMemcpy( d_cellnum,		cellnum,	Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+//	cudaMemcpy( d_matnum,		matnum,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+//	cudaMemcpy( d_isonum,		isonum,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+//	cudaMemcpy( d_yield,		zeros,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+//	cudaMemcpy( d_rxn,			zeros,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+//	cudaMemcpy( d_active,		remap,		Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice );
+//
+//	//set position, direction, energy
+//	sample_fixed_source( NUM_THREADS, N, d_active, dh_particles.rn_bank, d_E, d_space);
+//
+//	// update RNG seeds
+//	update_RNG();
+//
+//	// sync, these H2D and D2D copies aren't strictly synchronous
+//	cudaDeviceSynchronize();
 
 }
 void whistory::run(){
@@ -1711,10 +1672,15 @@ void whistory::run(){
 	int iteration = 0;
 	int iteration_total=0;
 	unsigned converged = 0;
-	unsigned active_size1, active_gap, escatter_N, escatter_start, iscatter_N, iscatter_start, cscatter_N, cscatter_start, fission_N, fission_start;
+	unsigned active_size1, active_gap, lscatter_N, lscatter_start, mscatter_N, mscatter_start, cscatter_N, cscatter_start, fission_N, fission_start;
 	std::string fiss_name, stats_name;
 	FILE* statsfile;
 	float runtime = get_time();
+
+	if(is_initialized!=1){
+		printf("whistory instance not initialized!!!!  Exiting.\n");
+		exit(0);
+	}
 
 	if(RUN_FLAG==0){
 		reset_fixed();
@@ -1760,7 +1726,7 @@ void whistory::run(){
 		if(converged){
 			if(dump_flag>=3){
 				//write_to_file(d_space,d_E,N,fiss_name,"a+");
-				bin_fission_points(d_space,N);
+				bin_fission_points(dh_particles.space,N);
 			}
 		}
 
@@ -1778,6 +1744,9 @@ void whistory::run(){
 		edges[9]  = 0;
 		edges[10] = 0;
 
+		// check any previous errors
+		check_cuda(cudaPeekAtLastError());
+
 		// process batch
 		while(Nrun>0){
 
@@ -1792,46 +1761,38 @@ void whistory::run(){
 			trace(2, Nrun);
 			check_cuda(cudaPeekAtLastError());
 
-			//find the main E grid index
-			find_E_grid_index( NUM_THREADS, Nrun, xs_length_numbers[1],  d_remap, d_xs_data_main_E_grid, d_E, d_index, d_rxn);
+			// find the main E grid index
+			find_E_grid_index( NUM_THREADS, Nrun, d_xsdata, d_remap, dh_particles.E, dh_particles.index, dh_particles.rxn);
 			check_cuda(cudaPeekAtLastError());
 
-			// run macroscopic kernel to find interaction length, macro_t, and reaction isotope, move to interactino length, set resample flag, 
-			macroscopic( NUM_THREADS, Nrun,  n_isotopes, n_materials, MT_columns, outer_cell, d_remap, d_space, d_isonum, d_cellnum, d_index, d_matnum, d_rxn, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_number_density_matrix, d_done);
-			check_cuda(cudaPeekAtLastError());
-
-			// run tally kernel to compute spectra
-			if(converged){
-				tally_spec( NUM_THREADS, Nrun, n_tally, tally_cell, d_remap, d_space, d_E, d_tally_score, d_tally_square, d_tally_count, d_done, d_cellnum, d_rxn, d_weight);
-			}
-			check_cuda(cudaPeekAtLastError());
-
-			// run microscopic kernel to find reaction type
-			microscopic( NUM_THREADS, Nrun, n_isotopes, MT_columns, d_remap, d_isonum, d_index, d_xs_data_main_E_grid, d_rn_bank, d_E, d_xs_data_MT , d_xs_MT_numbers_total, d_xs_MT_numbers, d_xs_data_Q, d_rxn, d_Q, d_done);
+			// run macroscopic kernel to find interaction length, do tally, find reaction isotope, move to interaction length, set resample flag, etc 
+			macro_micro( NUM_THREADS, Nrun, converged, n_materials, h_xsdata.n_isotopes, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix );
 			check_cuda(cudaPeekAtLastError());
 
 			// remap threads to still active data
-			remap_active(&Nrun, &escatter_N, &escatter_start, &iscatter_N, &iscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
+			remap_active(&Nrun, &lscatter_N, &lscatter_start, &mscatter_N, &mscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
 			check_cuda(cudaPeekAtLastError());
 
-			// concurrent calls to do escatter/iscatter/cscatter/fission
-			cudaThreadSynchronize();
-			cudaDeviceSynchronize();
-			escatter( stream[0], NUM_THREADS,   escatter_N, escatter_start, d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_temp_list, d_done, d_xs_data_scatter);
-			iscatter( stream[1], NUM_THREADS,   iscatter_N, iscatter_start, d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy);
-			cscatter( stream[2], NUM_THREADS,1, cscatter_N, cscatter_start, d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_Q, d_done, d_xs_data_scatter, d_xs_data_energy); // 1 is for transport run mode, as opposed to 'pop' mode
-			fission ( stream[3], NUM_THREADS,   fission_N,  fission_start , d_remap, d_isonum, d_index, d_rn_bank, d_E, d_space, d_rxn, d_awr_list, d_yield, d_weight, d_xs_data_scatter, d_xs_data_energy);  
-			cudaDeviceSynchronize();
+			// concurrent calls to do escatter/iscatter/cscatter/fission.  Must sync after since these calls are not synchronous.
+			check_cuda(cudaThreadSynchronize());
+			check_cuda(cudaDeviceSynchronize());
+			scatter_level(	stream[0], NUM_THREADS, lscatter_N, lscatter_start, d_xsdata, d_particles, d_remap );
+			scatter_conti(	stream[1], NUM_THREADS, cscatter_N, cscatter_start, d_xsdata, d_particles, d_remap );
+			scatter_multi(	stream[2], NUM_THREADS, mscatter_N, mscatter_start, d_xsdata, d_particles, d_remap );
+			fission( 		stream[3], NUM_THREADS, fission_N,  fission_start,  d_xsdata, d_particles, d_remap );  
+			check_cuda(cudaDeviceSynchronize());
 			check_cuda(cudaPeekAtLastError());
 
-			if(RUN_FLAG==0){  //fixed source
-				// pop secondaries back in
-				keff_cycle += reduce_yield();
-				prep_secondaries();
-				pop_secondaries( NUM_THREADS, Ndataset, RNUM_PER_THREAD, d_completed, d_scanned, d_yield, d_done, d_index, d_rxn, d_space, d_E , d_rn_bank , d_xs_data_energy);
-				//if(reduce_yield()!=0.0){printf("pop_secondaries did not reset all yields!\n");}
-			}
-			check_cuda(cudaPeekAtLastError());
+			// do safety check (if flagged)
+			safety_check(	NUM_THREADS, Nrun, d_xsdata, d_particles, d_remap );
+
+			//if(RUN_FLAG==0){  //fixed source
+			//	// pop secondaries back in
+			//	keff_cycle += reduce_yield();
+			//	prep_secondaries();
+			//	pop_secondaries( NUM_THREADS, d_xsdata, d_particles, d_scanned );
+			//}
+			//check_cuda(cudaPeekAtLastError());
 
 			//std::cout << "press enter to continue...\n";
 			//std::cin.ignore();
@@ -1839,12 +1800,12 @@ void whistory::run(){
 		}
 
 		//reduce yield and reset cycle
-		if(RUN_FLAG==0){
-			keff_cycle = 1.0 - 1.0/(keff_cycle+1.0);   // based on: Ntotal = Nsource / (1-k) 
-			reset_fixed();
-			Nrun=Ndataset;
-		}
-		else if (RUN_FLAG==1){	
+		//if(RUN_FLAG==0){
+		//	keff_cycle = 1.0 - 1.0/(keff_cycle+1.0);   // based on: Ntotal = Nsource / (1-k) 
+		//	reset_fixed();
+		//	Nrun=Ndataset;
+		//}
+		//else if (RUN_FLAG==1){	
 			accumulate_keff(converged, iteration, &keff, &keff_cycle);
 			check_cuda(cudaPeekAtLastError());
 			accumulate_tally();
@@ -1852,7 +1813,7 @@ void whistory::run(){
 			reset_cycle(keff_cycle);
 			check_cuda(cudaPeekAtLastError());
 			Nrun=N;
-		}
+		//}
 
 		// update active iteration
 		if (converged){
@@ -1901,7 +1862,7 @@ void whistory::run(){
 			std::cout << "RUNTIME = " << runtime << " seconds.\n";
 		}
 	}
-
+	
 	if(dump_flag>=1){
 		write_results(runtime,keff,"w");
 	}
@@ -1922,7 +1883,9 @@ void whistory::write_results(float runtime, float keff, std::string opentype){
 	fclose(f);
 
 }
-void whistory::write_tally(unsigned tallynum){
+void whistory::write_tally(){
+
+	// tallies should already be accumulated here.
 
 	//tallynum is unused at this point
 	float tally_err 	= 0;
@@ -1930,44 +1893,62 @@ void whistory::write_tally(unsigned tallynum){
 	float this_square 	= 0;
 	float this_mean 	= 0;
 	float this_count 	= 0;
-	float Emin 			= 1e-11;
-	float Emax 			= 20.0;
-	float edge 			= 0.0;
+	float edge0 		= 0.0;
+	float edge1 		= 0.0;
 
-	// write tally values
+	float Emin, Emax , length;
+
+	// open file
 	std::string tallyname = filename+".tally";
 	FILE* tfile = fopen(tallyname.c_str(),"w");
-	for (int k=0;k<n_tally;k++){
-		this_count  	= (float) 	(N*n_cycles);//tally_count_total[k];
-		this_mean 		= 			tally_score_total[k];
-		this_square 	= 			tally_square_total[k];
-		tally_err_sq 	= 			(1.0/((this_count - 1.0))) * ( (this_count*this_square)/(this_mean*this_mean) -  1.0 ) ;
-		if(tally_err_sq>0.0){ 	
-			tally_err = sqrtf(tally_err_sq);}
-		else{					
-			tally_err = 0.0;}
-		fprintf(tfile,"%10.8E %10.8E %lu\n", this_mean/reduced_weight_total, tally_err, tally_count_total[k]);
+
+	// go through tallies
+	for(int i=0; i<n_tallies ; i++){
+
+		// get this tally's info
+		Emin		=	h_tally[i].E_min;
+		Emax		=	h_tally[i].E_max;
+		length		=	h_tally[i].length;
+
+		// write header
+		fprintf(tfile,"TALLY  %6u  : CELL %6u \n", i, h_tally[i].cell);
+		fprintf(tfile,"lower bin edge (MeV)       upper bin edge (MeV)      Tally                     Err                      Count   \n");
+		fprintf(tfile,"================================================================================================================\n");
+
+		// write tally values
+		for (int k=0;k<length;k++){
+			this_count  	= (float) 	h_tally[i].count_total[k];
+			this_mean 		= 			h_tally[i].score_total[k];
+			this_square 	= 			h_tally[i].square_total[k];
+			tally_err_sq 	= 			(1.0/((this_count - 1.0))) * ( (this_count*this_square)/(this_mean*this_mean) -  1.0 ) ;
+			edge0 = Emin*powf((Emax/Emin), ((float)(k)  )/ ((float)length) );
+			edge1 = Emin*powf((Emax/Emin), ((float)(k+1))/ ((float)length) );
+			if(tally_err_sq>0.0){ 	
+				tally_err = sqrtf(tally_err_sq);
+			}
+			else{					
+				tally_err = 0.0;
+			}
+			fprintf(tfile,"% 10.8E           % 10.8E           % 10.8E           % 10.8E           %lu\n", edge0, edge1, this_mean/initial_weight_total, tally_err, h_tally[i].count_total[k]);
+		}
+
+		fprintf(tfile,"\n--------------------------------------------------------------------------------------------------------------\n");
+
 	}
+
+	// close file
 	fclose(tfile);
 
-	//write spacing, since there is n_tally+1 values, including it with the tally bins in a flat text messes with reading in as a matrix
-	std::string binsname = filename+".tallybins";
-	tfile = fopen(binsname.c_str(),"w");
-	for (int k=0;k<=n_tally;k++){
-		edge = Emin*powf((Emax/Emin), ((float)k)/ ((float)n_tally) );
-		fprintf(tfile,"%10.8E\n",edge);
-	}
-	fclose(tfile);
 }
 void whistory::prep_secondaries(){
 
-	// scan the yields to determine where the individual threads write into the done data
-	res = cudppScan( scanplan_int, d_scanned,  d_yield,  Ndataset );
-	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
-
-	// compact the done data to know where to write
-	res = cudppCompact( compactplan, d_completed , (size_t*) d_num_completed , d_remap , d_done , Ndataset);
-	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in compacting done values\n");exit(-1);}
+//	// scan the yields to determine where the individual threads write into the done data
+//	res = cudppScan( scanplan_int, d_scanned,  d_yield,  Ndataset );
+//	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
+//
+//	// compact the done data to know where to write
+//	res = cudppCompact( compactplan, d_completed , (size_t*) d_num_completed , d_remap , d_done , Ndataset);
+//	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in compacting done values\n");exit(-1);}
 
 	//unsigned * tmp1 = new unsigned [Ndataset];
 	//unsigned * tmp2 = new unsigned [Ndataset];
@@ -1980,36 +1961,36 @@ void whistory::prep_secondaries(){
 	//for(int k=0; k<Ndataset ; k++ ){printf("(tid,done,scanned,completed,yield) %u %u %u %u %u\n",k,tmp3[k],tmp1[k],tmp2[k],tmp4[k]);}
 
 }
-void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned* escatter_start, unsigned* iscatter_N, unsigned* iscatter_start, unsigned* cscatter_N, unsigned* cscatter_start, unsigned* fission_N, unsigned* fission_start){
+void whistory::remap_active(unsigned* num_active, unsigned* lscatter_N, unsigned* lscatter_start, unsigned* mscatter_N, unsigned* mscatter_start, unsigned* cscatter_N, unsigned* cscatter_start, unsigned* fission_N, unsigned* fission_start){
 
 	unsigned resamp_N = 0;
 	unsigned resamp_start = 0;
 
 	// sort key/value of rxn/tid
 	if(*num_active>1){
-		res = cudppRadixSort(radixplan, d_rxn, d_remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
+		res = cudppRadixSort(radixplan, dh_particles.rxn, d_remap, *num_active );  //everything in 900s doesn't need to be sorted anymore
 		if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in sorting reactions\n");exit(-1);}
 	}
 
 	// launch edge detection kernel, writes mapped d_edges array
-	reaction_edges(NUM_THREADS, *num_active, d_edges, d_rxn);
+	reaction_edges(NUM_THREADS, *num_active, d_edges, dh_particles.rxn);
 
 	// calculate lengths and starting indicies for the blocks, 0 indicates not found
 	if (edges[0]){
-		*escatter_N 	= (edges[1]-edges[0])+1;
-		*escatter_start	= edges[0]-1;
+		*mscatter_N 	= (edges[1]-edges[0])+1;
+		*mscatter_start	= edges[0]-1;
 	}
 	else{
-		*escatter_N 	= 0;
-		*escatter_start	= 0;
+		*mscatter_N 	= 0;
+		*mscatter_start	= 0;
 	}
 	if (edges[2]){
-		*iscatter_N 	= (edges[3]-edges[2])+1;
-		*iscatter_start	= edges[2]-1;
+		*lscatter_N 	= (edges[3]-edges[2])+1;
+		*lscatter_start	= edges[2]-1;
 	}
 	else{
-		*iscatter_N 	= 0;
-		*iscatter_start	= 0;
+		*lscatter_N 	= 0;
+		*lscatter_start	= 0;
 	}
 	if (edges[4]){
 		*cscatter_N 	= (edges[5]-edges[4])+1;
@@ -2037,22 +2018,22 @@ void whistory::remap_active(unsigned* num_active, unsigned* escatter_N, unsigned
 	}
 
 	//calculate total active, [10] is the starting index of >=811, so if==1, means that we are done!
-	*num_active=*escatter_N + *iscatter_N + *cscatter_N + resamp_N + *fission_N;   // fission includes multiplicity, have to reprocess
+	*num_active=*lscatter_N + *mscatter_N + *cscatter_N + resamp_N + *fission_N;   // fission includes multiplicity, have to reprocess
 
 	// debug
 	if(print_flag>=4){
 		//print
 		printf("num_active %u , edges[9] %u\n",*num_active,edges[9]);
 		printf("nactive = %u, edges %u %u %u %u %u %u %u %u %u %u %u \n",*num_active,edges[0],edges[1],edges[2],edges[3],edges[4],edges[5],edges[6],edges[7],edges[8],edges[9],edges[10]);
-		printf("escatter s %u n %u, iscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*escatter_start,*escatter_N,*iscatter_start,*iscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
+		printf("mscatter s %u n %u, lscatter s %u n %u, cscatter s %u n %u, resamp s %u n %u, fission s %u n %u \n\n",*mscatter_start,*mscatter_N,*lscatter_start,*lscatter_N,*cscatter_start,*cscatter_N,resamp_start,resamp_N, *fission_start, *fission_N);
 		if(dump_flag>=2){//dump
-			write_to_file(d_remap, d_rxn, N,"remap","w");
+			write_to_file(d_remap, dh_particles.rxn, N,"remap","w");
 		}
 	}
 
 	// ensure order
-	if(*iscatter_N>0){ assert(*iscatter_start >= *escatter_start);}
-	if(*cscatter_N>0){ assert(*cscatter_start >= *iscatter_start);}
+	if(*mscatter_N>0){ assert(*lscatter_start >= *mscatter_start);}
+	if(*cscatter_N>0){ assert(*cscatter_start >= *lscatter_start);}
 	if(resamp_N>0){    assert(   resamp_start >= *cscatter_start);}
 	if(*fission_N>0){  assert( *fission_start >=    resamp_start);}
 
@@ -2136,8 +2117,8 @@ void whistory::device_report(){
 	std::string 	enabled_string;
 
 	// get the number of devices
-	cudaGetDeviceCount(&n_devices);
-	cudaGetDevice(&enabled_dev);
+	check_cuda(cudaGetDeviceCount(&n_devices));
+	check_cuda(cudaGetDevice(&enabled_dev));
 
 	// loop over and print
 	std::cout << "\e[1;32m" << "--- Compute Devices Present ---" << "\e[m \n";
@@ -2145,7 +2126,7 @@ void whistory::device_report(){
 	std::cout << "  | Device  | Model                       |  SMs  | Global Mem | SM Freq | Mem Freq | Compute Cap. | Concurrent Kern |" << "\n";
 	std::cout << "  --------------------------------------------------------------------------------------------------------------------\n";
 	for(unsigned k=0;k<n_devices;k++){
-		cudaGetDeviceProperties(&device_prop,k);
+		check_cuda(cudaGetDeviceProperties(&device_prop,k));
 		compute_cap = (float)device_prop.major + (float)device_prop.minor/10.0;
 		con_string = "no ";
 		enabled_string=' ';
@@ -2169,94 +2150,89 @@ float whistory::get_time(){
 	return ((float)clock())/((float)CLOCKS_PER_SEC);
 
 }
-void whistory::set_tally_cell(unsigned cell){
-
-	tally_cell = cell;
-
-}
 void whistory::write_histories(unsigned iteration){
 
-	//allocate
-	unsigned*  done2;	
-	unsigned*  cellnum2;
-	unsigned*  matnum2;	
-	unsigned*  isonum2;	
-	unsigned*  yield2;
-	unsigned*  rxn2;
-	unsigned*  dex2;
-	source_point* space2;
-	float* E2;
-	done2 		= new unsigned [N];
-	cellnum2	= new unsigned [N];
-	matnum2		= new unsigned [N];
-	isonum2		= new unsigned [N];
-	yield2 		= new unsigned [N];
-	rxn2		= new unsigned [N];	
-	dex2 		= new unsigned [N];
-	space2 		= new source_point [N];
-	E2 			= new float [N];
-
-	// print actions
-	std::string histfile_name = "history_file";
-	char numstr[5];
-	sprintf(numstr,"%u",iteration);
-	histfile_name += numstr;
-	printf("Writing to \"%s\"\n",histfile_name.c_str());
-
-	// open file, appending to a new file.
-	FILE* history_file = fopen(histfile_name.c_str(),"w");
-
-	// write iteration delimiter
-	//fprintf(history_file,"==== ITERATION %u ====\n",iteration);
-
-	// copy gemetrical (positions / directions)
-	cudaMemcpy(space2,d_space,N*sizeof(source_point),cudaMemcpyDeviceToHost);
-
-	// copy energies
-	cudaMemcpy(E2,d_E,N*sizeof(float),cudaMemcpyDeviceToHost);
-
-	// copy cell numbeer
-	cudaMemcpy(cellnum2,d_cellnum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-
-	// copy material numbers
-	cudaMemcpy(matnum2,d_matnum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-
-	// copy done flags
-	cudaMemcpy(done2,d_done,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-
-	// copy isotope numbers
-	cudaMemcpy(isonum2,d_isonum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-
-	// copy yields
-	cudaMemcpy(yield2,d_yield,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-
-	// copy reaction numbers
-	cudaMemcpy(rxn2,d_rxn,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-
-	// copy index numbers
-	cudaMemcpy(dex2,d_index,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-
-	// sync device before write and return
-	cudaDeviceSynchronize();
-
-	// write history data to file
-	fprintf(history_file,"a=zeros(%u,7)\n",N);
-	for(unsigned k=0;k<N;k++){
-		//fprintf(history_file,"tid %u (x,y,z) %8.6E %8.6E %8.6E (x,y,z)-hat %8.6E %8.6E %8.6E surf_dist %8.6E macro_t %8.6E enforce_BC %u E %8.6E cellnum %u matnum %u isonum %u rxn %u done %u yield %u\n",k,space2[k].x,space2[k].y,space2[k].z,space2[k].xhat,space2[k].yhat,space2[k].zhat,space2[k].surf_dist,space2[k].macro_t,space2[k].enforce_BC,E2[k],cellnum2[k],matnum2[k],isonum2[k],rxn2[k],done2[k],yield2[k]);
-		fprintf(history_file,"a(%u,1:7)=[%8.6E,%8.6E,%8.6E,%8.6E,%u,%u,%u];\n",k+1,space2[k].x,space2[k].y,space2[k].z,E2[k],rxn2[k],yield2[k],dex2[k]);
-	}
- 	fclose(history_file);
-
- 	//deallocate so can be alloaed again next time
- 	delete done2 	;
-	delete cellnum2	;
-	delete matnum2	;
-	delete isonum2	;
-	delete yield2 	;
-	delete rxn2		;
-	delete space2 	;
-	delete E2 		;
-	delete dex2		;
+//	//allocate
+//	unsigned*  done2;	
+//	unsigned*  cellnum2;
+//	unsigned*  matnum2;	
+//	unsigned*  isonum2;	
+//	unsigned*  yield2;
+//	unsigned*  rxn2;
+//	unsigned*  dex2;
+//	spatial_data* space2;
+//	float* E2;
+//	done2 		= new unsigned [N];
+//	cellnum2	= new unsigned [N];
+//	matnum2		= new unsigned [N];
+//	isonum2		= new unsigned [N];
+//	yield2 		= new unsigned [N];
+//	rxn2		= new unsigned [N];	
+//	dex2 		= new unsigned [N];
+//	space2 		= new spatial_data [N];
+//	E2 			= new float [N];
+//
+//	// print actions
+//	std::string histfile_name = "history_file";
+//	char numstr[5];
+//	sprintf(numstr,"%u",iteration);
+//	histfile_name += numstr;
+//	printf("Writing to \"%s\"\n",histfile_name.c_str());
+//
+//	// open file, appending to a new file.
+//	FILE* history_file = fopen(histfile_name.c_str(),"w");
+//
+//	// write iteration delimiter
+//	//fprintf(history_file,"==== ITERATION %u ====\n",iteration);
+//
+//	// copy gemetrical (positions / directions)
+//	cudaMemcpy(space2,d_space,N*sizeof(spatial_data),cudaMemcpyDeviceToHost);
+//
+//	// copy energies
+//	cudaMemcpy(E2,d_E,N*sizeof(float),cudaMemcpyDeviceToHost);
+//
+//	// copy cell numbeer
+//	cudaMemcpy(cellnum2,d_cellnum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+//
+//	// copy material numbers
+//	cudaMemcpy(matnum2,d_matnum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+//
+//	// copy done flags
+//	cudaMemcpy(done2,d_done,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+//
+//	// copy isotope numbers
+//	cudaMemcpy(isonum2,d_isonum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+//
+//	// copy yields
+//	cudaMemcpy(yield2,d_yield,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+//
+//	// copy reaction numbers
+//	cudaMemcpy(rxn2,d_rxn,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+//
+//	// copy index numbers
+//	cudaMemcpy(dex2,d_index,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
+//
+//	// sync device before write and return
+//	cudaDeviceSynchronize();
+//
+//	// write history data to file
+//	fprintf(history_file,"a=zeros(%u,7)\n",N);
+//	for(unsigned k=0;k<N;k++){
+//		//fprintf(history_file,"tid %u (x,y,z) %8.6E %8.6E %8.6E (x,y,z)-hat %8.6E %8.6E %8.6E surf_dist %8.6E macro_t %8.6E enforce_BC %u E %8.6E cellnum %u matnum %u isonum %u rxn %u done %u yield %u\n",k,space2[k].x,space2[k].y,space2[k].z,space2[k].xhat,space2[k].yhat,space2[k].zhat,space2[k].surf_dist,space2[k].macro_t,space2[k].enforce_BC,E2[k],cellnum2[k],matnum2[k],isonum2[k],rxn2[k],done2[k],yield2[k]);
+//		fprintf(history_file,"a(%u,1:7)=[%8.6E,%8.6E,%8.6E,%8.6E,%u,%u,%u];\n",k+1,space2[k].x,space2[k].y,space2[k].z,E2[k],rxn2[k],yield2[k],dex2[k]);
+//	}
+// 	fclose(history_file);
+//
+// 	//deallocate so can be alloaed again next time
+// 	delete done2 	;
+//	delete cellnum2	;
+//	delete matnum2	;
+//	delete isonum2	;
+//	delete yield2 	;
+//	delete rxn2		;
+//	delete space2 	;
+//	delete E2 		;
+//	delete dex2		;
 
 }
 void whistory::set_print_level(unsigned level){
@@ -2265,7 +2241,7 @@ void whistory::set_print_level(unsigned level){
 void whistory::set_dump_level(unsigned level){
 	dump_flag = level;
 }
-void whistory::bin_fission_points( source_point * d_space, unsigned N){
+void whistory::bin_fission_points( spatial_data * d_space, unsigned N){
 
 	// init
 	unsigned res_x = 300;
@@ -2277,8 +2253,8 @@ void whistory::bin_fission_points( source_point * d_space, unsigned N){
 	float y_min   = 1.41421356 * outer_cell_dims[1];
 
 	// copy from device
-	source_point * positions_local = new source_point[N];
-	cudaMemcpy(positions_local,d_space,N*sizeof(source_point),cudaMemcpyDeviceToHost);
+	spatial_data * positions_local = new spatial_data[N];
+	check_cuda(cudaMemcpy(positions_local,dh_particles.space,N*sizeof(spatial_data),cudaMemcpyDeviceToHost));
 
 	// bin to grid
 	for(unsigned i=0; i<N; i++){
@@ -2353,18 +2329,18 @@ void whistory::plot_geom(std::string type_in){
 	float aspect, mu, theta;
 	float resolution = 1024;
 	float pi = 3.14159;
-	source_point * positions_local = new source_point[N];
+	spatial_data * positions_local = new spatial_data[N];
 	unsigned * image_local = new unsigned[N];
 	unsigned minnum, maxnum;
 	if (type_in.compare("cell")==0){
 		printf("  color set to \e[1;31mCELL\e[m\n");
-		type_array = d_cellnum;
+		type_array = dh_particles.cellnum;
 		minnum = problem_geom.get_minimum_cell();
 		maxnum = problem_geom.get_maximum_cell();
 	}
 	else if (type_in.compare("material")==0){
 		printf("  color set to \e[1;31mMATERIAL\e[m\n");
-		type_array = d_matnum;
+		type_array = dh_particles.matnum;
 		minnum = problem_geom.get_minimum_material();
 		maxnum = problem_geom.get_maximum_material();
 	}
@@ -2420,13 +2396,13 @@ void whistory::plot_geom(std::string type_in){
 	}
 
 	// copy starting positions data to pointer
-	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
+	check_cuda(cudaMemcpy(dh_particles.space,positions_local,N_plot*sizeof(spatial_data),cudaMemcpyHostToDevice));
 	
 	// trace with whereami?
 	trace(4, N_plot);
 	
 	//copy to local buffer
-	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost));
 
 	// make image
 	png::image< png::rgb_pixel > image(width, height);
@@ -2482,13 +2458,13 @@ void whistory::plot_geom(std::string type_in){
 	}
 
 	// copy starting positions data to pointer
-	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
+	check_cuda(cudaMemcpy(dh_particles.space,positions_local,N_plot*sizeof(spatial_data),cudaMemcpyHostToDevice));
 	
 	// trace with whereami?
 	trace(4, N_plot);
 	
 	//copy to local buffer
-	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost));
 
 	// make image
 	image = png::image< png::rgb_pixel > (width, height);
@@ -2543,13 +2519,13 @@ void whistory::plot_geom(std::string type_in){
 	}
 
 	// copy starting positions data to pointer
-	cudaMemcpy(d_space,positions_local,N_plot*sizeof(source_point),cudaMemcpyHostToDevice);
+	check_cuda(cudaMemcpy(dh_particles.space,positions_local,N_plot*sizeof(spatial_data),cudaMemcpyHostToDevice));
 	
 	// trace with whereami?
 	trace(4, N_plot);
 	
 	//copy to local buffer
-	cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost);
+	check_cuda(cudaMemcpy(image_local,type_array,N_plot*sizeof(unsigned),cudaMemcpyDeviceToHost));
 
 	// make image
 	image = png::image< png::rgb_pixel > (width, height);
@@ -2597,7 +2573,7 @@ void whistory::hot2(float* color, long unsigned val, long unsigned min, long uns
 
 	float val_norm = (float) (val-min)/(max-min);
 	if(val_norm>1.0){
-		printf("val_norm>1, min %u max %u val %u\n",min,max,val);
+		printf("val_norm>1, min %lu max %lu val %lu\n",min,max,val);
 	}
 
 	if( val_norm < 0.025){
@@ -2659,147 +2635,5 @@ void whistory::nonzero(float* color, unsigned val, unsigned min, unsigned max){
 	color[0] = color[0]*256;
 	color[1] = color[1]*256;
 	color[2] = color[2]*256;
-
-}
-void whistory::create_quad_tree(){
-
-	std::cout << "\e[1;32m" << "Building quad tree for energy search... " << "\e[m \n";
-//
-//	// node vectors
-//	std::vector<qnode_host>   nodes;
-//	std::vector<qnode_host>   nodes_next;
-//
-//	// node variables
-//	qnode_host  this_qnode;
-//	qnode*      cuda_qnode;
-//
-//	// build bottom-up from the unionized E vector
-//	unsigned k, depth;
-//	unsigned rows_by_four = MT_rows;
-//	for(k=0; k < rows_by_four ; k = k+4){
-//		this_qnode.node.values[0] = xs_data_main_E_grid[ k+0 ];
-//		this_qnode.node.values[1] = xs_data_main_E_grid[ k+1 ];
-//		this_qnode.node.values[2] = xs_data_main_E_grid[ k+2 ];
-//		this_qnode.node.values[3] = xs_data_main_E_grid[ k+3 ];
-//		this_qnode.node.leaves[0] = (qnode*) ((long unsigned)k + 0);  // recast grid index as the pointer for lowest nodes
-//		this_qnode.node.leaves[1] = (qnode*) ((long unsigned)k + 1);
-//		this_qnode.node.leaves[2] = (qnode*) ((long unsigned)k + 2);
-//		this_qnode.node.leaves[3] = (qnode*) ((long unsigned)k + 3);
-//		cudaMalloc(&cuda_qnode,sizeof(qnode));
-//		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-//		this_qnode.cuda_pointer = cuda_qnode;
-//		nodes.push_back(this_qnode);
-//	}
-//	//do the last values
-//	if(MT_rows%4){
-//		unsigned n=0;
-//		for(k=rows_by_four;k<MT_rows;k++){
-//			this_qnode.node.values[n] = xs_data_main_E_grid[ k ];
-//			this_qnode.node.leaves[n] = (qnode*) ((long unsigned)k); 
-//			n++;
-//		}
-//		//repeat the last values
-//		for(k=n;k<4;k++){
-//			this_qnode.node.values[k] = this_qnode.node.values[n-1];
-//			this_qnode.node.leaves[k] = this_qnode.node.leaves[n-1];
-//		}
-//		// device allocate and add to vector
-//		cudaMalloc(&cuda_qnode,sizeof(qnode));
-//		cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-//		this_qnode.cuda_pointer = cuda_qnode;
-//		nodes.push_back(this_qnode);
-//	}
-//
-//
-//	//now build it up!  length will *always* need to be a multiple of 4.  this routine pads the end nodes with 
-//	unsigned this_width = nodes.size();
-//	unsigned lowest_length = this_width;
-//	unsigned mod4 		= this_width % 4;
-//	unsigned end_depth=  (logf(lowest_length)/logf(4))+1;
-//	unsigned num_repeats = 1;
-//	unsigned starting_index = 0;
-//	float inf = 1e45;
-//	//std::cout << "end_depth="<<end_depth<<"\n";
-//	for(unsigned depth=0;depth<end_depth;depth++){
-//		//for(unsigned copy_repeats=0;copy_repeats<num_repeats;copy_repeats++){
-//		//	starting_index=copy_repeats*this_width;
-//		//for(unsigned copy_iteration=0;copy_iteration<4;copy_iteration++){
-//			for( k=starting_index;k<(starting_index+this_width-mod4);k=k+4){
-//				//std::cout << "k=" << k << "\n";
-//				this_qnode.node.values[0] = nodes[ k+0 ].node.values[0]; // can use 0 since values overlap
-//				this_qnode.node.values[1] = nodes[ k+1 ].node.values[0];
-//				this_qnode.node.values[2] = nodes[ k+2 ].node.values[0];
-//				this_qnode.node.values[3] = nodes[ k+3 ].node.values[0];  
-//				this_qnode.node.leaves[0] = nodes[ k+0 ].cuda_pointer;  // set pointers as the cuda pointer of the children
-//				this_qnode.node.leaves[1] = nodes[ k+1 ].cuda_pointer;
-//				this_qnode.node.leaves[2] = nodes[ k+2 ].cuda_pointer;
-//				this_qnode.node.leaves[3] = nodes[ k+3 ].cuda_pointer;
-//				cudaMalloc(&cuda_qnode,sizeof(qnode));
-//				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-//				this_qnode.cuda_pointer = cuda_qnode;
-//				nodes_next.push_back(this_qnode);
-//			}
-//			if(mod4){
-//				//std::cout << "adding padded node at " << nodes_next.size()-1 << "\n";
-//				unsigned n=0;
-//				for( k=(starting_index+this_width-mod4) ; k<(starting_index+this_width) ; k++){
-//					//std::cout <<"n="<<n << " k="<<k<<"\n";
-//					this_qnode.node.values[n] = nodes[ k ].node.values[0];
-//					this_qnode.node.leaves[n] = nodes[ k ].cuda_pointer;
-//					n++;
-//				}
-//				for( n;n<4;n++){
-//					//std::cout <<"n="<<n << " k="<<k<<"\n";
-//					this_qnode.node.values[n] = inf;
-//					this_qnode.node.leaves[n] = NULL;
-//				}
-//				cudaMalloc(&cuda_qnode,sizeof(qnode));
-//				cudaMemcpy(cuda_qnode,&this_qnode.node,sizeof(qnode),cudaMemcpyHostToDevice);
-//				this_qnode.cuda_pointer = cuda_qnode;
-//				nodes_next.push_back(this_qnode);
-//			}
-//		//}
-//	//}
-//		if(mod4){
-//			this_width=(this_width)/4+1;
-//		}
-//		else{
-//			this_width=this_width/4;
-//		}
-//		mod4=this_width%4;
-//		nodes=nodes_next;
-//		nodes_next.clear();
-//		num_repeats=num_repeats*4;
-//		//std::cout << "--------------------------------------\n";
-//		//for(int g=0;g<nodes.size();g++){ //node vector check
-//		//	std::cout << "node " << g << " values " << nodes[g].node.values[0] << " " << nodes[g].node.values[1] << " "<< nodes[g].node.values[2] << " "<< nodes[g].node.values[3] << " "<< nodes[g].node.values[4] << " " <<"\n";
-//		//	std::cout << "node " << g << " leaves " << nodes[g].node.leaves[0] << " " << nodes[g].node.leaves[1] << " "<< nodes[g].node.leaves[2] << " "<< nodes[g].node.leaves[3] << " " <<"\n";
-//		//}
-//	}
-//
-//
-//	// copy size to object vars
-//	qnodes_depth = end_depth;
-//	qnodes_width = nodes.size();
-//
-//	//copy root nodes vector to object variable
-//	//qnodes = new qnode[qnodes_width];
-//	//for(k=0;k<qnodes_width;k++){   //only need to copy heads, they have pointers to the rest in them
-//	//		qnodes[k].values[0] = nodes[k].node.values[0];
-//	//		qnodes[k].values[1] = nodes[k].node.values[1];
-//	//		qnodes[k].values[2] = nodes[k].node.values[2];
-//	//		qnodes[k].values[3] = nodes[k].node.values[3];
-//	//		qnodes[k].values[4] = nodes[k].node.values[4];
-//	//		qnodes[k].leaves[0] = nodes[k].node.leaves[0];
-//	//		qnodes[k].leaves[1] = nodes[k].node.leaves[1];
-//	//		qnodes[k].leaves[2] = nodes[k].node.leaves[2];
-//	//		qnodes[k].leaves[3] = nodes[k].node.leaves[3];
-//	//}
-//
-//	// make and copy device data
-//	cudaMalloc(	&d_qnodes_root,				sizeof(qnode)	);
-//	cudaMemcpy(	 d_qnodes_root,	&nodes[0].node,		sizeof(qnode),	cudaMemcpyHostToDevice); 
-//
-//	std::cout << "  Complete.  Depth of tree is "<< qnodes_depth << ", width is "<< qnodes_width <<".\n";
 
 }

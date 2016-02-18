@@ -4,18 +4,18 @@
 
 using namespace optix;
 
-rtBuffer<source_point,1>            positions_buffer;
+rtBuffer<spatial_data,1>            positions_buffer;
 rtBuffer<unsigned,1>                rxn_buffer;
 rtBuffer<unsigned,1>                remap_buffer;
-rtBuffer<unsigned,1>                done_buffer;
 rtBuffer<unsigned,1>                cellnum_buffer;
 rtBuffer<unsigned,1>                matnum_buffer;
-rtDeclareVariable(rtObject,      top_object, , );
-rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
-rtDeclareVariable(uint, launch_dim,   rtLaunchDim, );
-rtDeclareVariable(unsigned,  outer_cell, , );
-rtDeclareVariable(unsigned,  trace_type, , );
-rtDeclareVariable(unsigned,  boundary_condition, , );
+rtBuffer<unsigned,1>                talnum_buffer;
+rtDeclareVariable(rtObject,		top_object, 		, 				);
+rtDeclareVariable(uint, 		launch_index_in, 	rtLaunchIndex, 	);
+rtDeclareVariable(uint, 		launch_dim,   		rtLaunchDim, 	);
+rtDeclareVariable(unsigned,  	outer_cell, 		, 				);
+rtDeclareVariable(unsigned,  	trace_type, 		, 				);
+rtDeclareVariable(unsigned,  	boundary_condition, , 				);
 
 RT_PROGRAM void camera()
 {
@@ -39,7 +39,7 @@ RT_PROGRAM void camera()
 	intersection_point  payload;
 
 	// null rxn, miss will set it if there is a miss
-	rxn_buffer[launch_index_in] = 0.0;
+	// rxn_buffer[launch_index_in] = 0.0;
 
 	//rtPrintf("ray %u rxn %u xyz-hat % 10.8E % 10.8E % 10.8E\n",launch_index,rxn_buffer[launch_index_in],positions_buffer[launch_index].xhat,positions_buffer[launch_index].yhat,positions_buffer[launch_index].zhat);
 
@@ -107,6 +107,7 @@ RT_PROGRAM void camera()
 
 	// write cell/material numbers to buffer
 	cellnum_buffer[launch_index]	 				= payload.cell;
+	talnum_buffer[ launch_index]	 				= payload.tally_index;
 	if(trace_type == 3){  //write fissile flag if fissile query
 		matnum_buffer[launch_index] 				= payload.fiss;
 		rxn_buffer[launch_index_in] 				= 0;

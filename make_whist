@@ -1,0 +1,66 @@
+g++ -O3 -m64 -fPIC -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c whistory.cpp
+
+g++ -O3 -m64 -fPIC -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c optix_stuff.cpp
+
+g++ -O3 -m64 -fPIC -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c wgeometry.cpp
+
+g++ -O3 -m64 -fPIC -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c wprimitive.cpp
+
+
+
+
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c copy_points.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c set_positions_rand.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c test_function.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c sample_fissile_energy.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c find_E_grid_index.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c macro_micro.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c scatter_level.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c scatter_conti.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c scatter_multi.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c reaction_edges3.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c rebase_yield.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c fission.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c pop_fission.cu
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -c safety_check.cu
+
+
+
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -ptx camera.cu
+
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -ptx miss.cu
+
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -ptx hits_mesh.cu
+
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -ptx box_mesh.cu
+
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -ptx cylinder_mesh.cu
+
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -ptx hex_mesh.cu
+
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -ptx sphere_mesh.cu
+
+
+
+/usr/local/cuda/bin/nvcc -O3 -m64 -I/Developer/OptiX/include -L/Developer/Optix/lib64 -I/usr/local/cudpp-2.2/include -L/usr/local/cudpp-2.2/lib -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -L/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib -I/usr/local/cuda/include -L/usr/local/cuda/lib -I. -lpng -lpython2.7 -loptix -lcudpp -lcurand wgeometry.o whistory.o optix_stuff.o wprimitive.o copy_points.o test_function.o sample_fissile_energy.o set_positions_rand.o find_E_grid_index.o macro_micro.o scatter_level.o scatter_conti.o scatter_multi.o reaction_edges3.o fission.o rebase_yield.o pop_fission.o safety_check.o main.cpp

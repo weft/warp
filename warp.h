@@ -14,7 +14,7 @@
 #include <Python.h>
 #include <png++/png.hpp>
 #include "datadef.h"
-#include "primitive.h"
+#include "wprimitive.h"
 #include "wgeometry.h"
 #include "warp_cuda.h"
 #include "whistory.h"

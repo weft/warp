@@ -101,7 +101,7 @@ set(libs ${libs} ${PNG_LIBRARY})
 
 #mac stuff
 if(APPLE)
- set(CMAKE_OSX_VERSION "10.7" CACHE STRING "OSX Version number")
+ set(CMAKE_OSX_VERSION "10.11" CACHE STRING "OSX Version number")
  include_directories("/usr/local/include")
  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=${CMAKE_OSX_VERSION}")
  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=${CMAKE_OSX_VERSION}")
@@ -157,7 +157,6 @@ cuda_compile(escatter escatter.cu)
 cuda_compile(iscatter iscatter.cu)
 cuda_compile(cscatter cscatter.cu)
 cuda_compile(fission fission.cu)
-cuda_compile(absorb absorb.cu)
 cuda_compile(print_histories print_histories.cu)
 cuda_compile(pop_secondaries pop_secondaries.cu)
 cuda_compile(pop_source pop_source.cu)
@@ -168,8 +167,7 @@ cuda_compile(write_to_file write_to_file.cu)
 
 # Sources:
 set(warp_executable_srcs
-    print_banner.cpp
-    primitive.cpp
+    wprimitive.cpp
     mt19937ar.cpp
     optix_stuff.cpp
     whistory.cpp
@@ -188,7 +186,6 @@ set(warp_cuda_srcs
     ${iscatter}
     ${cscatter}
     ${fission}
-    ${absorb}
     ${print_histories}
     ${pop_secondaries}
     ${pop_source}
