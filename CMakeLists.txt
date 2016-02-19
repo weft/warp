@@ -148,22 +148,18 @@ add_custom_target(sphere_mesh ALL
 #build CUDA executables
 cuda_compile(set_positions_rand set_positions_rand.cu)
 cuda_compile(find_E_grid_index find_E_grid_index.cu)
-cuda_compile(sample_fixed_source sample_fixed_source.cu)
-cuda_compile(macroscopic macroscopic.cu)
-cuda_compile(microscopic microscopic.cu)
+cuda_compile(sample_fissile_energy sample_fissile_energy.cu)
+cuda_compile(macro_micro macro_micro.cu)
 cuda_compile(copy_points copy_points.cu)
-cuda_compile(tally_spec tally_spec.cu)
-cuda_compile(escatter escatter.cu)
-cuda_compile(iscatter iscatter.cu)
-cuda_compile(cscatter cscatter.cu)
+cuda_compile(scatter_level scatter_level.cu)
+cuda_compile(scatter_conti scatter_conti.cu)
+cuda_compile(scatter_multi scatter_multi.cu)
 cuda_compile(fission fission.cu)
-cuda_compile(print_histories print_histories.cu)
-cuda_compile(pop_secondaries pop_secondaries.cu)
-cuda_compile(pop_source pop_source.cu)
+cuda_compile(pop_fission pop_fission.cu)
 cuda_compile(rebase_yield rebase_yield.cu)
-cuda_compile(device_copies device_copies.cu)
 cuda_compile(reaction_edges3 reaction_edges3.cu) 
 cuda_compile(write_to_file write_to_file.cu)
+cuda_compile(safety_check safety_check.cu)
 
 # Sources:
 set(warp_executable_srcs
@@ -177,22 +173,18 @@ set(warp_executable_srcs
 set(warp_cuda_srcs
     ${set_positions_rand}
     ${find_E_grid_index}
-    ${sample_fixed_source}
-    ${macroscopic}
-    ${microscopic}
+    ${sample_fissile_energy}
+    ${macro_micro}
     ${copy_points}
-    ${tally_spec}
-    ${escatter}
-    ${iscatter}
-    ${cscatter}
+    ${scatter_level}
+    ${scatter_conti}
+    ${scatter_multi}
     ${fission}
-    ${print_histories}
-    ${pop_secondaries}
-    ${pop_source}
+    ${pop_fission}
     ${rebase_yield}
-    ${device_copies}
     ${reaction_edges3}
     ${write_to_file}
+    ${safety_check}
 )
 
 ADD_LIBRARY(libwarp SHARED ${warp_executable_srcs} ${warp_cuda_srcs})
@@ -202,15 +194,15 @@ TARGET_LINK_LIBRARIES(libwarp ${libs})
 
 # actual target:
 add_executable(warp       ${warp_executable_srcs} ${warp_cuda_srcs} main.cpp)
-add_executable(benchmarks ${warp_executable_srcs} ${warp_cuda_srcs} benchmarks.cpp)
+#add_executable(benchmarks ${warp_executable_srcs} ${warp_cuda_srcs} benchmarks.cpp)
 
 # link libs
 target_link_libraries(warp ${libs})
-target_link_libraries(benchmarks ${libs})
+#target_link_libraries(benchmarks ${libs})
 
-enable_testing()
-find_package(GTest REQUIRED)
-add_subdirectory(test)
+#enable_testing()
+#find_package(GTest REQUIRED)
+#add_subdirectory(test)
 
 find_package(SWIG REQUIRED)
 include(${SWIG_USE_FILE})
