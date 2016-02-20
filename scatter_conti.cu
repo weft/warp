@@ -24,7 +24,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	__shared__	spatial_data*		space;	
 	__shared__	unsigned*			rxn;	
 	__shared__	float*				E;		
-	__shared__	float*				Q;		
+	//__shared__	float*				Q;		
 	__shared__	unsigned*			rn_bank;
 	//__shared__	unsigned*			cellnum;
 	//__shared__	unsigned*			matnum;	
@@ -50,7 +50,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		space						= d_particles[0].space;
 		rxn							= d_particles[0].rxn;
 		E							= d_particles[0].E;
-		Q							= d_particles[0].Q;	
+		//Q							= d_particles[0].Q;	
 		rn_bank						= d_particles[0].rn_bank;
 		//cellnum						= d_particles[0].cellnum;
 		//matnum						= d_particles[0].matnum;
@@ -90,7 +90,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	unsigned	this_tope		=	isonum[  tid];
 	unsigned	this_dex		=	index[   tid];
 	float		this_E			=	E[       tid];
-	float		this_Q			=	Q[       tid];
+	//float		this_Q			=	Q[       tid];
 	unsigned	rn				=	rn_bank[ tid];
 	float		this_awr		=	awr[ this_tope];
 	//float		this_temp		=	temp[this_tope];
@@ -228,7 +228,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 											this_edist.var , 
 											this_edist.cdf, 
 											this_edist.pdf );
-		
+
 		//scale it to bins 
 		sampled_E = scale_to_bins(	f, E0, 
 									 this_edist.var[0],  this_edist.var[ this_edist.len-1], 

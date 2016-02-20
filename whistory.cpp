@@ -1765,7 +1765,7 @@ void whistory::run(){
 			find_E_grid_index( NUM_THREADS, Nrun, d_xsdata, d_remap, dh_particles.E, dh_particles.index, dh_particles.rxn);
 			check_cuda(cudaPeekAtLastError());
 
-			// run macroscopic kernel to find interaction length, do tally, find reaction isotope, move to interaction length, set resample flag, etc 
+			// run kernel to find interaction length (macro), do tally, find reaction isotope (micro), move to interaction length, set resample flag, etc 
 			macro_micro( NUM_THREADS, Nrun, converged, n_materials, h_xsdata.n_isotopes, n_tallies, d_xsdata, d_particles, d_tally, d_remap, d_number_density_matrix );
 			check_cuda(cudaPeekAtLastError());
 
@@ -1773,7 +1773,7 @@ void whistory::run(){
 			remap_active(&Nrun, &lscatter_N, &lscatter_start, &mscatter_N, &mscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
 			check_cuda(cudaPeekAtLastError());
 
-			// concurrent calls to do escatter/iscatter/cscatter/fission.  Must sync after since these calls are not synchronous.
+			// concurrent calls to do level/continuum/multiplicity scattering and fission yield sampling.  Must sync after since these calls are not synchronous.
 			check_cuda(cudaThreadSynchronize());
 			check_cuda(cudaDeviceSynchronize());
 			scatter_level(	stream[0], NUM_THREADS, lscatter_N, lscatter_start, d_xsdata, d_particles, d_remap );

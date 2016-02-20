@@ -1,0 +1,13 @@
+
+
+cython --cplus -I /usr/local/Cellar/hdf5/1.8.16_1/include -I /usr/local/lib/python2.7/site-packages/numpy/core/include -I /Users/rmb/code/pyne-sellitforcache/src -I /usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7 --output-file ace.cxx ace.pyx
+
+export CXX_FLAGS="-D__APPLE__ -DJSON_IS_AMALGAMATION -O3 -DNDEBUG -fPIC"
+export CXX_DEFINES="-Dace_EXPORTS"
+export CXX_INCLUDES="-I/usr/local/Cellar/hdf5/1.8.16_1/include -I/usr/local/lib/python2.7/site-packages/numpy/core/include -I/Users/rmb/code/pyne-sellitforcache/src -I/usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/include/python2.7"
+
+g++  $CXX_DEFINES $CXX_INCLUDES $CXX_FLAGS -o ace.cxx.o -c ace.cxx
+g++  $CXX_DEFINES $CXX_INCLUDES $CXX_FLAGS -E ace.cxx > ace.cxx.i
+g++  $CXX_DEFINES $CXX_INCLUDES $CXX_FLAGS -S ace.cxx -o ace.cxx.s
+
+g++   -D__APPLE__ -DJSON_IS_AMALGAMATION -O3 -DNDEBUG -bundle -Wl,-headerpad_max_install_names  -o ace.so ace.cxx.o  -L/usr/local/Cellar/hdf5/1.8.16_1/lib  -L/usr/local/opt/szip/lib /usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib /usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib -lhdf5 -Wl,-rpath,@loader_path/../lib -Wl,-rpath,/usr/local/Cellar/hdf5/1.8.16_1/lib -Wl,-rpath,/usr/local/opt/szip/lib 

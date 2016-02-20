@@ -1,5 +1,4 @@
-from pyne import ace
-from pyne import nucname
+import ace
 import numpy
 import sys
 import glob
