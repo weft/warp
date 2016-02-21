@@ -6,7 +6,7 @@ project(WARP)
 cmake_minimum_required(VERSION 2.8.10)
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} LD_LIBRARY_PATH)
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake") 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake") 
 include_directories(${CMAKE_SOURCE_DIR})
 
 #find CUDA; we need that
@@ -82,6 +82,10 @@ mark_as_advanced(
   CUDPP_LINK_DIRECTORIES                
 )
 
+# find numpy and include the numpy headers
+find_package(Numpy REQUIRED)
+include_directories("${NUMPY_INCLUDE_DIR}")
+
 set(libs ${libs} ${CUDPP_LIBRARY})
 set(libs ${libs} ${OptiX_LIBRARY})
 set(libs ${libs} ${CUDA_LIBRARIES})
@@ -107,6 +111,15 @@ if(APPLE)
  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=${CMAKE_OSX_VERSION}")
  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options '-mmacosx-version-min=${CMAKE_OSX_VERSION}'")
 endif(APPLE)
+
+include( UseCython )
+
+execute_process(COMMAND "${CYTHON_EXECUTABLE}" "-V"
+    ERROR_VARIABLE CYTHON_VERSION
+    ERROR_STRIP_TRAILING_WHITESPACE)
+message( STATUS "Cython Version: " ${CYTHON_VERSION} )
+
+
 
 cuda_compile_ptx(camera camera.cu)
 cuda_compile_ptx(miss miss.cu)
@@ -187,18 +200,24 @@ set(warp_cuda_srcs
     ${safety_check}
 )
 
-ADD_LIBRARY(libwarp SHARED ${warp_executable_srcs} ${warp_cuda_srcs})
+ADD_LIBRARY(warp SHARED ${warp_executable_srcs} ${warp_cuda_srcs})
 
 # link libs
-TARGET_LINK_LIBRARIES(libwarp ${libs})
+TARGET_LINK_LIBRARIES(warp ${libs})
 
 # actual target:
-add_executable(warp       ${warp_executable_srcs} ${warp_cuda_srcs} main.cpp)
-#add_executable(benchmarks ${warp_executable_srcs} ${warp_cuda_srcs} benchmarks.cpp)
+add_executable(dissertation ${warp_executable_srcs} ${warp_cuda_srcs} main.cpp)
+add_executable(benchmarks   ${warp_executable_srcs} ${warp_cuda_srcs} benchmarks.cpp)
+
+# standalone ace
+set_source_files_properties("${PROJECT_SOURCE_DIR}/ace.pyx"
+                            PROPERTIES CYTHON_IS_CXX TRUE)
+cython_add_module(ace ace.pyx)
+#target_link_libraries(ace pyne)
 
 # link libs
-target_link_libraries(warp ${libs})
-#target_link_libraries(benchmarks ${libs})
+target_link_libraries(dissertation ${libs})
+target_link_libraries(benchmarks ${libs})
 
 #enable_testing()
 #find_package(GTest REQUIRED)
@@ -213,4 +232,4 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 set_source_files_properties(warp.i PROPERTIES CPLUSPLUS ON)
 set_source_files_properties(warp.i PROPERTIES SWIG_FLAGS "-c++")
 swig_add_module(warp python warp.i)
-swig_link_libraries(warp libwarp ${PYTHON_LIBRARIES})
+swig_link_libraries(warp warp ${PYTHON_LIBRARIES})

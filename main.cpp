@@ -394,7 +394,6 @@ int main(int argc, char* argv[]){
 	hist.plot_geom("cell");  // **MUST** be called after init.
 	hist.run();
 	hist.write_tally();
-	//hist.write_xs_data("xsdata");
 
 	return 0;
 
