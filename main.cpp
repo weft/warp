@@ -304,49 +304,28 @@ int main(int argc, char* argv[]){
 		geom.add_transform(prim_id,999,0,0,0,0,0);
 	}
 	else if(testname.compare(argv[1])==0){
+		
 		// test mats
-		n_topes = 3;
+		n_topes = 2;
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
 		topes[0] = "92238.03c";
-		topes[1] =  "8016.03c" ;
-		topes[2] =  "1001.03c" ;
+		topes[1] =  "11023.06c";
 		fracs_fuel[0] = 1;  
-		fracs_fuel[1] = 2;   
-		fracs_fuel[2] = 0;
-		fracs_water[0] = 0;  
-		fracs_water[1] = 1;   
-		fracs_water[2] = 2;
+		fracs_fuel[1] = 2;     
 		float    dens_fuel = 15;
-		float 	 dens_water = 3;
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
-		geom.add_material(2,0,n_topes,dens_water,topes,fracs_water);
 		
 		// run stuff
 		tallycell = 1;
 		filename = testname;
 		tallyname = testname;
 		tallyname.append(".tally");
-	
-		//pin cell
+
+		// box 
 		type=0;
 		material=1;
-		mins[0]=-1;
-		mins[1]=-1;
-		mins[2]=-20;
-		maxs[0]= 1; 
-		maxs[1]= 1; 
-		maxs[2]= 20;
-		origin[0]=0.0;
-		origin[1]=0.0;
-		origin[2]=0.0;
-		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.add_transform(prim_id,1,0,0,0,0,0);
-
-		//water 
-		type=0;
-		material=2;
 		mins[0]=-5.0;
 		mins[1]=-5.0;
 		mins[2]=-25.0;

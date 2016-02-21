@@ -525,7 +525,7 @@ class cross_section_data:
 					next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
 
 		elif hasattr(rxn,"energy_dist") and hasattr(rxn.energy_dist,"energy_in"):
-			# there is no higher lavel angular table, everything is in energy_dist
+			# there is no higher level angular table, everything is in energy_dist
 			# find where this energy lies on this grid
 			upper_index = next((i for i, x in enumerate(this_E < rxn.energy_dist.energy_in) if x), len(rxn.energy_dist.energy_in))
 			lower_index = upper_index - 1
@@ -567,8 +567,12 @@ class cross_section_data:
 				upper_law  = rxn.energy_dist.law
 
 				# interpolation type
-				lower_intt = rxn.energy_dist.intt[lower_index]
-				upper_intt = rxn.energy_dist.intt[upper_index]
+				if hasattr(rxn.energy_dist,"intt"):
+					lower_intt = rxn.energy_dist.intt[lower_index]
+					upper_intt = rxn.energy_dist.intt[upper_index]
+				else:
+					lower_intt = 2
+					upper_intt = 2
 
 				# energies
 				lower_erg = rxn.energy_dist.energy_in[lower_index]
@@ -578,21 +582,31 @@ class cross_section_data:
 				if hasattr(rxn.energy_dist,"ang"):
 					lower_var = rxn.energy_dist.ang[lower_index]
 					upper_var = rxn.energy_dist.ang[upper_index]
+				elif hasattr(rxn.energy_dist,"var"):
+					lower_var = numpy.zeros(rxn.energy_dist.var[lower_index].shape)
+					upper_var = numpy.zeros(rxn.energy_dist.var[upper_index].shape)
 				else:
-					lower_var = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
-					upper_var = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
+					lower_var = numpy.array([0])
+					upper_var = numpy.array([0])
 	
 				# cdf can be law 44 fractions
 				if hasattr(rxn.energy_dist,"frac"):
 					lower_cdf = rxn.energy_dist.frac[lower_index]
 					upper_cdf = rxn.energy_dist.frac[upper_index]
-				else:
+				elif hasattr(rxn.energy_dist,"cdf"):
 					lower_cdf = numpy.zeros(rxn.energy_dist.cdf[lower_index].shape)
 					upper_cdf = numpy.zeros(rxn.energy_dist.cdf[upper_index].shape)
+				else:
+					lower_cdf = numpy.array([0])
+					upper_cdf = numpy.array([0])
 
 				# pdf zeros
-				lower_pdf = numpy.zeros(rxn.energy_dist.pdf[lower_index].shape)
-				upper_pdf = numpy.zeros(rxn.energy_dist.pdf[upper_index].shape)
+				if hasattr(rxn.energy_dist,"pdf"):
+					lower_pdf = numpy.zeros(rxn.energy_dist.pdf[lower_index].shape)
+					upper_pdf = numpy.zeros(rxn.energy_dist.pdf[upper_index].shape)
+				else:
+					lower_pdf = numpy.array([0])
+					upper_pdf = numpy.array([0])
 
 				# len
 				lower_len = len(lower_var)
@@ -713,20 +727,34 @@ class cross_section_data:
 				upper_law  = rxn.energy_dist.law
 
 				# interpolation type
-				lower_intt = rxn.energy_dist.intt[lower_index]
-				upper_intt = rxn.energy_dist.intt[upper_index]
+				if hasattr(rxn.energy_dist,"intt"):
+					lower_intt = rxn.energy_dist.intt[lower_index]
+					upper_intt = rxn.energy_dist.intt[upper_index]
+				else:
+					lower_intt = 2
+					upper_intt = 2
 
 				# energies
 				lower_erg = rxn.energy_dist.energy_in[lower_index]
 				upper_erg = rxn.energy_dist.energy_in[upper_index]
 	
-				# 
-				lower_var = rxn.energy_dist.energy_out[lower_index]
-				upper_var = rxn.energy_dist.energy_out[upper_index]
-				lower_pdf = rxn.energy_dist.pdf[lower_index]
-				upper_pdf = rxn.energy_dist.pdf[upper_index]
-				lower_cdf = rxn.energy_dist.cdf[lower_index]
-				upper_cdf = rxn.energy_dist.cdf[upper_index]
+				# tabular distributions
+				if hasattr(rxn.energy_dist,"energy_out"):
+					lower_var = rxn.energy_dist.energy_out[lower_index]
+					upper_var = rxn.energy_dist.energy_out[upper_index]
+					lower_pdf = rxn.energy_dist.pdf[lower_index]
+					upper_pdf = rxn.energy_dist.pdf[upper_index]
+					lower_cdf = rxn.energy_dist.cdf[lower_index]
+					upper_cdf = rxn.energy_dist.cdf[upper_index]
+				elif hasattr(rxn.energy_dist,"T"):  #evaporation 
+					lower_var = numpy.array([rxn.energy_dist.T[lower_index]])
+					upper_var = numpy.array([rxn.energy_dist.T[upper_index]])
+					lower_pdf = numpy.array([rxn.energy_dist.U])
+					upper_pdf = numpy.array([rxn.energy_dist.U])
+					lower_cdf = numpy.array([0])
+					upper_cdf = numpy.array([0])
+				else:
+					print "UNHANDLED ENERGY DIST CONTENTS"
 
 				# len
 				lower_len = len(lower_var)

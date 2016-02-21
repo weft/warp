@@ -97,10 +97,16 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 
 	// pick upper or lower via stochastic mixing
 	dist_data	this_edist, this_sdist;
-	dist_data	sdist_lower	=	dist_scatter[this_dex].lower[0];
-	dist_data	sdist_upper	=	dist_scatter[this_dex].upper[0];
-	dist_data	edist_lower	=	dist_energy[ this_dex].lower[0];
-	dist_data	edist_upper	=	dist_energy[ this_dex].upper[0];
+	dist_data	sdist_lower, sdist_upper, edist_lower, edist_upper;
+	if(dist_scatter!=0x0){
+		sdist_lower	=	dist_scatter[this_dex].lower[0];
+		sdist_upper	=	dist_scatter[this_dex].upper[0];
+	}
+	else{
+		printf("null scatter pointer in conti\n");
+	}
+	edist_lower	=	dist_energy[ this_dex].lower[0];
+	edist_upper	=	dist_energy[ this_dex].upper[0];
 	unsigned	this_law;
 	float		f			=	(this_E - edist_lower.erg) / (edist_upper.erg - edist_lower.erg);
 	if( get_rand(&rn)>f ){
@@ -157,49 +163,44 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		mu  = 2.0*get_rand(&rn)-1.0;
 
 	}
-//	else if (law==9){   //evaopration spectrum
-//
-//		// get tabulated temperature
-//		float t0 = this_Earray[ offset              ];
-//		float t1 = this_Earray[ offset + 1          ];
-//		float U  = this_Earray[ offset + vlen       ];
-//			  e0 = this_Earray[ offset + vlen*2     ];
-//			  e1 = this_Earray[ offset + vlen*2 + 1 ];
-//		float  T = 0.0;
-//		float  m = 0.0;
-//
-//		// interpolate T
-//		if (e1==e0){  // in top bin, both values are the same
-//			T = t0;
-//		}
-//		else if (intt==2){// lin-lin interpolation
-//			m = (this_E - e0)/(e1 - e0);
-//			T = (1.0 - m)*t0 + m*t1;
-//		}
-//		else if(intt==1){// histogram interpolation
-//			T  = (t1 - t0)/(e1 - e0) * this_E + t0;
-//		}
-//
-//		// rejection sample
-//		m  = (this_E - U)/T;
-//		e0 = 1.0-expf(-m);
-//		float x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
-//		while (  x>m ) {
-//			x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
-//		}
-//
-//		// mcnp5 volIII pg 2-43
-//		sampled_E = T * x;
-//
-//		//isotropic mu
-//		if (this_Sarray==0x0){
-//			mu  = 2.0*get_rand(&rn)-1.0;
-//		}
-//		else{
-//			printf("law 9 in cscatter has angular tables\n");
-//		}
-//
-//	}
+	else if (this_law==9){   //evaopration spectrum
+	
+		// get tabulated temperature
+		float t0 = edist_lower.var[0];
+		float t1 = edist_upper.var[0];
+		float U  = edist_lower.cdf[0];
+		float e0 = edist_lower.erg;
+		float e1 = edist_upper.erg;
+		float  T = 0.0;
+		float  m = 0.0;
+	
+		// interpolate T
+		if (e1==e0){  // in top bin, both values are the same
+			T = t0;
+		}
+		else if (edist_lower.intt==2){// lin-lin interpolation
+			m = (this_E - e0)/(e1 - e0);
+			T = (1.0 - m)*t0 + m*t1;
+		}
+		else if(edist_lower.intt==1){// histogram interpolation
+			T  = (t1 - t0)/(e1 - e0) * this_E + t0;
+		}
+	
+		// rejection sample
+		m  = (this_E - U)/T;
+		e0 = 1.0-expf(-m);
+		float x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
+		while (  x>m ) {
+			x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
+		}
+	
+		// mcnp5 volIII pg 2-43
+		sampled_E = T * x;
+	
+		// isotropic mu
+		mu  = 2.0*get_rand(&rn)-1.0;
+	
+	}
 	else if (this_law==44 | this_law==61){
 
 		// make sure scatter array is present
