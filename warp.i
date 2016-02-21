@@ -13,7 +13,7 @@
 #include <cudpp_hash.h>
 #include <curand.h>
 #include "datadef.h"
-#include "primitive.h"
+#include "wprimitive.h"
 #include "wgeometry.h"
 #include "whistory.h"
 %}
