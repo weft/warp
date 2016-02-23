@@ -449,7 +449,7 @@ class cross_section_data:
 				upper_cdf 	= numpy.array([0.0])
 
 				# next index
-				next_dex = row+1  # go to next value
+				next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
 
 		elif hasattr(rxn,"ang_energy_in"):
 			# get the data, easy.

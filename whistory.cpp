@@ -806,19 +806,21 @@ void whistory::copy_scatter_data(){
 	PyObject	*row_obj, *col_obj, *call_string, *obj_list;
 	PyObject	*lower_erg_obj, *lower_len_obj, *lower_law_obj, *lower_intt_obj, *lower_var_obj, *lower_pdf_obj, *lower_cdf_obj; 
 	PyObject	*upper_erg_obj, *upper_len_obj, *upper_law_obj, *upper_intt_obj, *upper_var_obj, *upper_pdf_obj, *upper_cdf_obj, *next_dex_obj; 
-	Py_buffer	lower_var_buff, lower_pdf_buff, lower_cdf_buff, upper_var_buff, upper_pdf_buff, upper_cdf_buff;
+	Py_buffer	lower_var_buff, lower_pdf_buff, lower_cdf_buff, lower_nu_buff, upper_var_buff, upper_pdf_buff, upper_cdf_buff, upper_nu_buff;
 	
 	// local temp variables
 	int				row, col;
-	float			nu_t, nu_p;
+	float			lower_nu_t, lower_nu_p, upper_nu_t, upper_nu_p;
+	float			*lower_nu, *upper_nu;
 	int				this_isotope;
+	unsigned		nu_d_got_data=0;
 	unsigned		array_index, next_dex, lower_rows;
-	unsigned		lower_var_buff_bytes,	lower_pdf_buff_bytes,	lower_cdf_buff_bytes;
-	unsigned		lower_var_buff_rows,	lower_pdf_buff_rows,	lower_cdf_buff_rows;
-	unsigned		lower_var_buff_columns,	lower_pdf_buff_columns,	lower_cdf_buff_columns;
-	unsigned		upper_var_buff_bytes,	upper_pdf_buff_bytes,	upper_cdf_buff_bytes;
-	unsigned		upper_var_buff_rows,	upper_pdf_buff_rows,	upper_cdf_buff_rows;
-	unsigned		upper_var_buff_columns,	upper_pdf_buff_columns,	upper_cdf_buff_columns;
+	unsigned		lower_var_buff_bytes,	lower_pdf_buff_bytes,	lower_cdf_buff_bytes,	lower_nu_buff_bytes;
+	unsigned		lower_var_buff_rows,	lower_pdf_buff_rows,	lower_cdf_buff_rows,	lower_nu_buff_rows;
+	unsigned		lower_var_buff_columns,	lower_pdf_buff_columns,	lower_cdf_buff_columns,	lower_nu_buff_columns;
+	unsigned		upper_var_buff_bytes,	upper_pdf_buff_bytes,	upper_cdf_buff_bytes,	upper_nu_buff_bytes;
+	unsigned		upper_var_buff_rows,	upper_pdf_buff_rows,	upper_cdf_buff_rows,	upper_nu_buff_rows;
+	unsigned		upper_var_buff_columns,	upper_pdf_buff_columns,	upper_cdf_buff_columns,	upper_nu_buff_columns;
 	dist_data		 h_lower_dist,  h_upper_dist;
 	dist_data		dh_lower_dist, dh_upper_dist;
 	dist_data		*d_lower_dist, *d_upper_dist;
@@ -831,6 +833,10 @@ void whistory::copy_scatter_data(){
 	// allocate host arrays
 	h_xsdata.dist_scatter	= new dist_container [total_rows * total_cols];
 	dh_dist_scatter			= new dist_container [total_rows * total_cols];
+
+	// allocate nu arrays
+	lower_nu	=	new float [2];
+	upper_nu	=	new float [2];
 
 	// init to null pointers
 	for (row=0 ; row<h_xsdata.energy_grid_len; row++){  //start after the total xs vectors
@@ -898,18 +904,15 @@ void whistory::copy_scatter_data(){
 			next_dex_obj	= PyList_GetItem(obj_list,14);
 			PyErr_Print();
 
-			// copy single values to temp objects
+			// copy erg, law, intt and next index.  These will always be datatypes as shown.  len can be a single int value for regular scattering, or a float array for nu data
 			h_lower_dist.erg	=	PyFloat_AsDouble(	lower_erg_obj);
-			h_lower_dist.len	=	PyInt_AsLong(		lower_len_obj);
 			h_lower_dist.law	=	PyInt_AsLong(		lower_law_obj);
 			h_lower_dist.intt	=	PyInt_AsLong(		lower_intt_obj);
 			h_upper_dist.erg	=	PyFloat_AsDouble(	upper_erg_obj);
-			h_upper_dist.len	=	PyInt_AsLong(		upper_len_obj);
 			h_upper_dist.law	=	PyInt_AsLong(		upper_law_obj);
 			h_upper_dist.intt	=	PyInt_AsLong(		upper_intt_obj);
 			next_dex			=	PyInt_AsLong(		next_dex_obj);
 			PyErr_Print();
-
 
 			// decide what to put in the array according to length reported
 			if(h_lower_dist.law==-2){   
@@ -920,21 +923,152 @@ void whistory::copy_scatter_data(){
 			}
 			else if (h_lower_dist.law==-1){  
 
-				// this is a fission reaction and this is nu_t, nu_p
-				// python routine linearly interpolates them, write current values
+				// this is a fission reaction and this is nu data
+				// get the precursor energy data to replicate on all arrays, only call once
+				if ( nu_d_got_data == 0 ){
 
-				// encode values directly to pointer positions on host arrays
-				memcpy(&h_xsdata.dist_scatter[array_index].upper, &h_upper_dist.erg , 1*sizeof(float));
-				memcpy(&h_xsdata.dist_scatter[array_index].lower, &h_lower_dist.erg , 1*sizeof(float));
-				memcpy(      &dh_dist_scatter[array_index].upper, &h_upper_dist.erg , 1*sizeof(float));
-				memcpy(      &dh_dist_scatter[array_index].lower, &h_lower_dist.erg , 1*sizeof(float));
+					// set flag that data has already been gotten, so new arrays aren't written for each nu point
+					nu_d_got_data = 1;
 
-				// go to next dex so python can do interpolation
-				row++;
+					// get new pointers for temp arrays according to length reported
+					h_lower_dist.var	=	new 	float[h_lower_dist.len];
+					h_lower_dist.pdf	=	new 	float[h_lower_dist.len];
+					h_lower_dist.cdf	=	new 	float[h_lower_dist.len];
+					h_upper_dist.var	=	new 	float[h_upper_dist.len];
+					h_upper_dist.pdf	=	new 	float[h_upper_dist.len];
+					h_upper_dist.cdf	=	new 	float[h_upper_dist.len];
+
+					// get buffers from python
+					if (PyObject_CheckBuffer(lower_var_obj) &
+						PyObject_CheckBuffer(lower_pdf_obj) &
+						PyObject_CheckBuffer(lower_cdf_obj) &
+						PyObject_CheckBuffer(upper_var_obj) &
+						PyObject_CheckBuffer(upper_pdf_obj) &
+						PyObject_CheckBuffer(upper_cdf_obj) )
+						{
+						PyObject_GetBuffer( lower_var_obj, &lower_var_buff, PyBUF_ND);
+						PyObject_GetBuffer( lower_pdf_obj, &lower_pdf_buff, PyBUF_ND);
+						PyObject_GetBuffer( lower_cdf_obj, &lower_cdf_buff, PyBUF_ND);
+						PyObject_GetBuffer( upper_var_obj, &upper_var_buff, PyBUF_ND);
+						PyObject_GetBuffer( upper_pdf_obj, &upper_pdf_buff, PyBUF_ND);
+						PyObject_GetBuffer( upper_cdf_obj, &upper_cdf_buff, PyBUF_ND);
+						PyErr_Print();
+					}
+					else{
+						PyErr_Print();
+						fprintf(stderr, "Returned object does not support buffer interface\n");
+						return;
+					}
+
+					// since lengths are the same for these arrays (multiplexed), don't check lengths against each other, trust python objects
+					// get array size info 
+					get_Py_buffer_dims(&lower_var_buff_rows, &lower_var_buff_columns, &lower_var_buff_bytes, &lower_var_buff);
+					get_Py_buffer_dims(&lower_pdf_buff_rows, &lower_pdf_buff_columns, &lower_pdf_buff_bytes, &lower_pdf_buff);
+					get_Py_buffer_dims(&lower_cdf_buff_rows, &lower_cdf_buff_columns, &lower_cdf_buff_bytes, &lower_cdf_buff);
+					get_Py_buffer_dims(&upper_var_buff_rows, &upper_var_buff_columns, &upper_var_buff_bytes, &upper_var_buff);
+					get_Py_buffer_dims(&upper_pdf_buff_rows, &upper_pdf_buff_columns, &upper_pdf_buff_bytes, &upper_pdf_buff);
+					get_Py_buffer_dims(&upper_cdf_buff_rows, &upper_cdf_buff_columns, &upper_cdf_buff_bytes, &upper_cdf_buff);
+
+					// allocate device distribution arrays
+					check_cuda(cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes)); 
+					check_cuda(cudaMalloc(&dh_lower_dist.pdf, lower_var_buff_bytes));
+					check_cuda(cudaMalloc(&dh_lower_dist.cdf, lower_var_buff_bytes));
+					check_cuda(cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes));
+					check_cuda(cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes));
+					check_cuda(cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes));
+					check_cuda(cudaPeekAtLastError());
+	
+					// copy data from python buffer to host pointer in array
+					memcpy(h_lower_dist.var, lower_var_buff.buf, lower_var_buff_bytes);  
+					memcpy(h_lower_dist.pdf, lower_pdf_buff.buf, lower_var_buff_bytes);
+					memcpy(h_lower_dist.cdf, lower_cdf_buff.buf, lower_var_buff_bytes);
+					memcpy(h_upper_dist.var, upper_var_buff.buf, upper_var_buff_bytes);
+					memcpy(h_upper_dist.pdf, upper_pdf_buff.buf, upper_var_buff_bytes);
+					memcpy(h_upper_dist.cdf, upper_cdf_buff.buf, upper_var_buff_bytes);
+	
+					// copy data from host arrays to device arrays
+					check_cuda(cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff_bytes, cudaMemcpyHostToDevice));  
+					check_cuda(cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+					check_cuda(cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+					check_cuda(cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+					check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+					check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+					check_cuda(cudaPeekAtLastError());
+
+				}
+
+				// copy nu array to host arrays
+				// get buffers from python
+				if (PyObject_CheckBuffer(lower_len_obj) &
+					PyObject_CheckBuffer(upper_len_obj) )
+					{
+					PyObject_GetBuffer( lower_len_obj, &lower_nu_buff, PyBUF_ND);
+					PyObject_GetBuffer( upper_len_obj, &upper_nu_buff, PyBUF_ND);
+					PyErr_Print();
+				}
+				else{
+					PyErr_Print();
+					fprintf(stderr, "Returned object does not support buffer interface\n");
+					return;
+				}
+
+				// get nu buffer dims
+				get_Py_buffer_dims(&lower_nu_buff_rows, &lower_nu_buff_columns, &lower_nu_buff_bytes, &lower_nu_buff);
+				get_Py_buffer_dims(&upper_nu_buff_rows, &upper_nu_buff_columns, &upper_nu_buff_bytes, &upper_nu_buff);
+
+				// check bytes for nu array
+				assert(lower_nu_buff_bytes==2*sizeof(float));
+				assert(upper_nu_buff_bytes==2*sizeof(float));
+
+				// copy nu buffers to local
+				memcpy(lower_nu, lower_nu_buff.buf, lower_nu_buff_bytes);  
+				memcpy(upper_nu, upper_nu_buff.buf, upper_nu_buff_bytes);
+
+				// this nu call gets the nu_p and nu_t data points, ecode them into len and law, respectively.   Safe to overwrite law since it will be overwritten again in next iteration
+				memcpy( &h_lower_dist.len, &lower_nu[0] , 1*sizeof(float));
+				memcpy( &h_lower_dist.law, &lower_nu[1] , 1*sizeof(float));
+				memcpy( &h_upper_dist.len, &upper_nu[0] , 1*sizeof(float));
+				memcpy( &h_upper_dist.law, &upper_nu[1] , 1*sizeof(float));
+				memcpy(&dh_lower_dist.len, &lower_nu[0] , 1*sizeof(float));
+				memcpy(&dh_lower_dist.law, &lower_nu[1] , 1*sizeof(float));
+				memcpy(&dh_upper_dist.len, &upper_nu[0] , 1*sizeof(float));
+				memcpy(&dh_upper_dist.law, &upper_nu[1] , 1*sizeof(float));
+
+				// copy other vals in structure, leave array pointers be!
+				dh_lower_dist.erg	=	h_lower_dist.erg;
+				dh_lower_dist.intt	=	h_lower_dist.intt;
+				dh_upper_dist.erg	=	h_upper_dist.erg;
+				dh_upper_dist.intt	=	h_upper_dist.intt;
+
+				// allocate container
+				check_cuda(cudaMalloc(&d_lower_dist, 1*sizeof(dist_data)));
+				check_cuda(cudaMalloc(&d_upper_dist, 1*sizeof(dist_data)));
+				check_cuda(cudaPeekAtLastError());
+	
+				// copy device pointers to device container
+				check_cuda(cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaPeekAtLastError());
+
+				// replicate pointers until next index
+				for (int i=row ; i<next_dex; i++){
+					array_index = i*total_cols + col;
+					h_xsdata.dist_scatter[array_index].upper = &h_upper_dist;
+					h_xsdata.dist_scatter[array_index].lower = &h_lower_dist;
+					      dh_dist_scatter[array_index].upper =  d_upper_dist;
+					      dh_dist_scatter[array_index].lower =  d_lower_dist;
+				}
+
+				// go to where the next index starts
+				row = next_dex;
 
 			}
 			else{
 				// normal scattering distributions
+				// get scalars whose types can change
+				h_lower_dist.len	=	PyInt_AsLong(	lower_len_obj);
+				h_upper_dist.len	=	PyInt_AsLong(	upper_len_obj);
+
 				// get new pointers for temp arrays according to length reported
 				h_lower_dist.var	=	new 	float[h_lower_dist.len];
 				h_lower_dist.pdf	=	new 	float[h_lower_dist.len];
@@ -961,8 +1095,8 @@ void whistory::copy_scatter_data(){
 				}
 				else{
 					PyErr_Print();
-				    fprintf(stderr, "Returned object does not support buffer interface\n");
-				    return;
+					fprintf(stderr, "Returned object does not support buffer interface\n");
+					return;
 				}
 	
 				// get array size info 
@@ -1055,8 +1189,13 @@ void whistory::copy_scatter_data(){
 
 			}
 
+			// error check
 			PyErr_Print();
 		}
+
+		// reset nu data flag since going to next column
+		nu_d_got_data = 0;
+
 	}
 
 	// copy host array containing device pointers to device array
