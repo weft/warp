@@ -407,49 +407,69 @@ class cross_section_data:
 				
 			else:
 
-				if nu_t_lower_index == nu_t_upper_index:  
-					# above last value, just return highest erg value
-					nu_t = table.nu_t_value[ nu_t_lower_index]
-					nu_p = table.nu_p_value[ nu_p_lower_index]
+				# get upper/lower grid values
+				lower_nu_t = table.nu_t_value[ nu_t_lower_index]
+				lower_nu_p = table.nu_p_value[ nu_p_lower_index]
+				upper_nu_t = table.nu_t_value[ nu_t_upper_index]
+				upper_nu_p = table.nu_p_value[ nu_p_upper_index]
 
+				# get intts
+				if numpy.isscalar(table.nu_p_interp_INT):
+					lower_nu_p_intt = table.nu_p_interp_INT
+					upper_nu_p_intt = table.nu_p_interp_INT
 				else:
-
-					# get nu_t values
-					e0 = table.nu_t_energy[nu_t_lower_index]
-					e1 = table.nu_t_energy[nu_t_upper_index]
-					v0 = table.nu_t_value[ nu_t_lower_index]
-					v1 = table.nu_t_value[ nu_t_upper_index]
-	
-					# linearly interpolate
-					nu_t = (v1-v0)/(e1-e0)*(e1-this_E) + v0
-	
-					# get nu_p values
-					e0 = table.nu_p_energy[nu_p_lower_index]
-					e1 = table.nu_p_energy[nu_p_upper_index]
-					v0 = table.nu_p_value[ nu_p_lower_index]
-					v1 = table.nu_p_value[ nu_p_upper_index]
-	
-					# linearly interpolate
-					nu_p = (v1-v0)/(e1-e0)*(e1-this_E) + v0
+					lower_nu_p_intt = table.nu_p_interp_INT[nu_p_lower_index]
+					upper_nu_p_intt = table.nu_p_interp_INT[nu_p_upper_index]
+				if numpy.isscalar(table.nu_t_interp_INT):
+					lower_nu_t_intt = table.nu_t_interp_INT
+					upper_nu_t_intt = table.nu_t_interp_INT
+				else:
+					lower_nu_t_intt = table.nu_t_interp_INT[nu_p_lower_index]
+					upper_nu_t_intt = table.nu_t_interp_INT[nu_p_upper_index]
+				if numpy.isscalar(table.nu_d_precursor_interp_INT):
+					pre_0_intt = table.nu_d_precursor_interp_INT
+					pre_1_intt = table.nu_d_precursor_interp_INT
+					pre_2_intt = table.nu_d_precursor_interp_INT
+					pre_3_intt = table.nu_d_precursor_interp_INT
+					pre_4_intt = table.nu_d_precursor_interp_INT
+					pre_5_intt = table.nu_d_precursor_interp_INT
+				else:
+					pre_0_intt = table.nu_d_precursor_interp_INT[0]
+					pre_1_intt = table.nu_d_precursor_interp_INT[1]
+					pre_2_intt = table.nu_d_precursor_interp_INT[2]
+					pre_3_intt = table.nu_d_precursor_interp_INT[3]
+					pre_4_intt = table.nu_d_precursor_interp_INT[4]
+					pre_5_intt = table.nu_d_precursor_interp_INT[5]  # should be six group if not a single value
 
 				# set values in vars
 				lower_law	= -1
 				upper_law	= -1
-				lower_intt	= 0
-				upper_intt	= 0
-				lower_erg	= this_E
-				upper_erg	= nu_t
-				lower_len	= 0
-				upper_len	= 0
-				lower_var 	= numpy.array([0.0])
-				upper_var 	= numpy.array([0.0])
-				lower_pdf 	= numpy.array([0.0])
-				upper_pdf 	= numpy.array([0.0])
-				lower_cdf 	= numpy.array([0.0])
-				upper_cdf 	= numpy.array([0.0])
+				lower_intt	= lower_nu_t_intt + lower_nu_p_intt*10 + pre_0_intt*100 + pre_1_intt*1000 + pre_2_intt*10000 + pre_3_intt*100000 + pre_4_intt*1000000 + pre_5_intt*10000000 # encode intts
+				upper_intt	= upper_nu_t_intt + upper_nu_p_intt*10 + pre_0_intt*100 + pre_1_intt*1000 + pre_2_intt*10000 + pre_3_intt*100000 + pre_4_intt*1000000 + pre_5_intt*10000000 # encode intts
+				lower_erg	= max(table.nu_t_energy[nu_t_lower_index],table.nu_p_energy[nu_p_lower_index])  # take narrowest interval
+				upper_erg	= min(table.nu_t_energy[nu_t_upper_index],table.nu_p_energy[nu_p_upper_index])  # take narrowest interval
+				lower_len	= numpy.array([lower_nu_t,lower_nu_p])
+				upper_len	= numpy.array([upper_nu_t,upper_nu_p])
+
+				# mux vectors
+				lower_var 	= numpy.hstack((table.nu_d_precursor_prob[0][0],table.nu_d_precursor_prob[1][0],table.nu_d_precursor_prob[2][0],table.nu_d_precursor_prob[3][0],table.nu_d_precursor_prob[4][0],table.nu_d_precursor_prob[5][0])) # probabilities
+				upper_var 	= numpy.hstack((table.nu_d_precursor_prob[0][1],table.nu_d_precursor_prob[1][1],table.nu_d_precursor_prob[2][1],table.nu_d_precursor_prob[3][1],table.nu_d_precursor_prob[4][1],table.nu_d_precursor_prob[5][1])) # probabilities
+				lower_cdf 	= []
+				upper_cdf 	= []
+				lower_pdf 	= numpy.array([0])
+				upper_pdf 	= numpy.array([0])
+				for i in range(0,len(table.nu_d_energy_dist)):
+					lower_cdf 	= numpy.hstack((lower_cdf,table.nu_d_energy_dist[i].cdf[0]))  # mux data, CDF first
+					upper_cdf 	= numpy.hstack((upper_cdf,table.nu_d_energy_dist[i].cdf[1]))  # mux data, CDF first
+					if i>0:
+						lower_pdf 	= numpy.hstack((lower_pdf,len(lower_cdf)))  # mux indicies
+						upper_pdf 	= numpy.hstack((upper_pdf,len(upper_cdf)))  # mux indicies
+				for i in range(0,len(table.nu_d_energy_dist)):
+					lower_cdf 	= numpy.hstack((lower_cdf,table.nu_d_energy_dist[i].pdf[0]))  # mux data, PDF second
+					upper_cdf 	= numpy.hstack((upper_cdf,table.nu_d_energy_dist[i].pdf[1]))  # mux data, PDF second
 
 				# next index
-				next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
+				next_dex = next((i for i, x in enumerate(upper_erg < self.MT_E_grid) if x), len(self.MT_E_grid))
 
 		elif hasattr(rxn,"ang_energy_in"):
 			# get the data, easy.

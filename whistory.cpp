@@ -960,7 +960,7 @@ void whistory::copy_scatter_data(){
 						return;
 					}
 
-					// since lengths are the same for these arrays (multiplexed), don't check lengths against each other, trust python objects
+					// since lengths are not the same for these arrays (multiplexed-ish), don't check lengths against each other, trust python object sizes
 					// get array size info 
 					get_Py_buffer_dims(&lower_var_buff_rows, &lower_var_buff_columns, &lower_var_buff_bytes, &lower_var_buff);
 					get_Py_buffer_dims(&lower_pdf_buff_rows, &lower_pdf_buff_columns, &lower_pdf_buff_bytes, &lower_pdf_buff);
