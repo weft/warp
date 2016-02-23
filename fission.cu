@@ -9,9 +9,9 @@
 __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
 	// declare shared variables
-	__shared__ 	unsigned			n_isotopes;				
+	//__shared__ 	unsigned			n_isotopes;				
 	//__shared__ 	unsigned			energy_grid_len;		
-	__shared__ 	unsigned			total_reaction_channels;
+	//__shared__ 	unsigned			total_reaction_channels;
 	//__shared__ 	float*				energy_grid;
 	__shared__ 	dist_container*		dist_scatter;			
 	__shared__	unsigned*			rxn;	
@@ -23,9 +23,9 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 
 	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
-		n_isotopes					= d_xsdata[0].n_isotopes;								
+		//n_isotopes					= d_xsdata[0].n_isotopes;								
 		//energy_grid_len				= d_xsdata[0].energy_grid_len;				
-		total_reaction_channels		= d_xsdata[0].total_reaction_channels;
+		//total_reaction_channels		= d_xsdata[0].total_reaction_channels;
 		//energy_grid 				= d_xsdata[0].energy_grid;
 		dist_scatter 				= d_xsdata[0].dist_scatter;						
 		rxn							= d_particles[0].rxn;
@@ -60,23 +60,25 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	if (dist_scatter[this_dex].lower==0x0){
 		printf("scatter pointer for rxn %d is null!\n",this_rxn);
 	}
-	float		nu0			=	0.0;
-	float		nu1			=	0.0;
+	dist_data	sdist_lower	=	dist_scatter[this_dex].lower[0];
+	dist_data	sdist_upper	=	dist_scatter[this_dex].upper[0];
+	float		nu_t0		=	0.0;
+	float		nu_t1		=	0.0;
 	float		e0			=	0.0;
 	float		e1			=	0.0;
 	float		nu			=	0.0;
 	unsigned	inu			=	0;
 	unsigned	this_yield	=	0;
-	unsigned 	n_columns	= n_isotopes + total_reaction_channels;
+	//unsigned 	n_columns	= n_isotopes + total_reaction_channels;
 
-	// copy nu from array, lower erg is nu_t, upper erg is nu_p
-	memcpy(&e0,  &dist_scatter[this_dex          ].lower, 1*sizeof(float));
-	memcpy(&nu0, &dist_scatter[this_dex          ].upper, 1*sizeof(float));
-	memcpy(&e0,  &dist_scatter[this_dex+n_columns].lower, 1*sizeof(float));
-	memcpy(&nu1, &dist_scatter[this_dex+n_columns].upper, 1*sizeof(float));
+	// copy nu values, energy points from dist, t is len, d is law
+	memcpy(&nu_t0	, &sdist_lower.len, 1*sizeof(float));
+	memcpy(&nu_t1	, &sdist_upper.len, 1*sizeof(float));
+	memcpy(&e0		, &sdist_lower.erg, 1*sizeof(float));
+	memcpy(&e1		, &sdist_upper.erg, 1*sizeof(float));
 
-	// interpolate nu
-	nu	=	interpolate_linear_energy( this_E, e0, e1, nu0, nu1 );
+	// interpolate nu total, energy is done in pop
+	nu	=	interpolate_linear_energy( this_E, e0, e1, nu_t0, nu_t1 );
 
 	// check nu
 	if (nu==0.0){
@@ -89,7 +91,6 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	if (this_weight<1.0){
 		printf("weight = 0!\n");
 	}
-	//printf("nu %6.4E\n",nu);
 
 	// get integer part
 	inu = (unsigned) nu;

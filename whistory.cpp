@@ -930,14 +930,6 @@ void whistory::copy_scatter_data(){
 					// set flag that data has already been gotten, so new arrays aren't written for each nu point
 					nu_d_got_data = 1;
 
-					// get new pointers for temp arrays according to length reported
-					h_lower_dist.var	=	new 	float[h_lower_dist.len];
-					h_lower_dist.pdf	=	new 	float[h_lower_dist.len];
-					h_lower_dist.cdf	=	new 	float[h_lower_dist.len];
-					h_upper_dist.var	=	new 	float[h_upper_dist.len];
-					h_upper_dist.pdf	=	new 	float[h_upper_dist.len];
-					h_upper_dist.cdf	=	new 	float[h_upper_dist.len];
-
 					// get buffers from python
 					if (PyObject_CheckBuffer(lower_var_obj) &
 						PyObject_CheckBuffer(lower_pdf_obj) &
@@ -969,30 +961,38 @@ void whistory::copy_scatter_data(){
 					get_Py_buffer_dims(&upper_pdf_buff_rows, &upper_pdf_buff_columns, &upper_pdf_buff_bytes, &upper_pdf_buff);
 					get_Py_buffer_dims(&upper_cdf_buff_rows, &upper_cdf_buff_columns, &upper_cdf_buff_bytes, &upper_cdf_buff);
 
+					// get new pointers for temp arrays according to length reported
+					h_lower_dist.var	=	new 	float[lower_var_buff_bytes/sizeof(float)];
+					h_lower_dist.pdf	=	new 	float[lower_pdf_buff_bytes/sizeof(float)];
+					h_lower_dist.cdf	=	new 	float[lower_cdf_buff_bytes/sizeof(float)];
+					h_upper_dist.var	=	new 	float[upper_var_buff_bytes/sizeof(float)];
+					h_upper_dist.pdf	=	new 	float[upper_pdf_buff_bytes/sizeof(float)];
+					h_upper_dist.cdf	=	new 	float[upper_cdf_buff_bytes/sizeof(float)];
+
 					// allocate device distribution arrays
-					check_cuda(cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes)); 
-					check_cuda(cudaMalloc(&dh_lower_dist.pdf, lower_var_buff_bytes));
-					check_cuda(cudaMalloc(&dh_lower_dist.cdf, lower_var_buff_bytes));
+					check_cuda(cudaMalloc(&dh_lower_dist.var, lower_var_buff_bytes));  // arrays are all different lengths now
+					check_cuda(cudaMalloc(&dh_lower_dist.pdf, lower_pdf_buff_bytes));
+					check_cuda(cudaMalloc(&dh_lower_dist.cdf, lower_cdf_buff_bytes));
 					check_cuda(cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes));
-					check_cuda(cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes));
-					check_cuda(cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes));
+					check_cuda(cudaMalloc(&dh_upper_dist.pdf, upper_pdf_buff_bytes));
+					check_cuda(cudaMalloc(&dh_upper_dist.cdf, upper_cdf_buff_bytes));
 					check_cuda(cudaPeekAtLastError());
 	
 					// copy data from python buffer to host pointer in array
 					memcpy(h_lower_dist.var, lower_var_buff.buf, lower_var_buff_bytes);  
-					memcpy(h_lower_dist.pdf, lower_pdf_buff.buf, lower_var_buff_bytes);
-					memcpy(h_lower_dist.cdf, lower_cdf_buff.buf, lower_var_buff_bytes);
+					memcpy(h_lower_dist.pdf, lower_pdf_buff.buf, lower_pdf_buff_bytes);
+					memcpy(h_lower_dist.cdf, lower_cdf_buff.buf, lower_cdf_buff_bytes);
 					memcpy(h_upper_dist.var, upper_var_buff.buf, upper_var_buff_bytes);
-					memcpy(h_upper_dist.pdf, upper_pdf_buff.buf, upper_var_buff_bytes);
-					memcpy(h_upper_dist.cdf, upper_cdf_buff.buf, upper_var_buff_bytes);
+					memcpy(h_upper_dist.pdf, upper_pdf_buff.buf, upper_pdf_buff_bytes);
+					memcpy(h_upper_dist.cdf, upper_cdf_buff.buf, upper_cdf_buff_bytes);
 	
 					// copy data from host arrays to device arrays
 					check_cuda(cudaMemcpy(dh_lower_dist.var, h_lower_dist.var, lower_var_buff_bytes, cudaMemcpyHostToDevice));  
-					check_cuda(cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
-					check_cuda(cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_var_buff_bytes, cudaMemcpyHostToDevice));
+					check_cuda(cudaMemcpy(dh_lower_dist.pdf, h_lower_dist.pdf, lower_pdf_buff_bytes, cudaMemcpyHostToDevice));
+					check_cuda(cudaMemcpy(dh_lower_dist.cdf, h_lower_dist.cdf, lower_cdf_buff_bytes, cudaMemcpyHostToDevice));
 					check_cuda(cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice));
-					check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
-					check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+					check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_pdf_buff_bytes, cudaMemcpyHostToDevice));
+					check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_cdf_buff_bytes, cudaMemcpyHostToDevice));
 					check_cuda(cudaPeekAtLastError());
 
 				}

@@ -367,7 +367,7 @@ class cross_section_data:
 
 			# find indicies
 			nu_t_upper_index = next((i for i, x in enumerate(this_E < table.nu_t_energy) if x), None)
-			nu_p_upper_index = next((i for i, x in enumerate(this_E < table.nu_p_energy) if x), None)
+			nu_d_upper_index = next((i for i, x in enumerate(this_E < table.nu_d_energy) if x), None)
 
 			# if above upper nu grid value
 			if  nu_t_upper_index == None:
@@ -376,11 +376,11 @@ class cross_section_data:
 			else:
 				nu_t_lower_index = nu_t_upper_index - 1
 
-			if  nu_p_upper_index == None:
-				nu_p_upper_index = len(table.nu_p_energy)-1
-				nu_p_lower_index = len(table.nu_p_energy)-1
+			if  nu_d_upper_index == None:
+				nu_d_upper_index = len(table.nu_d_energy)-1
+				nu_d_lower_index = len(table.nu_d_energy)-1
 			else:
-				nu_p_lower_index = nu_p_upper_index - 1
+				nu_d_lower_index = nu_d_upper_index - 1
 
 			# make sure above threshold
 			if nu_t_lower_index < 0:
@@ -409,64 +409,61 @@ class cross_section_data:
 
 				# get upper/lower grid values
 				lower_nu_t = table.nu_t_value[ nu_t_lower_index]
-				lower_nu_p = table.nu_p_value[ nu_p_lower_index]
+				lower_nu_d = table.nu_d_value[ nu_d_lower_index]
 				upper_nu_t = table.nu_t_value[ nu_t_upper_index]
-				upper_nu_p = table.nu_p_value[ nu_p_upper_index]
+				upper_nu_d = table.nu_d_value[ nu_d_upper_index]
 
 				# get intts
 				if numpy.isscalar(table.nu_p_interp_INT):
-					lower_nu_p_intt = table.nu_p_interp_INT
-					upper_nu_p_intt = table.nu_p_interp_INT
+					lower_nu_d_intt = table.nu_p_interp_INT
+					upper_nu_d_intt = table.nu_p_interp_INT
 				else:
-					lower_nu_p_intt = table.nu_p_interp_INT[nu_p_lower_index]
-					upper_nu_p_intt = table.nu_p_interp_INT[nu_p_upper_index]
+					lower_nu_d_intt = table.nu_p_interp_INT[nu_d_lower_index]
+					upper_nu_d_intt = table.nu_p_interp_INT[nu_d_upper_index]
 				if numpy.isscalar(table.nu_t_interp_INT):
 					lower_nu_t_intt = table.nu_t_interp_INT
 					upper_nu_t_intt = table.nu_t_interp_INT
 				else:
 					lower_nu_t_intt = table.nu_t_interp_INT[nu_p_lower_index]
 					upper_nu_t_intt = table.nu_t_interp_INT[nu_p_upper_index]
-				if numpy.isscalar(table.nu_d_precursor_interp_INT):
-					pre_0_intt = table.nu_d_precursor_interp_INT
-					pre_1_intt = table.nu_d_precursor_interp_INT
-					pre_2_intt = table.nu_d_precursor_interp_INT
-					pre_3_intt = table.nu_d_precursor_interp_INT
-					pre_4_intt = table.nu_d_precursor_interp_INT
-					pre_5_intt = table.nu_d_precursor_interp_INT
-				else:
-					pre_0_intt = table.nu_d_precursor_interp_INT[0]
-					pre_1_intt = table.nu_d_precursor_interp_INT[1]
-					pre_2_intt = table.nu_d_precursor_interp_INT[2]
-					pre_3_intt = table.nu_d_precursor_interp_INT[3]
-					pre_4_intt = table.nu_d_precursor_interp_INT[4]
-					pre_5_intt = table.nu_d_precursor_interp_INT[5]  # should be six group if not a single value
+				lower_pre_intt = table.nu_d_energy_dist[0].intt[0]
+				upper_pre_intt = table.nu_d_energy_dist[0].intt[1]
+				lower_pre_law = table.nu_d_energy_dist[0].law
+				upper_pre_law = table.nu_d_energy_dist[0].law  
 
 				# set values in vars
 				lower_law	= -1
 				upper_law	= -1
-				lower_intt	= lower_nu_t_intt + lower_nu_p_intt*10 + pre_0_intt*100 + pre_1_intt*1000 + pre_2_intt*10000 + pre_3_intt*100000 + pre_4_intt*1000000 + pre_5_intt*10000000 # encode intts
-				upper_intt	= upper_nu_t_intt + upper_nu_p_intt*10 + pre_0_intt*100 + pre_1_intt*1000 + pre_2_intt*10000 + pre_3_intt*100000 + pre_4_intt*1000000 + pre_5_intt*10000000 # encode intts
-				lower_erg	= max(table.nu_t_energy[nu_t_lower_index],table.nu_p_energy[nu_p_lower_index])  # take narrowest interval
-				upper_erg	= min(table.nu_t_energy[nu_t_upper_index],table.nu_p_energy[nu_p_upper_index])  # take narrowest interval
-				lower_len	= numpy.array([lower_nu_t,lower_nu_p])
-				upper_len	= numpy.array([upper_nu_t,upper_nu_p])
+				lower_intt	= lower_nu_t_intt + lower_nu_d_intt*10 + lower_pre_intt*100 + lower_pre_law*1000  # encode intts and laws, assuming no difference between dists
+				upper_intt	= upper_nu_t_intt + upper_nu_d_intt*10 + upper_pre_intt*100 + upper_pre_law*1000  # encode intts and laws, assuming no difference between dists
+				lower_erg	= max(table.nu_t_energy[nu_t_lower_index],table.nu_d_energy[nu_d_lower_index])  # take narrowest interval
+				upper_erg	= min(table.nu_t_energy[nu_t_upper_index],table.nu_d_energy[nu_d_upper_index])  # take narrowest interval
+				lower_len	= numpy.array([lower_nu_t,lower_nu_d])
+				upper_len	= numpy.array([upper_nu_t,upper_nu_d])
 
 				# mux vectors
-				lower_var 	= numpy.hstack((table.nu_d_precursor_prob[0][0],table.nu_d_precursor_prob[1][0],table.nu_d_precursor_prob[2][0],table.nu_d_precursor_prob[3][0],table.nu_d_precursor_prob[4][0],table.nu_d_precursor_prob[5][0])) # probabilities
-				upper_var 	= numpy.hstack((table.nu_d_precursor_prob[0][1],table.nu_d_precursor_prob[1][1],table.nu_d_precursor_prob[2][1],table.nu_d_precursor_prob[3][1],table.nu_d_precursor_prob[4][1],table.nu_d_precursor_prob[5][1])) # probabilities
-				lower_cdf 	= []
-				upper_cdf 	= []
-				lower_pdf 	= numpy.array([0])
-				upper_pdf 	= numpy.array([0])
+				lower_var	= numpy.hstack((table.nu_d_precursor_prob[0][0],table.nu_d_precursor_prob[1][0],table.nu_d_precursor_prob[2][0],table.nu_d_precursor_prob[3][0],table.nu_d_precursor_prob[4][0],table.nu_d_precursor_prob[5][0])) # probabilities
+				upper_var	= numpy.hstack((table.nu_d_precursor_prob[0][1],table.nu_d_precursor_prob[1][1],table.nu_d_precursor_prob[2][1],table.nu_d_precursor_prob[3][1],table.nu_d_precursor_prob[4][1],table.nu_d_precursor_prob[5][1])) # probabilities
+				lower_var	= numpy.cumsum(lower_var) # given as individual, accumulate for ease
+				upper_var	= numpy.cumsum(upper_var) # given as individual, accumulate for ease
+				lower_cdf	= []
+				upper_cdf	= []
+				lower_pdf	= numpy.array([0])
+				upper_pdf	= numpy.array([0])
 				for i in range(0,len(table.nu_d_energy_dist)):
-					lower_cdf 	= numpy.hstack((lower_cdf,table.nu_d_energy_dist[i].cdf[0]))  # mux data, CDF first
-					upper_cdf 	= numpy.hstack((upper_cdf,table.nu_d_energy_dist[i].cdf[1]))  # mux data, CDF first
-					if i>0:
-						lower_pdf 	= numpy.hstack((lower_pdf,len(lower_cdf)))  # mux indicies
-						upper_pdf 	= numpy.hstack((upper_pdf,len(upper_cdf)))  # mux indicies
+					lower_cdf 	= numpy.hstack((lower_cdf,table.nu_d_energy_dist[i].energy_out[0]))  # mux data, energy first
+					upper_cdf 	= numpy.hstack((upper_cdf,table.nu_d_energy_dist[i].energy_out[1]))  # mux data, energy first
+					lower_pdf 	= numpy.hstack((lower_pdf,len(lower_cdf)))  # compute muxed indicies
+					upper_pdf 	= numpy.hstack((upper_pdf,len(upper_cdf)))  # compute muxed indicies
 				for i in range(0,len(table.nu_d_energy_dist)):
-					lower_cdf 	= numpy.hstack((lower_cdf,table.nu_d_energy_dist[i].pdf[0]))  # mux data, PDF second
-					upper_cdf 	= numpy.hstack((upper_cdf,table.nu_d_energy_dist[i].pdf[1]))  # mux data, PDF second
+					lower_cdf 	= numpy.hstack((lower_cdf,table.nu_d_energy_dist[i].cdf[0]))  # mux data, CDF second
+					upper_cdf 	= numpy.hstack((upper_cdf,table.nu_d_energy_dist[i].cdf[1]))  # mux data, CDF second
+				for i in range(0,len(table.nu_d_energy_dist)):
+					lower_cdf 	= numpy.hstack((lower_cdf,table.nu_d_energy_dist[i].pdf[0]))  # mux data, PDF third
+					upper_cdf 	= numpy.hstack((upper_cdf,table.nu_d_energy_dist[i].pdf[1]))  # mux data, PDF third
+
+				#pre_position = 0
+				#print lower_cdf[ pre_position], lower_cdf[ pre_position + lower_pdf[6]] ,lower_cdf[ pre_position+ lower_pdf[6]*2]
 
 				# next index
 				next_dex = next((i for i, x in enumerate(upper_erg < self.MT_E_grid) if x), len(self.MT_E_grid))
