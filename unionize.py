@@ -363,7 +363,7 @@ class cross_section_data:
 		# do the cases
 		if hasattr(table,"nu_t_energy") and rxn.multiplicity>10:
 			# this is a fission reaction
-			# scattering dist is actually nu
+			# scattering dist is actually nu + precursor energy distributions
 
 			# find indicies
 			nu_t_upper_index = next((i for i, x in enumerate(this_E < table.nu_t_energy) if x), None)
