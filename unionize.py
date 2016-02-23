@@ -147,6 +147,12 @@ class cross_section_data:
 
 		for table in self.tables:
 			self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.energy)
+			#unionize nu data
+			if hasattr(table,"nu_d_energy_dist"):
+				self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.nu_t_energy)
+				self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.nu_d_energy)
+				#for dist in table.nu_d_energy_dist:
+				#	self.MT_E_grid=numpy.union1d(self.MT_E_grid,dist.)
 			# unionize the scattering energies in as well!  if present of course
 			for MT in table.reactions:
 				rxn = table.reactions[MT]
@@ -466,7 +472,11 @@ class cross_section_data:
 				#print lower_cdf[ pre_position], lower_cdf[ pre_position + lower_pdf[6]] ,lower_cdf[ pre_position+ lower_pdf[6]*2]
 
 				# next index
-				next_dex = next((i for i, x in enumerate(upper_erg < self.MT_E_grid) if x), len(self.MT_E_grid))
+				if max(nu_t_upper_index,nu_d_upper_index) == max(len(table.nu_t_energy),len(table.nu_d_energy))-1 :  # above last dist energy bin
+					next_dex = len(self.MT_E_grid)
+				else:
+					next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
+				
 
 		elif hasattr(rxn,"ang_energy_in"):
 			# get the data, easy.
