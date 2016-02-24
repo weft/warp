@@ -104,6 +104,8 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	beta	=	interpolate_linear_energy( this_E, e0, e1, nu_d0, nu_d1 ) / 
 				interpolate_linear_energy( this_E, e0, e1, nu_t0, nu_t1 );
 
+	printf("beta % 6.4E this_E % 6.4E e0 % 6.4E e1 % 6.4E nu_d0 % 6.4E nu_d1 % 6.4E nu_t0 % 6.4E nu_t1 % 6.4E\n",beta,this_E, e0, e1, nu_d0, nu_d1, nu_t0, nu_t1);
+
 	// write new histories for this yield number
 	for(unsigned k=0 ; k < this_yield ; k++ ){
 

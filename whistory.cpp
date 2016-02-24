@@ -1052,6 +1052,16 @@ void whistory::copy_scatter_data(){
 
 				// replicate pointers until next index
 				for (int i=row ; i<next_dex; i++){
+
+					// check boundaries
+					if(h_xsdata.energy_grid[row]<h_lower_dist.erg){
+						printf("row %u E %6.4E BELOW lower dist energy %6.4E\n",row,h_xsdata.energy_grid[row],h_lower_dist.erg);
+					}
+					if(h_xsdata.energy_grid[row]>h_upper_dist.erg){
+						printf("row %u E %6.4E ABOVE upper dist energy %6.4E\n",row,h_xsdata.energy_grid[row],h_upper_dist.erg);
+					}
+
+					// set array value
 					array_index = i*total_cols + col;
 					h_xsdata.dist_scatter[array_index].upper = &h_upper_dist;
 					h_xsdata.dist_scatter[array_index].lower = &h_lower_dist;
