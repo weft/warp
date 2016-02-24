@@ -10,7 +10,11 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	// get tid
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 
-	// declare shared variables					
+	// declare shared variables
+	__shared__ 	unsigned			n_isotopes;				
+	__shared__ 	unsigned			energy_grid_len;		
+	__shared__ 	unsigned			total_reaction_channels;
+	__shared__ 	float*				energy_grid;
 	__shared__ 	dist_container*		dist_scatter;			
 	__shared__ 	dist_container*		dist_energy; 
 	__shared__	spatial_data*		space;	
@@ -21,6 +25,10 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
+		n_isotopes					= d_xsdata[0].n_isotopes;								
+		energy_grid_len				= d_xsdata[0].energy_grid_len;				
+		total_reaction_channels		= d_xsdata[0].total_reaction_channels;
+		energy_grid 				= d_xsdata[0].energy_grid;
 		dist_scatter 				= d_xsdata[0].dist_scatter;
 		dist_energy 				= d_xsdata[0].dist_energy; 
 		space						= d_particles[0].space;
@@ -85,6 +93,14 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	unsigned	this_law, this_len, this_intt, upper_len, lower_len, pre_index, pre_position;
 	float		*this_var, *this_cdf, *this_pdf, *upper_var, *lower_var;
 
+	unsigned 	n_columns	= n_isotopes + total_reaction_channels;
+	unsigned	this_col	= this_dex % n_columns;
+	unsigned	this_row	= (this_dex-this_col) / n_columns;
+	float 		E_of_index0	= energy_grid[this_row];
+	float		E_of_index1	= energy_grid[this_row+1];
+
+	if(this_E < E_of_index0 | this_E > E_of_index1){printf("this %6.4E row %6.4E row+1 %6.4E \n",this_E,E_of_index0,E_of_index1);}
+
 	// load dist info
 	dist_data	this_edist, this_sdist;
 	dist_data	sdist_lower	=	dist_scatter[this_dex].lower[0];
@@ -113,7 +129,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		data_dex = position+k;
 
 		// check if this neutron is delayed or prompt
-		if ( get_rand(&rn) > beta ){
+		if ( get_rand(&rn) > -1 ){
 
 			// do individual stochastic mixing for this prompt neutron
 			// pick upper or lower edist via stochastic mixing
