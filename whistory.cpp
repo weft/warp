@@ -1747,7 +1747,7 @@ void whistory::reset_cycle(float keff_cycle){
 	check_cuda(cudaPeekAtLastError());
 
 	//pop them in!  should be the right size now due to keff rebasing  
-	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_scanned );
+	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_scanned , d_fissile_points, d_fissile_energy);
 	check_cuda(cudaPeekAtLastError());
 
 	// sync
@@ -1761,6 +1761,8 @@ void whistory::reset_cycle(float keff_cycle){
 	//}
 
  	// rest run arrays
+ 	check_cuda(cudaMemcpy( dh_particles.space,		d_fissile_points,	Ndataset*sizeof(spatial_data),	cudaMemcpyDeviceToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.E,			d_fissile_energy,	Ndataset*sizeof(float),			cudaMemcpyDeviceToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.cellnum,	zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.matnum,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.isonum,		zeros,				Ndataset*sizeof(unsigned),		cudaMemcpyHostToDevice ));

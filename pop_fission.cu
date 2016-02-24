@@ -5,7 +5,7 @@
 #include "check_cuda.h"
 
 
-__global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_scanned){
+__global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_scanned, spatial_data* fission_particles, float* fission_energy){
 
 	// get tid
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
@@ -51,7 +51,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	float			this_z			=	space[    tid].z;
 
 	// get array position from prefix scan
-	unsigned	position	=	d_scanned[tid];
+	unsigned		position		=	d_scanned[tid];
 
 	// make sure individual loads happen before anything else?
 	__syncthreads();
@@ -227,16 +227,16 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 			printf("LAW %u NOT HANDLED IN FISSION POP!\n",this_law);
 		}
 
-		// set data
-		E[     data_dex ] 				= sampled_E;
-		space[ data_dex ].x				= this_x;
-		space[ data_dex ].y				= this_y;
-		space[ data_dex ].z				= this_z;
-		space[ data_dex ].xhat			= sqrtf(1.0-(mu*mu))*cosf(phi);
-		space[ data_dex ].yhat			= sqrtf(1.0-(mu*mu))*sinf(phi); 
-		space[ data_dex ].zhat			= mu;
-		space[ data_dex ].enforce_BC	= 0;
-		space[ data_dex ].surf_dist		= 999999.0;
+		// set data in temp array since GRID-WISE threadsync cannot be done (easily?)!
+		fission_energy[     data_dex ] 					= sampled_E;
+		fission_particles[  data_dex ].x				= this_x;
+		fission_particles[  data_dex ].y				= this_y;
+		fission_particles[  data_dex ].z				= this_z;
+		fission_particles[  data_dex ].xhat				= sqrtf(1.0-(mu*mu))*cosf(phi);
+		fission_particles[  data_dex ].yhat				= sqrtf(1.0-(mu*mu))*sinf(phi); 
+		fission_particles[  data_dex ].zhat				= mu;
+		fission_particles[  data_dex ].enforce_BC		= 0;
+		fission_particles[  data_dex ].surf_dist		= 999999.0;
 		
 		//if(data_dex<=9){printf("array index %u, E = % 6.4E d_fissile_energy[ data_dex ] = % 6.4E\n",data_dex,sampled_E,E[ data_dex ]);}
 
@@ -247,11 +247,11 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 }
 
-void pop_fission( unsigned NUM_THREADS, unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_scanned ){
+void pop_fission( unsigned NUM_THREADS, unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_scanned, spatial_data* fission_particles, float* fission_energy ){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;
 
-	pop_fission_kernel <<< blks, NUM_THREADS >>> ( N, d_xsdata, d_particles, d_scanned);
+	pop_fission_kernel <<< blks, NUM_THREADS >>> ( N, d_xsdata, d_particles, d_scanned, fission_particles, fission_energy);
 	check_cuda(cudaThreadSynchronize());
 
 }
