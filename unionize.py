@@ -414,10 +414,14 @@ class cross_section_data:
 			else:
 
 				# get upper/lower grid values
-				lower_nu_t = table.nu_t_value[ nu_t_lower_index]
-				lower_nu_d = table.nu_d_value[ nu_d_lower_index]
-				upper_nu_t = table.nu_t_value[ nu_t_upper_index]
-				upper_nu_d = table.nu_d_value[ nu_d_upper_index]
+				lower_nu_t	= table.nu_t_value[ nu_t_lower_index]
+				lower_nu_d	= table.nu_d_value[ nu_d_lower_index]
+				upper_nu_t	= table.nu_t_value[ nu_t_upper_index]
+				upper_nu_d	= table.nu_d_value[ nu_d_upper_index]
+				lower_e_t	= table.nu_t_energy[nu_t_lower_index]
+				lower_e_d	= table.nu_d_energy[nu_d_lower_index]
+				upper_e_t	= table.nu_t_energy[nu_t_upper_index]
+				upper_e_d	= table.nu_d_energy[nu_d_upper_index]
 
 				# get intts
 				if numpy.isscalar(table.nu_p_interp_INT):
@@ -442,8 +446,14 @@ class cross_section_data:
 				upper_law	= -1
 				lower_intt	= lower_nu_t_intt + lower_nu_d_intt*10 + lower_pre_intt*100 + lower_pre_law*1000  # encode intts and laws, assuming no difference between dists
 				upper_intt	= upper_nu_t_intt + upper_nu_d_intt*10 + upper_pre_intt*100 + upper_pre_law*1000  # encode intts and laws, assuming no difference between dists
-				lower_erg	= max(table.nu_t_energy[nu_t_lower_index],table.nu_d_energy[nu_d_lower_index])  # take narrowest interval
-				upper_erg	= min(table.nu_t_energy[nu_t_upper_index],table.nu_d_energy[nu_d_upper_index])  # take narrowest interval
+				lower_erg	= max(lower_e_t,lower_e_d)  # take narrowest interval
+				upper_erg	= min(upper_e_t,upper_e_d)  # take narrowest interval
+				
+				# evaluate nu on this interval 
+				lower_nu_t	= lower_nu_t + (lower_erg - lower_e_t)/(upper_e_t - lower_e_t) * (upper_nu_t - lower_nu_t)
+				lower_nu_d	= lower_nu_d + (lower_erg - lower_e_d)/(upper_e_d - lower_e_d) * (upper_nu_d - lower_nu_d)
+				upper_nu_t	= lower_nu_t + (upper_erg - lower_e_t)/(upper_e_t - lower_e_t) * (upper_nu_t - lower_nu_t)
+				upper_nu_d	= lower_nu_d + (upper_erg - lower_e_d)/(upper_e_d - lower_e_d) * (upper_nu_d - lower_nu_d)
 				lower_len	= numpy.array([lower_nu_t,lower_nu_d])
 				upper_len	= numpy.array([upper_nu_t,upper_nu_d])
 
