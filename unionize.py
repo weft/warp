@@ -147,12 +147,6 @@ class cross_section_data:
 
 		for table in self.tables:
 			self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.energy)
-			#unionize nu data
-			if hasattr(table,"nu_d_energy_dist"):
-				self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.nu_t_energy)
-				self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.nu_d_energy)
-				#for dist in table.nu_d_energy_dist:
-				#	self.MT_E_grid=numpy.union1d(self.MT_E_grid,dist.)
 			# unionize the scattering energies in as well!  if present of course
 			for MT in table.reactions:
 				rxn = table.reactions[MT]
@@ -414,14 +408,14 @@ class cross_section_data:
 			else:
 
 				# get upper/lower grid values
-				lower_nu_t	= table.nu_t_value[ nu_t_lower_index]
-				lower_nu_d	= table.nu_d_value[ nu_d_lower_index]
-				upper_nu_t	= table.nu_t_value[ nu_t_upper_index]
-				upper_nu_d	= table.nu_d_value[ nu_d_upper_index]
-				lower_e_t	= table.nu_t_energy[nu_t_lower_index]
-				lower_e_d	= table.nu_d_energy[nu_d_lower_index]
-				upper_e_t	= table.nu_t_energy[nu_t_upper_index]
-				upper_e_d	= table.nu_d_energy[nu_d_upper_index]
+				lower_nu_t_grid	= table.nu_t_value[ nu_t_lower_index]
+				lower_nu_d_grid	= table.nu_d_value[ nu_d_lower_index]
+				upper_nu_t_grid	= table.nu_t_value[ nu_t_upper_index]
+				upper_nu_d_grid	= table.nu_d_value[ nu_d_upper_index]
+				lower_e_t		= table.nu_t_energy[nu_t_lower_index]
+				lower_e_d		= table.nu_d_energy[nu_d_lower_index]
+				upper_e_t		= table.nu_t_energy[nu_t_upper_index]
+				upper_e_d		= table.nu_d_energy[nu_d_upper_index]
 
 				# get intts
 				if numpy.isscalar(table.nu_p_interp_INT):
@@ -450,10 +444,10 @@ class cross_section_data:
 				upper_erg	= min(upper_e_t,upper_e_d)  # take narrowest interval
 				
 				# evaluate nu on this interval 
-				lower_nu_t	= lower_nu_t + (lower_erg - lower_e_t)/(upper_e_t - lower_e_t) * (upper_nu_t - lower_nu_t)
-				lower_nu_d	= lower_nu_d + (lower_erg - lower_e_d)/(upper_e_d - lower_e_d) * (upper_nu_d - lower_nu_d)
-				upper_nu_t	= lower_nu_t + (upper_erg - lower_e_t)/(upper_e_t - lower_e_t) * (upper_nu_t - lower_nu_t)
-				upper_nu_d	= lower_nu_d + (upper_erg - lower_e_d)/(upper_e_d - lower_e_d) * (upper_nu_d - lower_nu_d)
+				lower_nu_t	= lower_nu_t_grid + (lower_erg - lower_e_t)/(upper_e_t - lower_e_t) * (upper_nu_t_grid - lower_nu_t_grid)
+				lower_nu_d	= lower_nu_d_grid + (lower_erg - lower_e_d)/(upper_e_d - lower_e_d) * (upper_nu_d_grid - lower_nu_d_grid)
+				upper_nu_t	= lower_nu_t_grid + (upper_erg - lower_e_t)/(upper_e_t - lower_e_t) * (upper_nu_t_grid - lower_nu_t_grid)
+				upper_nu_d	= lower_nu_d_grid + (upper_erg - lower_e_d)/(upper_e_d - lower_e_d) * (upper_nu_d_grid - lower_nu_d_grid)
 				lower_len	= numpy.array([lower_nu_t,lower_nu_d])
 				upper_len	= numpy.array([upper_nu_t,upper_nu_d])
 
