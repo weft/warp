@@ -129,7 +129,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		data_dex = position+k;
 
 		// check if this neutron is delayed or prompt
-		if ( get_rand(&rn) > -1 ){
+		if ( get_rand(&rn) > beta ){
 
 			// do individual stochastic mixing for this prompt neutron
 			// pick upper or lower edist via stochastic mixing
