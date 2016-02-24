@@ -99,7 +99,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	float 		E_of_index0	= energy_grid[this_row];
 	float		E_of_index1	= energy_grid[this_row+1];
 
-	if(this_E < E_of_index0 | this_E > E_of_index1){printf("this %6.4E row %6.4E row+1 %6.4E \n",this_E,E_of_index0,E_of_index1);}
+	if(this_E < E_of_index0 | this_E > E_of_index1){printf("energy outside of distributions in pop!!!! this %6.4E row %6.4E row+1 %6.4E \n",this_E,E_of_index0,E_of_index1);}
 
 	// load dist info
 	dist_data	this_edist, this_sdist;
@@ -119,8 +119,6 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	// get interpolated beta value, beta = nu_d / nu_t
 	beta	=	interpolate_linear_energy( this_E, e0, e1, nu_d0, nu_d1 ) / 
 				interpolate_linear_energy( this_E, e0, e1, nu_t0, nu_t1 );
-
-	printf("beta % 6.4E this_E % 6.4E e0 % 6.4E e1 % 6.4E nu_d0 % 6.4E nu_d1 % 6.4E nu_t0 % 6.4E nu_t1 % 6.4E\n",beta,this_E, e0, e1, nu_d0, nu_d1, nu_t0, nu_t1);
 
 	// write new histories for this yield number
 	for(unsigned k=0 ; k < this_yield ; k++ ){
@@ -191,8 +189,6 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 			lower_var	=	&this_sdist.cdf[pre_position];
 			upper_len	=	this_len;
 			lower_len	=	this_len;
-
-			printf("DELAYED this_E %6.4E f %6.4E  pre_index %u pre_position %u this_len %u this_var[0] %6.4E this_cdf[0] %6.4E this_pdf[0] %6.4E\n",this_E,f,pre_index,pre_position,this_len,this_var[0],this_cdf[0],this_pdf[0]);
 
 		}
 			
