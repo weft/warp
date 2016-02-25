@@ -327,6 +327,61 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 
 }
 
+inline __device__ float sample_continuous_tablular61( unsigned* index_out, unsigned length , unsigned intt , float rn , float* var , float* cdf, float* pdf ){
+/*
+Samples a law 61 probability distribution with historgram or lin-lin interpolation.  Returns sampled value and writes array index to passed in pointer, passes a different index depending on intt type for law 61.
+*/
+	unsigned	index	= 0;
+	float 		out 	= 0.0;
+
+	// scan the CDF,
+	for( index=0; index<length-1; index++ ){
+		if ( rn <= cdf[index+1] ){
+			break;
+		}
+	}
+	
+	// calculate sampled value
+	if(intt==1){
+		if( index == length ){
+			printf("SAMPLED GAP IN TABULAR61: intt %u len %u rn %12.10E\n",intt,length,rn);
+			index--;
+		}
+		// histogram interpolation
+		out = interpolate_continuous_tablular_histogram( rn, var[index], cdf[index], pdf[index] );
+	}
+	else if(intt==2){
+		if( index == length-1 ){
+			printf("SAMPLED GAP IN TABULAR61: intt %u len %u rn %12.10E\n",intt,length,rn);
+			index--;
+		}
+		// lin-lin interpolation
+		out = interpolate_continuous_tablular_linlin( rn, var[index], var[index+1], cdf[index], cdf[index+1], pdf[index], pdf[index+1] );
+	}
+	else{
+		// return invalid mu, like -2
+		printf("INTT=%u NOT HANDLED!\n",intt);
+		out = -2;		
+	}
+
+	// write index to passed pointer according to intt
+	if ( intt == 1){
+		index_out[0] = index;
+	}
+	else {  //( intt == 2 ), return closer index
+		if( rn - cdf[index] < cdf[index+1] - rn){
+			index_out[0] = index;
+		}
+		else{
+			index_out[0] = index+1;
+		}
+	}
+
+	// return sampled value
+	return out;
+
+}
+
 __forceinline__ __device__ unsigned binary_search( float * array , float value, unsigned len ){
 
 	// load data

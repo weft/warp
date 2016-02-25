@@ -16,10 +16,10 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	//__shared__ 	unsigned*			rxn_numbers_total;		
 	//__shared__ 	float*				energy_grid;			
 	//__shared__ 	float*				rxn_Q;						
-	//__shared__ 	float*				xs;						
-	__shared__ 	float*				awr;					
-	//__shared__ 	float*				temp;					
-	__shared__ 	dist_container*		dist_scatter;			
+	//__shared__ 	float*				xs;	
+	__shared__ 	float*				awr;
+	//__shared__ 	float*				temp;
+	__shared__ 	dist_container*		dist_scatter;
 	__shared__ 	dist_container*		dist_energy; 
 	__shared__	spatial_data*		space;	
 	__shared__	unsigned*			rxn;	
@@ -138,7 +138,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	v_n_cm = v_n_lf - v_cm;
 	v_t_cm = v_t_lf - v_cm;
 
-	if (this_law ==4 ){
+	if ( this_law == 4 ){
 
 		// sample continuous tabular
 		E0 = sample_continuous_tablular( 	this_edist.len , 
@@ -157,7 +157,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 		mu  = 2.0*get_rand(&rn)-1.0;
 
 	}
-	else if (this_law==44){
+	else if ( this_law == 44 ){
 
 		// make sure scatter array is present
 		if(dist_scatter == 0x0){
@@ -214,6 +214,35 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 		else{
 			mu		= logf(rn1*expf(A)+(1.0-rn1)*expf(-A))/A;
 		}
+
+	}
+	else if ( this_law == 61 ){
+
+		// sample continuous tabular, 61 returns the the proper index depending on intt type for law 61
+		E0 = sample_continuous_tablular61( 	dist_index ,        
+											this_edist.len , 
+											this_edist.intt , 
+											get_rand(&rn) , 
+											this_edist.var , 
+											this_edist.cdf, 
+											this_edist.pdf );
+		//scale it to bins 
+		sampled_E = scale_to_bins(	f, E0, 
+									 this_edist.var[0],  this_edist.var[ this_edist.len-1], 
+									edist_lower.var[0], edist_lower.var[edist_lower.len-1], 
+									edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
+
+		// get position of data in vector and vector length
+		unsigned ang_position	=	(unsigned) this_sdist.pdf[dist_index[0]];
+		unsigned this_len		=	(unsigned) this_sdist.pdf[dist_index[0]+1] - (unsigned) this_sdist.pdf[dist_index[0]];
+
+		// sample mu from corresponding distribution
+		mu = sample_continuous_tablular(	this_len , 
+											this_sdist.intt , 
+											get_rand(&rn) , 
+											&this_sdist.cdf[ ang_position                                     ] , 
+											&this_sdist.cdf[ ang_position +   this_sdist.len ] , 
+											&this_sdist.cdf[ ang_position + 2*this_sdist.len ] );
 
 	}
 	else{

@@ -555,6 +555,96 @@ class cross_section_data:
 				else:
 					next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
 
+		elif hasattr(rxn,"energy_dist") and hasattr(rxn.energy_dist,"energy_in") and hasattr(rxn.energy_dist,"a_dist_cdf"):
+			# probably law 61!  There are angular distributions for each energy.  flatten array and pass back
+			# find where this energy lies on this grid
+			upper_index = next((i for i, x in enumerate(this_E < rxn.energy_dist.energy_in) if x), len(rxn.energy_dist.energy_in))
+			lower_index = upper_index - 1
+
+			#print this_E, upper_index, lower_index
+
+			# if above upper index, return two of the last
+			if upper_index == len(rxn.energy_dist.energy_in):
+				upper_index = len(rxn.energy_dist.energy_in)-1
+				lower_index = len(rxn.energy_dist.energy_in)-1
+
+			# make sure above threshold
+			if lower_index < 0:
+
+				# set all to zero
+				lower_law	= -2
+				upper_law	= -2
+				lower_intt	= 0
+				upper_intt	= 0
+				lower_erg	= 0
+				upper_erg	= 0
+				lower_len	= 0
+				upper_len	= 0
+				lower_var 	= numpy.array([0.0])
+				upper_var 	= numpy.array([0.0])
+				lower_pdf 	= numpy.array([0.0])
+				upper_pdf 	= numpy.array([0.0])
+				lower_cdf 	= numpy.array([0.0])
+				upper_cdf 	= numpy.array([0.0])
+
+				# next index
+				threshold = numpy.max([rxn.threshold(),rxn.energy_dist.energy_in[0]])
+				next_dex = next((i for i, x in enumerate(threshold <= self.MT_E_grid) if x), None)
+				
+			else:
+
+				# law
+				lower_law  = rxn.energy_dist.law
+				upper_law  = rxn.energy_dist.law
+
+				# interpolation type
+				if hasattr(rxn.energy_dist,"intt"):
+					lower_intt = rxn.energy_dist.a_dist_intt[lower_index][0]
+					upper_intt = rxn.energy_dist.a_dist_intt[upper_index][0]
+				else:
+					lower_intt = 2
+					upper_intt = 2
+
+				# energies
+				lower_erg = rxn.energy_dist.energy_in[lower_index]
+				upper_erg = rxn.energy_dist.energy_in[upper_index]
+	
+				# get angular distribution values, else write zeros
+				# mux vectors
+				lower_var	= numpy.array([0]) # nothing, index determined by energy dist sampling
+				upper_var	= numpy.array([0]) # nothing, index determined by energy dist sampling
+				lower_cdf	= []
+				upper_cdf	= []
+				lower_pdf	= numpy.array([0]) # pdf is lengths
+				upper_pdf	= numpy.array([0]) 
+				# do lower dist first
+				for i in range(0,len(rxn.energy_dist.a_dist_mu_out[lower_index])):  # can be replaced with a flatten command
+					lower_cdf 	= numpy.hstack((lower_cdf,rxn.energy_dist.a_dist_mu_out[lower_index][i]))  # mux data, energy first
+					lower_pdf 	= numpy.hstack((lower_pdf,len(lower_cdf)))  # compute muxed indicies
+				for i in range(0,len(rxn.energy_dist.a_dist_mu_out[lower_index])):
+					lower_cdf 	= numpy.hstack((lower_cdf,rxn.energy_dist.a_dist_cdf[lower_index][i]))  # mux data, CDF second
+				for i in range(0,len(rxn.energy_dist.a_dist_mu_out[lower_index])):
+					lower_cdf 	= numpy.hstack((lower_cdf,rxn.energy_dist.a_dist_pdf[lower_index][i]))  # mux data, PDF third
+				# do upper dist first
+				for i in range(0,len(rxn.energy_dist.a_dist_mu_out[upper_index])):
+					upper_cdf 	= numpy.hstack((upper_cdf,rxn.energy_dist.a_dist_mu_out[upper_index][i]))  # mux data, energy first
+					upper_pdf 	= numpy.hstack((upper_pdf,len(upper_cdf)))  # compute muxed indicies
+				for i in range(0,len(rxn.energy_dist.a_dist_mu_out[upper_index])):
+					upper_cdf 	= numpy.hstack((upper_cdf,rxn.energy_dist.a_dist_cdf[upper_index][i]))  # mux data, CDF second
+				for i in range(0,len(rxn.energy_dist.a_dist_mu_out[upper_index])):
+					upper_cdf 	= numpy.hstack((upper_cdf,rxn.energy_dist.a_dist_pdf[upper_index][i]))  # mux data, PDF third
+
+				# len
+				lower_len = len(lower_cdf)/3
+				upper_len = len(upper_cdf)/3
+
+				# next index
+				if upper_index == lower_index == len(rxn.energy_dist.energy_in)-1:  # above last dist energy bin
+					next_dex = len(self.MT_E_grid)
+				else:
+					next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
+
+
 		elif hasattr(rxn,"energy_dist") and hasattr(rxn.energy_dist,"energy_in"):
 			# there is no higher level angular table, everything is in energy_dist
 			# find where this energy lies on this grid

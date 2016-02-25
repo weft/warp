@@ -12,7 +12,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 	// declare shared variables
 	__shared__ 	unsigned			n_isotopes;				
-	__shared__ 	unsigned			energy_grid_len;		
+	//__shared__ 	unsigned			energy_grid_len;		
 	__shared__ 	unsigned			total_reaction_channels;
 	__shared__ 	float*				energy_grid;
 	__shared__ 	dist_container*		dist_scatter;			
@@ -26,7 +26,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
 		n_isotopes					= d_xsdata[0].n_isotopes;								
-		energy_grid_len				= d_xsdata[0].energy_grid_len;				
+		//energy_grid_len				= d_xsdata[0].energy_grid_len;				
 		total_reaction_channels		= d_xsdata[0].total_reaction_channels;
 		energy_grid 				= d_xsdata[0].energy_grid;
 		dist_scatter 				= d_xsdata[0].dist_scatter;
