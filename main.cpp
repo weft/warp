@@ -311,7 +311,7 @@ int main(int argc, char* argv[]){
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
 		topes[0] = "92238.03c";
-		topes[1] =  "11023.06c";
+		topes[1] =  "9019.03c";
 		fracs_fuel[0] = 1;  
 		fracs_fuel[1] = 2;     
 		float    dens_fuel = 15;
