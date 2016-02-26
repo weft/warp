@@ -77,7 +77,7 @@ def get_warp_data(filepath):
 
 warpdata   = get_warp_data(  sys.argv[1]+'.tally')
 serpdata   = get_serpent_det(sys.argv[1]+'_det0.m')
-mcnpdata   = get_mcnp_mctal(sys.argv[1]+'.mctal')
+#mcnpdata   = get_mcnp_mctal(sys.argv[1]+'.mctal')
 
 tallybins = warpdata[0]
 tally     = warpdata[1]
@@ -88,7 +88,7 @@ mcnp_vol = 5.1*5.1*5.1*numpy.pi*4.0/3.0
 if sys.argv[1] == 'godiva':
 	err_range = 0.03
 	mcnp_vol = 555.647209455
-if sys.argv[1] == 'homfuel':
+if sys.argv[1] == 'homfuel' or sys.argv[1]=='test':
 	err_range = 0.05
 	mcnp_vol = 60*60*60
 if sys.argv[1] == 'pincell':
@@ -121,13 +121,13 @@ serp_flux=numpy.divide(serpF,serp_widths)
 serp_flux=numpy.multiply(serp_flux,serp_avg)
 
 
-mcnp_bins = mcnpdata[0]
-mcnp_widths=numpy.diff(mcnp_bins);
-mcnp_avg=(mcnp_bins[:-1]+mcnp_bins[1:])/2;
-mcnp_newflux= mcnpdata[1][1:-1]
-mcnp_err = mcnpdata[2][1:-1]
-mcnp_newflux=numpy.divide(mcnp_newflux,mcnp_widths)
-mcnp_newflux=numpy.multiply(mcnp_newflux,mcnp_avg)
+#mcnp_bins = mcnpdata[0]
+#mcnp_widths=numpy.diff(mcnp_bins);
+#mcnp_avg=(mcnp_bins[:-1]+mcnp_bins[1:])/2;
+#mcnp_newflux= mcnpdata[1][1:-1]
+#mcnp_err = mcnpdata[2][1:-1]
+#mcnp_newflux=numpy.divide(mcnp_newflux,mcnp_widths)
+#mcnp_newflux=numpy.multiply(mcnp_newflux,mcnp_avg)
 
 fig = plt.figure(figsize=(10,6))
 gs = gridspec.GridSpec(3, 1, height_ratios=[6, 1, 1]) 
@@ -137,7 +137,7 @@ ax2 = plt.subplot(gs[2])
 #gs = gridspec.GridSpec(2, 1, height_ratios=[6, 1]) 
 #ax0 = plt.subplot(gs[0])
 #ax2 = plt.subplot(gs[1])
-ax0.semilogx(mcnp_avg,mcnp_newflux,'k',linestyle='steps-mid',label='MCNP 6.1')
+#ax0.semilogx(mcnp_avg,mcnp_newflux,'k',linestyle='steps-mid',label='MCNP 6.1')
 ax0.semilogx(serp_avg,serpF,'b',linestyle='steps-mid',label='Serpent 2.1.18')
 ax0.semilogx(avg,newflux,'r',linestyle='steps-mid',label='WARP')
 #ax0.set_xlabel('Energy (MeV)')
@@ -148,15 +148,15 @@ ax0.legend(handles,labels,loc=2)
 ax0.set_xlim([1e-11,20])
 ax0.grid(True)
 
-ax1.semilogx(mcnp_avg,numpy.divide(newflux-mcnp_newflux,mcnp_newflux),'b',linestyle='steps-mid',label='Flux Relative Error vs. MCNP')
-ax1.set_xlim([1e-11,20])
-ax1.set_ylim([-err_range,err_range])
-ax1.fill_between(mcnp_avg,-2.0*mcnp_err,2.0*mcnp_err,color='black',facecolor='green', alpha=0.5)
-ax1.set_xscale('log')
-ax1.yaxis.set_major_locator(MaxNLocator(4))
-ax1.set_xlabel('Energy (MeV)')
-ax1.set_ylabel('Rel. Err. \n vs. MCNP')
-ax1.grid(True)
+#ax1.semilogx(mcnp_avg,numpy.divide(newflux-mcnp_newflux,mcnp_newflux),'b',linestyle='steps-mid',label='Flux Relative Error vs. MCNP')
+#ax1.set_xlim([1e-11,20])
+#ax1.set_ylim([-err_range,err_range])
+#ax1.fill_between(mcnp_avg,-2.0*mcnp_err,2.0*mcnp_err,color='black',facecolor='green', alpha=0.5)
+#ax1.set_xscale('log')
+#ax1.yaxis.set_major_locator(MaxNLocator(4))
+#ax1.set_xlabel('Energy (MeV)')
+#ax1.set_ylabel('Rel. Err. \n vs. MCNP')
+#ax1.grid(True)
 
 ax2.semilogx(serp_avg,numpy.divide(newflux-serpF,serpF),'b',linestyle='steps-mid',label='Flux Relative Error vs. Serpent')
 ax2.set_xlim([1e-11,20])

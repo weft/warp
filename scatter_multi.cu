@@ -244,7 +244,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 											&this_sdist.cdf[ ang_position +   this_sdist.len ] , 
 											&this_sdist.cdf[ ang_position + 2*this_sdist.len ] );
 
-		printf("position %u len %u total len %u mu %6.4E cdf %6.4E pdf %6.4E\n",ang_position,this_len,this_sdist.len,this_sdist.cdf[ ang_position ], this_sdist.cdf[ ang_position +   this_sdist.len ], this_sdist.cdf[ ang_position + 2*this_sdist.len ]);
+		//printf("position %u len %u total len %u mu %6.4E cdf %6.4E pdf %6.4E\n",ang_position,this_len,this_sdist.len,this_sdist.cdf[ ang_position ], this_sdist.cdf[ ang_position +   this_sdist.len ], this_sdist.cdf[ ang_position + 2*this_sdist.len ]);
 
 	}
 	else{
