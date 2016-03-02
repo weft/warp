@@ -179,16 +179,20 @@ class cross_section_data:
 			self.awr.append(table.awr)
 			#append this topes temp
 			self.temp.append(table.temp)
-			#append totals
-			self.reaction_numbers_total.append(table.reactions.__len__())
 
 		#append reaction numbers
+		total_good_reactions = 0
 		for table in self.tables:
 			for MT in table.reactions: # reactions is a dict
-				rxn = table.reactions[MT]
-				self.reaction_numbers.append(MT)
-				self.Q.append(rxn.Q)
-				self.num_reactions += 1
+				if MT <200 and MT!=4:
+					rxn = table.reactions[MT]
+					self.reaction_numbers.append(MT)
+					self.Q.append(rxn.Q)
+					self.num_reactions += 1
+					total_good_reactions += 1
+
+		#append totals
+		self.reaction_numbers_total.append(total_good_reactions)
 
 		#print self.num_reactions
 		#print self.reaction_numbers
@@ -227,25 +231,26 @@ class cross_section_data:
 			self.MT_array[:,tope_index]=this_array
 
 			for MT in table.reactions:
-				rxn        = table.reactions[MT]
-				#if rxn.IE>0:
-				#	IE = rxn.IE-1       #convert form fortran to python/C indexing 
-				#else:
-				IE = rxn.IE # in post 9/2014 pyne, -1 is already done?
-				#print MT, IE
-				#print table.energy[IE:]
-				#print rxn.sigma
-				#if hasattr(rxn,'ang_energy_in'): 
-				#	print rxn.ang_energy_in
-				#else:
-				#	print "no angular"
-				#print rxn.threshold()
-				#print len(table.energy[IE:]), len(rxn.sigma)
-				this_array = numpy.interp( self.MT_E_grid, table.energy[IE:], rxn.sigma , left=0.0 )  #interpolate MT cross section, left means xs below threshold is 0
-				self.MT_array[:,MT_array_dex] = this_array  # insert into the MT array
-
-				#  this MT is done, increment counter
-				MT_array_dex = MT_array_dex +1
+				if MT <200 and MT!=4:
+					rxn        = table.reactions[MT]
+					#if rxn.IE>0:
+					#	IE = rxn.IE-1       #convert form fortran to python/C indexing 
+					#else:
+					IE = rxn.IE # in post 9/2014 pyne, -1 is already done?
+					#print MT, IE
+					#print table.energy[IE:]
+					#print rxn.sigma
+					#if hasattr(rxn,'ang_energy_in'): 
+					#	print rxn.ang_energy_in
+					#else:
+					#	print "no angular"
+					#print rxn.threshold()
+					#print len(table.energy[IE:]), len(rxn.sigma)
+					this_array = numpy.interp( self.MT_E_grid, table.energy[IE:], rxn.sigma , left=0.0 )  #interpolate MT cross section, left means xs below 	threshold is 0
+					self.MT_array[:,MT_array_dex] = this_array  # insert into the MT array
+	
+					#  this MT is done, increment counter
+					MT_array_dex = MT_array_dex +1
 
 			#this isotope is done, increment counter
 			tope_index  = tope_index+1
@@ -870,10 +875,10 @@ class cross_section_data:
 				elif hasattr(rxn.energy_dist,"T"):  #evaporation 
 					lower_var = numpy.array([rxn.energy_dist.T[lower_index]])
 					upper_var = numpy.array([rxn.energy_dist.T[upper_index]])
-					lower_pdf = numpy.array([rxn.energy_dist.U])
-					upper_pdf = numpy.array([rxn.energy_dist.U])
-					lower_cdf = numpy.array([0])
-					upper_cdf = numpy.array([0])
+					lower_cdf = numpy.array([rxn.energy_dist.U])
+					upper_cdf = numpy.array([rxn.energy_dist.U])
+					lower_pdf = numpy.array([0])
+					upper_pdf = numpy.array([0])
 				else:
 					print "UNHANDLED ENERGY DIST CONTENTS"
 

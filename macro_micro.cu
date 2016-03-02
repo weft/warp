@@ -384,6 +384,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	//
 
 	if(this_rxn==0){printf("rxn for tid_in %d / tid %d is still ZERO at end of macro_micro!\n", tid_in, tid);}
+	if(this_rxn==4){printf("rxn for tid_in %d / tid %d is 4 at end of macro_micro!\n", tid_in, tid);}
 
 	rxn[    tid_in]			=	this_rxn;			// rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
 	Q[      tid]			=	this_Q; 			// put reaction Q value into particle Q value

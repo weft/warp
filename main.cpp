@@ -306,15 +306,13 @@ int main(int argc, char* argv[]){
 	else if(testname.compare(argv[1])==0){
 		
 		// test mats
-		n_topes = 2;
+		n_topes = 1;
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
-		topes[0] = "92238.03c";
-		topes[1] =  "9019.03c";
+		topes[0] = "94240.03c";
 		fracs_fuel[0] = 1;  
-		fracs_fuel[1] = 2;     
-		float    dens_fuel = 15;
+		float    dens_fuel = 4.5;
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
 		
 		// run stuff

@@ -163,45 +163,86 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		mu  = 2.0*get_rand(&rn)-1.0;
 
 	}
-//	else if (this_law==9){   //evaopration spectrum
-//	
-//		// get tabulated temperature
-//		float t0 = edist_lower.var[0];
-//		float t1 = edist_upper.var[0];
-//		float U  = edist_lower.cdf[0];
-//		float e0 = edist_lower.erg;
-//		float e1 = edist_upper.erg;
-//		float  T = 0.0;
-//		float  m = 0.0;
-//	
-//		// interpolate T
-//		if (e1==e0){  // in top bin, both values are the same
-//			T = t0;
-//		}
-//		else if (edist_lower.intt==2){// lin-lin interpolation
-//			m = (this_E - e0)/(e1 - e0);
-//			T = (1.0 - m)*t0 + m*t1;
-//		}
-//		else if(edist_lower.intt==1){// histogram interpolation
-//			T  = (t1 - t0)/(e1 - e0) * this_E + t0;
-//		}
-//	
-//		// rejection sample
-//		m  = (this_E - U)/T;
-//		e0 = 1.0-expf(-m);
-//		float x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
-//		while (  x>m ) {
-//			x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
-//		}
-//	
-//		// mcnp5 volIII pg 2-43
-//		sampled_E = T * x;
-//	
-//		// isotropic mu
-//		mu  = 2.0*get_rand(&rn)-1.0;
-//	
-//	}
-	else if ( this_law==44 ){
+	else if ( this_law == 7 ){   // maxwell spectrum
+	
+		// get tabulated temperature
+		float t0 = edist_lower.var[0];
+		float t1 = edist_upper.var[0];
+		float U  = edist_lower.cdf[0];
+		float e0 = edist_lower.erg;
+		float e1 = edist_upper.erg;
+		float  T = 0;
+		sampled_E = 99999.0;
+	
+		// interpolate T
+		if (e1==e0 | edist_lower.intt==1){  // in top bin, both values are the same
+			T = t0;
+		}
+		else if (edist_lower.intt==2){// lin-lin interpolation
+			T  = (t1 - t0)/(e1 - e0) * this_E + t0;
+		}
+		else{
+			printf("dont know what to do!\n");
+		}
+	
+		// restriction
+		while (sampled_E > this_E - U){
+
+			// rejection sample
+			rn1 = get_rand(&rn);
+			rn2 = get_rand(&rn);
+			while ( rn1*rn1+rn2*rn2 > 1.0 ) {
+				rn1 = get_rand(&rn);
+				rn2 = get_rand(&rn);
+			}
+		
+			// mcnp5 volIII pg 2-43
+			sampled_E = -T * (    rn1*rn1*logf(get_rand(&rn)) / (rn1*rn1+rn2*rn2) + logf(get_rand(&rn))   );
+
+		}
+	
+		// isotropic mu
+		mu  = 2.0*get_rand(&rn)-1.0;
+	
+	}
+	else if ( this_law == 9 ){   // evaporation spectrum
+	
+		// get tabulated temperature
+		float t0 = edist_lower.var[0];
+		float t1 = edist_upper.var[0];
+		float U  = edist_lower.cdf[0];
+		float e0 = edist_lower.erg;
+		float e1 = edist_upper.erg;
+		float  T = 0.0;
+		float  m = 0.0;
+	
+		// interpolate T
+		if (e1==e0 | edist_lower.intt==1){  
+			T = t0;
+		}
+		else if (edist_lower.intt==2){// lin-lin interpolation
+			T  = (t1 - t0)/(e1 - e0) * this_E + t0;
+		}
+		else{
+			printf("dont know what to do!\n");
+		}
+	
+		// rejection sample
+		m  = (this_E - U)/T;
+		e0 = 1.0-expf(-m);
+		float x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
+		while (  x>m ) {
+			x  = -logf(1.0-e0*get_rand(&rn)) - logf(1.0-e0*get_rand(&rn));
+		}
+	
+		// mcnp5 volIII pg 2-43
+		sampled_E = T * x;
+	
+		// isotropic mu
+		mu  = 2.0*get_rand(&rn)-1.0;
+	
+	}
+	else if ( this_law == 44 ){
 
 		// make sure scatter array is present
 		if(dist_scatter == 0x0){
@@ -301,8 +342,6 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 											&this_sdist.cdf[ ang_position                    ] , 
 											&this_sdist.cdf[ ang_position +   this_sdist.len ] , 
 											&this_sdist.cdf[ ang_position + 2*this_sdist.len ] );
-
-		//printf("position %u len %u total len %u mu %6.4E cdf %6.4E pdf %6.4E\n",ang_position,this_len,this_sdist.len,this_sdist.cdf[ ang_position ], this_sdist.cdf[ ang_position +   this_sdist.len ], this_sdist.cdf[ ang_position + 2*this_sdist.len ]);
 
 	}
 	else{
