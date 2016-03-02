@@ -94,6 +94,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	float		diff			= 0.0;
 	unsigned	this_tope		= 999999999;
 	unsigned	array_dex		= 0;
+	unsigned	adj_dex			= 0;
 	float		dotp			= 0.0;
 	float		macro_t_total	= 0.0;
 	const float	epsilon			= 2.0e-5;
@@ -140,16 +141,16 @@ All neutrons need these things done, so these routines all live in the same rout
 
 		if(dex==4294967294){
 			// out of bounds below data
-			dex = 0;
-			e0	= energy_grid[dex];
-			e1	= 0.0;
+			adj_dex = 0;
+			e0		= energy_grid[adj_dex];
+			e1		= 0.0;
 
 		}
 		else{
 			// out of bounds above data
-			dex = energy_grid_len-1;
-			e0	= energy_grid[dex];
-			e1	= 0.0;
+			adj_dex = energy_grid_len-1;
+			e0		= energy_grid[adj_dex];
+			e1		= 0.0;
 		}
 
 		// outside data, pass one array
@@ -157,13 +158,15 @@ All neutrons need these things done, so these routines all live in the same rout
 		macro_t_total = sum_cross_section(	n_isotopes,
 											e0, this_E,
 											&s_number_density_matrix[this_mat*n_isotopes],  
-											&xs[ dex   *n_columns]					);
+											&xs[ adj_dex   *n_columns]					);
+
+		if(!isfinite(macro_t_total) | macro_t_total<=0.0){printf("1 macro_t_total is wrong:  % 6.4E e0 % 6.4E e1 % 6.4E \n",macro_t_total,e0,e1);}
 	
 		// determine the isotope in the material for this cell
 		this_tope = sample_cross_section(	n_isotopes, macro_t_total, rn1,
 											e0, this_E,
 											&s_number_density_matrix[this_mat*n_isotopes],  
-											&xs[ dex   *n_columns]					);
+											&xs[ adj_dex   *n_columns]					);
 
 	}
 	else{
@@ -179,6 +182,8 @@ All neutrons need these things done, so these routines all live in the same rout
 											&s_number_density_matrix[this_mat*n_isotopes],
 											&xs[ dex   *n_columns],  
 											&xs[(dex+1)*n_columns]				);
+
+		if(!isfinite(macro_t_total) | macro_t_total<=0.0){printf("2 macro_t_total is wrong:  % 6.4E e0 % 6.4E e1 % 6.4E \n",macro_t_total,e0,e1);}
 	
 		// determine the isotope in the material for this cell
 		this_tope = sample_cross_section(	n_isotopes, macro_t_total, rn1,
@@ -320,47 +325,61 @@ All neutrons need these things done, so these routines all live in the same rout
 
 			if(dex==4294967294){
 				// out of bounds below data
-				dex = 0;
-				e0	= energy_grid[dex];
-				e1	= 0.0;
+				adj_dex = 0;
+				e0		= energy_grid[adj_dex];
+				e1		= 0.0;
 			}
 			else{
 				// out of bounds above data
-				dex = energy_grid_len-1;
-				e0	= energy_grid[dex];
-				e1	= 0.0;
+				adj_dex = energy_grid_len-1;
+				e0		= energy_grid[adj_dex];
+				e1		= 0.0;
 			}
 
 			// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
 			micro_t = sum_cross_section(	1,
 											e0, this_E,
-											&xs[ dex   *n_columns + this_tope]	);
+											&xs[ adj_dex   *n_columns + this_tope]	);
+
+			if(!isfinite(micro_t) | micro_t<=0.0){printf("1 micro_t is wrong:  % 6.4E e0 % 6.4E e1 % 6.4E \n!",micro_t,e0,e1);}
 
 			// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
 			this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
 															e0, this_E,
-															&xs[ dex   *n_columns + col_start]			);
+															&xs[ adj_dex   *n_columns + col_start]			);
+
+			// compute array index
+			array_dex	=	adj_dex*n_columns + this_col;
 	
 		}
 		else{
+
+			// energy edges
+			e0 = energy_grid[dex];
+			e1 = energy_grid[dex+1];
 		
 			// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
 			micro_t = sum_cross_section(	1,
 											e0, e1, this_E,
 											&xs[ dex   *n_columns + this_tope],  
 											&xs[(dex+1)*n_columns + this_tope] );
+
+			if(!isfinite(micro_t) | micro_t<=0.0){printf("2 micro_t is wrong:  % 6.4E e0 % 6.4E e1 % 6.4E \n",micro_t,e0,e1);}
 			
 			// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
 			this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
 															e0, e1, this_E,
 															&xs[ dex   *n_columns + col_start],  
 															&xs[(dex+1)*n_columns + col_start]			);
+
+			// compute array index
+			array_dex	=	dex*n_columns + this_col;
+
 		}
 
 		// the the numbers for this column
 		this_rxn	=	rxn_numbers[this_col];
-		this_Q		=	rxn_Q[      this_col];
-		array_dex	=	dex*n_columns + this_col; 
+		this_Q		=	rxn_Q[      this_col]; 
 		
 		//printf("this_tope %u this_E %6.4E micro_t %6.4E col_start %u col_end %u \n",this_tope,this_E,micro_t,col_start,col_end);
 		
