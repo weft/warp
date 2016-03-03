@@ -382,7 +382,8 @@ All neutrons need these things done, so these routines all live in the same rout
 		this_Q		=	rxn_Q[      this_col]; 
 		
 		//printf("this_tope %u this_E %6.4E micro_t %6.4E col_start %u col_end %u \n",this_tope,this_E,micro_t,col_start,col_end);
-		
+		printf("(E,micro_t)  % 6.4E % 6.4E \n",this_E,micro_t);
+
 		// errors?
 		if(this_rxn == 999999999){ 
 			printf("micro - REACTION NOT SAMPLED CORRECTLY! tope=%u E=%10.8E dex=%u rxn=%u\n",this_tope, this_E, dex, this_rxn); //most likely becasue rn1=1.0
