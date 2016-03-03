@@ -355,8 +355,8 @@ All neutrons need these things done, so these routines all live in the same rout
 			// get interpolated cross section for this rxn (debug)
 			micro_rxn = sum_cross_section(	1,
 											e0, e1, this_E,
-											&xs[ dex_adj   *n_columns + this_col],  
-											&xs[(dex_adj+1)*n_columns + this_col] );
+											&xs[ adj_dex   *n_columns + this_col],  
+											&xs[(adj_dex+1)*n_columns + this_col] );
 
 	
 		}
