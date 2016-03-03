@@ -380,9 +380,15 @@ All neutrons need these things done, so these routines all live in the same rout
 		// the the numbers for this column
 		this_rxn	=	rxn_numbers[this_col];
 		this_Q		=	rxn_Q[      this_col]; 
+
+		// get interpolated cross section for this rxn (debug)
+		float micro_rxn = sum_cross_section(	1,
+												e0, e1, this_E,
+												&xs[ dex   *n_columns + this_col],  
+												&xs[(dex+1)*n_columns + this_col] );
 		
 		//printf("this_tope %u this_E %6.4E micro_t %6.4E col_start %u col_end %u \n",this_tope,this_E,micro_t,col_start,col_end);
-		printf("(E,micro_t)  % 6.4E % 6.4E \n",this_E,micro_t);
+		printf("(E,micro_t) %u % 6.4E % 6.4E \n",this_rxn,this_E,micro_t,micro_rxn);
 
 		// errors?
 		if(this_rxn == 999999999){ 
