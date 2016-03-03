@@ -310,6 +310,7 @@ All neutrons need these things done, so these routines all live in the same rout
 		unsigned	col_end		=	0;
 		unsigned	this_col	=	0;
 		float		micro_t		=	0.0;
+		float		micro_rxn	=	0.0;
 		
 		// compute the index ranges 
 		if(this_tope>=n_isotopes){
@@ -350,6 +351,13 @@ All neutrons need these things done, so these routines all live in the same rout
 
 			// compute array index
 			array_dex	=	adj_dex*n_columns + this_col;
+
+			// get interpolated cross section for this rxn (debug)
+			micro_rxn = sum_cross_section(	1,
+											e0, e1, this_E,
+											&xs[ dex_adj   *n_columns + this_col],  
+											&xs[(dex_adj+1)*n_columns + this_col] );
+
 	
 		}
 		else{
@@ -375,17 +383,17 @@ All neutrons need these things done, so these routines all live in the same rout
 			// compute array index
 			array_dex	=	dex*n_columns + this_col;
 
+			// get interpolated cross section for this rxn (debug)
+			 micro_rxn = sum_cross_section(	1,
+											e0, e1, this_E,
+											&xs[ dex   *n_columns + this_col],  
+											&xs[(dex+1)*n_columns + this_col] );
+
 		}
 
 		// the the numbers for this column
 		this_rxn	=	rxn_numbers[this_col];
 		this_Q		=	rxn_Q[      this_col]; 
-
-		// get interpolated cross section for this rxn (debug)
-		float micro_rxn = sum_cross_section(	1,
-												e0, e1, this_E,
-												&xs[ dex   *n_columns + this_col],  
-												&xs[(dex+1)*n_columns + this_col] );
 		
 		//printf("this_tope %u this_E %6.4E micro_t %6.4E col_start %u col_end %u \n",this_tope,this_E,micro_t,col_start,col_end);
 		printf("(rxn,E,micro_t,micro_rxn) %4u % 6.4E % 6.4E % 6.4E \n",this_rxn,this_E,micro_t,micro_rxn);
