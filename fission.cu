@@ -81,7 +81,7 @@ __global__ void fission_kernel(unsigned N, unsigned starting_index, cross_sectio
 	nu	=	interpolate_linear_energy( this_E, e0, e1, nu_t0, nu_t1 );
 	if(this_E > e1 | this_E < e0){printf("OUTSIDE bounds in fission!   this_E %6.4E e0 %6.4E e1 %6.4E\n",this_E,e0,e1);}
 
-	print("(this_E,nu)  % 6.4E  % 6.4E \n",this_E,nu);
+	printf("(this_E,nu)  % 6.4E  % 6.4E \n",this_E,nu);
 
 	// check nu
 	if (nu==0.0){

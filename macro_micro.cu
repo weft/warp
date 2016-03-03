@@ -310,7 +310,7 @@ All neutrons need these things done, so these routines all live in the same rout
 		unsigned	col_end		=	0;
 		unsigned	this_col	=	0;
 		float		micro_t		=	0.0;
-		float		micro_rxn	=	0.0;
+		//float		micro_rxn	=	0.0;
 		
 		// compute the index ranges 
 		if(this_tope>=n_isotopes){
