@@ -99,7 +99,8 @@ All neutrons need these things done, so these routines all live in the same rout
 	float		macro_t_total	= 0.0;
 	const float	epsilon			= 2.0e-5;
 	const float	push_value		= 2.0;
-	float surf_minimum, xhat_new, yhat_new, zhat_new, this_Q;
+	float surf_minimum, this_Q;
+	//float xhat_new, yhat_new, zhat_new;
 
 	// load from arrays
 	unsigned	this_mat		=  matnum[tid];
@@ -224,15 +225,14 @@ All neutrons need these things done, so these routines all live in the same rout
 				this_tope = 999999997;  
 			}
 			else if(enforce_BC == 2){  // specular reflection BC
-				printf("Reflecting at specular BC NOT IMPLEMENTED YET!\n");
 				// move epsilon off of surface
 				x += surf_dist*xhat - copysignf(1.0,dotp)*push_value*epsilon*norm[0]; 
 				y += surf_dist*yhat - copysignf(1.0,dotp)*push_value*epsilon*norm[1];
 				z += surf_dist*zhat - copysignf(1.0,dotp)*push_value*epsilon*norm[2];
 				// calculate reflection
-				xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
-				yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
-				zhat_new = -(2.0 * dotp * norm[2]) + zhat; 
+				xhat += -(2.0 * dotp * norm[0]);
+				yhat += -(2.0 * dotp * norm[1]);   
+				zhat += -(2.0 * dotp * norm[2]);   
 				// flags
 				this_rxn  = 801;  // reflection is 801 
 				this_tope = 999999996;  
@@ -421,19 +421,24 @@ All neutrons need these things done, so these routines all live in the same rout
 	if(this_rxn==4){printf("rxn for tid_in %d / tid %d is 4 at end of macro_micro!\n", tid_in, tid);}
 	//if(this_rxn==999){printf("(macro_t_total,surf_dist,samp_dist,surf_minimum,dotp) % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E\n",macro_t_total,surf_dist,samp_dist,surf_minimum,dotp);}
 
-	rxn[    tid_in]			=	this_rxn;			// rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
-	Q[      tid]			=	this_Q; 			// put reaction Q value into particle Q value
-	rn_bank[tid]			=	rn;
-	index[  tid]			=	array_dex;			// write MT array index to dex instead of energy vector index
-	isonum[ tid]			=	this_tope;
-	space[  tid].x			=	x;
-	space[  tid].y			=	y;
-	space[  tid].z			=	z;
-	if( enforce_BC==2 ){
-		space[tid].xhat		=	xhat_new;			// write reflected directions for specular BC
-		space[tid].yhat		=	yhat_new;
-		space[tid].zhat		=	zhat_new;
-	}
+	rxn[    tid_in]		=	this_rxn;			// rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
+	Q[      tid]		=	this_Q; 			// put reaction Q value into particle Q value
+	rn_bank[tid]		=	rn;
+	index[  tid]		=	array_dex;			// write MT array index to dex instead of energy vector index
+	isonum[ tid]		=	this_tope;
+	space[  tid].x		=	x;
+	space[  tid].y		=	y;
+	space[  tid].z		=	z;
+	space[  tid].xhat	=	xhat;
+	space[  tid].yhat	=	yhat;
+	space[  tid].zhat	=	zhat;
+
+	//if( enforce_BC==2 ){
+	//	printf("(norm) % 6.4E % 6.4E % 6.4E (xyz-hat) % 6.4E % 6.4E % 6.4E (xyz-hat_new) % 6.4E % 6.4E % 6.4E\n",norm[0],norm[1],norm[2],xhat,yhat,zhat,xhat_new,yhat_new,zhat_new);
+	//	space[tid].xhat		=	xhat_new;			// write reflected directions for specular BC
+	//	space[tid].yhat		=	yhat_new;
+	//	space[tid].zhat		=	zhat_new;
+	//}
 
 }
 

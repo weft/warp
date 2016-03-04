@@ -86,7 +86,7 @@ warp_err  = warpdata[2]
 mcnp_vol = 5.1*5.1*5.1*numpy.pi*4.0/3.0
 
 if sys.argv[1] == 'godiva':
-	err_range = 0.03
+	err_range = 0.02
 	mcnp_vol = 555.647209455
 if sys.argv[1] == 'homfuel' or sys.argv[1]=='test':
 	err_range = 0.05
@@ -99,6 +99,9 @@ if sys.argv[1] == 'assembly':
 	mcnp_vol = 125.663706144
 if sys.argv[1] == 'test':
 	err_range = 0.1
+	mcnp_vol = 30*30*30.0
+if sys.argv[1] == 'jezebel':
+	err_range = 0.01
 	mcnp_vol = 30*30*30.0
 
 widths=numpy.diff(tallybins)

@@ -344,7 +344,7 @@ int main(int argc, char* argv[]){
 	}
 
 	// finalize geom
-	geom.set_outer_cell(999,1);  // cell, BC  1=black, 2=specular
+	geom.set_outer_cell(999,2);  // cell, BC  1=black, 2=specular
 	geom.add_tally(tallycell);
 	geom.update();
 	if(geom.check()){std::cout << "geometry failed check!\n"; return 1;}
