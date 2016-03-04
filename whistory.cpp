@@ -177,7 +177,7 @@ void whistory::init_host(){
 	dh_tally	=	new tally_data[     n_tallies];
 	 h_tally	=	new tally_data_host[n_tallies];
 
-	// compute minumum size, in case dataset is shorter than tally, etc...
+	// compute minimum size, in case dataset is shorter than tally, etc...
 	unsigned minimum_size = Ndataset * sizeof(spatial_data)/sizeof(float);
 	for( int i=0 ; i<n_tallies ; i++ ){
 		if (h_tally[i].length > minimum_size){
@@ -199,10 +199,10 @@ void whistory::init_host(){
 	h_particles.yield	= new unsigned 		[Ndataset];
 	h_particles.weight	= new float  		[Ndataset];
 	remap				= new unsigned 		[Ndataset];
-	zeros				= new unsigned 		[minumum_size];
-	ones				= new unsigned 		[minumum_size];
-	fones				= new float  		[minumum_size];
-	mones				= new int			[minumum_size];
+	zeros				= new unsigned 		[minimum_size];
+	ones				= new unsigned 		[minimum_size];
+	fones				= new float  		[minimum_size];
+	mones				= new int			[minimum_size];
 
 	//  init dataset lengths
 	for(int k=0;k<Ndataset;k++){
@@ -270,7 +270,7 @@ void whistory::init_device(){
 	dh_particles.rxn		= (unsigned*)		optix_obj.rxn_ptr;
 	d_remap					= (unsigned*)		optix_obj.remap_ptr;
 
-	// compute minumum size, in case dataset is shorter than tally, etc...
+	// compute minimum size, in case dataset is shorter than tally, etc...
 	unsigned minimum_size = Ndataset * sizeof(spatial_data)/sizeof(float);
 	for( int i=0 ; i<n_tallies ; i++ ){
 		if (h_tally[i].length > minimum_size){
