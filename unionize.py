@@ -900,12 +900,12 @@ class cross_section_data:
 			else:
 				lower_law = 0
 				upper_law = 0
-			lower_intt	= 0
-			upper_intt	= 0
-			lower_erg	= 0
-			upper_erg	= 0
-			lower_len	= 0
-			upper_len	= 0
+			lower_intt	= 1
+			upper_intt	= 1
+			lower_erg	= self.MT_E_grid[0]
+			upper_erg	= self.MT_E_grid[-1]
+			lower_len	= 1
+			upper_len	= 1
 			lower_var 	= numpy.array([0.0])
 			upper_var 	= numpy.array([0.0])
 			lower_pdf 	= numpy.array([0.0])

@@ -74,9 +74,9 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	// print and return if wrong
 	if ( this_rxn < 11 | this_rxn > 45 ){printf("multiplicity scattering kernel accessing wrong reaction @ dex %u rxn %u\n",tid, this_rxn);return;} 
 
-	// check E data pointers
-	if(dist_energy == 0x0){
-		printf("null pointer, energy array in multiplicity scatter!,tid %u rxn %u\n",tid,this_rxn);
+	// check data pointers
+	if( dist_energy == 0x0 | dist_scatter == 0x0 ){
+		printf("null pointer, energy/scatter array in multiplicity scatter!,tid %u rxn %u\n",tid,this_rxn);
 		return;
 	}
 
@@ -102,6 +102,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	dist_data	sdist_upper	=	dist_scatter[this_dex].upper[0];
 	dist_data	edist_lower	=	dist_energy[ this_dex].lower[0];
 	dist_data	edist_upper	=	dist_energy[ this_dex].upper[0];
+
 	unsigned	this_law;
 	float		f			=	(this_E - edist_lower.erg) / (edist_upper.erg - edist_lower.erg);
 	if( get_rand(&rn)>f ){
@@ -312,8 +313,6 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 
 		//  calculate mu
 		sampled_E = Emax * x /( x + y );
-
-		printf("sampled_E % 6.4E\n",sampled_E);
 
 		// isotropic mu
 		mu  = 2.0*get_rand(&rn)-1.0;
