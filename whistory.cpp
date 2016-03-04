@@ -177,11 +177,11 @@ void whistory::init_host(){
 	dh_tally	=	new tally_data[     n_tallies];
 	 h_tally	=	new tally_data_host[n_tallies];
 
-	// compute minumum size, incase dataset is shorter than tally, etc...
-	unsigned minumum_size = Ndataset;
+	// compute minumum size, in case dataset is shorter than tally, etc...
+	unsigned minimum_size = Ndataset * sizeof(spatial_data)/sizeof(float);
 	for( int i=0 ; i<n_tallies ; i++ ){
-		if (h_tally[i].length > minumum_size){
-			minumum_size = h_tally[i].length;
+		if (h_tally[i].length > minimum_size){
+			minimum_size = h_tally[i].length;
 		}
 	}
 
@@ -230,7 +230,7 @@ void whistory::init_host(){
 	}
 
 	// init minimum lengths
-	for(int k=0;k<minumum_size;k++){
+	for(int k=0;k<minimum_size;k++){
 		zeros[k]							= 0;
 		ones[k]								= 1;
 		fones[k]							= 1.0;
@@ -270,51 +270,51 @@ void whistory::init_device(){
 	dh_particles.rxn		= (unsigned*)		optix_obj.rxn_ptr;
 	d_remap					= (unsigned*)		optix_obj.remap_ptr;
 
-	// compute minumum size, incase dataset is shorter than tally, etc...
-	unsigned minumum_size = Ndataset;
+	// compute minumum size, in case dataset is shorter than tally, etc...
+	unsigned minimum_size = Ndataset * sizeof(spatial_data)/sizeof(float);
 	for( int i=0 ; i<n_tallies ; i++ ){
-		if (h_tally[i].length > minumum_size){
-			minumum_size = h_tally[i].length;
+		if (h_tally[i].length > minimum_size){
+			minimum_size = h_tally[i].length;
 		}
 	}
 
 	// init others only used on CUDA side
-	check_cuda(cudaMalloc( &d_tally					,    n_tallies*sizeof(tally_data)			));
-	check_cuda(cudaMalloc( &d_particles				,    		 1*sizeof(particle_data)		));
-	check_cuda(cudaMalloc( &dh_particles.E			,     Ndataset*sizeof(float)				));
-	check_cuda(cudaMalloc( &dh_particles.Q			,     Ndataset*sizeof(float)				));
-	check_cuda(cudaMalloc( &dh_particles.rn_bank	,     Ndataset*sizeof(float)				));
-	check_cuda(cudaMalloc( &dh_particles.isonum		,     Ndataset*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &dh_particles.yield		,     Ndataset*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &dh_particles.weight		,     Ndataset*sizeof(float)				));
-	check_cuda(cudaMalloc( &dh_particles.index		,     Ndataset*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_valid_result			,     Ndataset*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_valid_N				,            1*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_fissile_points		,     Ndataset*sizeof(spatial_data)			));
-	check_cuda(cudaMalloc( &d_fissile_energy		,     Ndataset*sizeof(float)				));
-	check_cuda(cudaMalloc( &d_scanned 				,     Ndataset*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_num_completed 		,            1*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_num_active 			,            1*sizeof(unsigned)				));
-	check_cuda(cudaMalloc( &d_zeros					, minumum_size*sizeof(unsigned)				));
+	check_cuda(cudaMalloc( &d_tally					,    n_tallies*sizeof(tally_data)		));
+	check_cuda(cudaMalloc( &d_particles				,    		 1*sizeof(particle_data)	));
+	check_cuda(cudaMalloc( &dh_particles.E			,     Ndataset*sizeof(float)			));
+	check_cuda(cudaMalloc( &dh_particles.Q			,     Ndataset*sizeof(float)			));
+	check_cuda(cudaMalloc( &dh_particles.rn_bank	,     Ndataset*sizeof(float)			));
+	check_cuda(cudaMalloc( &dh_particles.isonum		,     Ndataset*sizeof(unsigned)			));
+	check_cuda(cudaMalloc( &dh_particles.yield		,     Ndataset*sizeof(unsigned)			));
+	check_cuda(cudaMalloc( &dh_particles.weight		,     Ndataset*sizeof(float)			));
+	check_cuda(cudaMalloc( &dh_particles.index		,     Ndataset*sizeof(unsigned)			));
+	check_cuda(cudaMalloc( &d_valid_result			,     Ndataset*sizeof(unsigned)			));
+	check_cuda(cudaMalloc( &d_valid_N				,            1*sizeof(unsigned)			));
+	check_cuda(cudaMalloc( &d_fissile_points		,     Ndataset*sizeof(spatial_data)		));
+	check_cuda(cudaMalloc( &d_fissile_energy		,     Ndataset*sizeof(float)			));
+	check_cuda(cudaMalloc( &d_scanned 				,     Ndataset*sizeof(unsigned)			));
+	check_cuda(cudaMalloc( &d_num_completed 		,            1*sizeof(unsigned)			));
+	check_cuda(cudaMalloc( &d_num_active 			,            1*sizeof(unsigned)			));
+	check_cuda(cudaMalloc( &d_zeros					, minimum_size*sizeof(unsigned)			));
 
 	// copy values from initialized host arrays
-	check_cuda(cudaMemcpy( dh_particles.space		, h_particles.space			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( d_fissile_points			, h_particles.space			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.cellnum		, h_particles.cellnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.talnum		, h_particles.talnum		, Ndataset*sizeof(int)			, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.matnum		, h_particles.matnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.rxn			, h_particles.rxn			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.E			, h_particles.E				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( d_fissile_energy			, zeros						, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.Q			, h_particles.Q				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.rn_bank		, h_particles.rn_bank		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.isonum		, h_particles.isonum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.yield		, h_particles.yield			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.weight		, h_particles.weight		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( dh_particles.index		, h_particles.index			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( d_valid_result			, zeros						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( d_remap					, remap						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
-	check_cuda(cudaMemcpy( d_zeros					, zeros						, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.space		, h_particles.space			,     Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_fissile_points			, h_particles.space			,     Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.cellnum		, h_particles.cellnum		,     Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.talnum		, h_particles.talnum		,     Ndataset*sizeof(int)			, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.matnum		, h_particles.matnum		,     Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.rxn			, h_particles.rxn			,     Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.E			, h_particles.E				,     Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_fissile_energy			, zeros						,     Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.Q			, h_particles.Q				,     Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.rn_bank		, h_particles.rn_bank		,     Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.isonum		, h_particles.isonum		,     Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.yield		, h_particles.yield			,     Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.weight		, h_particles.weight		,     Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( dh_particles.index		, h_particles.index			,     Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_valid_result			, zeros						,     Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_remap					, remap						,     Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_zeros					, zeros						, minimum_size*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
 
 	// init tally containers
 	for( int i=0 ; i<n_tallies ; i++ ){
@@ -1841,7 +1841,7 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 void whistory::reset_cycle(float keff_cycle){
 
 	// re-base the yield so keff is 1
-	rebase_yield( NUM_THREADS, N,  keff_cycle, d_particles );
+	rebase_yield( NUM_THREADS, N,  1.05*keff_cycle, d_particles );
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
 	check_cuda(cudaPeekAtLastError());
@@ -1851,11 +1851,13 @@ void whistory::reset_cycle(float keff_cycle){
 	if (res != CUDPP_SUCCESS){fprintf(stderr, "Error in scanning yield values\n");exit(-1);}
 	check_cuda(cudaPeekAtLastError());
 
-	//pop them in!  should be the right size now due to keff rebasing  
-	null_spatial(NUM_THREADS,Ndataset,d_fissile_points);
-	check_cuda(cudaMemcpy( dh_particles.E,			d_zeros,	Ndataset*sizeof(float),			cudaMemcpyDeviceToDevice ));
+	// null temp arrays to make sure everything is OK
+	check_cuda(cudaMemcpy( d_fissile_points,	d_zeros,	Ndataset*sizeof(spatial_data),	cudaMemcpyDeviceToDevice ));
+	check_cuda(cudaMemcpy( d_fissile_energy,	d_zeros,	Ndataset*sizeof(float),			cudaMemcpyDeviceToDevice ));
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
+
+	//pop them in!  should be the right size now due to keff rebasing  
 	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_scanned , d_fissile_points, d_fissile_energy);
 	check_cuda(cudaPeekAtLastError());
 
