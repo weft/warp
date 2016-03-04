@@ -173,7 +173,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 			T = t0;
 		}
 		else if (edist_lower.intt==2){// lin-lin interpolation
-			T  = (t1 - t0)/(e1 - e0) * this_E + t0;
+			T  = (t1 - t0)/(e1 - e0) * (this_E - e0) + t0;
 		}
 		else{
 			printf("dont know what to do!\n");

@@ -98,7 +98,7 @@ if sys.argv[1] == 'assembly':
 	err_range = 0.2
 	mcnp_vol = 125.663706144
 if sys.argv[1] == 'test':
-	err_range = 0.5
+	err_range = 0.1
 	mcnp_vol = 30*30*30.0
 
 widths=numpy.diff(tallybins)

@@ -314,6 +314,7 @@ int main(int argc, char* argv[]){
 		fracs_fuel[0] = 1;  
 		float    dens_fuel = 4.5;
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
+		geom.add_material(1,0,n_topes,0.0,       topes,fracs_fuel);
 		
 		// run stuff
 		tallycell = 999;
@@ -335,6 +336,7 @@ int main(int argc, char* argv[]){
 		origin[2]=0.0;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
 		geom.add_transform(prim_id,999,0,0,0,0,0);
+
 	}
 	else{
 		printf("MUST ENTER A *VALID* RUN TYPE : %s, %s, %s, or %s\n",assemblyname.c_str(),homfuelname.c_str(), godivaname.c_str(),  pincellname.c_str() );
@@ -355,7 +357,7 @@ int main(int argc, char* argv[]){
 
 	whistory hist ( N , geom );
 	hist.set_print_level(4);
-	hist.set_dump_level(0);
+	hist.set_dump_level(3);
 	hist.set_device(0);
 	hist.init();
 	hist.print_xs_data();

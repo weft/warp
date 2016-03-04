@@ -181,8 +181,8 @@ class cross_section_data:
 			self.temp.append(table.temp)
 
 		#append reaction numbers
-		total_good_reactions = 0
 		for table in self.tables:
+			total_good_reactions = 0
 			for MT in table.reactions: # reactions is a dict
 				if MT <200 and MT!=3 and MT!=4 and MT!=5 and MT!=10 and MT!=27:
 					rxn = table.reactions[MT]
@@ -190,9 +190,9 @@ class cross_section_data:
 					self.Q.append(rxn.Q)
 					self.num_reactions += 1
 					total_good_reactions += 1
-
-		#append totals
-		self.reaction_numbers_total.append(total_good_reactions)
+			#append totals
+			self.reaction_numbers_total.append(total_good_reactions)
+		
 
 		#print self.num_reactions
 		#print self.reaction_numbers

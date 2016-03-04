@@ -1841,7 +1841,7 @@ void whistory::write_to_file(unsigned* array_in , unsigned* array_in2, unsigned 
 void whistory::reset_cycle(float keff_cycle){
 
 	// re-base the yield so keff is 1
-	rebase_yield( NUM_THREADS, N,  1.05*keff_cycle, d_particles );
+	rebase_yield( NUM_THREADS, N,  0.95*keff_cycle, d_particles );
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
 	check_cuda(cudaPeekAtLastError());
@@ -2517,9 +2517,14 @@ void whistory::bin_fission_points( spatial_data * d_space, unsigned N){
 	// copy from device
 	spatial_data * positions_local = new spatial_data[N];
 	check_cuda(cudaMemcpy(positions_local,dh_particles.space,N*sizeof(spatial_data),cudaMemcpyDeviceToHost));
+	check_cuda(cudaThreadSynchronize());
 
 	// bin to grid
 	for(unsigned i=0; i<N; i++){
+		if(positions_local[i].x >= outer_cell_dims[3]){printf("x >= max!\n");}
+		if(positions_local[i].x <= outer_cell_dims[0]){printf("x <= min!\n");}
+		if(positions_local[i].y >= outer_cell_dims[4]){printf("y >= max!\n");}
+		if(positions_local[i].y <= outer_cell_dims[1]){printf("y <= min!\n");}
 		dex_x = unsigned(  ( positions_local[i].x - x_min )*res_x/width_x  );
 		dex_y = unsigned(  ( positions_local[i].y - y_min )*res_y/width_y  );
 		fiss_img[ dex_y*res_x + dex_x ] += 1; 

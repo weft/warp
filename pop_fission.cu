@@ -236,7 +236,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 				T = t0;
 			}
 			else if (edist_lower.intt==2){// lin-lin interpolation
-				T  = (t1 - t0)/(e1 - e0) * this_E + t0;
+				T  = (t1 - t0)/(e1 - e0) * (this_E - e0) + t0;
 			}
 			else{
 				printf("dont know what to do!\n");
@@ -258,8 +258,9 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	
 			}
 	
-			// isotropic mu
+			// isotropic mu/phi
 			mu  = 2.0*get_rand(&rn)-1.0;
+			phi = 2.0*pi*get_rand(&rn);
 	
 		}
 		else if ( this_law == 9 ){   //evaopration spectrum
@@ -278,7 +279,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 				T = t0;
 			}
 			else if (edist_lower.intt==2){// lin-lin interpolation
-				T  = (t1 - t0)/(e1 - e0) * this_E + t0;
+				T  = (t1 - t0)/(e1 - e0) * (this_E - e0) + t0;
 			}
 			else{
 				printf("dont know what to do!\n");
@@ -295,8 +296,9 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 			// mcnp5 volIII pg 2-43
 			sampled_E = T * x;
 		
-			// isotropic mu
+			// isotropic mu/phi
 			mu  = 2.0*get_rand(&rn)-1.0;
+			phi = 2.0*pi*get_rand(&rn);
 	
 		}
 		else{
@@ -312,7 +314,7 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		if(fission_particles[data_dex].yhat			!= 0.0){printf("NONZERO fission_particles[data_dex].yhat       = % 6.4E \n",fission_particles[data_dex].yhat		);}
 		if(fission_particles[data_dex].zhat			!= 0.0){printf("NONZERO fission_particles[data_dex].zhat       = % 6.4E \n",fission_particles[data_dex].zhat		);}
 		if(fission_particles[data_dex].surf_dist	!= 0.0){printf("NONZERO fission_particles[data_dex].surf_dist  = % 6.4E \n",fission_particles[data_dex].surf_dist	);}
-		if(fission_particles[data_dex].enforce_BC	!= 0.0){printf("NONZERO fission_particles[data_dex].enforce_BC = % 6.4E \n",fission_particles[data_dex].enforce_BC	);}
+		if(fission_particles[data_dex].enforce_BC	!= 0  ){printf("NONZERO fission_particles[data_dex].enforce_BC = %u     \n",fission_particles[data_dex].enforce_BC	);}
 		if(fission_particles[data_dex].norm[0]		!= 0.0){printf("NONZERO fission_particles[data_dex].norm[0]    = % 6.4E \n",fission_particles[data_dex].norm[0]		);}
 		if(fission_particles[data_dex].norm[1]		!= 0.0){printf("NONZERO fission_particles[data_dex].norm[1]    = % 6.4E \n",fission_particles[data_dex].norm[1]		);}
 		if(fission_particles[data_dex].norm[2]		!= 0.0){printf("NONZERO fission_particles[data_dex].norm[2]    = % 6.4E \n",fission_particles[data_dex].norm[2]		);}
