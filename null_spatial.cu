@@ -11,17 +11,17 @@ __global__ void null_spatial_kernel(unsigned N, spatial_data* space){
 	int tid_in = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid_in >= N){return;} 
 
-	space[k].x				= 0.0;
-	space[k].y				= 0.0;
-	space[k].z				= 0.0;
-	space[k].xhat			= 0.0;
-	space[k].yhat			= 0.0;
-	space[k].zhat			= 0.0;
-	space[k].surf_dist		= 10000.0;
-	space[k].enforce_BC		= 0.0;
-	space[k].norm[0]		= 1.0;
-	space[k].norm[1]		= 0.0;
-	space[k].norm[2]		= 0.0;
+	space[tid_in].x				= 0.0;
+	space[tid_in].y				= 0.0;
+	space[tid_in].z				= 0.0;
+	space[tid_in].xhat			= 0.0;
+	space[tid_in].yhat			= 0.0;
+	space[tid_in].zhat			= 0.0;
+	space[tid_in].surf_dist		= 10000.0;
+	space[tid_in].enforce_BC	= 0;
+	space[tid_in].norm[0]		= 1.0;
+	space[tid_in].norm[1]		= 0.0;
+	space[tid_in].norm[2]		= 0.0;
 
 }
 
