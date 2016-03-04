@@ -306,15 +306,16 @@ int main(int argc, char* argv[]){
 	else if(testname.compare(argv[1])==0){
 		
 		// test mats
-		n_topes = 1;
+		n_topes = 2;
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
-		topes[0] = "94240.03c";
-		fracs_fuel[0] = 1;  
+		topes[0] = "92233.03c";
+		topes[1] = "1002.03c";
+		fracs_fuel[0] = 1;
+		fracs_fuel[1] = 1;  
 		float    dens_fuel = 4.5;
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
-		geom.add_material(1,0,n_topes,0.0,       topes,fracs_fuel);
 		
 		// run stuff
 		tallycell = 999;
@@ -344,7 +345,7 @@ int main(int argc, char* argv[]){
 	}
 
 	// finalize geom
-	geom.set_outer_cell(999,2);  // cell, BC  1=black, 2=specular
+	geom.set_outer_cell(999,1);  // cell, BC  1=black, 2=specular
 	geom.add_tally(tallycell);
 	geom.update();
 	if(geom.check()){std::cout << "geometry failed check!\n"; return 1;}

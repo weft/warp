@@ -24,7 +24,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	__shared__	spatial_data*		space;	
 	__shared__	unsigned*			rxn;	
 	__shared__	float*				E;		
-	//__shared__	float*				Q;		
+	__shared__	float*				Q;		
 	__shared__	unsigned*			rn_bank;
 	//__shared__	unsigned*			cellnum;
 	//__shared__	unsigned*			matnum;	
@@ -50,7 +50,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 		space						= d_particles[0].space;
 		rxn							= d_particles[0].rxn;
 		E							= d_particles[0].E;
-		//Q							= d_particles[0].Q;	
+		Q							= d_particles[0].Q;	
 		rn_bank						= d_particles[0].rn_bank;
 		//cellnum						= d_particles[0].cellnum;
 		//matnum						= d_particles[0].matnum;
@@ -91,7 +91,7 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 	unsigned	this_dex		=	index[   tid];
 	float		this_E			=	E[       tid];
 	float		this_weight		=	weight[  tid];
-	//float		this_Q			=	Q[       tid];
+	float		this_Q			=	Q[       tid];
 	unsigned	rn				=	rn_bank[ tid];
 	float		this_awr		=	awr[ this_tope];
 	//float		this_temp		=	temp[this_tope];
@@ -280,6 +280,43 @@ __global__ void scatter_multi_kernel(unsigned N, unsigned starting_index, cross_
 											&this_sdist.cdf[ ang_position                    ] , 
 											&this_sdist.cdf[ ang_position +   this_sdist.len ] , 
 											&this_sdist.cdf[ ang_position + 2*this_sdist.len ] );
+
+	}
+	else if ( this_law == 66 ){
+
+		// get tabulated temperature
+		//unsigned 	nbodies 	= 	3;                   // assume ONLY FOR 1002 n,2n!
+		unsigned 	this_yield1 = 	2;                   // assume ONLY FOR 1002 n,2n!
+		float		A			=	2.9986199999999998;  // assume ONLY FOR 1002 n,2n!
+		// if (nbodies>3) {printf("nbodies in law 66  is greater than 3!!!\n");}
+
+		// calculate things...
+		float Emax 		= (this_yield1-1.0)/this_yield1 * (A/(A+1)*this_E + this_Q); 
+		float rn1       = get_rand(&rn);
+		float rn2       = get_rand(&rn);
+		float rn3       = get_rand(&rn);
+		float rn4       = get_rand(&rn);
+
+		// rejection sample random numbers
+		while ( (rn1*rn1 + rn2*rn2) > 1.0 ){
+			rn1 = get_rand(&rn);
+			rn2 = get_rand(&rn);
+		}
+		while ( (rn3*rn3 + rn4*rn4) > 1.0 ){
+			rn3 = get_rand(&rn);
+			rn4 = get_rand(&rn);
+		}
+
+		float x = -rn1 * logf(rn1*rn1 + rn2*rn2)/ (rn1*rn1 + rn2*rn2) - logf(get_rand(&rn)) ;
+		float y = -rn3 * logf(rn3*rn3 + rn4*rn4)/ (rn3*rn3 + rn4*rn4) - logf(get_rand(&rn)) ;
+
+		//  calculate mu
+		sampled_E = Emax * x /( x + y );
+
+		printf("sampled_E % 6.4E\n",sampled_E);
+
+		// isotropic mu
+		mu  = 2.0*get_rand(&rn)-1.0;
 
 	}
 	else{
