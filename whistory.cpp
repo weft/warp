@@ -1850,7 +1850,7 @@ void whistory::reset_cycle(float keff_cycle){
 	check_cuda(cudaPeekAtLastError());
 
 	//pop them in!  should be the right size now due to keff rebasing  
-	null_spatial(Ndataset,dh_particles.space);
+	null_spatial(NUM_THREADS,Ndataset,dh_particles.space);
 	check_cuda(cudaMemcpy( dh_particles.E,			d_zeros,	Ndataset*sizeof(float),			cudaMemcpyDeviceToDevice ));
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
