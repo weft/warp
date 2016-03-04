@@ -173,6 +173,7 @@ cuda_compile(rebase_yield rebase_yield.cu)
 cuda_compile(reaction_edges3 reaction_edges3.cu) 
 cuda_compile(write_to_file write_to_file.cu)
 cuda_compile(safety_check safety_check.cu)
+cuda_compile(null_spatial null_spatial.cu)
 
 # Sources:
 set(warp_executable_srcs

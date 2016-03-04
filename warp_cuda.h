@@ -29,5 +29,6 @@ void print_data( cudaStream_t , unsigned , unsigned , spatial_data* , float* , u
 void test_function(unsigned ,  unsigned , cross_section_data*, particle_data*, tally_data*, unsigned*);
 void sample_fissile_energy(unsigned ,  unsigned , float , float , unsigned * , float*);
 void safety_check( unsigned, unsigned, cross_section_data* , particle_data* , unsigned* );
+void null_spatial( unsigned, unsigned, spatial_data* );
 
 #endif
