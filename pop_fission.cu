@@ -304,18 +304,18 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 		}
 
 		// check temp array
-		if(fission_energy[   data_dex] 				!= 0.0)    {printf("NONZERO fission_energy[   data_dex]            = % 6.4E \n",fission_energy[   data_dex] 			);}
-		if(fission_particles[data_dex].x			!= 0.0)    {printf("NONZERO fission_particles[data_dex].x          = % 6.4E \n",fission_particles[data_dex].x			);}
-		if(fission_particles[data_dex].y			!= 0.0)    {printf("NONZERO fission_particles[data_dex].y          = % 6.4E \n",fission_particles[data_dex].y			);}
-		if(fission_particles[data_dex].z			!= 0.0)    {printf("NONZERO fission_particles[data_dex].z          = % 6.4E \n",fission_particles[data_dex].z			);}
-		if(fission_particles[data_dex].xhat			!= 0.0)    {printf("NONZERO fission_particles[data_dex].xhat       = % 6.4E \n",fission_particles[data_dex].xhat		);}
-		if(fission_particles[data_dex].yhat			!= 0.0)    {printf("NONZERO fission_particles[data_dex].yhat       = % 6.4E \n",fission_particles[data_dex].yhat		);}
-		if(fission_particles[data_dex].zhat			!= 0.0)    {printf("NONZERO fission_particles[data_dex].zhat       = % 6.4E \n",fission_particles[data_dex].zhat		);}
-		if(fission_particles[data_dex].surf_dist	!= 10000.0){printf("NONZERO fission_particles[data_dex].surf_dist  = % 6.4E \n",fission_particles[data_dex].surf_dist	);}
-		if(fission_particles[data_dex].enforce_BC	!= 0.0)    {printf("NONZERO fission_particles[data_dex].enforce_BC = % 6.4E \n",fission_particles[data_dex].enforce_BC	);}
-		if(fission_particles[data_dex].norm[0]		!= 1.0)    {printf("NONZERO fission_particles[data_dex].norm[0]    = % 6.4E \n",fission_particles[data_dex].norm[0]		);}
-		if(fission_particles[data_dex].norm[1]		!= 0.0)    {printf("NONZERO fission_particles[data_dex].norm[1]    = % 6.4E \n",fission_particles[data_dex].norm[1]		);}
-		if(fission_particles[data_dex].norm[2]		!= 0.0)    {printf("NONZERO fission_particles[data_dex].norm[2]    = % 6.4E \n",fission_particles[data_dex].norm[2]		);}
+		if(fission_energy[   data_dex] 				!= 0.0){printf("NONZERO fission_energy[   data_dex]            = % 6.4E \n",fission_energy[   data_dex] 			);}
+		if(fission_particles[data_dex].x			!= 0.0){printf("NONZERO fission_particles[data_dex].x          = % 6.4E \n",fission_particles[data_dex].x			);}
+		if(fission_particles[data_dex].y			!= 0.0){printf("NONZERO fission_particles[data_dex].y          = % 6.4E \n",fission_particles[data_dex].y			);}
+		if(fission_particles[data_dex].z			!= 0.0){printf("NONZERO fission_particles[data_dex].z          = % 6.4E \n",fission_particles[data_dex].z			);}
+		if(fission_particles[data_dex].xhat			!= 0.0){printf("NONZERO fission_particles[data_dex].xhat       = % 6.4E \n",fission_particles[data_dex].xhat		);}
+		if(fission_particles[data_dex].yhat			!= 0.0){printf("NONZERO fission_particles[data_dex].yhat       = % 6.4E \n",fission_particles[data_dex].yhat		);}
+		if(fission_particles[data_dex].zhat			!= 0.0){printf("NONZERO fission_particles[data_dex].zhat       = % 6.4E \n",fission_particles[data_dex].zhat		);}
+		if(fission_particles[data_dex].surf_dist	!= 0.0){printf("NONZERO fission_particles[data_dex].surf_dist  = % 6.4E \n",fission_particles[data_dex].surf_dist	);}
+		if(fission_particles[data_dex].enforce_BC	!= 0.0){printf("NONZERO fission_particles[data_dex].enforce_BC = % 6.4E \n",fission_particles[data_dex].enforce_BC	);}
+		if(fission_particles[data_dex].norm[0]		!= 0.0){printf("NONZERO fission_particles[data_dex].norm[0]    = % 6.4E \n",fission_particles[data_dex].norm[0]		);}
+		if(fission_particles[data_dex].norm[1]		!= 0.0){printf("NONZERO fission_particles[data_dex].norm[1]    = % 6.4E \n",fission_particles[data_dex].norm[1]		);}
+		if(fission_particles[data_dex].norm[2]		!= 0.0){printf("NONZERO fission_particles[data_dex].norm[2]    = % 6.4E \n",fission_particles[data_dex].norm[2]		);}
 
 		// set data in temp array since GRID-WISE threadsync cannot be done (easily?)!
 		fission_energy[     data_dex ] 					= sampled_E;
