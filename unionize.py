@@ -192,7 +192,6 @@ class cross_section_data:
 					total_good_reactions += 1
 			#append totals
 			self.reaction_numbers_total.append(total_good_reactions)
-		
 
 		#print self.num_reactions
 		#print self.reaction_numbers
