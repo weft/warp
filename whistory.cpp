@@ -299,11 +299,13 @@ void whistory::init_device(){
 
 	// copy values from initialized host arrays
 	check_cuda(cudaMemcpy( dh_particles.space		, h_particles.space			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_fissile_points			, h_particles.space			, Ndataset*sizeof(spatial_data)	, cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.cellnum		, h_particles.cellnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.talnum		, h_particles.talnum		, Ndataset*sizeof(int)			, cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.matnum		, h_particles.matnum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.rxn			, h_particles.rxn			, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.E			, h_particles.E				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
+	check_cuda(cudaMemcpy( d_fissile_energy			, zeros						, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.Q			, h_particles.Q				, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.rn_bank		, h_particles.rn_bank		, Ndataset*sizeof(float)		, cudaMemcpyHostToDevice ));
 	check_cuda(cudaMemcpy( dh_particles.isonum		, h_particles.isonum		, Ndataset*sizeof(unsigned)		, cudaMemcpyHostToDevice ));
@@ -1850,7 +1852,7 @@ void whistory::reset_cycle(float keff_cycle){
 	check_cuda(cudaPeekAtLastError());
 
 	//pop them in!  should be the right size now due to keff rebasing  
-	null_spatial(NUM_THREADS,Ndataset,dh_particles.space);
+	null_spatial(NUM_THREADS,Ndataset,d_fissile_points);
 	check_cuda(cudaMemcpy( dh_particles.E,			d_zeros,	Ndataset*sizeof(float),			cudaMemcpyDeviceToDevice ));
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
