@@ -194,7 +194,7 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	}
 
-	if (this_tope==n_isotopes) {printf("this_tope==n_isotopes, tid %d E %6.4E macro_t %6.4E rn %12.10E dex %u\n",tid,this_E,macro_t_total,rn1,dex);}
+	if (this_tope==n_isotopes) {printf("this_tope==n_isotopes, tid %d E %6.4E macro_t_total %6.4E rn %12.10E dex %u\n",tid,this_E,macro_t_total,rn1,dex);}
 
 	// compute the interaction length
 	samp_dist = -logf(get_rand(&rn))/macro_t_total;
@@ -419,6 +419,7 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	if(this_rxn==0){printf("rxn for tid_in %d / tid %d is still ZERO at end of macro_micro!\n", tid_in, tid);}
 	if(this_rxn==4){printf("rxn for tid_in %d / tid %d is 4 at end of macro_micro!\n", tid_in, tid);}
+	if(this_rxn==999){printf("(macro_t_total,surf_dist,surf_minimum,dotp) % 6.4E % 6.4E % 6.4E % 6.4E\n",macro_t_total,surf_dist,surf_minimum,dotp);}
 
 	rxn[    tid_in]			=	this_rxn;			// rxn is sorted WITH the remapping vector, i.e. its index does not need to be remapped
 	Q[      tid]			=	this_Q; 			// put reaction Q value into particle Q value
