@@ -184,7 +184,7 @@ class cross_section_data:
 		total_good_reactions = 0
 		for table in self.tables:
 			for MT in table.reactions: # reactions is a dict
-				if MT <200 and MT!=4:
+				if MT <200 and MT!=3 and MT!=4 and MT!=5 and MT!=10 and MT!=27:
 					rxn = table.reactions[MT]
 					self.reaction_numbers.append(MT)
 					self.Q.append(rxn.Q)
@@ -231,7 +231,7 @@ class cross_section_data:
 			self.MT_array[:,tope_index]=this_array
 
 			for MT in table.reactions:
-				if MT <200 and MT!=4:
+				if MT <200 and MT!=3 and MT!=4 and MT!=5 and MT!=10 and MT!=27:
 					rxn        = table.reactions[MT]
 					#if rxn.IE>0:
 					#	IE = rxn.IE-1       #convert form fortran to python/C indexing 

@@ -476,7 +476,7 @@ inline __device__ float scale_to_bins(float f, float this_E, float this_erg_min,
 	}
 	else {  
 	// return without scaling, since mixing hasn't been used!  Should only happen when above or below the tabular data.
-		printf("scaling above or below dists!   f = % 6.4E\n",f);
+		//printf("scaling above or below dists!   f = % 6.4E\n",f);
 		return this_E;
 	}
 
