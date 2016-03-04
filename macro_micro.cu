@@ -226,9 +226,9 @@ All neutrons need these things done, so these routines all live in the same rout
 			else if(enforce_BC == 2){  // specular reflection BC
 				printf("Reflecting at specular BC NOT IMPLEMENTED YET!\n");
 				// move epsilon off of surface
-				x += ((surf_dist*xhat) + copysignf(1.0,dotp)*push_value*epsilon*norm[0]); 
-				y += ((surf_dist*yhat) + copysignf(1.0,dotp)*push_value*epsilon*norm[1]);
-				z += ((surf_dist*zhat) + copysignf(1.0,dotp)*push_value*epsilon*norm[2]);
+				x += surf_dist*xhat - copysignf(1.0,dotp)*push_value*epsilon*norm[0]; 
+				y += surf_dist*yhat - copysignf(1.0,dotp)*push_value*epsilon*norm[1];
+				z += surf_dist*zhat - copysignf(1.0,dotp)*push_value*epsilon*norm[2];
 				// calculate reflection
 				xhat_new = -(2.0 * dotp * norm[0]) + xhat; 
 				yhat_new = -(2.0 * dotp * norm[1]) + yhat; 
