@@ -199,6 +199,7 @@ set(warp_cuda_srcs
     ${reaction_edges3}
     ${write_to_file}
     ${safety_check}
+    ${null_spatial}
 )
 
 ADD_LIBRARY(warp SHARED ${warp_executable_srcs} ${warp_cuda_srcs})
