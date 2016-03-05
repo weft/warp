@@ -301,6 +301,59 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 			phi = 2.0*pi*get_rand(&rn);
 	
 		}
+		else if( this_law == 11 ){  // energy-dependent maxwellian
+
+			// get tabulated parameters
+			float a0 = edist_lower.var[0];
+			float a1 = edist_upper.var[0];
+			float b0 = edist_lower.cdf[0];
+			float b1 = edist_upper.cdf[0];
+			float U  = edist_lower.pdf[0];
+			float e0 = edist_lower.erg;
+			float e1 = edist_upper.erg;
+			float  a = 0.0;
+			float  b = 0.0;
+			float  g = 0.0;
+			float  c = 0.0;
+			sampled_E = 99999.0;
+		
+			// interpolate T
+			if (e1==e0 | edist_lower.intt==1){  // in top bin, both values are the same
+				a = a0;
+				b = b0;
+			}
+			else if (edist_lower.intt==2){// lin-lin interpolation
+				a  = (a1 - a0)/(e1 - e0) * (this_E - e0) + a0;
+				b  = (b1 - b0)/(e1 - e0) * (this_E - e0) + b0;
+				c  = 1.0 + a*b/8.0;
+				g  = sqrtf( c*c - 1.0 ) + c;
+			}
+			else{
+				printf("dont know what to do!\n");
+			}
+
+			// restriction
+			while (sampled_E > this_E - U){
+	
+				// rejection sample
+				rn1 = get_rand(&rn);
+				rn2 = get_rand(&rn);
+				sampled_E = -a*g*logf(rn1);
+				c = (1.0-g)*(1.0-logf(rn1)) - logf(rn2);
+				while ( c*c > b*sampled_E ) {
+					rn1 = get_rand(&rn);
+					rn2 = get_rand(&rn);
+					sampled_E = -a*g*logf(rn1);
+					c = (1.0-g)*(1.0-logf(rn1)) - logf(rn2);
+				}
+				
+			}
+
+			// isotropic mu/phi
+			mu  = 2.0*get_rand(&rn)-1.0;
+			phi = 2.0*pi*get_rand(&rn);
+
+		}
 		else{
 			printf("LAW %u NOT HANDLED IN FISSION POP!\n",this_law);
 		}

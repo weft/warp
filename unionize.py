@@ -152,9 +152,13 @@ class cross_section_data:
 				rxn = table.reactions[MT]
 				if hasattr(rxn,"ang_energy_in"):
 					self.MT_E_grid=numpy.union1d(self.MT_E_grid,rxn.ang_energy_in)
-				if hasattr(rxn,"energy_dist") and rxn.energy_dist.law!=3 and rxn.energy_dist.law!=66:
-					#print table.name, MT, "law",rxn.energy_dist.law
-					self.MT_E_grid=numpy.union1d(self.MT_E_grid,rxn.energy_dist.energy_in)
+				if hasattr(rxn,"energy_dist"):# and rxn.energy_dist.law!=3 and rxn.energy_dist.law!=66:
+					if hasattr(rxn.energy_dist,"energy_in"):
+						self.MT_E_grid=numpy.union1d(self.MT_E_grid,rxn.energy_dist.energy_in)
+					if hasattr(rxn.energy_dist,"energya_in"):
+						self.MT_E_grid=numpy.union1d(self.MT_E_grid,rxn.energy_dist.energya_in)
+					if hasattr(rxn.energy_dist,"energyb_in"):
+						self.MT_E_grid=numpy.union1d(self.MT_E_grid,rxn.energy_dist.energyb_in)
 
 		self.num_main_E   = self.MT_E_grid.__len__()
 
@@ -809,8 +813,14 @@ class cross_section_data:
 		#print MTnum
 
 		# do the cases
-		if hasattr(rxn,"energy_dist") and hasattr(rxn.energy_dist,"energy_in"):
-			# there is no higher lavel angular table, everything is in energy_dist
+		if hasattr(rxn,"energy_dist") and ( hasattr(rxn.energy_dist,"energy_in") or hasattr(rxn.energy_dist,"energya_in")):
+			# unionize a/b for law 11 and set it as energy_in, interpolate a/b values to new grid
+			# just in case they have differrent grids...
+			if hasattr(rxn.energy_dist,"energya_in"):
+				rxn.energy_dist.energy_in	= numpy.union1d(rxn.energy_dist.energya_in,rxn.energy_dist.energyb_in)
+				rxn.energy_dist.a			= numpy.interp( rxn.energy_dist.energy_in, rxn.energy_dist.energya_in, rxn.energy_dist.a )
+				rxn.energy_dist.b			= numpy.interp( rxn.energy_dist.energy_in, rxn.energy_dist.energyb_in, rxn.energy_dist.b )
+			# there is no higher level table, everything is in energy_dist
 			# find where this energy lies on this grid
 			upper_index = next((i for i, x in enumerate(this_E < rxn.energy_dist.energy_in) if x), len(rxn.energy_dist.energy_in))
 			lower_index = upper_index - 1
@@ -878,6 +888,13 @@ class cross_section_data:
 					upper_cdf = numpy.array([rxn.energy_dist.U])
 					lower_pdf = numpy.array([0])
 					upper_pdf = numpy.array([0])
+				elif hasattr(rxn.energy_dist,"a"):  # e dep maxwellian 
+					lower_var = numpy.array([rxn.energy_dist.a[lower_index]])
+					upper_var = numpy.array([rxn.energy_dist.a[upper_index]])
+					lower_cdf = numpy.array([rxn.energy_dist.b[lower_index]])
+					upper_cdf = numpy.array([rxn.energy_dist.b[upper_index]])
+					lower_pdf = numpy.array([rxn.energy_dist.U])
+					upper_pdf = numpy.array([rxn.energy_dist.U])
 				else:
 					print "UNHANDLED ENERGY DIST CONTENTS"
 
