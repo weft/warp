@@ -94,12 +94,18 @@ RT_PROGRAM void camera()
 	ray_direction		= make_float3(0,0,-1);
 	ray_origin			= make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
 	ray					= optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
+	const float	push_value		= 2.0;
 	
 	// then find entering cell, use downward z to make problems with high x-y density faster
 	rtTrace(top_object, ray, payload);
 	sense = payload.sense;
 	while( (sense>=0)){// & (outer_cell!=payload.cell)){
-		ray_origin = make_float3(payload.x+2.0*epsilon*ray_direction.x,payload.y+2.0*epsilon*ray_direction.y,payload.z+2.0*epsilon*ray_direction.z);
+		dotp = 	payload.norm[0]*ray_direction.x +
+				payload.norm[1]*ray_direction.y +
+				payload.norm[2]*ray_direction.z;
+		ray_origin = make_float3(	payload.x + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[0],
+									payload.y + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[1],
+									payload.z + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[2]	);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);
 		sense = sense + payload.sense;

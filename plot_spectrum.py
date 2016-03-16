@@ -103,6 +103,12 @@ if sys.argv[1] == 'test':
 if sys.argv[1] == 'jezebel':
 	err_range = 0.01
 	mcnp_vol = 30*30*30.0
+if sys.argv[1] == 'flibe':
+	err_range = 0.01
+	mcnp_vol = 30*30*30.0
+if sys.argv[1] == 'assembly-lw':
+	err_range = 0.1
+	mcnp_vol = 30*30*30.0
 
 widths=numpy.diff(tallybins)
 avg=(tallybins[:-1]+tallybins[1:])/2

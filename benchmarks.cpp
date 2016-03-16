@@ -21,6 +21,9 @@ int main(int argc, char* argv[]){
 	std::string pincellname  	= "pincell";
 	std::string sodiumpinname  	= "sodiumpin";
 	std::string testname 	 	= "test";
+	std::string card1name 	 	= "k20";
+	std::string card2name 	 	= "k80";
+	std::string card3name 	 	= "titan";
 
 
 	// check
@@ -34,12 +37,12 @@ int main(int argc, char* argv[]){
 		printf("%s, ",pincellname.c_str());
 		printf("%s, ",sodiumpinname.c_str());
 		printf("%s, ",testname.c_str());
-		printf("and a number of particles to run!\n");
+		printf("and a card name (%s %s %s)!\n",card1name.c_str(),card2name.c_str(),card3name.c_str());
 		exit(0);
 	}
 
 	// get number of histories to do
-	N = atoi(argv[2]);
+	// N = atoi(argv[2]);
 
 	// set up geometry
 	std::vector<float> mins  (3);
@@ -48,6 +51,7 @@ int main(int argc, char* argv[]){
 	unsigned type, material, n_topes;
 	unsigned prim_id    = 0;
 	unsigned bc 		= 1;
+	unsigned dev		= 0;
 	wgeometry geom;
 
 	// set datapath
@@ -114,6 +118,19 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "criticality";
+		if(card1name.compare(argv[1])==0){
+			N = ;
+		}
+		else if (card2name.compare(argv[1])==0){
+			N = ;
+		}
+		else if(card3name.compare(argv[1])==0){
+			N = ;
+		}
+		else{
+			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			exit(0);
+		}
 	
 		// assembly geom, fuel
 		type=1;
@@ -206,6 +223,19 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 2;
 		runtype = "criticality";
+		if(card1name.compare(argv[1])==0){
+			N = ;
+		}
+		else if (card2name.compare(argv[1])==0){
+			N = ;
+		}
+		else if(card3name.compare(argv[1])==0){
+			N = ;
+		}
+		else{
+			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			exit(0);
+		}
 	
 		// flibe geom
 		type=3;
@@ -352,6 +382,19 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "fixed";
+		if(card1name.compare(argv[1])==0){
+			N = ;
+		}
+		else if (card2name.compare(argv[1])==0){
+			N = ;
+		}
+		else if(card3name.compare(argv[1])==0){
+			N = ;
+		}
+		else{
+			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			exit(0);
+		}
 	
 		//fusion geom
 		type=3;
@@ -441,6 +484,19 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "criticality";
+		if(card1name.compare(argv[1])==0){
+			N = ;
+		}
+		else if (card2name.compare(argv[1])==0){
+			N = ;
+		}
+		else if(card3name.compare(argv[1])==0){
+			N = ;
+		}
+		else{
+			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			exit(0);
+		}
 	
 		//jezebel geom
 		type=3;
@@ -517,6 +573,19 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "criticality";
+		if(card1name.compare(argv[1])==0){
+			N = ;
+		}
+		else if (card2name.compare(argv[1])==0){
+			N = ;
+		}
+		else if(card3name.compare(argv[1])==0){
+			N = ;
+		}
+		else{
+			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			exit(0);
+		}
 	
 		//pin cell
 		type=1;
@@ -597,6 +666,19 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "criticality";
+		if(card1name.compare(argv[1])==0){
+			N = ;
+		}
+		else if (card2name.compare(argv[1])==0){
+			N = ;
+		}
+		else if(card3name.compare(argv[1])==0){
+			N = ;
+		}
+		else{
+			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			exit(0);
+		}
 	
 		//water 
 		type=0;
@@ -645,6 +727,19 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "fixed";
+		if(card1name.compare(argv[1])==0){
+			N = ;
+		}
+		else if (card2name.compare(argv[1])==0){
+			N = ;
+		}
+		else if(card3name.compare(argv[1])==0){
+			N = ;
+		}
+		else{
+			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			exit(0);
+		}
 
 		//fuel 
 		type=1;
@@ -778,6 +873,19 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 2;
 		runtype = "criticality";
+		if(card1name.compare(argv[1])==0){
+			N = ;
+		}
+		else if (card2name.compare(argv[1])==0){
+			N = ;
+		}
+		else if(card3name.compare(argv[1])==0){
+			N = ;
+		}
+		else{
+			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			exit(0);
+		}
 	
 		//pin cell
 		type=1;
@@ -854,7 +962,7 @@ int main(int argc, char* argv[]){
 	whistory hist ( N , geom );
 	hist.set_print_level(3);
 	hist.set_dump_level(3);
-	hist.set_device(0);
+	hist.set_device(dev);
 	hist.init();
 	hist.print_xs_data();
 	hist.print_materials_table();
