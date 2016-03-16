@@ -90,6 +90,7 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	// declare
 	float		norm[3];
+	float		plane_vec[3];
 	float		samp_dist		= 0.0;
 	float		diff			= 0.0;
 	unsigned	this_tope		= 999999999;
@@ -225,6 +226,13 @@ All neutrons need these things done, so these routines all live in the same rout
 				this_tope = 999999997;  
 			}
 			else if(enforce_BC == 2){  // specular reflection BC
+				// calculate plane vector and normalize to one
+				plane_vec[0] = xhat - dotp*norm[0];
+				plane_vec[1] = yhat - dotp*norm[1];
+				plane_vec[2] = zhat - dotp*norm[2];
+				plane_vec[0] = plane_vec[0] / sqrtf(plane_vec[0]*plane_vec[0]+plane_vec[1]*plane_vec[1]+plane_vec[2]*plane_vec[2]);
+				plane_vec[1] = plane_vec[1] / sqrtf(plane_vec[0]*plane_vec[0]+plane_vec[1]*plane_vec[1]+plane_vec[2]*plane_vec[2]);
+				plane_vec[2] = plane_vec[2] / sqrtf(plane_vec[0]*plane_vec[0]+plane_vec[1]*plane_vec[1]+plane_vec[2]*plane_vec[2]);
 				// first move intersection point back in the incoming direction in case close to a wall
 				x += surf_dist*xhat - push_value*epsilon*plane_vec[0];
 				y += surf_dist*yhat - push_value*epsilon*plane_vec[1];
