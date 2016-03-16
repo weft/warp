@@ -89,11 +89,11 @@ if sys.argv[1] == 'godiva':
 	err_range = 0.02
 	mcnp_vol = 555.647209455
 if sys.argv[1] == 'homfuel' or sys.argv[1]=='test':
-	err_range = 0.05
-	mcnp_vol = 60*60*60
+	err_range = 0.005
+	mcnp_vol = 50.0*100.0*100.0#60*60*60
 if sys.argv[1] == 'pincell':
 	err_range = 0.05
-	mcnp_vol = 125.663706144
+	mcnp_vol = 40.0*2.*2.*numpy.pi
 if sys.argv[1] == 'assembly':
 	err_range = 0.2
 	mcnp_vol = 125.663706144
@@ -102,13 +102,13 @@ if sys.argv[1] == 'test':
 	mcnp_vol = 30*30*30.0
 if sys.argv[1] == 'jezebel':
 	err_range = 0.01
-	mcnp_vol = 30*30*30.0
+	mcnp_vol = 6.6595*6.6595*6.6595*numpy.pi*4.0/3.0
 if sys.argv[1] == 'flibe':
 	err_range = 0.01
 	mcnp_vol = 5.0*5.0*5.0*numpy.pi*4.0/3.0
 if sys.argv[1] == 'assembly-lw':
 	err_range = 0.1
-	mcnp_vol = 30*30*30.0
+	mcnp_vol = 40.0*2.*2.*numpy.pi
 
 widths=numpy.diff(tallybins)
 avg=(tallybins[:-1]+tallybins[1:])/2

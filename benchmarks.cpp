@@ -104,7 +104,7 @@ int main(int argc, char* argv[]){
 		fracs_clad[8] = 0.0280;
 	   
 	
-		float    dens_fuel = 15.00;
+		float    dens_fuel = 10.97;
 		float 	 dens_water = 1.00;
 		float 	 dens_clad = 6.52;
 		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
@@ -762,7 +762,7 @@ int main(int argc, char* argv[]){
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
 			exit(0);
 		}
-		
+
 		//fuel 
 		type=1;
 		material=1;
