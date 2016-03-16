@@ -33,7 +33,7 @@ RT_PROGRAM void camera()
 
 	// declare important stuff
 	int                 sense = 0;
-	float               epsilon=2.0e-5; 	
+	float               epsilon=5.0e-6; 	
 	float3 ray_direction, ray_origin;
 	optix::Ray ray;
 	intersection_point  payload;

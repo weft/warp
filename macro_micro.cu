@@ -97,7 +97,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	unsigned	adj_dex			= 0;
 	float		dotp			= 0.0;
 	float		macro_t_total	= 0.0;
-	const float	epsilon			= 2.0e-5;
+	const float	epsilon			= 5.0e-6;
 	const float	push_value		= 2.0;
 	float surf_minimum, this_Q;
 	//float xhat_new, yhat_new, zhat_new;
