@@ -77,7 +77,7 @@ def get_warp_data(filepath):
 
 warpdata   = get_warp_data(  sys.argv[1]+'.tally')
 serpdata   = get_serpent_det(sys.argv[1]+'_det0.m')
-#mcnpdata   = get_mcnp_mctal(sys.argv[1]+'.mctal')
+mcnpdata   = get_mcnp_mctal(sys.argv[1]+'.mctal')
 
 tallybins = warpdata[0]
 tally     = warpdata[1]
@@ -105,7 +105,7 @@ if sys.argv[1] == 'jezebel':
 	mcnp_vol = 30*30*30.0
 if sys.argv[1] == 'flibe':
 	err_range = 0.01
-	mcnp_vol = 30*30*30.0
+	mcnp_vol = 5.0*5.0*5.0*numpy.pi*4.0/3.0
 if sys.argv[1] == 'assembly-lw':
 	err_range = 0.1
 	mcnp_vol = 30*30*30.0
@@ -133,13 +133,13 @@ serp_flux=numpy.divide(serpF,serp_widths)
 serp_flux=numpy.multiply(serp_flux,serp_avg)
 
 
-#mcnp_bins = mcnpdata[0]
-#mcnp_widths=numpy.diff(mcnp_bins);
-#mcnp_avg=(mcnp_bins[:-1]+mcnp_bins[1:])/2;
-#mcnp_newflux= mcnpdata[1][1:-1]
-#mcnp_err = mcnpdata[2][1:-1]
-#mcnp_newflux=numpy.divide(mcnp_newflux,mcnp_widths)
-#mcnp_newflux=numpy.multiply(mcnp_newflux,mcnp_avg)
+mcnp_bins = mcnpdata[0]
+mcnp_widths=numpy.diff(mcnp_bins);
+mcnp_avg=(mcnp_bins[:-1]+mcnp_bins[1:])/2;
+mcnp_newflux= mcnpdata[1][1:-1]
+mcnp_err = mcnpdata[2][1:-1]
+mcnp_newflux=numpy.divide(mcnp_newflux,mcnp_widths)
+mcnp_newflux=numpy.multiply(mcnp_newflux,mcnp_avg)
 
 fig = plt.figure(figsize=(10,6))
 gs = gridspec.GridSpec(3, 1, height_ratios=[6, 1, 1]) 
@@ -160,15 +160,15 @@ ax0.legend(handles,labels,loc=2)
 ax0.set_xlim([1e-11,20])
 ax0.grid(True)
 
-#ax1.semilogx(mcnp_avg,numpy.divide(newflux-mcnp_newflux,mcnp_newflux),'b',linestyle='steps-mid',label='Flux Relative Error vs. MCNP')
-#ax1.set_xlim([1e-11,20])
-#ax1.set_ylim([-err_range,err_range])
-#ax1.fill_between(mcnp_avg,-2.0*mcnp_err,2.0*mcnp_err,color='black',facecolor='green', alpha=0.5)
-#ax1.set_xscale('log')
-#ax1.yaxis.set_major_locator(MaxNLocator(4))
-#ax1.set_xlabel('Energy (MeV)')
-#ax1.set_ylabel('Rel. Err. \n vs. MCNP')
-#ax1.grid(True)
+ax1.semilogx(mcnp_avg,numpy.divide(newflux-mcnp_newflux,mcnp_newflux),'b',linestyle='steps-mid',label='Flux Relative Error vs. MCNP')
+ax1.set_xlim([1e-11,20])
+ax1.set_ylim([-err_range,err_range])
+ax1.fill_between(mcnp_avg,-2.0*mcnp_err,2.0*mcnp_err,color='black',facecolor='green', alpha=0.5)
+ax1.set_xscale('log')
+ax1.yaxis.set_major_locator(MaxNLocator(4))
+ax1.set_xlabel('Energy (MeV)')
+ax1.set_ylabel('Rel. Err. \n vs. MCNP')
+ax1.grid(True)
 
 ax2.semilogx(serp_avg,numpy.divide(newflux-serpF,serpF),'b',linestyle='steps-mid',label='Flux Relative Error vs. Serpent')
 ax2.set_xlim([1e-11,20])
