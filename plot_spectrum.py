@@ -110,7 +110,7 @@ if sys.argv[1] == 'jezebel':
 	xlims=[1e-3,20]
 	mcnp_vol = 6.6595*6.6595*6.6595*numpy.pi*4.0/3.0
 if sys.argv[1] == 'flibe':
-	err_range_mcnp = 0.005
+	err_range_mcnp = 0.0025
 	err_range_serp = 0.016
 	xlims=[1e-5,20]
 	mcnp_vol = 5.0*5.0*5.0*numpy.pi*4.0/3.0
