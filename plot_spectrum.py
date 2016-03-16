@@ -108,7 +108,7 @@ if sys.argv[1] == 'flibe':
 	mcnp_vol = 5.0*5.0*5.0*numpy.pi*4.0/3.0
 if sys.argv[1] == 'assembly-lw':
 	err_range = 0.1
-	mcnp_vol = 40.0*2.*2.*numpy.pi
+	mcnp_vol = 40.0*1.0*1.0*numpy.pi
 
 widths=numpy.diff(tallybins)
 avg=(tallybins[:-1]+tallybins[1:])/2
@@ -149,7 +149,7 @@ ax2 = plt.subplot(gs[2])
 #gs = gridspec.GridSpec(2, 1, height_ratios=[6, 1]) 
 #ax0 = plt.subplot(gs[0])
 #ax2 = plt.subplot(gs[1])
-#ax0.semilogx(mcnp_avg,mcnp_newflux,'k',linestyle='steps-mid',label='MCNP 6.1')
+ax0.semilogx(mcnp_avg,mcnp_newflux,'k',linestyle='steps-mid',label='MCNP 6.1')
 ax0.semilogx(serp_avg,serpF,'b',linestyle='steps-mid',label='Serpent 2.1.18')
 ax0.semilogx(avg,newflux,'r',linestyle='steps-mid',label='WARP')
 #ax0.set_xlabel('Energy (MeV)')
