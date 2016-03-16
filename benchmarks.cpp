@@ -21,6 +21,7 @@ int main(int argc, char* argv[]){
 	std::string pincellname  	= "pincell";
 	std::string sodiumpinname  	= "sodiumpin";
 	std::string testname 	 	= "test";
+	std::string card0name 	 	= "debug";
 	std::string card1name 	 	= "k20";
 	std::string card2name 	 	= "k80";
 	std::string card3name 	 	= "titan";
@@ -37,7 +38,7 @@ int main(int argc, char* argv[]){
 		printf("%s, ",pincellname.c_str());
 		printf("%s, ",sodiumpinname.c_str());
 		printf("%s, ",testname.c_str());
-		printf("and a card name (%s %s %s)!\n",card1name.c_str(),card2name.c_str(),card3name.c_str());
+		printf("and a card name (%s %s %s %s)!\n",card0name.c_str(),card1name.c_str(),card2name.c_str(),card3name.c_str());
 		exit(0);
 	}
 
@@ -118,17 +119,20 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "criticality";
-		if(card1name.compare(argv[1])==0){
-			N = ;
+		if(card0name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if (card2name.compare(argv[1])==0){
-			N = ;
+		else if(card1name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if(card3name.compare(argv[1])==0){
-			N = ;
+		else if (card2name.compare(argv[2])==0){
+			N = int(1e6);
+		}
+		else if(card3name.compare(argv[2])==0){
+			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
 			exit(0);
 		}
 	
@@ -223,17 +227,20 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 2;
 		runtype = "criticality";
-		if(card1name.compare(argv[1])==0){
-			N = ;
+		if(card0name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if (card2name.compare(argv[1])==0){
-			N = ;
+		else if(card1name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if(card3name.compare(argv[1])==0){
-			N = ;
+		else if (card2name.compare(argv[2])==0){
+			N = int(1e6);
+		}
+		else if(card3name.compare(argv[2])==0){
+			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
 			exit(0);
 		}
 	
@@ -382,17 +389,20 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "fixed";
-		if(card1name.compare(argv[1])==0){
-			N = ;
+		if(card0name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if (card2name.compare(argv[1])==0){
-			N = ;
+		else if(card1name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if(card3name.compare(argv[1])==0){
-			N = ;
+		else if (card2name.compare(argv[2])==0){
+			N = int(1e6);
+		}
+		else if(card3name.compare(argv[2])==0){
+			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
 			exit(0);
 		}
 	
@@ -484,17 +494,20 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "criticality";
-		if(card1name.compare(argv[1])==0){
-			N = ;
+		if(card0name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if (card2name.compare(argv[1])==0){
-			N = ;
+		else if(card1name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if(card3name.compare(argv[1])==0){
-			N = ;
+		else if (card2name.compare(argv[2])==0){
+			N = int(1e6);
+		}
+		else if(card3name.compare(argv[2])==0){
+			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
 			exit(0);
 		}
 	
@@ -573,17 +586,20 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "criticality";
-		if(card1name.compare(argv[1])==0){
-			N = ;
+		if(card0name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if (card2name.compare(argv[1])==0){
-			N = ;
+		else if(card1name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if(card3name.compare(argv[1])==0){
-			N = ;
+		else if (card2name.compare(argv[2])==0){
+			N = int(1e6);
+		}
+		else if(card3name.compare(argv[2])==0){
+			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
 			exit(0);
 		}
 	
@@ -666,17 +682,20 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "criticality";
-		if(card1name.compare(argv[1])==0){
-			N = ;
+		if(card0name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if (card2name.compare(argv[1])==0){
-			N = ;
+		else if(card1name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if(card3name.compare(argv[1])==0){
-			N = ;
+		else if (card2name.compare(argv[2])==0){
+			N = int(1e6);
+		}
+		else if(card3name.compare(argv[2])==0){
+			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
 			exit(0);
 		}
 	
@@ -727,17 +746,20 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 1;
 		runtype = "fixed";
-		if(card1name.compare(argv[1])==0){
-			N = ;
+		if(card0name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if (card2name.compare(argv[1])==0){
-			N = ;
+		else if(card1name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if(card3name.compare(argv[1])==0){
-			N = ;
+		else if (card2name.compare(argv[2])==0){
+			N = int(1e6);
+		}
+		else if(card3name.compare(argv[2])==0){
+			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
 			exit(0);
 		}
 
@@ -873,17 +895,20 @@ int main(int argc, char* argv[]){
 		tallyname.append(".tally");
 		bc = 2;
 		runtype = "criticality";
-		if(card1name.compare(argv[1])==0){
-			N = ;
+		if(card0name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if (card2name.compare(argv[1])==0){
-			N = ;
+		else if(card1name.compare(argv[2])==0){
+			N = int(1e6);
 		}
-		else if(card3name.compare(argv[1])==0){
-			N = ;
+		else if (card2name.compare(argv[2])==0){
+			N = int(1e6);
+		}
+		else if(card3name.compare(argv[2])==0){
+			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[1].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
 			exit(0);
 		}
 	
