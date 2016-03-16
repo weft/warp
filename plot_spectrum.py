@@ -89,10 +89,14 @@ if sys.argv[1] == 'godiva':
 	err_range = 0.02
 	mcnp_vol = 555.647209455
 if sys.argv[1] == 'homfuel' or sys.argv[1]=='test':
-	err_range = 0.005
+	err_range_mcnp = 0.005
+	err_range_serp = 0.005
+	xlims=[1e-6,20]
 	mcnp_vol = 50.0*100.0*100.0#60*60*60
 if sys.argv[1] == 'pincell':
-	err_range = 0.05
+	err_range_mcnp = 0.05
+	err_range_serp = 0.025
+	xlims=[1e-8,20]
 	mcnp_vol = 40.0*2.*2.*numpy.pi
 if sys.argv[1] == 'assembly':
 	err_range = 0.2
@@ -101,13 +105,19 @@ if sys.argv[1] == 'test':
 	err_range = 0.1
 	mcnp_vol = 30*30*30.0
 if sys.argv[1] == 'jezebel':
-	err_range = 0.01
+	err_range_mcnp = 0.01
+	err_range_serp = 0.01
+	xlims=[1e-3,20]
 	mcnp_vol = 6.6595*6.6595*6.6595*numpy.pi*4.0/3.0
 if sys.argv[1] == 'flibe':
-	err_range = 0.01
+	err_range_mcnp = 0.005
+	err_range_serp = 0.016
+	xlims=[1e-5,20]
 	mcnp_vol = 5.0*5.0*5.0*numpy.pi*4.0/3.0
 if sys.argv[1] == 'assembly-lw':
-	err_range = 0.1
+	err_range_mcnp = 0.1
+	err_range_serp = 0.1
+	xlims=[1e-8,20]
 	mcnp_vol = 40.0*1.0*1.0*numpy.pi
 
 widths=numpy.diff(tallybins)
@@ -157,22 +167,22 @@ ax0.set_ylabel(r'Flux/Lethargy per Fission Neutron')
 #ax0.set_title(title)
 handles, labels = ax0.get_legend_handles_labels()
 ax0.legend(handles,labels,loc=2)
-ax0.set_xlim([1e-11,20])
+ax0.set_xlim(xlims)
 ax0.grid(True)
 
 ax1.semilogx(mcnp_avg,numpy.divide(newflux-mcnp_newflux,mcnp_newflux),'b',linestyle='steps-mid',label='Flux Relative Error vs. MCNP')
-ax1.set_xlim([1e-11,20])
-ax1.set_ylim([-err_range,err_range])
+ax1.set_xlim(xlims)
+ax1.set_ylim([-err_range_mcnp,err_range_mcnp])
 ax1.fill_between(mcnp_avg,-2.0*mcnp_err,2.0*mcnp_err,color='black',facecolor='green', alpha=0.5)
 ax1.set_xscale('log')
 ax1.yaxis.set_major_locator(MaxNLocator(4))
-ax1.set_xlabel('Energy (MeV)')
+#ax1.set_xlabel('Energy (MeV)')
 ax1.set_ylabel('Rel. Err. \n vs. MCNP')
 ax1.grid(True)
 
 ax2.semilogx(serp_avg,numpy.divide(newflux-serpF,serpF),'b',linestyle='steps-mid',label='Flux Relative Error vs. Serpent')
-ax2.set_xlim([1e-11,20])
-ax2.set_ylim([-err_range,err_range])
+ax2.set_xlim(xlims)
+ax2.set_ylim([-err_range_serp,err_range_serp])
 ax2.fill_between(serp_avg,-2.0*serpErr,2.0*serpErr,color='black',facecolor='green', alpha=0.5)
 ax2.set_xscale('log')
 ax2.yaxis.set_major_locator(MaxNLocator(4))
