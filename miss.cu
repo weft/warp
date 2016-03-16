@@ -20,7 +20,7 @@ RT_PROGRAM void miss()
 	if(trace_type==2){
 		launch_index=remap_buffer[launch_index_in];
 		//rtPrintf("!!!MISS IN TRANSPORT!!! rxn = %u outer_cell = %d launch_index = %d remapped index %u trace %d (x,y,z,xhat,yhat,zhat-source)= (% 10.9E % 10.9E % 10.9E)(% 10.9E % 10.9E % 10.9E)\n", rxn_buffer[launch_index_in], outer_cell, launch_index_in, launch_index, trace_type,positions_buffer[launch_index].x,positions_buffer[launch_index].y,positions_buffer[launch_index].z,positions_buffer[launch_index].xhat,positions_buffer[launch_index].yhat,positions_buffer[launch_index].zhat);
-		rtPrintf("(x,y,z,xhat,yhat,zhat-source) = % 10.9E % 10.9E % 10.9E % 10.9E % 10.9E % 10.9E\n", positions_buffer[launch_index].x,positions_buffer[launch_index].y,positions_buffer[launch_index].z,positions_buffer[launch_index].xhat,positions_buffer[launch_index].yhat,positions_buffer[launch_index].zhat);
+		rtPrintf("!!!MISS(x,y,z,xhat,yhat,zhat-source) = % 10.9E % 10.9E % 10.9E % 10.9E % 10.9E % 10.9E\n", positions_buffer[launch_index].x,positions_buffer[launch_index].y,positions_buffer[launch_index].z,positions_buffer[launch_index].xhat,positions_buffer[launch_index].yhat,positions_buffer[launch_index].zhat);
 	}
 	else{
 		launch_index = launch_index_in;  // misses in fissile query and geometry plotting are expected for out-of-bounds regions in non-rectangular geometries

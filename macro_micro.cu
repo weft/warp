@@ -225,10 +225,14 @@ All neutrons need these things done, so these routines all live in the same rout
 				this_tope = 999999997;  
 			}
 			else if(enforce_BC == 2){  // specular reflection BC
+				// first move intersection point back in the imcoming direction in case close to a wall
+				x += surf_dist*xhat - ( xhat - dotp*push_value*norm[0]);
+				y += surf_dist*yhat - ( yhat - dotp*push_value*norm[1]);
+				z += surf_dist*zhat - ( zhat - dotp*push_value*norm[2]);
 				// move epsilon off of surface
-				x += surf_dist*xhat - copysignf(1.0,dotp)*push_value*epsilon*norm[0]; 
-				y += surf_dist*yhat - copysignf(1.0,dotp)*push_value*epsilon*norm[1];
-				z += surf_dist*zhat - copysignf(1.0,dotp)*push_value*epsilon*norm[2];
+				x += - copysignf(1.0,dotp)*push_value*epsilon*norm[0]; 
+				y += - copysignf(1.0,dotp)*push_value*epsilon*norm[1];
+				z += - copysignf(1.0,dotp)*push_value*epsilon*norm[2];
 				// calculate reflection
 				xhat += -(2.0 * dotp * norm[0]);
 				yhat += -(2.0 * dotp * norm[1]);   
