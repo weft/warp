@@ -132,7 +132,7 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2]);
 			exit(0);
 		}
 	
@@ -240,7 +240,7 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2]);
 			exit(0);
 		}
 	
@@ -402,7 +402,7 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2]);
 			exit(0);
 		}
 	
@@ -507,7 +507,7 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2]);
 			exit(0);
 		}
 	
@@ -599,7 +599,7 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2]);
 			exit(0);
 		}
 	
@@ -695,7 +695,7 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2]);
 			exit(0);
 		}
 	
@@ -759,10 +759,10 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2]);
 			exit(0);
 		}
-
+		
 		//fuel 
 		type=1;
 		material=1;
@@ -908,7 +908,7 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else{
-			printf("card type: %s not recognized, exiting.\n",argv[2].c_str());
+			printf("card type: %s not recognized, exiting.\n",argv[2]);
 			exit(0);
 		}
 	
