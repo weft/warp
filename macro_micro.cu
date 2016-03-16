@@ -225,10 +225,10 @@ All neutrons need these things done, so these routines all live in the same rout
 				this_tope = 999999997;  
 			}
 			else if(enforce_BC == 2){  // specular reflection BC
-				// first move intersection point back in the imcoming direction in case close to a wall
-				x += surf_dist*xhat - push_value*epsilon*( xhat - dotp*norm[0]);
-				y += surf_dist*yhat - push_value*epsilon*( yhat - dotp*norm[1]);
-				z += surf_dist*zhat - push_value*epsilon*( zhat - dotp*norm[2]);
+				// first move intersection point back in the incoming direction in case close to a wall
+				x += surf_dist*xhat - push_value*epsilon*plane_vec[0];
+				y += surf_dist*yhat - push_value*epsilon*plane_vec[1];
+				z += surf_dist*zhat - push_value*epsilon*plane_vec[2];
 				// move epsilon off of surface
 				x += - copysignf(1.0,dotp)*push_value*epsilon*norm[0]; 
 				y += - copysignf(1.0,dotp)*push_value*epsilon*norm[1];
@@ -297,7 +297,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	
 			//score the bins atomicly, could be bad if many neutrons are in a single bin since this will serialize their operations
 			atomicAdd(&this_tally.score[ bin_index], this_weight/macro_t_total);
-			atomicAdd(&this_tally.square[bin_index], this_weight/(macro_t_total * macro_t_total));
+			atomicAdd(&this_tally.square[bin_index], this_weight*this_weight/(macro_t_total * macro_t_total));
 			atomicInc(&this_tally.count[ bin_index], 4294967295);
 	
 		}
