@@ -82,10 +82,10 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	}
 
 	// check second levle pointers
-	if(dist_scatter.lower == 0x0){printf("null pointer dist_scatter.lower!"); return;}
-	if(dist_scatter.upper == 0x0){printf("null pointer dist_scatter.upper!"); return;}
-	if(dist_energy.lower  == 0x0){printf("null pointer dist_energy.lower!" ); return;}
-	if(dist_energy.upper  == 0x0){printf("null pointer dist_energy.upper!" ); return;}
+	if(dist_scatter[this_dex].lower == 0x0){printf("null pointer dist_scatter.lower!"); return;}
+	if(dist_scatter[this_dex].upper == 0x0){printf("null pointer dist_scatter.upper!"); return;}
+	if(dist_energy[ this_dex].lower == 0x0){printf("null pointer dist_energy.lower!" ); return;}
+	if(dist_energy[ this_dex].upper == 0x0){printf("null pointer dist_energy.upper!" ); return;}
 
 	//constants
 	const float  	pi			=   3.14159265359;
