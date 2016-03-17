@@ -1567,6 +1567,7 @@ void whistory::copy_energy_data(){
 					h_xsdata.dist_energy[array_index].lower = &h_lower_dist;
 					      dh_dist_energy[array_index].upper =  d_upper_dist;
 					      dh_dist_energy[array_index].lower =  d_lower_dist;
+					if(col==18){printf("%d %d %p %p \n",i,array_index,dh_dist_energy[array_index].lower,dh_dist_energy[array_index].upper);}
 				}
 
 				// go to where the next index starts
