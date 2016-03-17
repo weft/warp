@@ -72,7 +72,12 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 	// check E data pointers
 	if(dist_energy == 0x0){
-		printf("null pointer, energy array in continuum scatter!,tid %u\n",tid);
+		printf("null pointer, energy array in pop_fission!,tid %u\n",tid);
+		return;
+	}
+	// check S data pointers
+	if(dist_scatter == 0x0){
+		printf("null pointer, scatter array in pop_fission!,tid %u\n",tid);
 		return;
 	}
 
