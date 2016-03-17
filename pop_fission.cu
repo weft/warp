@@ -85,10 +85,10 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	}
 
 	// check second levle pointers
-	if(dist_scatter[this_dex].lower == 0x0){printf("null pointer dist_scatter.lower! this_E %6.4E tope %u yield %u\n",this_E,this_tope,this_yield); return;}
-	if(dist_scatter[this_dex].upper == 0x0){printf("null pointer dist_scatter.upper! this_E %6.4E tope %u yield %u\n",this_E,this_tope,this_yield); return;}
-	if(dist_energy[ this_dex].lower == 0x0){printf("null pointer dist_energy.lower!  this_E %6.4E tope %u yield %u\n",this_E,this_tope,this_yield); return;}
-	if(dist_energy[ this_dex].upper == 0x0){printf("null pointer dist_energy.upper!  this_E %6.4E tope %u yield %u\n",this_E,this_tope,this_yield); return;}
+	if(dist_scatter[this_dex].lower == 0x0){printf("null pointer dist_scatter.lower! this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
+	if(dist_scatter[this_dex].upper == 0x0){printf("null pointer dist_scatter.upper! this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
+	if(dist_energy[ this_dex].lower == 0x0){printf("null pointer dist_energy.lower!  this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
+	if(dist_energy[ this_dex].upper == 0x0){printf("null pointer dist_energy.upper!  this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
 
 	//constants
 	const float  	pi			=   3.14159265359;
