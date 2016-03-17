@@ -1562,6 +1562,7 @@ void whistory::copy_energy_data(){
 
 				// replicate pointers until next index
 				for (int i=row ; i<next_dex; i++){
+					printf("%d\n",i);
 					array_index = i*total_cols + col;
 					h_xsdata.dist_energy[array_index].upper = &h_upper_dist;
 					h_xsdata.dist_energy[array_index].lower = &h_lower_dist;
