@@ -82,10 +82,10 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 	}
 
 	// check second levle pointers
-	if(dist_scatter[this_dex].lower == 0x0){printf("null pointer dist_scatter.lower!"); return;}
-	if(dist_scatter[this_dex].upper == 0x0){printf("null pointer dist_scatter.upper!"); return;}
-	if(dist_energy[ this_dex].lower == 0x0){printf("null pointer dist_energy.lower!" ); return;}
-	if(dist_energy[ this_dex].upper == 0x0){printf("null pointer dist_energy.upper!" ); return;}
+	if(dist_scatter[this_dex].lower == 0x0){printf("null pointer dist_scatter.lower!\n"); return;}
+	if(dist_scatter[this_dex].upper == 0x0){printf("null pointer dist_scatter.upper!\n"); return;}
+	if(dist_energy[ this_dex].lower == 0x0){printf("null pointer dist_energy.lower! \n"); return;}
+	if(dist_energy[ this_dex].upper == 0x0){printf("null pointer dist_energy.upper! \n"); return;}
 
 	//constants
 	const float  	pi			=   3.14159265359;
@@ -162,6 +162,13 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 			lower_var	=	edist_lower.var;
 			upper_len	=	edist_upper.len;
 			lower_len	=	edist_lower.len;
+
+			//check for null again
+			if( this_var == 0x0){printf("null pointer  this_var!\n"); return;}
+			if( this_cdf == 0x0){printf("null pointer  this_cdf!\n"); return;}
+			if( this_pdf == 0x0){printf("null pointer  this_pdf!\n"); return;}
+			if(upper_var == 0x0){printf("null pointer upper_var!\n"); return;}
+			if(lower_var == 0x0){printf("null pointer lower_var!\n"); return;}
 
 		}
 		else{
