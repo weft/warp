@@ -212,6 +212,13 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 			upper_len	=	this_len;
 			lower_len	=	this_len;
 
+			//check for null again
+			if( this_var == 0x0){printf("delayed null pointer  this_var!\n"); return;}
+			if( this_cdf == 0x0){printf("delayed null pointer  this_cdf!\n"); return;}
+			if( this_pdf == 0x0){printf("delayed null pointer  this_pdf!\n"); return;}
+			if(upper_var == 0x0){printf("delayed null pointer upper_var!\n"); return;}
+			if(lower_var == 0x0){printf("delayed null pointer lower_var!\n"); return;}
+
 		}
 			
 		// sample dist, passing the parameters/pointers of the sampled delayed/prompt emission data
