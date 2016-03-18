@@ -2059,7 +2059,7 @@ void whistory::run(){
 				for( unsigned i = 0 ; i<accumulate_n ; i++){
 					accumulate_trigger = (N - i*accumulate_size);
 					if( Nrun < accumulate_trigger & Nrun_old > accumulate_trigger ){
-						printf("Accumualating tallies after %u histories...\n",accumulate_trigger);
+						printf("Accumualating tallies after %u histories completed...\n",accumulate_size);
 						accumulate_tally();
 						break; // so accumulated doesn't execute >1 if more than a single step is span
 					}
