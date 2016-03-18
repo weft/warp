@@ -146,7 +146,15 @@ class cross_section_data:
 		print "  --------- unionizing grid --------- "
 
 		for table in self.tables:
+			# main xs
 			self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.energy)
+			# nu if present
+			if hasattr(table,"nu_t_energy"):
+				self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.nu_t_energy)
+			if hasattr(table,"nu_d_energy"):
+				self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.nu_d_energy)
+			if hasattr(table,"nu_p_energy"):
+				self.MT_E_grid=numpy.union1d(self.MT_E_grid,table.nu_p_energy)
 			# unionize the scattering energies in as well!  if present of course
 			for MT in table.reactions:
 				rxn = table.reactions[MT]
@@ -381,14 +389,18 @@ class cross_section_data:
 			if  nu_t_upper_index == None:
 				nu_t_upper_index = len(table.nu_t_energy)-1
 				nu_t_lower_index = len(table.nu_t_energy)-1
+				above_last_t = True
 			else:
 				nu_t_lower_index = nu_t_upper_index - 1
+				above_last_t = False
 
 			if  nu_d_upper_index == None:
 				nu_d_upper_index = len(table.nu_d_energy)-1
 				nu_d_lower_index = len(table.nu_d_energy)-1
+				above_last_d = True
 			else:
 				nu_d_lower_index = nu_d_upper_index - 1
+				above_last_d = False
 
 			# make sure above threshold
 			if nu_t_lower_index < 0:
@@ -440,8 +452,8 @@ class cross_section_data:
 					upper_nu_t_intt = table.nu_t_interp_INT[nu_p_upper_index]
 				lower_pre_intt = table.nu_d_energy_dist[0].intt[0]
 				upper_pre_intt = table.nu_d_energy_dist[0].intt[1]
-				lower_pre_law = table.nu_d_energy_dist[0].law
-				upper_pre_law = table.nu_d_energy_dist[0].law  
+				lower_pre_law  = table.nu_d_energy_dist[0].law
+				upper_pre_law  = table.nu_d_energy_dist[0].law  
 
 				# set values in vars
 				lower_law	= -1
@@ -452,10 +464,18 @@ class cross_section_data:
 				upper_erg	= min(upper_e_t,upper_e_d)  # take narrowest interval
 				
 				# evaluate nu on this interval 
-				lower_nu_t	= lower_nu_t_grid + (lower_erg - lower_e_t)/(upper_e_t - lower_e_t) * (upper_nu_t_grid - lower_nu_t_grid)
-				lower_nu_d	= lower_nu_d_grid + (lower_erg - lower_e_d)/(upper_e_d - lower_e_d) * (upper_nu_d_grid - lower_nu_d_grid)
-				upper_nu_t	= lower_nu_t_grid + (upper_erg - lower_e_t)/(upper_e_t - lower_e_t) * (upper_nu_t_grid - lower_nu_t_grid)
-				upper_nu_d	= lower_nu_d_grid + (upper_erg - lower_e_d)/(upper_e_d - lower_e_d) * (upper_nu_d_grid - lower_nu_d_grid)
+				if above_last_t:
+					lower_nu_t	= upper_nu_t_grid
+					upper_nu_t	= upper_nu_t_grid
+				else:
+					lower_nu_t	= lower_nu_t_grid + (lower_erg - lower_e_t)/(upper_e_t - lower_e_t) * (upper_nu_t_grid - lower_nu_t_grid)
+					upper_nu_t	= lower_nu_t_grid + (upper_erg - lower_e_t)/(upper_e_t - lower_e_t) * (upper_nu_t_grid - lower_nu_t_grid)
+				if above_last_d:
+					lower_nu_d	= upper_nu_d_grid
+					upper_nu_d	= upper_nu_d_grid
+				else:
+					lower_nu_d	= lower_nu_d_grid + (lower_erg - lower_e_d)/(upper_e_d - lower_e_d) * (upper_nu_d_grid - lower_nu_d_grid)
+					upper_nu_d	= lower_nu_d_grid + (upper_erg - lower_e_d)/(upper_e_d - lower_e_d) * (upper_nu_d_grid - lower_nu_d_grid)
 				lower_len	= numpy.array([lower_nu_t,lower_nu_d])
 				upper_len	= numpy.array([upper_nu_t,upper_nu_d])
 
@@ -484,7 +504,8 @@ class cross_section_data:
 				#print lower_cdf[ pre_position], lower_cdf[ pre_position + lower_pdf[6]] ,lower_cdf[ pre_position+ lower_pdf[6]*2]
 
 				# next index
-				if max(nu_t_upper_index,nu_d_upper_index) == max(len(table.nu_t_energy),len(table.nu_d_energy))-1 :  # above last dist energy bin
+				if above_last_d and above_last_t:
+				#if max(nu_t_upper_index,nu_d_upper_index) == max(len(table.nu_t_energy),len(table.nu_d_energy))-1 :  # above last dist energy bin
 					next_dex = len(self.MT_E_grid)
 				else:
 					next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))

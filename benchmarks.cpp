@@ -507,7 +507,7 @@ int main(int argc, char* argv[]){
 		bc = 1;
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e5);
 			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
