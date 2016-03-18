@@ -500,12 +500,8 @@ class cross_section_data:
 					lower_cdf 	= numpy.hstack((lower_cdf,table.nu_d_energy_dist[i].pdf[0]))  # mux data, PDF third
 					upper_cdf 	= numpy.hstack((upper_cdf,table.nu_d_energy_dist[i].pdf[1]))  # mux data, PDF third
 
-				#pre_position = 0
-				#print lower_cdf[ pre_position], lower_cdf[ pre_position + lower_pdf[6]] ,lower_cdf[ pre_position+ lower_pdf[6]*2]
-
 				# next index
 				if above_last_d and above_last_t:
-				#if max(nu_t_upper_index,nu_d_upper_index) == max(len(table.nu_t_energy),len(table.nu_d_energy))-1 :  # above last dist energy bin
 					next_dex = len(self.MT_E_grid)
 				else:
 					next_dex = next((i for i, x in enumerate(upper_erg <= self.MT_E_grid) if x), len(self.MT_E_grid))
