@@ -121,15 +121,19 @@ int main(int argc, char* argv[]){
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
 			N = int(1e6);
+			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
 			N = int(6.5e6);
+			dev = 1;
 		}
 		else if (card2name.compare(argv[2])==0){
 			N = int(1e7);
+			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
 			N = int(9.5e6);
+			dev = 0;
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -229,15 +233,19 @@ int main(int argc, char* argv[]){
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
 			N = int(1e6);
+			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
 			N = int(6.5e6);
+			dev = 1;
 		}
 		else if (card2name.compare(argv[2])==0){
 			N = int(1e7);
+			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
 			N = int(9.5e6);
+			dev = 0;
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -391,15 +399,19 @@ int main(int argc, char* argv[]){
 		runtype = "fixed";
 		if(card0name.compare(argv[2])==0){
 			N = int(1e6);
+			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
 			N = int(6.5e6);
+			dev = 1;
 		}
 		else if (card2name.compare(argv[2])==0){
 			N = int(1e7);
+			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
 			N = int(9.5e6);
+			dev = 0;
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -496,15 +508,19 @@ int main(int argc, char* argv[]){
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
 			N = int(1e6);
+			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
 			N = int(6.5e6);
+			dev = 1;
 		}
 		else if (card2name.compare(argv[2])==0){
 			N = int(1e7);
+			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
 			N = int(9.5e6);
+			dev = 0;
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -588,15 +604,19 @@ int main(int argc, char* argv[]){
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
 			N = int(1e6);
+			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
 			N = int(6.5e6);
+			dev = 1;
 		}
 		else if (card2name.compare(argv[2])==0){
 			N = int(1e7);
+			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
 			N = int(9.5e6);
+			dev = 0;
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -684,15 +704,19 @@ int main(int argc, char* argv[]){
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
 			N = int(1e6);
+			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
 			N = int(6.5e6);
+			dev = 1;
 		}
 		else if (card2name.compare(argv[2])==0){
 			N = int(1e7);
+			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
 			N = int(9.5e6);
+			dev = 0;
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -748,15 +772,19 @@ int main(int argc, char* argv[]){
 		runtype = "fixed";
 		if(card0name.compare(argv[2])==0){
 			N = int(1e6);
+			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
 			N = int(6.5e6);
+			dev = 1;
 		}
 		else if (card2name.compare(argv[2])==0){
 			N = int(1e7);
+			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
 			N = int(9.5e6);
+			dev = 0;
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -897,15 +925,19 @@ int main(int argc, char* argv[]){
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
 			N = int(1e6);
+			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
 			N = int(6.5e6);
+			dev = 1;
 		}
 		else if (card2name.compare(argv[2])==0){
 			N = int(1e7);
+			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
 			N = int(9.5e6);
+			dev = 0;
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
