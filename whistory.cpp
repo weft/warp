@@ -1937,6 +1937,7 @@ void whistory::run(){
 	int iteration = 0;
 	int iteration_total=0;
 	unsigned converged = 0;
+	unsigned Nrun_old = 0;
 	unsigned active_size1, active_gap, lscatter_N, lscatter_start, mscatter_N, mscatter_start, cscatter_N, cscatter_start, fission_N, fission_start;
 	std::string fiss_name, stats_name;
 	FILE* statsfile;
@@ -1996,7 +1997,8 @@ void whistory::run(){
 		}
 
 		// reset edges and active number
-		Nrun=N;
+		Nrun = N;
+		Nrun_old = N;
 		edges[0]  = 0; 
 		edges[1]  = 0; 
 		edges[2]  = 0;
@@ -2035,6 +2037,7 @@ void whistory::run(){
 			check_cuda(cudaPeekAtLastError());
 
 			// remap threads to still active data
+			Nrun_old = Nrun;
 			remap_active(&Nrun, &lscatter_N, &lscatter_start, &mscatter_N, &mscatter_start, &cscatter_N, &cscatter_start, &fission_N, &fission_start);
 			check_cuda(cudaPeekAtLastError());
 
@@ -2047,6 +2050,17 @@ void whistory::run(){
 			fission( 		stream[3], NUM_THREADS, fission_N,  fission_start,  d_xsdata, d_particles, d_remap );  
 			check_cuda(cudaDeviceSynchronize());
 			check_cuda(cudaPeekAtLastError());
+
+			// accumulate tally half way though cycle... was running into overflow or rondoff problems with large datasets
+			if( N >= 2e6 & Nrun < N/2 & Nrun_old > N/2 ){
+				accumulate_tally();
+			}
+			if( N >= 4e6 & Nrun < N/4 & Nrun_old > N/4 ){
+				accumulate_tally();
+			}
+			if( N >= 4e6 & Nrun < 3*N/4 & Nrun_old > 3*N/4 ){
+				accumulate_tally();
+			}
 
 			// do safety check (if flagged)
 			// safety_check(	NUM_THREADS, Nrun, d_xsdata, d_particles, d_remap );
