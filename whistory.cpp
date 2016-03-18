@@ -1938,6 +1938,9 @@ void whistory::run(){
 	int iteration_total=0;
 	unsigned converged = 0;
 	unsigned Nrun_old = 0;
+	unsigned accumulate_size = (unsigned) 1e6;  // this is a conservative level
+	unsigned accumulate_trigger = 0;
+	unsigned accumulate_n = Nrun/accumulate_size;
 	unsigned active_size1, active_gap, lscatter_N, lscatter_start, mscatter_N, mscatter_start, cscatter_N, cscatter_start, fission_N, fission_start;
 	std::string fiss_name, stats_name;
 	FILE* statsfile;
@@ -2051,15 +2054,16 @@ void whistory::run(){
 			check_cuda(cudaDeviceSynchronize());
 			check_cuda(cudaPeekAtLastError());
 
-			// accumulate tally half way though cycle... was running into overflow or rondoff problems with large datasets
-			if( N >= 2e6 & Nrun < N/2 & Nrun_old > N/2 ){
-				accumulate_tally();
-			}
-			if( N >= 4e6 & Nrun < N/4 & Nrun_old > N/4 ){
-				accumulate_tally();
-			}
-			if( N >= 4e6 & Nrun < 3*N/4 & Nrun_old > 3*N/4 ){
-				accumulate_tally();
+			// accumulate if gone through specified number of histories... was running into overflow or rondoff problems with large datasets
+			if(converged){
+				for( unsigned i = 0 ; i<accumulate_n ; i++){
+					accumulate_trigger = (N - i*accumulate_size);
+					if( Nrun < accumulate_trigger & Nrun_old > accumulate_trigger ){
+						printf("triggered %u!\n",i);
+						accumulate_tally();
+						break; // so accumulated doesn't execute >1 if more than a since step is span
+					}
+				}
 			}
 
 			// do safety check (if flagged)
@@ -2078,21 +2082,14 @@ void whistory::run(){
 
 		}
 
-		//reduce yield and reset cycle
-		//if(RUN_FLAG==0){
-		//	keff_cycle = 1.0 - 1.0/(keff_cycle+1.0);   // based on: Ntotal = Nsource / (1-k) 
-		//	reset_fixed();
-		//	Nrun=Ndataset;
-		//}
-		//else if (RUN_FLAG==1){	
-			accumulate_keff(converged, iteration, &keff, &keff_cycle);
-			check_cuda(cudaPeekAtLastError());
-			accumulate_tally();
-			check_cuda(cudaPeekAtLastError());
-			reset_cycle(keff_cycle);
-			check_cuda(cudaPeekAtLastError());
-			Nrun=N;
-		//}
+		//reduce yield and reset cycle.  accumulate keff must be run since it gives the cycle keff which is needed for rebase
+		accumulate_keff(converged, iteration, &keff, &keff_cycle);
+		check_cuda(cudaPeekAtLastError());
+		if(converged){accumulate_tally();}s
+		check_cuda(cudaPeekAtLastError());
+		reset_cycle(keff_cycle);
+		check_cuda(cudaPeekAtLastError());
+		Nrun=N;
 
 		// update active iteration
 		if (converged){
