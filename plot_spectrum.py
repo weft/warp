@@ -119,6 +119,11 @@ if sys.argv[1] == 'assembly-lw':
 	err_range_serp = 0.1
 	xlims=[1e-8,20]
 	mcnp_vol = 40.0*1.0*1.0*numpy.pi
+if sys.argv[1] == 'sodiumpin':
+	err_range_mcnp = 0.01
+	err_range_serp = 0.01
+	xlims=[1e-4,20]
+	mcnp_vol = 40.0*1.0*1.0*numpy.pi
 
 widths=numpy.diff(tallybins)
 avg=(tallybins[:-1]+tallybins[1:])/2

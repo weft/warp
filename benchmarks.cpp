@@ -123,13 +123,13 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else if(card1name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(6.5e6);
 		}
 		else if (card2name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e7);
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(9.5e6);
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -231,13 +231,13 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else if(card1name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(6.5e6);
 		}
 		else if (card2name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e7);
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(9.5e6);
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -393,13 +393,13 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else if(card1name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(6.5e6);
 		}
 		else if (card2name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e7);
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(9.5e6);
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -498,13 +498,13 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else if(card1name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(6.5e6);
 		}
 		else if (card2name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e7);
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(9.5e6);
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -590,13 +590,13 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else if(card1name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(6.5e6);
 		}
 		else if (card2name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e7);
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(9.5e6);
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -686,13 +686,13 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else if(card1name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(6.5e6);
 		}
 		else if (card2name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e7);
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(9.5e6);
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -750,13 +750,13 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else if(card1name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(6.5e6);
 		}
 		else if (card2name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e7);
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(9.5e6);
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -899,13 +899,13 @@ int main(int argc, char* argv[]){
 			N = int(1e6);
 		}
 		else if(card1name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(6.5e6);
 		}
 		else if (card2name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e7);
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(9.5e6);
 		}
 		else{
 			printf("card type: %s not recognized, exiting.\n",argv[2]);
@@ -985,8 +985,8 @@ int main(int argc, char* argv[]){
 	/////////////////////////////////////////////////////////////////
 
 	whistory hist ( N , geom );
-	hist.set_print_level(3);
-	hist.set_dump_level(3);
+	hist.set_print_level(2);
+	hist.set_dump_level(0);
 	hist.set_device(dev);
 	hist.init();
 	hist.print_xs_data();
