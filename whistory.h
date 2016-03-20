@@ -441,11 +441,6 @@ public:
 	*/
 	void set_filename(std::string);
 	/**
-	* \brief appends history data to file in debug mode.
-	* @param[in] iteration - iteration number
-	*/
-	void write_histories(unsigned iteration);
-	/**
 	* \brief sets amount of information printed to stdout
 	* @param[in] level - level of verbosity
 	*/

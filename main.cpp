@@ -310,12 +310,12 @@ int main(int argc, char* argv[]){
 		std::vector<std::string> topes (n_topes);
 		std::vector<float>    fracs_fuel  (n_topes);
 		std::vector<float>    fracs_water (n_topes);
-		topes[0] = "92233.03c";
+		topes[0] = "92235.03c";
 		topes[1] = "1002.03c";
 		fracs_fuel[0] = 1;
 		fracs_fuel[1] = 1;  
 		float    dens_fuel = 4.5;
-		geom.add_material(1,1,n_topes,dens_fuel, topes,fracs_fuel);
+		geom.add_material(1,1,n_topes,dens_fuel,topes,fracs_fuel);
 		
 		// run stuff
 		tallycell = 999;
@@ -345,7 +345,7 @@ int main(int argc, char* argv[]){
 	}
 
 	// finalize geom
-	geom.set_outer_cell(999,1);  // cell, BC  1=black, 2=specular
+	geom.set_outer_cell(999,2);  // cell, BC  1=black, 2=specular
 	geom.add_tally(tallycell);
 	geom.update();
 	if(geom.check()){std::cout << "geometry failed check!\n"; return 1;}
@@ -369,7 +369,7 @@ int main(int argc, char* argv[]){
 	/////////////////////////////////////
 
 	hist.set_run_type("criticality");
-	hist.set_run_param(40,20);  //run, skip
+	hist.set_run_param(40,20);  //active, skip
 	hist.set_filename(filename);
 	hist.plot_geom("cell");  // **MUST** be called after init.
 	hist.run();

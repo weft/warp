@@ -1857,9 +1857,6 @@ void whistory::reset_cycle(float keff_cycle){
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
 
-	//try to recopy xs
-	
-
 	//pop them in!  should be the right size now due to keff rebasing  
 	pop_fission( NUM_THREADS, N, d_xsdata, d_particles, d_scanned , d_fissile_points, d_fissile_energy);
 	check_cuda(cudaPeekAtLastError());
@@ -1867,12 +1864,6 @@ void whistory::reset_cycle(float keff_cycle){
 	// sync
 	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaDeviceSynchronize());
-
-	//cudaMemcpy(h_particles.space, dh_particles.space, Ndataset*sizeof(spatial_data), cudaMemcpyDeviceToHost);
-	//cudaMemcpy(h_particles.E,     dh_particles.E,     Ndataset*sizeof(float),        cudaMemcpyDeviceToHost);
-	//for(int g=0;g<10;g++){
-	//	printf("%7d E = %6.4E xyz % 6.4E % 6.4E % 6.4E\n",g,h_particles.E[g],h_particles.space[g].x,h_particles.space[g].y,h_particles.space[g].z);
-	//}
 
  	// rest run arrays
  	check_cuda(cudaMemcpy( dh_particles.space,		d_fissile_points,	Ndataset*sizeof(spatial_data),	cudaMemcpyDeviceToDevice ));
@@ -1973,14 +1964,6 @@ void whistory::run(){
 		printf("\e[1;32m--- Running in\e[m \e[1;31m%s\e[m \e[1;32msource mode --- \e[m \n",runtype.c_str());
 		printf("\e[1;32m--- Skipping %u cycles, Running %u ACTIVE CYCLES, %u histories each--- \e[m \n",n_skip,n_cycles,N);
 	}
-
-	// make sure fissile_points file is cleared
-	//if(dump_flag>=3){          // level 3 includes fissile points
-	//	fiss_name=filename;
-	//	fiss_name.append(".fission_points.png");
-	//	FILE* ffile = fopen(fiss_name.c_str(),"w");
-	//	fclose(ffile);
-	//}
 
 	// open file for run stats
 	if(dump_flag>=2){         // level 2 includes stats files
@@ -2424,91 +2407,6 @@ void whistory::set_acceration(std::string accel_in){
 float whistory::get_time(){
 
 	return ((float)clock())/((float)CLOCKS_PER_SEC);
-
-}
-void whistory::write_histories(unsigned iteration){
-
-//	//allocate
-//	unsigned*  done2;	
-//	unsigned*  cellnum2;
-//	unsigned*  matnum2;	
-//	unsigned*  isonum2;	
-//	unsigned*  yield2;
-//	unsigned*  rxn2;
-//	unsigned*  dex2;
-//	spatial_data* space2;
-//	float* E2;
-//	done2 		= new unsigned [N];
-//	cellnum2	= new unsigned [N];
-//	matnum2		= new unsigned [N];
-//	isonum2		= new unsigned [N];
-//	yield2 		= new unsigned [N];
-//	rxn2		= new unsigned [N];	
-//	dex2 		= new unsigned [N];
-//	space2 		= new spatial_data [N];
-//	E2 			= new float [N];
-//
-//	// print actions
-//	std::string histfile_name = "history_file";
-//	char numstr[5];
-//	sprintf(numstr,"%u",iteration);
-//	histfile_name += numstr;
-//	printf("Writing to \"%s\"\n",histfile_name.c_str());
-//
-//	// open file, appending to a new file.
-//	FILE* history_file = fopen(histfile_name.c_str(),"w");
-//
-//	// write iteration delimiter
-//	//fprintf(history_file,"==== ITERATION %u ====\n",iteration);
-//
-//	// copy gemetrical (positions / directions)
-//	cudaMemcpy(space2,d_space,N*sizeof(spatial_data),cudaMemcpyDeviceToHost);
-//
-//	// copy energies
-//	cudaMemcpy(E2,d_E,N*sizeof(float),cudaMemcpyDeviceToHost);
-//
-//	// copy cell numbeer
-//	cudaMemcpy(cellnum2,d_cellnum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-//
-//	// copy material numbers
-//	cudaMemcpy(matnum2,d_matnum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-//
-//	// copy done flags
-//	cudaMemcpy(done2,d_done,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-//
-//	// copy isotope numbers
-//	cudaMemcpy(isonum2,d_isonum,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-//
-//	// copy yields
-//	cudaMemcpy(yield2,d_yield,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-//
-//	// copy reaction numbers
-//	cudaMemcpy(rxn2,d_rxn,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-//
-//	// copy index numbers
-//	cudaMemcpy(dex2,d_index,N*sizeof(unsigned),cudaMemcpyDeviceToHost);
-//
-//	// sync device before write and return
-//	cudaDeviceSynchronize();
-//
-//	// write history data to file
-//	fprintf(history_file,"a=zeros(%u,7)\n",N);
-//	for(unsigned k=0;k<N;k++){
-//		//fprintf(history_file,"tid %u (x,y,z) %8.6E %8.6E %8.6E (x,y,z)-hat %8.6E %8.6E %8.6E surf_dist %8.6E macro_t %8.6E enforce_BC %u E %8.6E cellnum %u matnum %u isonum %u rxn %u done %u yield %u\n",k,space2[k].x,space2[k].y,space2[k].z,space2[k].xhat,space2[k].yhat,space2[k].zhat,space2[k].surf_dist,space2[k].macro_t,space2[k].enforce_BC,E2[k],cellnum2[k],matnum2[k],isonum2[k],rxn2[k],done2[k],yield2[k]);
-//		fprintf(history_file,"a(%u,1:7)=[%8.6E,%8.6E,%8.6E,%8.6E,%u,%u,%u];\n",k+1,space2[k].x,space2[k].y,space2[k].z,E2[k],rxn2[k],yield2[k],dex2[k]);
-//	}
-// 	fclose(history_file);
-//
-// 	//deallocate so can be alloaed again next time
-// 	delete done2 	;
-//	delete cellnum2	;
-//	delete matnum2	;
-//	delete isonum2	;
-//	delete yield2 	;
-//	delete rxn2		;
-//	delete space2 	;
-//	delete E2 		;
-//	delete dex2		;
 
 }
 void whistory::set_print_level(unsigned level){

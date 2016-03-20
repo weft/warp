@@ -27,7 +27,7 @@
 \title{WARP User's Guide}
 \author{Ryan M. Bergmann \thanks{ryanmbergmann@gmail.com} \\
 Kelly L. Rowland \thanks{krowland@berkeley.edu}\\
-v 1.0,  Nov 2015}
+v 1.0,  April 2016}
 
 \date{}
 \emergencystretch1em  %
@@ -58,7 +58,7 @@ This user's guide is meant to introduce a user to the way in which WARP executes
 functionality can be used to solve neutron transport problems.  For more detailed information about the 
 algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous 
 energy Monte Carlo neutron transport in general 3D geometries on GPUs'' in Annals of Nuclear Engineering 
-(doi:10.1016/j.anucene.2014.10.039).
+(doi:10.1016/j.anucene.2014.10.039) and ``Relative Performance and Accuracy of Neutron Criticality Calculations Performed by WARP- A Framework for Continuous Energy Monte Carlo Neutron Transport in General 3D Geometries on GPUs'' in Annals of Nuclear Engineering (doi: XXX).
 
 \vfill
 
@@ -79,7 +79,7 @@ execute efficiently on a single GPU.
 Typical CPU codes track a single neutron life, from cradle to grave, marking its interactions along the 
 way. WARP does things a little differently.  WARP applies the main transport loop to an entire (preferably
 large) set of neutrons instead of a single neutron.  The parallelism in WARP comes from acting on many 
-pieces of data concurrently instead of executing many tasks concurrently.
+similar pieces of data concurrently instead of executing many, possibly dissimilar tasks concurrently.
 
 \begin{figure}[h!] 
   \centering
@@ -132,12 +132,6 @@ parallel sort, can, and reduction.
 CUDPP can be downloaded at \url{http://cudpp.github.io/} with documentation available at 
 \url{http://cudpp.github.io/cudpp/2.2/}.
 
-\item[PyNE]\index{PyNE}$\ge$ 0.4 \\
-PyNE (``Python for Nuclear Engineering") is an open-source toolkit for calculations related to nuclear
-engineering.
-
-Installation instructions and options can be found at \url{http://pyne.io/install/index.html}.
-
 \item[SWIG]\index{SWIG}$\ge$ 1.3.40 \\
 SWIG is an interface compiler that connects programs written in C/C\texttt{++} with scripting languages
 like Python; it is used for the WARP Python interface.
@@ -159,15 +153,20 @@ by many Monte Carlo codes; the data includes cross sections as well as angular a
 used in neutron scattering and fission.
 
 ACE formatted files can be downloaded at \url{http://www.nndc.bnl.gov/endf/b7.1/acefiles.html} and are 
-also included with distributions of the MCNP and Serpent softwares.
- 
+also included with releases of the MCNP and Serpent from RSICC (rsicc url).
+
 \end{description}
+
+PyNE (``Python for Nuclear Engineering", \url{http://pyne.io/}) is an open-source toolkit for calculations related to nuclear
+engineering.  WARP has taken the ``ace'' module of PyNE and modified it to be a stand-alone Python module independent of of PyNE.  Legally, this is acceptable since WARP is released as open-source software under the same BSD license under which PyNE is released.
 
 \section{Building WARP}
 
-WARP is compiled with CMake. To build WARP, follow these steps:
+WARP can be compiled with CMake. To build WARP, follow these steps:
 
 \begin{enumerate}
+\item{Install git if it isn't already installed on your system (currently only *nix distributions and OSX are supported)}
+\item{Download WARP from GitHub.  On the command line: \texttt{git clone blah} }
 \item{Create an empty directory outside of the WARP source code folder and navigate into that directory.}
 \item{In the terminal, enter \texttt{ccmake /path/to/warp}, where the path is the absolute or relative 
 path to the WARP source code directory.}
@@ -176,47 +175,43 @@ and necessary for your system.}
 \item{Configure again after setting the above directories, and then generate code.}
 \item{In the terminal, enter the command \texttt{make}. This will build the WARP executables and test 
 suite.}
+\tem{The warp library (_warp.so) must be in the default library search path, and the ace library (ace.so) must be in the Python search path.  These can be set via ``export PYTHONPATH+=:/path/to/warp/BUILD/'' and ``export LD_LIBRARY_PATH+=/path/to/warp/BUILD'' (use ``DYLD_LIBRARY_PATH'' if on OSX) if using a bash shell.  It is recommended that these commands are added to your bash initialization file (~/.bashrc in Linux and ~/.bash_profile in OSX)}
 \end{enumerate}
 
 \section{The Library Interface}
 
 WARP has two interfaces available for use -- one in C\texttt{++} directly and one in Python.  The Python 
-interface is a wrapper for the C\texttt{++} library, and basically gives access to identical methods.  For
+interface is a wrapper for the C\texttt{++} library, and basically mirrors the C\texttt{++} objects and gives access to their methods.  For
 a complete list and detailed descriptions of all the library classes, methods, and data structures, please
 refer to the ``WARP\_API\_Reference.pdf'' which has been automatically generated from the source code with
-Doxygen and is included here.
+Doxygen and is included as a compiled document with the source code.
 
 \subsection{C\texttt{++}}
 
-If using the C\texttt{++} interface, the user simply needs to compile WARP (as instructed above) and 
-specify which geometry input to use at runtime. The syntax for running WARP with the C\texttt{++} 
-interface is
+If using the C\texttt{++} interface, the user simply needs to compile the WARP library (as instructed above) and 
+write a ``main'' file that sets up the problem parameters and directs execution at runtime.  There are two example main files can be found in the main source directory. The main file used for the problems described in "" are in ``main.cpp'', and the problems described in the ``'' paper are in benchmarks.cpp.  These main files are both compiled by default, and can be executed by running either of the following commands:
 
 \begin{verbatim}
-./warp <geometry> <histories>
+./dissertation <case> <histories>
+./benchmarks <case> <card>
 \end{verbatim}
 
-where ``warp" is the executable that was built with CMake and the current geometry options are ``godiva",
-``homfuel", ``pincell", and ``assembly". In addition to these, the user can construct new geometry
-configurations and then recompile WARP to run these new configurations using the C\texttt{++} interface. 
+where ``dissertation" or ``benchmarks'' are the executables that were built with CMake.  For the ``dissertation'' problems, the current case options are ``godiva",
+``homfuel", ``pincell", ``test'', and ``assembly".  The ``histories'' parameter for this executable sets the number of histories per cycle. For the ``benchmarks'' problems, the current case options are ``jezebel", ``homfuel", ``pincell", ``flibe'', ``sodiumpin'', and ``assembly-lw".   The ``card'' parameter refers to the NVIDIA card that was used during the benchmarking and sets the device number and number of histories run per cycle.  For both of these executables, 20 cycles are discarded and 40 active cycles are run.
 
-Program specifications are done in the ``main.cpp" file. After the instantiation of a geometry object, 
-datapath ending in ``*.xsdir" must be designated as follows:
+These executables are included to be examples and to allow users to re-create the published benchmark problems if desired.  New geometry and material compositions can be made in any combination, but new configurations require the ``main'' object to be recompiled and linked to the WARP library, resulting in a new executable.  As in any C\texttt{++}  application (or any application?), the inputs taken by the main function can be changed according to the user's desires, as can what the main function does.  A series of useful print statements could be added, or even an input-file reader could be implemented to translate MCNP-like geometries into WARP geometries (an ambitions, but extremely useful project)!
+
+A quick summary of the main program structure is as follows.  After the instantiation of a wgeometry object, datapath ending in ``*.xsdir" must be designated as follows:
 
 \begin{verbatim}
+wgeometry geom;
 geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
 \end{verbatim}
 
 Next, material and geometry information are specified. The material specification works as follows. The 
 number of isotopes in the problem must be specified first, then the particular isotope(s) and their 
 corresponding material fraction(s) assigned. Following that, a material density is specified and the 
-material and its information are ``added" to the geometry object.
-
-Information for tallying (the cell number in which to tally and the filename to which the tally data is written) is then defined.
-
-Lastly, the geometry parameters are specified. The primitive type (cube, cylinder, hexagonal prism, or sphere) is noted and the number of the material with which the primitive will be filled is defined. The 
-``mins", ``maxs", and ``origin" vectors are filled with the primitive's Cartesian minima, maxima, and origin, respectively (in units of centimeters). The primitive is then added to the geometry object and a corresponding transform is also added to the geometry object. The outer cell is set and the boundary
-condition (``1" for vacuum or ``2" for reflecting) is written.
+material and its information are ``added" to the geometry object as a set of equally-sized vectors. Information for tallying (the cell number in which to tally and the filename to which the tally data is written) is then defined.  Lastly, the geometry parameters are specified. The primitive type (cube, cylinder, hexagonal prism, or sphere) is noted and the number of the material with which the primitive will be filled is defined. The ``mins", ``maxs", and ``origin" vectors are filled with the primitive's Cartesian minima, maxima, and origin, respectively (in units of centimeters). The primitive is then added to the geometry object and a corresponding transform is also added to the geometry object. The outer cell is set and the boundary condition (``1" for vacuum or ``2" for reflecting) is written.
 
 An example of geometry and material specification for a bare plutonium sphere is shown below.
 
@@ -272,26 +267,26 @@ Example syntax for setting up the history and cycle information is shown below. 
 
 \begin{verbatim}
 	whistory hist ( N , geom );
-	hist.set_print_level(2);
+	hist.set_print_level(4);
+	hist.set_dump_level(1);
 	hist.set_device(0);
 	hist.init();
 	hist.print_xs_data();
 	hist.print_materials_table();
 
-	// converge fission source and run //
 	hist.set_run_type("criticality");
-	hist.set_tally_cell(tallycell);
-	hist.set_run_param(40,20);  //run, skip
+	hist.set_run_param(40,20);  //active, skip
 	hist.set_filename(filename);
+	hist.plot_geom("cell"); 
 	hist.run();
-	hist.write_tally(0);
+	hist.write_tally();
 \end{verbatim}
 
 \subsection{Python}
 
 The Python interface is very similar to the C\texttt{++} interface; the syntax differs only slightly.
-Additionally, if the Python interface is used, it is easier for the user to use geometry and material 
-configurations other than the pre-programmed ones listed above.
+Additionally, if the Python interface is used, it is easier for the user to change geometry and material 
+configurations since the main file does not need to be recompiled and linked.
 
 An example Python run file is shown below. The geometry and material configuration is the same as the
 bare plutonium sphere example discussed above in the C\texttt{++} interface. Similarly, the code is set
@@ -369,9 +364,9 @@ hist.run()
 hist.write_tally(0)
 \end{verbatim}
 
-\section{WARP Input}
+\section{WARP Geometry Input}
 
-This section describes input details and syntax relevant to creating custom configurations to run with 
+This section describes input details and syntax relevant to creating custom geometry configurations to run with 
 WARP. Configurations may contain an unlimited number of z-aligned shapes \textbf{which may not intersect
 or share any faces}. The input numbers corresponding to various shapes are shown in Table \ref{shapenum}.
 
