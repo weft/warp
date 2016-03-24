@@ -355,7 +355,12 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		printf("continuum scatter mis-sampled!  tid_in %d tid %d E0 %6.4E sampled_E %6.4E dist len %u dist_index %u rn %6.4E var0 %6.4E var1 %6.4E cdf0 %6.4E cdf1 %6.4E pdf0 %6.4E pdf1 %6.4E... \n",tid_in,tid,E0,sampled_E,this_edist.len,dist_index[0],rn2,this_edist.var[dist_index[0]],this_edist.var[dist_index[0]+1],this_edist.cdf[dist_index[0]],this_edist.cdf[dist_index[0]+1],this_edist.pdf[dist_index[0]],this_edist.pdf[dist_index[0]+1]);
 	}
 	if (!isfinite(mu) | mu < -1.0 | mu > 1.0){
-		printf("continuum scatter mis-sampled tid_in %d tid %d this_E %6.4E law %u mu %6.4E dist len %u dist_index %u... \n",tid_in,tid,this_e,this_law,mu,this_sdist.len,dist_index[0]);
+		if(this_law==61){
+			printf("continuum scatter mis-sampled tid_in %d tid %d this_E %6.4E law %u mu %6.4E dist len %u this_len %u ang_position %u dist_index %u... \n",tid_in,tid,this_E,this_law,mu,this_sdist.len,this_len,ang_position,dist_index[0]);
+		}
+		else{
+			printf("continuum scatter mis-sampled tid_in %d tid %d this_E %6.4E law %u mu %6.4E dist len %u dist_index %u... \n",tid_in,tid,this_E,this_law,mu,this_sdist.len,dist_index[0]);
+		}
 	}
 
 
