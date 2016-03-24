@@ -128,6 +128,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	wfloat3 	v_n_cm, v_t_cm, v_n_lf, v_t_lf, v_cm, hats_new, hats_target, rotation_hat;
 	float 		mu, E0, A, R , rn1, rn2;
 	unsigned 	dist_index[1];    // must be declared this way in order to write to passed pointer, why??
+	unsigned	ang_position, this_len;
 
 	// ensure normalization
 	hats_old = hats_old / hats_old.norm2();
@@ -332,8 +333,8 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 									edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
 
 		// get position of data in vector and vector length
-		unsigned ang_position	=	(unsigned) this_sdist.pdf[dist_index[0]];
-		unsigned this_len		=	(unsigned) this_sdist.pdf[dist_index[0]+1] - (unsigned) this_sdist.pdf[dist_index[0]];
+		ang_position	=	(unsigned) this_sdist.pdf[dist_index[0]];
+		this_len		=	(unsigned) this_sdist.pdf[dist_index[0]+1] - (unsigned) this_sdist.pdf[dist_index[0]];
 
 		// sample mu from corresponding distribution
 		mu = sample_continuous_tablular(	this_len , 

@@ -1,4 +1,9 @@
-import ace
+try:
+	import ace
+	ace_available = True
+except ImportError:
+	from pyne import ace
+	ace_available = False
 import numpy
 import sys
 import glob
