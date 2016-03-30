@@ -336,6 +336,11 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		ang_position	=	(unsigned) this_sdist.pdf[dist_index[0]];
 		this_len		=	(unsigned) this_sdist.pdf[dist_index[0]+1] - (unsigned) this_sdist.pdf[dist_index[0]];
 
+		// check var to make sure
+		if (this_sdist.cdf[ ang_position ] != -1){
+			printf("First var entry is %6.4E (not -1)!\n",this_sdist.cdf[ ang_position ]);
+		}
+
 		if (this_len == 3){
 			// assume isotropic
 			mu  = 2.0*get_rand(&rn)-1.0;
