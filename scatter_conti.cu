@@ -332,9 +332,23 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 									edist_lower.var[0], edist_lower.var[edist_lower.len-1], 
 									edist_upper.var[0], edist_upper.var[edist_upper.len-1] );
 
+		// check dist_index
+		if (this_edist.intt==1 & dist_index[0]>=this_edist.len){
+			printf("dist_index %u >= %u this_edist.len for INTT 1!!\n",dist_index[0],this_edist.len);
+		}
+		if (this_edist.intt==2 & dist_index[0]>=this_edist.len-1){
+			printf("dist_index %u >= %u this_edist.len-1 for INTT 2!!\n",dist_index[0],this_edist.len-1);
+		}
+
 		// get position of data in vector and vector length
 		ang_position	=	(unsigned) this_sdist.pdf[dist_index[0]];
 		this_len		=	(unsigned) this_sdist.pdf[dist_index[0]+1] - (unsigned) this_sdist.pdf[dist_index[0]];
+
+		// check lengths?
+		//if(ang_position >= this_sdist.pdf[this_edist.len]){
+		//}
+		//if(){
+		//}
 
 		// check var to make sure
 		if (this_sdist.cdf[ ang_position ] != -1.0){

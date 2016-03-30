@@ -647,7 +647,9 @@ class cross_section_data:
 				upper_cdf	= []
 				lower_pdf	= numpy.array([0]) # pdf is lengths
 				upper_pdf	= numpy.array([0]) 
-				# do lower dist first
+				# check
+				assert(len(rxn.energy_dist.a_dist_mu_out[lower_index]) == len(rxn.energy_dist.energy_out[lower_index]))
+				# do lower dist 
 				for i in range(0,len(rxn.energy_dist.a_dist_mu_out[lower_index])):  # can be replaced with a flatten command
 					lower_cdf 	= numpy.hstack((lower_cdf,rxn.energy_dist.a_dist_mu_out[lower_index][i]))  # mux data, energy first
 					lower_pdf 	= numpy.hstack((lower_pdf,len(lower_cdf)))  # compute muxed indicies
@@ -655,7 +657,7 @@ class cross_section_data:
 					lower_cdf 	= numpy.hstack((lower_cdf,rxn.energy_dist.a_dist_cdf[lower_index][i]))  # mux data, CDF second
 				for i in range(0,len(rxn.energy_dist.a_dist_mu_out[lower_index])):
 					lower_cdf 	= numpy.hstack((lower_cdf,rxn.energy_dist.a_dist_pdf[lower_index][i]))  # mux data, PDF third
-				# do upper dist first
+				# do upper dist 
 				for i in range(0,len(rxn.energy_dist.a_dist_mu_out[upper_index])):
 					upper_cdf 	= numpy.hstack((upper_cdf,rxn.energy_dist.a_dist_mu_out[upper_index][i]))  # mux data, energy first
 					upper_pdf 	= numpy.hstack((upper_pdf,len(upper_cdf)))  # compute muxed indicies

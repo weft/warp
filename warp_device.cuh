@@ -333,48 +333,49 @@ Samples a law 61 probability distribution with historgram or lin-lin interpolati
 */
 	unsigned	index	= 0;
 	float 		out 	= 0.0;
-
-	// scan the CDF,
-	for( index=0; index<length-1; index++ ){
-		if ( rn <= cdf[index+1] ){
-			break;
-		}
-	}
 	
 	// calculate sampled value
 	if(intt==1){
+		// scan the CDF
+		for( index=0; index<length; index++ ){
+			if ( rn <= cdf[index+1] ){
+				break;
+			}
+		}
 		if( index == length ){
 			printf("SAMPLED GAP IN TABULAR61: intt %u len %u rn %12.10E\n",intt,length,rn);
 			index--;
 		}
 		// histogram interpolation
 		out = interpolate_continuous_tablular_histogram( rn, var[index], cdf[index], pdf[index] );
+		// write output index
+		index_out[0] = index;
 	}
 	else if(intt==2){
+		// scan the CDF
+		for( index=0; index<length-1; index++ ){
+			if ( rn <= cdf[index+1] ){
+				break;
+			}
+		}
 		if( index == length-1 ){
 			printf("SAMPLED GAP IN TABULAR61: intt %u len %u rn %12.10E\n",intt,length,rn);
 			index--;
 		}
 		// lin-lin interpolation
 		out = interpolate_continuous_tablular_linlin( rn, var[index], var[index+1], cdf[index], cdf[index+1], pdf[index], pdf[index+1] );
-	}
-	else{
-		// return invalid mu, like -2
-		printf("INTT=%u NOT HANDLED!\n",intt);
-		out = -2;		
-	}
-
-	// write index to passed pointer according to intt
-	if ( intt == 1){
-		index_out[0] = index;
-	}
-	else {  //( intt == 2 ), return closer index
+		// write output index
 		if( rn - cdf[index] < cdf[index+1] - rn){
 			index_out[0] = index;
 		}
 		else{
 			index_out[0] = index+1;
 		}
+	}
+	else{
+		// return invalid mu, like -2
+		printf("INTT=%u NOT HANDLED!\n",intt);
+		out = -2;		
 	}
 
 	// return sampled value
