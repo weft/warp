@@ -336,13 +336,19 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		ang_position	=	(unsigned) this_sdist.pdf[dist_index[0]];
 		this_len		=	(unsigned) this_sdist.pdf[dist_index[0]+1] - (unsigned) this_sdist.pdf[dist_index[0]];
 
-		// sample mu from corresponding distribution
-		mu = sample_continuous_tablular(	this_len , 
-											this_sdist.intt , 
-											get_rand(&rn) , 
-											&this_sdist.cdf[ ang_position                    ] , 
-											&this_sdist.cdf[ ang_position +   this_sdist.len ] , 
-											&this_sdist.cdf[ ang_position + 2*this_sdist.len ] );
+		if (this_len == 3){
+			// assume isotropic
+			mu  = 2.0*get_rand(&rn)-1.0;
+		}
+		else{
+			// sample mu from corresponding distribution
+			mu = sample_continuous_tablular(	this_len , 
+												this_sdist.intt , 
+												get_rand(&rn) , 
+												&this_sdist.cdf[ ang_position                    ] , 
+												&this_sdist.cdf[ ang_position +   this_sdist.len ] , 
+												&this_sdist.cdf[ ang_position + 2*this_sdist.len ] );
+		}
 
 	}
 	else{
