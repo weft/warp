@@ -337,7 +337,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 		this_len		=	(unsigned) this_sdist.pdf[dist_index[0]+1] - (unsigned) this_sdist.pdf[dist_index[0]];
 
 		// check var to make sure
-		if (this_sdist.cdf[ ang_position ] != -1){
+		if (this_sdist.cdf[ ang_position ] != -1.0){
 			printf("First var entry is %6.4E (not -1)!\n",this_sdist.cdf[ ang_position ]);
 		}
 
