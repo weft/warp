@@ -98,15 +98,32 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	// pick upper or lower via stochastic mixing
 	dist_data	this_edist, this_sdist;
 	dist_data	sdist_lower, sdist_upper, edist_lower, edist_upper;
-	if(dist_scatter!=0x0){
+
+	// check E data pointers
+	if(dist_energy == 0x0){
+		printf("scatter_conti: null pointer dist_energy, tid %u\n",tid);
+		return;
+	}
+	else{
+		edist_lower	=	dist_energy[ this_dex].lower[0];
+		edist_upper	=	dist_energy[ this_dex].upper[0];
+	}
+	// check S data pointers
+	if(dist_scatter == 0x0){
+		printf("scatter_conti: null pointer dist_scatter, tid %u\n",tid);
+		return;
+	}
+	else{
 		sdist_lower	=	dist_scatter[this_dex].lower[0];
 		sdist_upper	=	dist_scatter[this_dex].upper[0];
 	}
-	else{
-		printf("null scatter pointer in conti\n");
-	}
-	edist_lower	=	dist_energy[ this_dex].lower[0];
-	edist_upper	=	dist_energy[ this_dex].upper[0];
+
+	// check second level pointers
+	if(dist_scatter[this_dex].lower == 0x0){printf("scatter_conti: null pointer dist_scatter.lower! this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
+	if(dist_scatter[this_dex].upper == 0x0){printf("scatter_conti: null pointer dist_scatter.upper! this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
+	if(dist_energy[ this_dex].upper == 0x0){printf("scatter_conti: null pointer dist_energy.upper!  this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
+	if(dist_energy[ this_dex].lower == 0x0){printf("scatter_conti: null pointer dist_energy.lower!  this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
+
 	unsigned	this_law;
 	float		f			=	(this_E - edist_lower.erg) / (edist_upper.erg - edist_lower.erg);
 	if( get_rand(&rn)>f ){
