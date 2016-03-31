@@ -119,10 +119,10 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	}
 
 	// check second level pointers
-	if(dist_scatter[this_dex].lower == 0x0){printf("scatter_conti: null pointer dist_scatter.lower! this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
-	if(dist_scatter[this_dex].upper == 0x0){printf("scatter_conti: null pointer dist_scatter.upper! this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
-	if(dist_energy[ this_dex].upper == 0x0){printf("scatter_conti: null pointer dist_energy.upper!  this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
-	if(dist_energy[ this_dex].lower == 0x0){printf("scatter_conti: null pointer dist_energy.lower!  this_dex %u this_E %6.4E tope %u yield %u\n",this_dex,this_E,this_tope,this_yield); return;}
+	if(dist_scatter[this_dex].lower == 0x0){printf("scatter_conti: null pointer dist_scatter.lower! this_dex %u this_E %6.4E tope %u\n",this_dex,this_E,this_tope); return;}
+	if(dist_scatter[this_dex].upper == 0x0){printf("scatter_conti: null pointer dist_scatter.upper! this_dex %u this_E %6.4E tope %u\n",this_dex,this_E,this_tope); return;}
+	if(dist_energy[ this_dex].upper == 0x0){printf("scatter_conti: null pointer dist_energy.upper!  this_dex %u this_E %6.4E tope %u\n",this_dex,this_E,this_tope); return;}
+	if(dist_energy[ this_dex].lower == 0x0){printf("scatter_conti: null pointer dist_energy.lower!  this_dex %u this_E %6.4E tope %u\n",this_dex,this_E,this_tope); return;}
 
 	unsigned	this_law;
 	float		f			=	(this_E - edist_lower.erg) / (edist_upper.erg - edist_lower.erg);
@@ -145,6 +145,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 	wfloat3 	v_n_cm, v_t_cm, v_n_lf, v_t_lf, v_cm, hats_new, hats_target, rotation_hat;
 	float 		mu, E0, A, R , rn1, rn2;
 	unsigned 	dist_index[1];    // must be declared this way in order to write to passed pointer, why??
+	dist_index[0] = 999999999;
 	unsigned	ang_position, this_len;
 
 	// ensure normalization
