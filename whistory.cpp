@@ -1585,6 +1585,8 @@ void whistory::copy_energy_data(){
 	check_cuda(cudaMemcpy( dh_xsdata.dist_energy,dh_dist_energy,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
 	check_cuda(cudaPeekAtLastError());
 
+	printf("pointer value (upper,lower) at index=%u: (%p,%p)\n",28961291,dh_xsdata.dist_energy[28961291].upper,dh_xsdata.dist_energy[28961291].lower);
+
 	// free host array containing device pointers, not needed anymore
 	delete dh_dist_energy;
 
