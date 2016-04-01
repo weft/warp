@@ -826,7 +826,7 @@ void whistory::copy_scatter_data(){
 	dist_data		 h_lower_dist,  h_upper_dist;
 	dist_data		dh_lower_dist, dh_upper_dist;
 	dist_data		*d_lower_dist, *d_upper_dist;
-	dist_container	*dh_dist_scatter;
+	//dist_container	*dh_dist_scatter;
 
 	// compute some sizes
 	unsigned total_rows = h_xsdata.energy_grid_len;
@@ -1349,7 +1349,7 @@ void whistory::copy_energy_data(){
 	dist_data		 h_lower_dist,  h_upper_dist;
 	dist_data		dh_lower_dist, dh_upper_dist;
 	dist_data		*d_lower_dist, *d_upper_dist;
-	dist_container	*dh_dist_energy;
+	//dist_container	*dh_dist_energy;
 
 	// compute some sizes
 	unsigned total_rows = h_xsdata.energy_grid_len;
