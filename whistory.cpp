@@ -1625,12 +1625,6 @@ void whistory::init_cross_sections(){
 	copy_energy_data();
 	check_cuda(cudaPeekAtLastError());
 
-	// recopy???
-	unsigned total_rows = h_xsdata.energy_grid_len;
-	unsigned total_cols = h_xsdata.total_reaction_channels + h_xsdata.n_isotopes;
-	check_cuda(cudaMemcpy( dh_xsdata.dist_energy, dh_dist_energy, total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
-	check_cuda(cudaMemcpy( dh_xsdata.dist_scatter,dh_dist_scatter,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
-
 	// intialization complete, copy host structure (containing device pointers) to device structure
 	check_cuda(cudaMemcpy( d_xsdata,	&dh_xsdata,	1*sizeof(cross_section_data),	cudaMemcpyHostToDevice));
 	check_cuda(cudaPeekAtLastError());
@@ -1928,6 +1922,12 @@ void whistory::run(){
 	std::string runtype = "UNDEFINED";
 	if     (RUN_FLAG==0){runtype="fixed";}
 	else if(RUN_FLAG==1){runtype="criticality";}
+
+	// recopy???
+	unsigned total_rows = h_xsdata.energy_grid_len;
+	unsigned total_cols = h_xsdata.total_reaction_channels + h_xsdata.n_isotopes;
+	check_cuda(cudaMemcpy( dh_xsdata.dist_energy, dh_dist_energy, total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
+	check_cuda(cudaMemcpy( dh_xsdata.dist_scatter,dh_dist_scatter,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
 
 	double keff = 0.0;
 	float keff_cycle = 0.0;
