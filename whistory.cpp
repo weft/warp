@@ -1928,7 +1928,9 @@ void whistory::run(){
 	unsigned total_cols = h_xsdata.total_reaction_channels + h_xsdata.n_isotopes;
 	check_cuda(cudaMemcpy( dh_xsdata.dist_energy, dh_dist_energy, total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
 	check_cuda(cudaMemcpy( dh_xsdata.dist_scatter,dh_dist_scatter,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
+	check_cuda(cudaThreadSynchronize());
 
+	//
 	double keff = 0.0;
 	float keff_cycle = 0.0;
 	float it = 0.0;
