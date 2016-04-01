@@ -1578,6 +1578,8 @@ void whistory::copy_energy_data(){
 		}
 	}
 
+	printf("pointer value (upper,lower) at index=%u: (%p,%p)\n",28961291,dh_dist_energy[28961291].upper,dh_dist_energy[28961291].lower);
+
 	// copy host array containing device pointers to device array
 	check_cuda(cudaMalloc(&dh_xsdata.dist_energy,               total_rows*total_cols*sizeof(dist_container)));
 	check_cuda(cudaMemcpy( dh_xsdata.dist_energy,dh_dist_energy,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
