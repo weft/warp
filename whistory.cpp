@@ -995,6 +995,7 @@ void whistory::copy_scatter_data(){
 					check_cuda(cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice));
 					check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_pdf_buff_bytes, cudaMemcpyHostToDevice));
 					check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_cdf_buff_bytes, cudaMemcpyHostToDevice));
+					check_cuda(cudaThreadSynchronize());
 					check_cuda(cudaPeekAtLastError());
 
 				}
@@ -1045,11 +1046,13 @@ void whistory::copy_scatter_data(){
 				// allocate container
 				check_cuda(cudaMalloc(&d_lower_dist, 1*sizeof(dist_data)));
 				check_cuda(cudaMalloc(&d_upper_dist, 1*sizeof(dist_data)));
+				check_cuda(cudaThreadSynchronize());
 				check_cuda(cudaPeekAtLastError());
 	
 				// copy device pointers to device container
 				check_cuda(cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaThreadSynchronize());
 				check_cuda(cudaPeekAtLastError());
 
 				// replicate pointers until next index
@@ -1143,6 +1146,7 @@ void whistory::copy_scatter_data(){
 				check_cuda(cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_pdf_buff_bytes, cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_cdf_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaThreadSynchronize());
 				check_cuda(cudaPeekAtLastError());
 
 				// copy vals in structure
@@ -1163,6 +1167,7 @@ void whistory::copy_scatter_data(){
 				// copy device pointers to device container
 				check_cuda(cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaThreadSynchronize());
 				check_cuda(cudaPeekAtLastError());
 
 				// replicate pointers until next index
@@ -1251,6 +1256,7 @@ void whistory::copy_scatter_data(){
 				check_cuda(cudaMalloc(&dh_upper_dist.var, upper_var_buff_bytes));
 				check_cuda(cudaMalloc(&dh_upper_dist.pdf, upper_var_buff_bytes));
 				check_cuda(cudaMalloc(&dh_upper_dist.cdf, upper_var_buff_bytes));
+				check_cuda(cudaThreadSynchronize());
 				check_cuda(cudaPeekAtLastError());
 
 				// copy data from python buffer to host pointer in array
@@ -1268,6 +1274,7 @@ void whistory::copy_scatter_data(){
 				check_cuda(cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaThreadSynchronize());
 				check_cuda(cudaPeekAtLastError());
 
 				// copy vals in structure
@@ -1283,11 +1290,13 @@ void whistory::copy_scatter_data(){
 				// allocate container
 				check_cuda(cudaMalloc(&d_lower_dist, 1*sizeof(dist_data)));
 				check_cuda(cudaMalloc(&d_upper_dist, 1*sizeof(dist_data)));
+				check_cuda(cudaThreadSynchronize());
 				check_cuda(cudaPeekAtLastError());
 
 				// copy device pointers to device container
 				check_cuda(cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaThreadSynchronize());
 				check_cuda(cudaPeekAtLastError());
 
 				// replicate pointers until next index
@@ -1316,6 +1325,7 @@ void whistory::copy_scatter_data(){
 	// copy host array containing device pointers to device array
 	check_cuda(cudaMalloc(&dh_xsdata.dist_scatter,                total_rows*total_cols*sizeof(dist_container)));
 	check_cuda(cudaMemcpy( dh_xsdata.dist_scatter,dh_dist_scatter,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
+	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaPeekAtLastError());
 
 	// free host array containing device pointers, not needed anymore
@@ -1538,6 +1548,7 @@ void whistory::copy_energy_data(){
 				check_cuda(cudaMemcpy(dh_upper_dist.var, h_upper_dist.var, upper_var_buff_bytes, cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(dh_upper_dist.pdf, h_upper_dist.pdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(dh_upper_dist.cdf, h_upper_dist.cdf, upper_var_buff_bytes, cudaMemcpyHostToDevice));
+				check_cuda(cudaThreadSynchronize());
 				check_cuda(cudaPeekAtLastError());
 
 				// copy vals in structure
@@ -1558,6 +1569,7 @@ void whistory::copy_energy_data(){
 				// copy device pointers to device container
 				check_cuda(cudaMemcpy(d_lower_dist, &dh_lower_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
 				check_cuda(cudaMemcpy(d_upper_dist, &dh_upper_dist, 1*sizeof(dist_data), cudaMemcpyHostToDevice));
+				check_cuda(cudaThreadSynchronize());
 				check_cuda(cudaPeekAtLastError());
 
 				// replicate pointers until next index
@@ -1581,6 +1593,7 @@ void whistory::copy_energy_data(){
 	// copy host array containing device pointers to device array
 	check_cuda(cudaMalloc(&dh_xsdata.dist_energy,               total_rows*total_cols*sizeof(dist_container)));
 	check_cuda(cudaMemcpy( dh_xsdata.dist_energy,dh_dist_energy,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
+	check_cuda(cudaThreadSynchronize());
 	check_cuda(cudaPeekAtLastError());
 
 	// free host array containing device pointers, not needed anymore
