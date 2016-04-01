@@ -44,8 +44,8 @@ __global__ void check_pointers_kernel(unsigned N, unsigned dex0, unsigned dex1, 
 	int tid = threadIdx.x+blockIdx.x*blockDim.x;
 	if (tid >= N){return;} 
 
-	printf("INDEX %u -> energy  pointer = %p -> lower %p upper %p",dex0+tid,dist_energy, dist_energy[ dex0+tid].upper,dist_energy[ dex0+tid].lower);
-	printf("INDEX %u -> scatter pointer = %p -> lower %p upper %p",dex0+tid,dist_scatter,dist_scatter[dex0+tid].upper,dist_scatter[dex0+tid].lower);
+	printf("INDEX %u -> energy  pointer = %p -> lower %p upper %p\n",dex0+tid,dist_energy, dist_energy[ dex0+tid].upper,dist_energy[ dex0+tid].lower);
+	printf("INDEX %u -> scatter pointer = %p -> lower %p upper %p\n",dex0+tid,dist_scatter,dist_scatter[dex0+tid].upper,dist_scatter[dex0+tid].lower);
 
 }
 

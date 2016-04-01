@@ -47,6 +47,8 @@ class whistory {
 	tally_data*					d_tally;				/**< device tally data structure containing device pointers*/
 	tally_data*					dh_tally;				/**< host tally data structure containing device pointers*/
 	tally_data_host*			h_tally;				/**< host tally data structure containing host pointers (has long values for accumulation)*/
+	dist_container*				dh_dist_energy;
+	dist_container*				dh_dist_scatter;
 
 	// mapped arrays
 	unsigned					n_edges;				/**< mapped array of number of edges */

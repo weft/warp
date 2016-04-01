@@ -1319,7 +1319,7 @@ void whistory::copy_scatter_data(){
 	check_cuda(cudaPeekAtLastError());
 
 	// free host array containing device pointers, not needed anymore
-	delete dh_dist_scatter;
+	//delete dh_dist_scatter;
 
 }
 void whistory::copy_energy_data(){
@@ -1578,15 +1578,13 @@ void whistory::copy_energy_data(){
 		}
 	}
 
-	printf("pointer value (upper,lower) at index=%u: (%p,%p)\n",28961291,dh_dist_energy[28961291].upper,dh_dist_energy[28961291].lower);
-
 	// copy host array containing device pointers to device array
 	check_cuda(cudaMalloc(&dh_xsdata.dist_energy,               total_rows*total_cols*sizeof(dist_container)));
 	check_cuda(cudaMemcpy( dh_xsdata.dist_energy,dh_dist_energy,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
 	check_cuda(cudaPeekAtLastError());
 
 	// free host array containing device pointers, not needed anymore
-	delete dh_dist_energy;
+	//delete dh_dist_energy;
 
 }
 void whistory::init_cross_sections(){
@@ -1627,12 +1625,20 @@ void whistory::init_cross_sections(){
 	copy_energy_data();
 	check_cuda(cudaPeekAtLastError());
 
+	// recopy???
+	unsigned total_rows = h_xsdata.energy_grid_len;
+	unsigned total_cols = h_xsdata.total_reaction_channels + h_xsdata.n_isotopes;
+	check_cuda(cudaMemcpy( dh_xsdata.dist_energy, dh_dist_energy, total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
+	check_cuda(cudaMemcpy( dh_xsdata.dist_scatter,dh_dist_scatter,total_rows*total_cols*sizeof(dist_container),cudaMemcpyHostToDevice));
+
 	// intialization complete, copy host structure (containing device pointers) to device structure
 	check_cuda(cudaMemcpy( d_xsdata,	&dh_xsdata,	1*sizeof(cross_section_data),	cudaMemcpyHostToDevice));
 	check_cuda(cudaPeekAtLastError());
 
 	// check a particular pointer range
 	check_pointers(NUM_THREADS,28961291,28961291,d_xsdata);
+	check_pointers(NUM_THREADS,28959342,28959342,d_xsdata);
+	check_pointers(NUM_THREADS,28960891,28960891,d_xsdata);
 
 	// finalize python if initialized by warp
 	if(do_final){
