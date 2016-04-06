@@ -403,7 +403,7 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 			// rescale
 			mu = mu - copysignf(1.0,mu);
 			mu = -copysignf(1.0,mu) + mu;
-			printf("continuum scatter mis-sampled MU, rescaled mu to %6.4E\n"mu);
+			printf("continuum scatter mis-sampled MU, rescaled mu to %6.4E\n",mu);
 		}
 		else{
 			if(this_law==61){
