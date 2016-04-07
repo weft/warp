@@ -59,19 +59,19 @@ static __device__ bool accept_y(float3 pnt, float a, float x1, float x2, float z
 
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
-  float tol = 1e-6;
+  //float tol = 1e-5;
   
   if ( pnt.z < zmin | pnt.z > zmax){
     return false;
   }
   else if(x <= x1){
-    if ( fabsf(x-a) > tol ){
+    //if ( fabsf(x-a) > tol ){
       return true;
-    }
-    else{
-      rtPrintf("HEX: y plane intersection diff > %6.4E, y=%6.4E a=%6.4E\n",tol,y,a);
-      return false;
-    }
+    //}
+    //else{
+      //rtPrintf("HEX: y plane intersection diff > %6.4E, y=%6.4E a=%6.4E\n",tol,y,a);
+      //return false;
+    //}
   }
   else{
     return false;
@@ -85,7 +85,7 @@ static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float z
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
-  float tol = 1e-6;
+  float tol = 1e-5;
 
   if ( pnt.z < zmin | pnt.z > zmax){
 
@@ -100,7 +100,7 @@ static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float z
       }
       else{
         if(y-line < -tol){
-          rtPrintf("HEX: line plane intersection diff > %6.4E, y=%6.4E line=%6.4E\n",tol,y,line);
+          rtPrintf("HEX: line plane intersection diff < %6.4E, y=%6.4E line=%6.4E\n",-tol,y,line);
         }
         return false;
       }
