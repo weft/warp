@@ -218,26 +218,28 @@ RT_PROGRAM void intersect(int object_dex)
   else{
     report = true;
     check_second = true;
-    unsigned d0, d1;
-    // eliminate the point near one of the other points
-    for (unsigned g=0;g<3;g++){
-      // compute the other indicies
-      d0 = 2-g; 
-      d1 = abs(1-g);
-      // check the relative difference of point g to the other two points.  If it is on the same order of magnitude, *they* are the doubles.
-      if( fabsf((t[d0]-t[g])/(t[d1]-t[g])) < 10 ){
-        t0 = fminf(t[d0],t[g]);
-        t1 = fmaxf(t[d0],t[g]);
-        if(t[g]==t0){
-          norm0 = norms[d[g]];
-          norm1 = norms[d[d0]];
-        }
-        else{
-          norm0 = norms[d[d0]];
-          norm1 = norms[d[g]];
-        }
-        break;
-      }
+    // eliminate the point near one of the other points by sorting
+    t0 = fminf(fminf(t[0],t[1]),t[2]);
+    t1 = fmaxf(fmaxf(t[0],t[1]),t[2]);
+    // assign norms
+    if(t[0]==t0){
+      norm0 = norms[d[0]];
+    }
+    else if(t[1]==t0){
+      norm0 = norms[d[1]];
+    }
+    else{
+      norm0 = norms[d[2]];
+    }
+    //
+    if(t[0]==t1){
+      norm1 = norms[d[0]];
+    }
+    else if(t[1]==t1){
+      norm1 = norms[d[1]];
+    }
+    else{
+      norm1 = norms[d[2]];
     }
   }
 
