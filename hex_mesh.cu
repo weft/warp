@@ -216,9 +216,10 @@ RT_PROGRAM void intersect(int object_dex)
     float3 int1 = ray.direction * t1 + xformed_origin;
     if(k==1){
       //rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
-      report = false;
+      report = true;
+      check_second = false;
     }
-    if(k==33){
+    if(k==3){
       rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
     }
   }
