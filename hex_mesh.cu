@@ -187,7 +187,7 @@ RT_PROGRAM void intersect(int object_dex)
       accept = accept_l(this_int, maxs.x, x1, x2, mins.z, maxs.z);
     }
     if( accept ){ 
-      if(fabsf((this_t-t0)/t0) >= tol & fabsf((this_t-t1)/t1) >= tol){  // check that this is a "new" point
+      if(fabsf((t0-this_t)/this_t) >= tol & fabsf((t1-this_t)/this_t) >= tol){  // check that this is a "new" point and the difference 
         if(fabsf(this_t)<fabsf(t0)){  // order the points
           k++;
           t1 = t0;
@@ -217,11 +217,13 @@ RT_PROGRAM void intersect(int object_dex)
     float3 int0 = ray.direction * t0 + xformed_origin;
     float3 int1 = ray.direction * t1 + xformed_origin;
     if(k==1){
+      // probably a glancing hit
       //rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
       report = true;
       check_second = false;
     }
     if(k==3){
+      // shouldn't happen...
       rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
     }
   }
