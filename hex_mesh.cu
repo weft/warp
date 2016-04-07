@@ -143,7 +143,7 @@ RT_PROGRAM void intersect(int object_dex)
   float   t0=1e34, t1=1e34, sgn=1.0, this_t;
   float3  this_int, norm0, norm1, norms[8], pts[8];
   bool report=true, check_second=true, accept;
-  float tol = 1e-6;
+  float tol = 1e-4;
 
   // box/line region delimiters
   float x1 = maxs.x/sqrtf(3.0);
@@ -194,7 +194,7 @@ RT_PROGRAM void intersect(int object_dex)
         t0 = this_t;
         norm0 = norms[i];
       }
-      else if(fabsf(this_t)<fabsf(t1) & fabsf((this_t-t1)/t1)) >= tol){
+      else if(fabsf(this_t)<fabsf(t1) & fabsf((this_t-t1)/t1) >= tol){
         t1 = this_t;
         norm1 = norms[i];
       }
