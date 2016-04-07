@@ -94,7 +94,7 @@ static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float z
   }
   else{
     
-    if ( x>x1 & x<=x2 ){
+    if ( x>=x1 & x<=x2 ){
       if ( fabsf(y-line) <= tol ){
         return true;
       }
@@ -107,7 +107,7 @@ static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float z
     }
     else{
       return false;
-    }
+    } 
 
   }
 
@@ -212,7 +212,9 @@ RT_PROGRAM void intersect(int object_dex)
   else{
     rtPrintf("!!! Number of accepted t-values in hex=%d, which != 2 or 0\n",k);
     this_int = ray.direction * t0 + xformed_origin;
-    //rtPrintf("a(%u,:)=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];\n",launch_index_in,xformed_origin.x,xformed_origin.y,xformed_origin.z,this_int.x,this_int.y,this_int.z);
+    if(k==3){
+      rtPrintf("b=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];\n",launch_index_in,xformed_origin.x,xformed_origin.y,xformed_origin.z,this_int.x,this_int.y,this_int.z);
+    }
     //report = false;
   }
 
