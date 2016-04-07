@@ -85,7 +85,7 @@ static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float z
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
-  float tol = 1e-5;
+  float tol = 1e-4;
 
   if ( pnt.z < zmin | pnt.z > zmax){
 
@@ -94,7 +94,7 @@ static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float z
   }
   else{
     
-    if ( x>=x1 & x<=x2 ){
+    if ( x>=x1 & x<=x2*(1.0+tol) ){
       if ( fabsf(y-line) <= tol ){
         return true;
       }
@@ -143,7 +143,7 @@ RT_PROGRAM void intersect(int object_dex)
   float   t0=1e34, t1=1e34, sgn=1.0, this_t;
   float3  this_int, norm0, norm1, norms[8], pts[8];
   bool report=true, check_second=true, accept;
-  float tol = 1e-3;
+  float tol = 1e-2;
 
   // box/line region delimiters
   float x1 = maxs.x/sqrtf(3.0);
@@ -205,7 +205,6 @@ RT_PROGRAM void intersect(int object_dex)
   // corner miss check
   if(k==0){
     report = false;
-    //rtPrintf("corner miss\n");
   }
   else if(k==2){
     report = true;
@@ -218,7 +217,6 @@ RT_PROGRAM void intersect(int object_dex)
     if(k==1){
       rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
     }
-    //report = false;
   }
 
   // sense
