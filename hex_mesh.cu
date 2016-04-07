@@ -140,16 +140,23 @@ RT_PROGRAM void intersect(int object_dex)
   float3 xformed_origin = ray.origin - loc;
 
   // init
-  float  max_diff = 2.0*sqrtf(2.0*maxs.x*maxs.x+maxs.z*maxs.z); // BB chord, maxium difference possible in t values
-  float    t0=1e34, t1=1e34, sgn=1.0, this_t, t[3];
-  unsigned d[3];
+  //float  max_diff = 2.0*sqrtf(2.0*maxs.x*maxs.x+maxs.z*maxs.z); // BB chord, maxium difference possible in t values
+  float  t0=1e34, t1=1e34, sgn=1.0, this_t, t[3];
+  int    d[3];
   float3  this_int, norm0, norm1, norms[8], pts[8];
   bool report=true, check_second=true, accept;
-  float tol = 1e-4;
 
   // box/line region delimiters
   float x1 = maxs.x/sqrtf(3.0);
   float x2 = 2.0*x1;
+
+  //init
+  t[0] = 0.0;
+  t[1] = 0.0;
+  t[2] = 0.0;
+  d[0] = 0;
+  d[1] = 0;
+  d[2] = 0;
   
   // normal vectors
   norms[0] = make_float3( 0.0            , 0.0     , 1.0 );  //  z
@@ -208,6 +215,7 @@ RT_PROGRAM void intersect(int object_dex)
     check_second = false;
   }
   else if(k==2){
+    // what is supposed to happen
     t0=t[0];
     t1=t[1];
     norm0=norms[d[0]];
@@ -215,12 +223,14 @@ RT_PROGRAM void intersect(int object_dex)
     report = true;
     check_second = true;
   }
-  else{
+  else if(k==3){
+    // double point reported probably
     report = true;
     check_second = true;
     // eliminate the point near one of the other points by sorting
     t0 = fminf(fminf(t[0],t[1]),t[2]);
     t1 = fmaxf(fmaxf(t[0],t[1]),t[2]);
+    rtPrintf("t0 % 8.6E t1 % 8.6E\n",t0,t1);
     // assign norms
     if(t[0]==t0){
       norm0 = norms[d[0]];
@@ -241,6 +251,10 @@ RT_PROGRAM void intersect(int object_dex)
     else{
       norm1 = norms[d[2]];
     }
+  }
+  else{
+    rtPrintf("HEX: k=%d!!!!!!!",k);
+    return;
   }
 
   // sense
