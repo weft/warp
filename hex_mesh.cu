@@ -21,8 +21,8 @@ static __device__ bool accept_z(float3 pnt, float a, float x1, float x2, float z
 {
 
   // z plane accepted if within the hex region
-  float x = abs(pnt.x);
-  float y = abs(pnt.y);
+  float x = fabsf(pnt.x);
+  float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
 
   if ( x > x2){
@@ -56,53 +56,48 @@ static __device__ bool accept_z(float3 pnt, float a, float x1, float x2, float z
 
 static __device__ bool accept_y(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
+
+  float x = fabsf(pnt.x);
+  float y = fabsf(pnt.y);
   
-  if ( pnt.z <= zmin | pnt.z >= zmax){
-
+  if ( pnt.z < zmin | pnt.z > zmax){
     return false;
-
   }
-  else{
-    
-    if (pnt.x <= x1 & pnt.x >= -x1){
-      //if(y<=a & y>= -a){
-        return true;
-      //}
-      //else{
-      // return false;
-      //}
+  else if(x <= x1){
+    if (y == a){
+      return true;
     }
     else{
+      rtPrintf("HEX: y plane intersection != a, y=%6.4E a=%6.4E\n",y,a);
       return false;
     }
-
+  }
+  else{
+    return false;
   }
 
 }
 
 static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
-  
-  if ( pnt.z <= zmin | pnt.z >= zmax){
+
+  float x = fabsf(pnt.x);
+  float y = fabsf(pnt.y);
+  float line = -a*(x-x2)/(x2-x1); 
+
+  if ( pnt.z < zmin | pnt.z > zmax){
 
     return false;
 
   }
   else{
     
-    if ( pnt.x>x1 & pnt.x<=x2 ){
-      if(pnt.y<=0.0){
+    if ( x>x1 & x<=x2 ){
+      if (y == line){
         return true;
       }
       else{
-        return false;
-      }
-    }
-    else if ( pnt.x<-x1 & pnt.x>=-x2 ){
-      if(pnt.y>=0.0){
-        return true;
-      }
-      else{
+        rtPrintf("HEX: line plane intersection != line, y=%6.4E line=%6.4E\n",y,line);
         return false;
       }
     }
@@ -218,9 +213,6 @@ RT_PROGRAM void intersect(int object_dex)
     else if(i<4){
       accept = accept_y(this_int, maxs.x, x1, x2, mins.z, maxs.z);
     }
-    else if(i<6){
-      accept = accept_r(this_int, maxs.x, x1, x2, mins.z, maxs.z);
-    }
     else{
       accept = accept_l(this_int, maxs.x, x1, x2, mins.z, maxs.z);
     }
@@ -244,10 +236,6 @@ RT_PROGRAM void intersect(int object_dex)
     report = false;
     //rtPrintf("corner miss\n");
   }
-  else if(k==1){
-    report = true;
-    check_second = false;
-  }
   else if(k==2){
     report = true;
     check_second = true;
@@ -260,7 +248,7 @@ RT_PROGRAM void intersect(int object_dex)
   }
 
   // sense
-  if (t0*t1 < 0.0 | k==1 ){ // neg means inside
+  if (t0*t1 < 0.0){ // neg means inside
     sgn = -1.0;
   }
   else{
