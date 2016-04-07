@@ -143,7 +143,7 @@ RT_PROGRAM void intersect(int object_dex)
   float   t0=1e34, t1=1e34, sgn=1.0, this_t;
   float3  this_int, norm0, norm1, norms[8], pts[8];
   bool report=true, check_second=true, accept;
-  float tol = 1e-2;
+  float tol = 1e-4;
 
   // box/line region delimiters
   float x1 = maxs.x/sqrtf(3.0);
@@ -186,7 +186,7 @@ RT_PROGRAM void intersect(int object_dex)
     else{
       accept = accept_l(this_int, maxs.x, x1, x2, mins.z, maxs.z);
     }
-    if( accept ){   // find the two closest to zero, tolerance elmininates selecting two very close points (under tol means this_t is the same point)
+    if( accept ){   // find the two closest to zero, tolerance elmininates selecting two points close to each other (under tol means this_t is the same point)
       if(fabsf(this_t)<fabsf(t0) & fabsf((this_t-t0)/t0) >= tol){
         k++;
         t1 = t0;
@@ -211,10 +211,14 @@ RT_PROGRAM void intersect(int object_dex)
     check_second = true;
   }
   else{
-    rtPrintf("!!! Number of accepted t-values in hex=%d, which != 2 or 0\n",k);
+    //rtPrintf("!!! Number of accepted t-values in hex=%d, which != 2 or 0\n",k);
     float3 int0 = ray.direction * t0 + xformed_origin;
     float3 int1 = ray.direction * t1 + xformed_origin;
     if(k==1){
+      //rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
+      report = false;
+    }
+    if(k==33){
       rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
     }
   }
