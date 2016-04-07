@@ -20,7 +20,7 @@ rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
 static __device__ bool accept_z(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
 
-  // z plane in accepted if within the hex region
+  // z plane accepted if within the hex region
   float x = abs(pnt.x);
   float y = abs(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
@@ -57,7 +57,7 @@ static __device__ bool accept_z(float3 pnt, float a, float x1, float x2, float z
 static __device__ bool accept_y(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
   
-  if ( pnt.z < zmin | pnt.z > zmax){
+  if ( pnt.z <= zmin | pnt.z >= zmax){
 
     return false;
 
@@ -83,7 +83,7 @@ static __device__ bool accept_y(float3 pnt, float a, float x1, float x2, float z
 static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
   
-  if ( pnt.z < zmin | pnt.z > zmax){
+  if ( pnt.z <= zmin | pnt.z >= zmax){
 
     return false;
 
@@ -117,7 +117,7 @@ static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float z
 static __device__ bool accept_r(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
   
-  if ( pnt.z < zmin | pnt.z > zmax){
+  if ( pnt.z <= zmin | pnt.z >= zmax){
 
     return false;
 
@@ -224,15 +224,15 @@ RT_PROGRAM void intersect(int object_dex)
     else{
       accept = accept_l(this_int, maxs.x, x1, x2, mins.z, maxs.z);
     }
-    if( accept ){   // (int, apothem, x1, x2, zmin, zmax)
+    if( accept ){   // find the two closest to zero
       k++;
-      if(this_t<t0){
+      if(fabsf(this_t)<fabsf(t0)){
         t1 = t0;
         norm1 = norm0;
         t0 = this_t;
         norm0 = norms[i];
       }
-      else if(this_t<t1){
+      else if(fabsf(this_t)<fabsf(t1)){
         t1 = this_t;
         norm1 = norms[i];
       }
@@ -244,19 +244,23 @@ RT_PROGRAM void intersect(int object_dex)
     report = false;
     //rtPrintf("corner miss\n");
   }
-  else if(k==1 | k>2){
+  else if(k==1){
+    report = true;
+    check_second = false;
+  }
+  else if(k==2){
+    report = true;
+    check_second = true;
+  }
+  else{
     rtPrintf("!!! Number of accepted t-values in hex=%d, which != 2 or 0\n",k);
     this_int = ray.direction * t0 + xformed_origin;
     //rtPrintf("a(%u,:)=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];\n",launch_index_in,xformed_origin.x,xformed_origin.y,xformed_origin.z,this_int.x,this_int.y,this_int.z);
     //report = false;
   }
-  else{
-    report = true;
-    check_second = true;
-  }
 
   // sense
-  if (t0*t1 < 0.0 ){ // neg means inside
+  if (t0*t1 < 0.0 | k==1 ){ // neg means inside
     sgn = -1.0;
   }
   else{
