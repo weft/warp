@@ -99,7 +99,9 @@ static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float z
         return true;
       }
       else{
-        rtPrintf("HEX: line plane intersection diff > %6.4E, y=%6.4E line=%6.4E\n",tol,y,line);
+        if(y-line < -tol){
+          rtPrintf("HEX: line plane intersection diff > %6.4E, y=%6.4E line=%6.4E\n",tol,y,line);
+        }
         return false;
       }
     }
