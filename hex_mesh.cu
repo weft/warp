@@ -140,7 +140,9 @@ RT_PROGRAM void intersect(int object_dex)
   float3 xformed_origin = ray.origin - loc;
 
   // init
-  float   t0=1e34, t1=1e34, sgn=1.0, this_t;
+  float  max_diff = 2.0*sqrtf(2.0*maxs.x*maxs.x+maxs.z*maxs.z); // BB chord, maxium difference possible in t values
+  float    t0=1e34, t1=1e34, sgn=1.0, this_t, t[3];
+  unsigned d[3];
   float3  this_int, norm0, norm1, norms[8], pts[8];
   bool report=true, check_second=true, accept;
   float tol = 1e-4;
@@ -187,20 +189,9 @@ RT_PROGRAM void intersect(int object_dex)
       accept = accept_l(this_int, maxs.x, x1, x2, mins.z, maxs.z);
     }
     if( accept ){ 
-      if(fabsf((t0-this_t)/this_t) >= tol & fabsf((t1-this_t)/this_t) >= tol){  // check that this is a "new" point and the difference 
-        if(fabsf(this_t)<fabsf(t0)){  // order the points
-          k++;
-          t1 = t0;
-          norm1 = norm0;
-          t0 = this_t;
-          norm0 = norms[i];
-        }
-        else if(fabsf(this_t)<fabsf(t1)){
-          k++;
-          t1 = this_t;
-          norm1 = norms[i];
-        }
-      }
+      t[k]=this_t;
+      d[k]=i;
+      k++;
     }
   }
 
@@ -208,23 +199,45 @@ RT_PROGRAM void intersect(int object_dex)
   if(k==0){
     report = false;
   }
+  else if(k==1){
+    // probably a glancing hit
+    //rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
+    t0=t[0];
+    norm1=norms[d[1]];
+    report = true;
+    check_second = false;
+  }
   else if(k==2){
+    t0=t[0];
+    t1=t[1];
+    norm0=norms[d[0]];
+    norm1=norms[d[1]];
     report = true;
     check_second = true;
   }
   else{
-    //rtPrintf("!!! Number of accepted t-values in hex=%d, which != 2 or 0\n",k);
-    float3 int0 = ray.direction * t0 + xformed_origin;
-    float3 int1 = ray.direction * t1 + xformed_origin;
-    if(k==1){
-      // probably a glancing hit
-      //rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
-      report = true;
-      check_second = false;
-    }
-    if(k==3){
-      // shouldn't happen...
-      rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
+    report = true;
+    check_second = true;
+    unsigned d0, d1;
+    // eliminate the point near one of the other points
+    for (unsigned g=0;g<3;g++){
+      // compute the other indicies
+      d0 = 2-g; 
+      d1 = abs(1-g);
+      // check the relative difference of point g to the other two points.  If it is on the same order of magnitude, *they* are the doubles.
+      if( fabsf((t[d0]-t[g])/(t[d1]-t[g])) < 10 ){
+        t0 = fminf(t[d0],t[g]);
+        t1 = fmaxf(t[d0],t[g]);
+        if(t[g]==t0){
+          norm0 = norms[d[g]];
+          norm1 = norms[d[d0]];
+        }
+        else{
+          norm0 = norms[d[d0]];
+          norm1 = norms[d[g]];
+        }
+        break;
+      }
     }
   }
 
