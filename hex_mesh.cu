@@ -143,7 +143,7 @@ RT_PROGRAM void intersect(int object_dex)
   float   t0=1e34, t1=1e34, sgn=1.0, this_t;
   float3  this_int, norm0, norm1, norms[8], pts[8];
   bool report=true, check_second=true, accept;
-  float tol = 1e-5;
+  float tol = 1e-6;
 
   // box/line region delimiters
   float x1 = maxs.x/sqrtf(3.0);
@@ -188,13 +188,13 @@ RT_PROGRAM void intersect(int object_dex)
     }
     if( accept ){   // find the two closest to zero, tolerance elmininates selecting two very close points (under tol means this_t is the same point)
       k++;
-      if(fabsf(this_t)<fabsf(t0) & fabsf(this_t-t0) >= tol){
+      if(fabsf(this_t)<fabsf(t0) & fabsf((this_t-t0)/t0) >= tol){
         t1 = t0;
         norm1 = norm0;
         t0 = this_t;
         norm0 = norms[i];
       }
-      else if(fabsf(this_t)<fabsf(t1) & fabsf(this_t-t1) >= tol){
+      else if(fabsf(this_t)<fabsf(t1) & fabsf((this_t-t1)/t1)) >= tol){
         t1 = this_t;
         norm1 = norms[i];
       }
