@@ -200,6 +200,7 @@ RT_PROGRAM void intersect(int object_dex)
       d[k]=i;
       k++;
     }
+    if(k==3){break;}
   }
 
   // corner miss check
@@ -210,7 +211,7 @@ RT_PROGRAM void intersect(int object_dex)
     // probably a glancing hit
     //rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
     t0=t[0];
-    norm1=norms[d[1]];
+    norm0=norms[d[0]];
     report = true;
     check_second = false;
   }
@@ -230,7 +231,7 @@ RT_PROGRAM void intersect(int object_dex)
     // eliminate the point near one of the other points by sorting
     t0 = fminf(fminf(t[0],t[1]),t[2]);
     t1 = fmaxf(fmaxf(t[0],t[1]),t[2]);
-    rtPrintf("t0 % 8.6E t1 % 8.6E\n",t0,t1);
+    //rtPrintf("t0 % 8.6E t1 % 8.6E\n",t0,t1);
     // assign norms
     if(t[0]==t0){
       norm0 = norms[d[0]];
