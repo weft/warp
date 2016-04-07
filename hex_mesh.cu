@@ -186,18 +186,20 @@ RT_PROGRAM void intersect(int object_dex)
     else{
       accept = accept_l(this_int, maxs.x, x1, x2, mins.z, maxs.z);
     }
-    if( accept ){   // find the two closest to zero, tolerance elmininates selecting two points close to each other (under tol means this_t is the same point)
-      if(fabsf(this_t)<fabsf(t0) & fabsf((this_t-t0)/t0) >= tol){
-        k++;
-        t1 = t0;
-        norm1 = norm0;
-        t0 = this_t;
-        norm0 = norms[i];
-      }
-      else if(fabsf(this_t)<fabsf(t1) & fabsf((this_t-t1)/t1) >= tol){
-        k++;
-        t1 = this_t;
-        norm1 = norms[i];
+    if( accept ){ 
+      if(fabsf((this_t-t0)/t0) >= tol & fabsf((this_t-t1)/t1) >= tol){  // check that this is a "new" point
+        if(fabsf(this_t)<fabsf(t0)){  // order the points
+          k++;
+          t1 = t0;
+          norm1 = norm0;
+          t0 = this_t;
+          norm0 = norms[i];
+        }
+        else if(fabsf(this_t)<fabsf(t1)){
+          k++;
+          t1 = this_t;
+          norm1 = norms[i];
+        }
       }
     }
   }
