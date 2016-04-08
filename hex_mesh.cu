@@ -24,7 +24,7 @@ static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, flo
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
-  float tol = 0.0; 
+  float tol = 1e-8; 
 
   // check z
   if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmin)) ){
@@ -123,7 +123,7 @@ RT_PROGRAM void intersect(int object_dex)
 
   //  do xy-perpendicular planes first
   int k=0;
-  for (int i=0; i<2; i++) {
+  for (int i=0; i<8; i++) {
     // calculate intersection t value
     this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
     // calculate intersection point from t value
@@ -156,7 +156,7 @@ RT_PROGRAM void intersect(int object_dex)
     norm1=norms[d[1]];
     report = true;
     check_second = true;
-    rtPrintf("k==2! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
+    //rtPrintf("k==2! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
   }
   else{
     // also not good
