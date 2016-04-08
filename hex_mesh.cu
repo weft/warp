@@ -17,38 +17,30 @@ rtDeclareVariable(float3,    normal,      attribute normal,   );
 rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
 
 
-static __device__ bool accept_xy(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
+static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
 
-  // z plane accepted if within the hex region
+  // point accepted if within the hex region
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
 
-  if ( x > x2){
-
+  // check z
+  if( pnt.z > zmax | pnt.z < zmin ){
     return false;
+  }
 
+  // check xy
+  if ( x > x2){
+    return false;
   }
   else if( x > x1){
-
-    if(y<=line){
-      return true;
-    }
-    else{
-      return false;
-    }
-
+    if(y<=line){return true;}
+    else{       return false;}
   }
   else{
-    
-    if(y<=a){
-      return true;
-    }
-    else{
-      return false;
-    }
-
+    if(y<=a){return true;}
+    else{    return false;}
   }
 
 }
@@ -118,13 +110,13 @@ RT_PROGRAM void intersect(int object_dex)
 
   //  do xy-perpendicular planes first
   int k=0;
-  for (int i=2; i<8; i++) {
+  for (int i=0; i<8; i++) {
     // calculate intersection t value
     this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
     // calculate intersection point from t value
     this_int = ray.direction * this_t + xformed_origin;
     // accept if within maximum radius and within z values
-    if(this_int.z <= maxs.z & this_int.z >= mins.z & accept_xy(this_int, maxs.x, x1, x2, mins.z, maxs.z) ){
+    if( accept_point(this_int, maxs.x, x1, x2, mins.z, maxs.z) ){
       t[k]=this_t;
       d[k]=i;
       k++;
@@ -138,11 +130,11 @@ RT_PROGRAM void intersect(int object_dex)
   }
   else if(k==1){
     // not good
-    rtPrintf("k==1! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
     t0=t[0];
     norm0=norms[d[0]];
     report = true;
     check_second = false;
+    rtPrintf("k==1! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
   }
   else if(k==2){
     // good
@@ -155,13 +147,13 @@ RT_PROGRAM void intersect(int object_dex)
   }
   else{
     // also not good
-    rtPrintf("k==3! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
     t0=t[0];
     t1=t[1];
     norm0=norms[d[0]];
     norm1=norms[d[1]];
     report = true;
     check_second = true;
+    rtPrintf("k==3! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
   }
 
   // sense
