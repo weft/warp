@@ -27,21 +27,21 @@ static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, flo
   float tol = 1e-6; 
 
   // check z
-  if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmax)) ){
+  if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmin)) ){
     return false;
   }
 
   // check xy
-  if ( x > (x2+fabsf(tol*x2)) ){
+  if (     x > (x2+fabsf(tol*x2)) ){
     return false;
   }
   else if( x > x1){
-    if( y<=( line+fabsf(tol*line)) ){return true;}
-    else{       return false;}
+    if(    y <= (line+fabsf(tol*line)) ){return true;}
+    else{                                return false;}
   }
   else{
-    if( y<= (a+fabsf(tol*a) ){return true;}
-    else{    return false;}
+    if(    y <= (a+fabsf(tol*a))       ){return true;}
+    else{                                return false;}
   }
 
 }
@@ -53,7 +53,7 @@ static __device__ float get_t(float3 hat, float3 dir, float3 diff_points){
 
   ndD = dot(hat,dir);
 
-  if (ndD>=1e-10){
+  if (ndD>=1e-20){
     return dot(hat,diff_points) / ndD;
   }
   else{
@@ -123,18 +123,17 @@ RT_PROGRAM void intersect(int object_dex)
 
   //  do xy-perpendicular planes first
   int k=0;
-  for (int i=0; i<8; i++) {
+  for (int i=0; i<2; i++) {
     // calculate intersection t value
     this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
     // calculate intersection point from t value
     this_int = ray.direction * this_t + xformed_origin;
     // accept if within maximum radius and within z values
-    if( accept_point(this_int, maxs.x, x1, x2, mins.z, maxs.z) ){
+   // if( accept_point(this_int, maxs.x, x1, x2, mins.z, maxs.z) ){
       t[k]=this_t;
       d[k]=i;
       k++;
-    }
-//    if(k==2){break;}
+    //}
   }
 
   // now find any missing points or determine if its a corner miss
@@ -157,6 +156,7 @@ RT_PROGRAM void intersect(int object_dex)
     norm1=norms[d[1]];
     report = true;
     check_second = true;
+    rtPrintf("k==2! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
   }
   else{
     // also not good
