@@ -24,7 +24,7 @@ static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, flo
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
-  float tol = 1e-8; 
+  float tol = 0.0;//1e-6; 
 
   // check z
   if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmin)) ){
@@ -53,11 +53,11 @@ static __device__ float get_t(float3 hat, float3 dir, float3 diff_points){
 
   ndD = dot(hat,dir);
 
-  if (fabsf(ndD)>=1e-20){
+  if (ndD!=0.0){
     return dot(hat,diff_points) / ndD;
   }
   else{
-    return 1e34;   // something big just to put it out of range
+    return 1e99;   // something big just to put it out of range
   }
 
 }
@@ -83,7 +83,7 @@ RT_PROGRAM void intersect(int object_dex)
   float x1 = maxs.x/sqrtf(3.0);
   float x2 = 2.0*x1;
 
-  //init
+  // init
   t[0] = 0.0;
   t[1] = 0.0;
   t[2] = 0.0;
@@ -134,6 +134,8 @@ RT_PROGRAM void intersect(int object_dex)
       d[k]=i;
       k++;
     }
+    // break if a double is flagged
+    if(k==3){break;}
   }
 
   // now find any missing points or determine if its a corner miss
@@ -146,7 +148,7 @@ RT_PROGRAM void intersect(int object_dex)
     norm0=norms[d[0]];
     report = true;
     check_second = false;
-    rtPrintf("k==1! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
+    rtPrintf("k==1! t=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7],xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
   }
   else if(k==2){
     // good
@@ -166,7 +168,7 @@ RT_PROGRAM void intersect(int object_dex)
     norm1=norms[d[1]];
     report = true;
     check_second = true;
-    rtPrintf("k==3! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
+    rtPrintf("k==%d! t=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",k,t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7],xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
   }
 
   // sense
