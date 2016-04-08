@@ -24,7 +24,7 @@ static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, flo
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
-  float tol = 0.0;//1e-6; 
+  float tol = 1e-4; 
 
   // check z
   if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmin)) ){
