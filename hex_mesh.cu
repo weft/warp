@@ -24,22 +24,23 @@ static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, flo
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
+  float tol = 1e-6; 
 
   // check z
-  if( pnt.z > zmax | pnt.z < zmin ){
+  if( pnt.z > (zmax*(1.0+tol)) | pnt.z < (zmin*(1.0-tol)) ){
     return false;
   }
 
   // check xy
-  if ( x > x2){
+  if ( x > (x2*(1.0+tol)) ){
     return false;
   }
   else if( x > x1){
-    if(y<=line){return true;}
+    if( y<=(line*(1.0+tol)) ){return true;}
     else{       return false;}
   }
   else{
-    if(y<=a){return true;}
+    if( y<= (a*(1.0+tol)) ){return true;}
     else{    return false;}
   }
 
