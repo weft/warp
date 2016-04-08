@@ -24,7 +24,7 @@ static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, flo
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
-  float tol = 1e-6; 
+  float tol = 0.0; 
 
   // check z
   if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmin)) ){
@@ -53,7 +53,7 @@ static __device__ float get_t(float3 hat, float3 dir, float3 diff_points){
 
   ndD = dot(hat,dir);
 
-  if (ndD>=1e-20){
+  if (fabsf(ndD)>=1e-20){
     return dot(hat,diff_points) / ndD;
   }
   else{
@@ -129,11 +129,11 @@ RT_PROGRAM void intersect(int object_dex)
     // calculate intersection point from t value
     this_int = ray.direction * this_t + xformed_origin;
     // accept if within maximum radius and within z values
-   // if( accept_point(this_int, maxs.x, x1, x2, mins.z, maxs.z) ){
+    if( accept_point(this_int, maxs.x, x1, x2, mins.z, maxs.z) ){
       t[k]=this_t;
       d[k]=i;
       k++;
-    //}
+    }
   }
 
   // now find any missing points or determine if its a corner miss
