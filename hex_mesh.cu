@@ -27,20 +27,20 @@ static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, flo
   float tol = 1e-6; 
 
   // check z
-  if( pnt.z > (zmax*(1.0+tol)) | pnt.z < (zmin*(1.0-tol)) ){
+  if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmax)) ){
     return false;
   }
 
   // check xy
-  if ( x > (x2*(1.0+tol)) ){
+  if ( x > (x2+fabsf(tol*x2)) ){
     return false;
   }
   else if( x > x1){
-    if( y<=(line*(1.0+tol)) ){return true;}
+    if( y<=( line+fabsf(tol*line)) ){return true;}
     else{       return false;}
   }
   else{
-    if( y<= (a*(1.0+tol)) ){return true;}
+    if( y<= (a+fabsf(tol*a) ){return true;}
     else{    return false;}
   }
 
@@ -53,7 +53,7 @@ static __device__ float get_t(float3 hat, float3 dir, float3 diff_points){
 
   ndD = dot(hat,dir);
 
-  if (ndD!=0.0){
+  if (ndD>=1e-10){
     return dot(hat,diff_points) / ndD;
   }
   else{
@@ -74,10 +74,10 @@ RT_PROGRAM void intersect(int object_dex)
 
   // init
   //float  max_diff = 2.0*sqrtf(2.0*maxs.x*maxs.x+maxs.z*maxs.z); // BB chord, maxium difference possible in t values
-  float  t0=1e34, t1=1e34, sgn=1.0, this_t, t[2];
-  int    d[2];
+  float  t0=1e34, t1=1e34, sgn=1.0, this_t, t[8];
+  int    d[8];
   float3  this_int, norm0, norm1, norms[8], pts[8];
-  bool report=true, check_second=true, accept;
+  bool report=true, check_second=true;
 
   // box/line region delimiters
   float x1 = maxs.x/sqrtf(3.0);
@@ -86,8 +86,20 @@ RT_PROGRAM void intersect(int object_dex)
   //init
   t[0] = 0.0;
   t[1] = 0.0;
+  t[2] = 0.0;
+  t[3] = 0.0;
+  t[4] = 0.0;
+  t[5] = 0.0;
+  t[6] = 0.0;
+  t[7] = 0.0;
   d[0] = 0;
   d[1] = 0;
+  d[2] = 0;
+  d[3] = 0;
+  d[4] = 0;
+  d[5] = 0;
+  d[6] = 0;
+  d[7] = 0;
   
   // normal vectors
   norms[0] = make_float3( 0.0            , 0.0     , 1.0 );  //  z
@@ -122,7 +134,7 @@ RT_PROGRAM void intersect(int object_dex)
       d[k]=i;
       k++;
     }
-    if(k==2){break;}
+//    if(k==2){break;}
   }
 
   // now find any missing points or determine if its a corner miss
