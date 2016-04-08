@@ -17,14 +17,13 @@ rtDeclareVariable(float3,    normal,      attribute normal,   );
 rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
 
 
-static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
+static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, float zmin, float zmax, float tol)
 {
 
   // point accepted if within the hex region
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
-  float tol = 1e-4; 
 
   // check z
   if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmin)) ){
@@ -75,9 +74,10 @@ RT_PROGRAM void intersect(int object_dex)
   // init
   //float  max_diff = 2.0*sqrtf(2.0*maxs.x*maxs.x+maxs.z*maxs.z); // BB chord, maxium difference possible in t values
   float  t0=1e34, t1=1e34, sgn=1.0, this_t, t[8];
-  int    d[8];
+  int    d[8], k=0;
   float3  this_int, norm0, norm1, norms[8], pts[8];
   bool report=true, check_second=true;
+  float tol = 1e-8;
 
   // box/line region delimiters
   float x1 = maxs.x/sqrtf(3.0);
@@ -122,20 +122,23 @@ RT_PROGRAM void intersect(int object_dex)
   pts[7] = make_float3(  x2,  0.0         , maxs.z );   // 1
 
   //  do xy-perpendicular planes first
-  int k=0;
-  for (int i=0; i<8; i++) {
-    // calculate intersection t value
-    this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
-    // calculate intersection point from t value
-    this_int = ray.direction * this_t + xformed_origin;
-    // accept if within maximum radius and within z values
-    if( accept_point(this_int, maxs.x, x1, x2, mins.z, maxs.z) ){
-      t[k]=this_t;
-      d[k]=i;
-      k++;
+  while(k<2){
+    k=0;
+    for (int i=0; i<8; i++) {
+      // calculate intersection t value
+      this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
+      // calculate intersection point from t value
+      this_int = ray.direction * this_t + xformed_origin;
+      // accept if within maximum radius and within z values
+      if( accept_point(this_int, maxs.x, x1, x2, mins.z, maxs.z, tol) ){
+        t[k]=this_t;
+        d[k]=i;
+        k++;
+      }
+      // break if a double is flagged
+      if(k==3){break;}
     }
-    // break if a double is flagged
-    if(k==3){break;}
+  tol = tol*10.0;
   }
 
   // now find any missing points or determine if its a corner miss
