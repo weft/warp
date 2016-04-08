@@ -148,7 +148,8 @@ RT_PROGRAM void intersect(int object_dex)
     norm0=norms[d[0]];
     report = true;
     check_second = false;
-    rtPrintf("k==1! t=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7],xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
+    rtPrintf("k==1! t(%d,:)=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];\n",tid,t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7]);
+    rtPrintf("k==1! o(%d,:)=[%10.8E, %10.8E, %10.8E];dir(%d,:)=[%10.8E, %10.8E, %10.8E];\n",tid,xformed_origin.x,xformed_origin.y,xformed_origin.z,tid,ray.direction.x,ray.direction.y,ray.direction.z);
   }
   else if(k==2){
     // good
@@ -168,7 +169,8 @@ RT_PROGRAM void intersect(int object_dex)
     norm1=norms[d[1]];
     report = true;
     check_second = true;
-    rtPrintf("k==%d! t=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",k,t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7],xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
+    rtPrintf("k==%d! t(%d,:)=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];\n",k,tid,t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7]);
+    rtPrintf("k==%d! o(%d,:)=[%10.8E, %10.8E, %10.8E];dir(%d,:)=[%10.8E, %10.8E, %10.8E];\n",k,tid,xformed_origin.x,xformed_origin.y,xformed_origin.z,tid,ray.direction.x,ray.direction.y,ray.direction.z);
   }
 
   // sense
