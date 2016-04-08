@@ -17,7 +17,7 @@ rtDeclareVariable(float3,    normal,      attribute normal,   );
 rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
 
 
-static __device__ bool accept_z(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
+static __device__ bool accept_xy(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
 
   // z plane accepted if within the hex region
@@ -54,66 +54,6 @@ static __device__ bool accept_z(float3 pnt, float a, float x1, float x2, float z
 }
 
 
-static __device__ bool accept_y(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
-{
-
-  float x = fabsf(pnt.x);
-  float y = fabsf(pnt.y);
-  //float tol = 1e-5;
-  
-  if ( pnt.z < zmin | pnt.z > zmax){
-    return false;
-  }
-  else if(x <= x1){
-    //if ( fabsf(x-a) > tol ){
-      return true;
-    //}
-    //else{
-      //rtPrintf("HEX: y plane intersection diff > %6.4E, y=%6.4E a=%6.4E\n",tol,y,a);
-      //return false;
-    //}
-  }
-  else{
-    return false;
-  }
-
-}
-
-static __device__ bool accept_l(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
-{
-
-  float x = fabsf(pnt.x);
-  float y = fabsf(pnt.y);
-  float line = -a*(x-x2)/(x2-x1); 
-  float tol = 1e-4;
-
-  if ( pnt.z < zmin | pnt.z > zmax){
-
-    return false;
-
-  }
-  else{
-    
-    if ( x>=x1 & x<=x2*(1.0+tol) ){
-      if ( fabsf(y-line) <= tol ){
-        return true;
-      }
-      else{
-        if(y-line < -tol){
-          rtPrintf("HEX: line plane intersection diff < %6.4E, y=%6.4E line=%6.4E\n",-tol,y,line);
-        }
-        return false;
-      }
-    }
-    else{
-      return false;
-    } 
-
-  }
-
-}
-
-
 static __device__ float get_t(float3 hat, float3 dir, float3 diff_points){
 
   float ndD;
@@ -141,8 +81,8 @@ RT_PROGRAM void intersect(int object_dex)
 
   // init
   //float  max_diff = 2.0*sqrtf(2.0*maxs.x*maxs.x+maxs.z*maxs.z); // BB chord, maxium difference possible in t values
-  float  t0=1e34, t1=1e34, sgn=1.0, this_t, t[3];
-  int    d[3];
+  float  t0=1e34, t1=1e34, sgn=1.0, this_t, t[2];
+  int    d[2];
   float3  this_int, norm0, norm1, norms[8], pts[8];
   bool report=true, check_second=true, accept;
 
@@ -153,10 +93,8 @@ RT_PROGRAM void intersect(int object_dex)
   //init
   t[0] = 0.0;
   t[1] = 0.0;
-  t[2] = 0.0;
   d[0] = 0;
   d[1] = 0;
-  d[2] = 0;
   
   // normal vectors
   norms[0] = make_float3( 0.0            , 0.0     , 1.0 );  //  z
@@ -178,45 +116,36 @@ RT_PROGRAM void intersect(int object_dex)
   pts[6] = make_float3( -x1,  maxs.x      , maxs.z );   // 2
   pts[7] = make_float3(  x2,  0.0         , maxs.z );   // 1
 
+  //  do xy-perpendicular planes first
   int k=0;
-  for (int i=0; i<8; i++) {
+  for (int i=2; i<8; i++) {
     // calculate intersection t value
     this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
     // calculate intersection point from t value
     this_int = ray.direction * this_t + xformed_origin;
-    // keep smallest two values, rejecting those who are not in the acceptable space
-    accept = false;
-    if(i<2){
-      accept = accept_z(this_int, maxs.x, x1, x2, mins.z, maxs.z);
-    }
-    else if(i<4){
-      accept = accept_y(this_int, maxs.x, x1, x2, mins.z, maxs.z);
-    }
-    else{
-      accept = accept_l(this_int, maxs.x, x1, x2, mins.z, maxs.z);
-    }
-    if( accept ){ 
+    // accept if within maximum radius and within z values
+    if(this_int.z <= maxs.z & this_int.z >= mins.z & accept_xy(this_int, maxs.x, x1, x2, mins.z, maxs.z) ){
       t[k]=this_t;
       d[k]=i;
       k++;
     }
-    if(k==3){break;}
+    if(k==2){break;}
   }
 
-  // corner miss check
+  // now find any missing points or determine if its a corner miss
   if(k==0){
     report = false;
   }
   else if(k==1){
-    // probably a glancing hit
-    //rtPrintf("t0 %6.4E t1 %6.4E, o=[%10.8E, %10.8E, %10.8E];b=[%10.8E, %10.8E, %10.8E];c=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,int0.x,int0.y,int0.z,int1.x,int1.y,int1.z);
+    // not good
+    rtPrintf("k==1! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
     t0=t[0];
     norm0=norms[d[0]];
     report = true;
     check_second = false;
   }
   else if(k==2){
-    // what is supposed to happen
+    // good
     t0=t[0];
     t1=t[1];
     norm0=norms[d[0]];
@@ -224,38 +153,15 @@ RT_PROGRAM void intersect(int object_dex)
     report = true;
     check_second = true;
   }
-  else if(k==3){
-    // double point reported probably
+  else{
+    // also not good
+    rtPrintf("k==3! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
+    t0=t[0];
+    t1=t[1];
+    norm0=norms[d[0]];
+    norm1=norms[d[1]];
     report = true;
     check_second = true;
-    // eliminate the point near one of the other points by sorting
-    t0 = fminf(fminf(t[0],t[1]),t[2]);
-    t1 = fmaxf(fmaxf(t[0],t[1]),t[2]);
-    //rtPrintf("t0 % 8.6E t1 % 8.6E\n",t0,t1);
-    // assign norms
-    if(t[0]==t0){
-      norm0 = norms[d[0]];
-    }
-    else if(t[1]==t0){
-      norm0 = norms[d[1]];
-    }
-    else{
-      norm0 = norms[d[2]];
-    }
-    //
-    if(t[0]==t1){
-      norm1 = norms[d[0]];
-    }
-    else if(t[1]==t1){
-      norm1 = norms[d[1]];
-    }
-    else{
-      norm1 = norms[d[2]];
-    }
-  }
-  else{
-    rtPrintf("HEX: k=%d!!!!!!!",k);
-    return;
   }
 
   // sense
