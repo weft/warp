@@ -73,7 +73,7 @@ RT_PROGRAM void intersect(int object_dex)
 
   // init
   //float  max_diff = 2.0*sqrtf(2.0*maxs.x*maxs.x+maxs.z*maxs.z); // BB chord, maxium difference possible in t values
-  float  t0=-1e34, t1=1e34, sgn=1.0, this_t, t[8], new_t=0.0;
+  float  t0=-1e34, t1=1e34, sgn=1.0, this_t, t[8], new_t=0.0, closest_xy_t=0.0;
   int    d[8], k=0;
   float3  this_int, norm0, norm1, norms[8], pts[8];
   bool report=true, check_second=true;
@@ -122,12 +122,12 @@ RT_PROGRAM void intersect(int object_dex)
   pts[7] = make_float3(  x2,  0.0         , maxs.z );   // 1
 
   // calculate t for closest point in xy (this point is only good for xy!)
-  closest_xy_t = -(xformed_origin.x*ray.direction.x + xformed_origin.y*ray.direction.y)/sqrtf(ray.direction.x*ray.direction.x + ray.direction.y*ray.direction.y);
+  closest_xy_t = -(xformed_origin.x*ray.direction.x + xformed_origin.y*ray.direction.y) / sqrtf(ray.direction.x*ray.direction.x + ray.direction.y*ray.direction.y);
 
   // get two xy points that are closest to origin
-  // t1 is nearest positive wrt closest_xy_t, t0 is nearest negative
+  // t1 is nearest positive w.r.t. closest_xy_t, t0 is nearest negative
   k=0;
-  for (int i=2; i<8; i++) {
+  for (int i=0; i<8; i++) {
     // calculate intersection t value
     this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
     // calculate intersection point from t value
@@ -135,9 +135,14 @@ RT_PROGRAM void intersect(int object_dex)
     // find the nearest points to closest_xy_t
     new_t = this_t - closest_xy_t;
     if( new_t < 0.0) { 
-      if(new_t > t0){t0=this_t;}
+      if(new_t > t0){
+        t0=this_t;
+      }
+    }
     else{ 
-      if(new_t < t1){t1=this_t;}
+      if(new_t < t1){
+        t1=this_t;
+      }
     }
   }
 

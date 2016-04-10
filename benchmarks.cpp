@@ -120,7 +120,7 @@ int main(int argc, char* argv[]){
 		bc = 1;
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e5);
 			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
@@ -232,7 +232,7 @@ int main(int argc, char* argv[]){
 		bc = 2;
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e5);
 			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
@@ -398,7 +398,7 @@ int main(int argc, char* argv[]){
 		bc = 1;
 		runtype = "fixed";
 		if(card0name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e5);
 			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
@@ -603,7 +603,7 @@ int main(int argc, char* argv[]){
 		bc = 1;
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e5);
 			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
@@ -703,7 +703,7 @@ int main(int argc, char* argv[]){
 		bc = 1;
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e5);
 			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
@@ -771,7 +771,7 @@ int main(int argc, char* argv[]){
 		bc = 1;
 		runtype = "fixed";
 		if(card0name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e5);
 			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
@@ -822,7 +822,7 @@ int main(int argc, char* argv[]){
 		geom.add_transform(prim_id,400,0,0,0,0,0);
 
 		//water 
-		type=0;
+		type=2;
 		material=2;
 		mins[0]=-45.0;
 		mins[1]=-45.0;
@@ -924,7 +924,7 @@ int main(int argc, char* argv[]){
 		bc = 2;
 		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
-			N = int(1e6);
+			N = int(1e5);
 			dev = 0;
 		}
 		else if(card1name.compare(argv[2])==0){
