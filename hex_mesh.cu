@@ -61,7 +61,8 @@ RT_PROGRAM void intersect(int object_dex)
 
   // init
   float  t0=-1e34, t1=1e34, sgn=1.0, this_t, new_t=0.0, closest_xy_t=0.0, int_c_z=0.0;
-  int    d0=0, d1=0;
+  float diff_t_cr=1e99, new_closest_xy_t=0.0, t_cr=0.0;
+  int    d0=0, d1=0, i=0;
   float3 norms[8], pts[8];
   bool report=true, check_second=true;
 
@@ -97,6 +98,24 @@ RT_PROGRAM void intersect(int object_dex)
       closest_xy_t = -(xformed_origin.x*ray.direction.x + xformed_origin.y*ray.direction.y) / (ray.direction.x*ray.direction.x + ray.direction.y*ray.direction.y);
   }
 
+  // adjust closest t to nearest corner ray
+  t_cr = get_t(norms[6],ray.direction,(pts[3]-xformed_origin));
+  if (fabsf(t_cr - closest_xy_t)<diff_t_cr){
+    new_closest_xy_t = t_cr;
+    diff_t_cr = fabsf(t_cr - closest_xy_t);
+  }
+  t_cr = get_t(norms[4],ray.direction,(pts[2]-xformed_origin));
+  if (fabsf(t_cr - closest_xy_t)<diff_t_cr){
+    new_closest_xy_t = t_cr;
+    diff_t_cr = fabsf(t_cr - closest_xy_t);
+  }
+  t_cr = get_t(norms[2],ray.direction,(pts[4]-xformed_origin));
+  if (fabsf(t_cr - closest_xy_t)<diff_t_cr){
+    new_closest_xy_t = t_cr;
+    diff_t_cr = fabsf(t_cr - closest_xy_t);
+  }
+  closest_xy_t = new_closest_xy_t;
+  
   // calculate z point of the closest x-y point
   int_c_z = ray.direction.z * closest_xy_t + xformed_origin.z;
 
@@ -110,7 +129,7 @@ RT_PROGRAM void intersect(int object_dex)
 
   // get two xy points that are closest to origin
   // t1 is nearest positive w.r.t. closest_xy_t, t0 is nearest negative
-  for (int i=0; i<8; i++) {
+  for (i=0; i<8; i++) {
     // calculate intersection t value
     this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
     // find the points to closest_xy_t
