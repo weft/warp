@@ -16,35 +16,22 @@ rtDeclareVariable(unsigned,  sense      , attribute cell_sense, );
 rtDeclareVariable(float3,    normal,      attribute normal,   );
 rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
 
+static __device__ bool accept_point(float3 pnt, float a, float x1, float x2)
+{
 
-//static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, float zmin, float zmax, float tol)
-//{
-//
-//  // point accepted if within the hex region
-//  float x = fabsf(pnt.x);
-//  float y = fabsf(pnt.y);
-//  float line = -a*(x-x2)/(x2-x1); 
-//
-//  // check z
-//  if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmin)) ){
-//    return false;
-//  }
-//
-//  // check xy
-//  if (     x > (x2+fabsf(tol*x2)) ){
-//    return false;
-//  }
-//  else if( x > x1){
-//    if(    y <= (line+fabsf(tol*line)) ){return true;}
-//    else{                                return false;}
-//  }
-//  else{
-//    if(    y <= (a+fabsf(tol*a))       ){return true;}
-//    else{                                return false;}
-//  }
-//
-//}
+  // point accepted if within the hex region
+  float x = fabsf(pnt.x);
+  float y = fabsf(pnt.y);
+  float line = -a*(x-x2)/(x2-x1); 
 
+  if( x > x1 & y > line){
+    return false;
+  }
+  else{
+    return true;
+  }
+
+}
 
 static __device__ float get_t(float3 hat, float3 dir, float3 diff_points){
 
@@ -72,12 +59,10 @@ RT_PROGRAM void intersect(int object_dex)
   float3 xformed_origin = ray.origin - loc;
 
   // init
-  //float  max_diff = 2.0*sqrtf(2.0*maxs.x*maxs.x+maxs.z*maxs.z); // BB chord, maxium difference possible in t values
   float  t0=-1e34, t1=1e34, sgn=1.0, this_t, new_t=0.0, closest_xy_t=0.0, int_c_z=0.0;
-  int    d0=0, d1=0, k=0;
+  int    d0=0, d1=0;
   float3 norms[8], pts[8];
   bool report=true, check_second=true;
-//  float tol = 1e-4;
 
   // box/line region delimiters
   float x1 = maxs.x/sqrtf(3.0);
@@ -124,13 +109,10 @@ RT_PROGRAM void intersect(int object_dex)
 
   // get two xy points that are closest to origin
   // t1 is nearest positive w.r.t. closest_xy_t, t0 is nearest negative
-  k=0;
   for (int i=0; i<8; i++) {
     // calculate intersection t value
     this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
-    // calculate intersection point from t value
-    //this_int = ray.direction * this_t + xformed_origin;
-    // find the nearest points to closest_xy_t
+    // find the points to closest_xy_t
     new_t = this_t - closest_xy_t;
     if( new_t < 0.0) { 
       if(new_t > t0){
@@ -150,28 +132,9 @@ RT_PROGRAM void intersect(int object_dex)
   t0 = t0 + closest_xy_t;
   t1 = t1 + closest_xy_t;
 
-  // now find any missing points or determine if its a corner miss
-  if(k==0){
-    report = false;
-  }
-  else if(k==1){
-    // not good
-    report = true;
-    check_second = false;
-    rtPrintf("k==1! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];dir=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
-  }
-  else if(k==2){
-    // good
-    report = true;
-    check_second = true;
-    //rtPrintf("k==2! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
-  }
-  else{
-    // also not good
-    report = true;
-    check_second = true;
-    rtPrintf("k==%d! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];dir=[%10.8E, %10.8E, %10.8E];\n",k,t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
-  }
+  // check these points for corner misses
+  report =          accept_point( (xformed_origin + t0*ray.direction) , maxs.x, x1, x2);
+  report = report & accept_point( (xformed_origin + t1*ray.direction) , maxs.x, x1, x2);
 
   // sense
   if (t0*t1 < 0.0){ // neg means inside
