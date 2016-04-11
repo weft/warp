@@ -155,9 +155,9 @@ RT_PROGRAM void intersect(int object_dex)
   // check these points for corner misses
   report =          accept_point( (xformed_origin + t0*ray.direction) , maxs.x, x1, x2, mins.z, maxs.z);
   report = report & accept_point( (xformed_origin + t1*ray.direction) , maxs.x, x1, x2, mins.z, maxs.z);
-  if (!report){
-    rtPrintf("CORNER MISS \no=numpy.array([% 10.8E,% 10.8E,% 10.8E])\ndir=numpy.array([% 10.8E,% 10.8E,% 10.8E])\n",xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
-  }
+  //if (!report){
+  //  rtPrintf("CORNER MISS \no=numpy.array([% 10.8E,% 10.8E,% 10.8E])\ndir=numpy.array([% 10.8E,% 10.8E,% 10.8E])\n",xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
+  //}
 
   // sense
   if (t0*t1 < 0.0){ // neg means inside
