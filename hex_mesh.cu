@@ -23,9 +23,9 @@ static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, flo
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = a*(2.0-x/x1); 
-  float tol = 1e-7;
+  float tol = 1e-5;
 
-  if( x > x1 & y > (line+fabsf(tol*line))){
+  if( x > x1 & y > (line+tol) ){
     return false;
   }
   else{
@@ -121,10 +121,10 @@ RT_PROGRAM void intersect(int object_dex)
 
   // correct if the closest intersection point is outside z bounds
   if (int_c_z>maxs.z){
-    closest_xy_t = (1.0 + copysignf(1e-6,-ray.direction.z))*get_t(norms[0],ray.direction,(pts[0]-xformed_origin)); // make t value slightly inside that of the top z plane
+    closest_xy_t = (1.0 + copysignf(1e-6,dot(ray.direction,norms[0])))*get_t(norms[0],ray.direction,(pts[0]-xformed_origin)); // make t value slightly inside that of the top z plane
   }
   else if (int_c_z<mins.z){
-    closest_xy_t = (1.0 + copysignf(1e-6,ray.direction.z))*get_t(norms[1],ray.direction,(pts[1]-xformed_origin));  // make t value slightly inside that of the bottom z plane
+    closest_xy_t = (1.0 + copysignf(1e-6,dot(ray.direction,norms[1])))*get_t(norms[1],ray.direction,(pts[1]-xformed_origin));  // make t value slightly inside that of the bottom z plane
   }
 
   // get two xy points that are closest to origin
@@ -155,9 +155,9 @@ RT_PROGRAM void intersect(int object_dex)
   // check these points for corner misses
   report =          accept_point( (xformed_origin + t0*ray.direction) , maxs.x, x1, x2, mins.z, maxs.z);
   report = report & accept_point( (xformed_origin + t1*ray.direction) , maxs.x, x1, x2, mins.z, maxs.z);
-  //if (!report){
-  //  rtPrintf("CORNER MISS \no=numpy.array([% 10.8E,% 10.8E,% 10.8E])\ndir=numpy.array([% 10.8E,% 10.8E,% 10.8E])\n",xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
-  //}
+  if (!report & ray.direction.z!=-1.0){
+    rtPrintf("CORNER MISS \no=numpy.array([% 10.8E,% 10.8E,% 10.8E])\ndir=numpy.array([% 10.8E,% 10.8E,% 10.8E])\n bools %d %d\n",xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z,(accept_point( (xformed_origin + t0*ray.direction) , maxs.x, x1, x2, mins.z, maxs.z))?1:0,(accept_point( (xformed_origin + t1*ray.direction) , maxs.x, x1, x2, mins.z, maxs.z))?1:0);
+  }
 
   // sense
   if (t0*t1 < 0.0){ // neg means inside

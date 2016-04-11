@@ -1643,9 +1643,9 @@ void whistory::init_cross_sections(){
 	check_cuda(cudaPeekAtLastError());
 
 	// check a particular pointer range
-	check_pointers(NUM_THREADS,28961291,28961291,d_xsdata);
-	check_pointers(NUM_THREADS,28959342,28959342,d_xsdata);
-	check_pointers(NUM_THREADS,28960891,28960891,d_xsdata);
+	//check_pointers(NUM_THREADS,28961291,28961291,d_xsdata);
+	//check_pointers(NUM_THREADS,28959342,28959342,d_xsdata);
+	//check_pointers(NUM_THREADS,28960891,28960891,d_xsdata);
 
 	// finalize python if initialized by warp
 	if(do_final){

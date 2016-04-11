@@ -769,7 +769,7 @@ int main(int argc, char* argv[]){
 		tallyname = testname;
 		tallyname.append(".tally");
 		bc = 1;
-		runtype = "fixed";
+		runtype = "criticality";
 		if(card0name.compare(argv[2])==0){
 			N = int(1e5);
 			dev = 0;
@@ -791,45 +791,45 @@ int main(int argc, char* argv[]){
 			exit(0);
 		}
 
-		//fuel 
+		//pin cell
 		type=1;
 		material=1;
-		mins[0]=-2.0;
-		mins[1]=-2.0;
-		mins[2]=-25.0;
-		maxs[0]= 2.0;
-		maxs[1]= 2.0;
-		maxs[2]= 25.0;
+		mins[0]=-1.0;
+		mins[1]=-1.0;
+		mins[2]=-20;
+		maxs[0]= 1.0; 
+		maxs[1]= 1.0; 
+		maxs[2]= 20;
 		origin[0]=0.0;
 		origin[1]=0.0;
 		origin[2]=0.0;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
 		geom.add_transform(prim_id,1,0,0,0,0,0);
 
-		//clad 
+		//clad
 		type=1;
-		material=1;
-		mins[0]=-3.0;
-		mins[1]=-3.0;
-		mins[2]=-26.0;
-		maxs[0]= 3.0;
-		maxs[1]= 3.0;
-		maxs[2]= 26.0;
+		material=2;
+		mins[0]=-1.2;
+		mins[1]=-1.2;
+		mins[2]=-20.2;
+		maxs[0]= 1.2; 
+		maxs[1]= 1.2; 
+		maxs[2]= 20.2;
 		origin[0]=0.0;
 		origin[1]=0.0;
 		origin[2]=0.0;
 		prim_id=geom.add_primitive(type,material,mins,maxs,origin);
-		geom.add_transform(prim_id,400,0,0,0,0,0);
+		geom.add_transform(prim_id,2,0,0,0,0,0);
 
 		//water 
 		type=2;
 		material=2;
-		mins[0]=-45.0;
-		mins[1]=-45.0;
-		mins[2]=-45.0;
-		maxs[0]= 45.0;
-		maxs[1]= 45.0;
-		maxs[2]= 45.0;
+		mins[0]=-1.8;
+		mins[1]=-1.8;
+		mins[2]=-25.0;
+		maxs[0]= 1.8;
+		maxs[1]= 1.8;
+		maxs[2]= 25.0;
 		origin[0]=0.0;
 		origin[1]=0.0;
 		origin[2]=0.0;
