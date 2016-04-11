@@ -17,33 +17,33 @@ rtDeclareVariable(float3,    normal,      attribute normal,   );
 rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
 
 
-static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, float zmin, float zmax, float tol)
-{
-
-  // point accepted if within the hex region
-  float x = fabsf(pnt.x);
-  float y = fabsf(pnt.y);
-  float line = -a*(x-x2)/(x2-x1); 
-
-  // check z
-  if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmin)) ){
-    return false;
-  }
-
-  // check xy
-  if (     x > (x2+fabsf(tol*x2)) ){
-    return false;
-  }
-  else if( x > x1){
-    if(    y <= (line+fabsf(tol*line)) ){return true;}
-    else{                                return false;}
-  }
-  else{
-    if(    y <= (a+fabsf(tol*a))       ){return true;}
-    else{                                return false;}
-  }
-
-}
+//static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, float zmin, float zmax, float tol)
+//{
+//
+//  // point accepted if within the hex region
+//  float x = fabsf(pnt.x);
+//  float y = fabsf(pnt.y);
+//  float line = -a*(x-x2)/(x2-x1); 
+//
+//  // check z
+//  if( pnt.z > (zmax+fabsf(tol*zmax)) | pnt.z < (zmin-fabsf(tol*zmin)) ){
+//    return false;
+//  }
+//
+//  // check xy
+//  if (     x > (x2+fabsf(tol*x2)) ){
+//    return false;
+//  }
+//  else if( x > x1){
+//    if(    y <= (line+fabsf(tol*line)) ){return true;}
+//    else{                                return false;}
+//  }
+//  else{
+//    if(    y <= (a+fabsf(tol*a))       ){return true;}
+//    else{                                return false;}
+//  }
+//
+//}
 
 
 static __device__ float get_t(float3 hat, float3 dir, float3 diff_points){
@@ -73,33 +73,15 @@ RT_PROGRAM void intersect(int object_dex)
 
   // init
   //float  max_diff = 2.0*sqrtf(2.0*maxs.x*maxs.x+maxs.z*maxs.z); // BB chord, maxium difference possible in t values
-  float  t0=-1e34, t1=1e34, sgn=1.0, this_t, t[8], new_t=0.0, closest_xy_t=0.0;
-  int    d[8], k=0;
-  float3  this_int, norm0, norm1, norms[8], pts[8];
+  float  t0=-1e34, t1=1e34, sgn=1.0, this_t, new_t=0.0, closest_xy_t=0.0, int_c_z=0.0;
+  int    d0=0, d1=0, k=0;
+  float3 norms[8], pts[8];
   bool report=true, check_second=true;
-  float tol = 1e-4;
+//  float tol = 1e-4;
 
   // box/line region delimiters
   float x1 = maxs.x/sqrtf(3.0);
   float x2 = 2.0*x1;
-
-  // init
-  t[0] = 0.0;
-  t[1] = 0.0;
-  t[2] = 0.0;
-  t[3] = 0.0;
-  t[4] = 0.0;
-  t[5] = 0.0;
-  t[6] = 0.0;
-  t[7] = 0.0;
-  d[0] = 0;
-  d[1] = 0;
-  d[2] = 0;
-  d[3] = 0;
-  d[4] = 0;
-  d[5] = 0;
-  d[6] = 0;
-  d[7] = 0;
   
   // normal vectors
   norms[0] = make_float3( 0.0            , 0.0     , 1.0 );  //  z
@@ -121,8 +103,24 @@ RT_PROGRAM void intersect(int object_dex)
   pts[6] = make_float3( -x1,  maxs.x      , maxs.z );   // 2
   pts[7] = make_float3(  x2,  0.0         , maxs.z );   // 1
 
-  // calculate t for closest point in xy (this point is only good for xy!)
-  closest_xy_t = -(xformed_origin.x*ray.direction.x + xformed_origin.y*ray.direction.y) / sqrtf(ray.direction.x*ray.direction.x + ray.direction.y*ray.direction.y);
+  // calculate t for closest point in xy
+  if ( (xformed_origin.x*ray.direction.x + xformed_origin.y*ray.direction.y) == 0.0 | (ray.direction.x*ray.direction.x + ray.direction.y*ray.direction.y) == 0.0 ){ // z-only, use z
+      closest_xy_t = -dot(xformed_origin,ray.direction) / dot(ray.direction,ray.direction);
+  }
+  else{
+      closest_xy_t = -(xformed_origin.x*ray.direction.x + xformed_origin.y*ray.direction.y) / (ray.direction.x*ray.direction.x + ray.direction.y*ray.direction.y);
+  }
+
+  // calculate z point of the closest x-y point
+  int_c_z = ray.direction.z * closest_xy_t + xformed_origin.z;
+
+  // correct if the closest intersection point is outside z bounds
+  if (int_c_z>maxs.z){
+    closest_xy_t = (1.0 + copysignf(1e-6,-ray.direction.z))*get_t(norms[0],ray.direction,(pts[0]-xformed_origin)); // make t value slightly inside that of the top z plane
+  }
+  else if (int_c_z<mins.z){
+    closest_xy_t = (1.0 + copysignf(1e-6,ray.direction.z))*get_t(norms[1],ray.direction,(pts[1]-xformed_origin));  // make t value slightly inside that of the bottom z plane
+  }
 
   // get two xy points that are closest to origin
   // t1 is nearest positive w.r.t. closest_xy_t, t0 is nearest negative
@@ -131,20 +129,26 @@ RT_PROGRAM void intersect(int object_dex)
     // calculate intersection t value
     this_t = get_t(norms[i],ray.direction,(pts[i]-xformed_origin));
     // calculate intersection point from t value
-    this_int = ray.direction * this_t + xformed_origin;
+    //this_int = ray.direction * this_t + xformed_origin;
     // find the nearest points to closest_xy_t
     new_t = this_t - closest_xy_t;
     if( new_t < 0.0) { 
       if(new_t > t0){
-        t0=this_t;
+        t0=new_t;
+        d0=i;
       }
     }
     else{ 
       if(new_t < t1){
-        t1=this_t;
+        t1=new_t;
+        d1=i;
       }
     }
   }
+
+  // shift back to normal t
+  t0 = t0 + closest_xy_t;
+  t1 = t1 + closest_xy_t;
 
   // now find any missing points or determine if its a corner miss
   if(k==0){
@@ -152,33 +156,21 @@ RT_PROGRAM void intersect(int object_dex)
   }
   else if(k==1){
     // not good
-    t0=t[0];
-    norm0=norms[d[0]];
     report = true;
     check_second = false;
-    rtPrintf("k==1! t(%u,:)=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];\n",launch_index_in,t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7]);
-    rtPrintf("k==1! o(%u,:)=[%10.8E, %10.8E, %10.8E];dir(%u,:)=[%10.8E, %10.8E, %10.8E];\n",launch_index_in,xformed_origin.x,xformed_origin.y,xformed_origin.z,launch_index_in,ray.direction.x,ray.direction.y,ray.direction.z);
+    rtPrintf("k==1! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];dir=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
   }
   else if(k==2){
     // good
-    t0=t[0];
-    t1=t[1];
-    norm0=norms[d[0]];
-    norm1=norms[d[1]];
     report = true;
     check_second = true;
     //rtPrintf("k==2! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];d=[%10.8E, %10.8E, %10.8E];\n",t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
   }
   else{
     // also not good
-    t0=t[0];
-    t1=t[1];
-    norm0=norms[d[0]];
-    norm1=norms[d[1]];
     report = true;
     check_second = true;
-    rtPrintf("k==%d! t(%u,:)=[%10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E, %10.8E];\n",k,launch_index_in,t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7]);
-    rtPrintf("k==%d! o(%u,:)=[%10.8E, %10.8E, %10.8E];dir(%u,:)=[%10.8E, %10.8E, %10.8E];\n",k,launch_index_in,xformed_origin.x,xformed_origin.y,xformed_origin.z,launch_index_in,ray.direction.x,ray.direction.y,ray.direction.z);
+    rtPrintf("k==%d! t=[%10.8E, %10.8E];o=[%10.8E, %10.8E, %10.8E];dir=[%10.8E, %10.8E, %10.8E];\n",k,t0,t1,xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
   }
 
   // sense
@@ -196,7 +188,7 @@ RT_PROGRAM void intersect(int object_dex)
         celltal     = dims[object_dex].talnum;
         cellmat     = dims[object_dex].matnum;
         cellfissile = dims[object_dex].is_fissile;
-        normal      = sgn*norm0;
+        normal      = sgn*norms[d0];
         sense       = int(sgn);
        if(rtReportIntersection(0))
          check_second = false;
@@ -207,7 +199,7 @@ RT_PROGRAM void intersect(int object_dex)
          celltal     = dims[object_dex].talnum;
          cellmat     = dims[object_dex].matnum;
          cellfissile = dims[object_dex].is_fissile;
-         normal      = sgn*norm1;
+         normal      = sgn*norms[d1];
          sense       = int(sgn);
         rtReportIntersection(0);
       }
