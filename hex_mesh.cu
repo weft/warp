@@ -22,10 +22,10 @@ static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, flo
   // point accepted if within the hex region
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
-  float line = -a*(x-x2)/(x2-x1); 
+  float line = a*(1.0-x/x1); 
   float tol = 1e-7;
 
-  if( (pnt.z==zmax|pnt.z==zmin) & x > x1 & y > (line+fabsf(tol*line))){
+  if( x > x1 & y > (line+fabsf(tol*line))){
     return false;
   }
   else{
