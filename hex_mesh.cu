@@ -16,15 +16,16 @@ rtDeclareVariable(unsigned,  sense      , attribute cell_sense, );
 rtDeclareVariable(float3,    normal,      attribute normal,   );
 rtDeclareVariable(uint, launch_index_in, rtLaunchIndex, );
 
-static __device__ bool accept_point(float3 pnt, float a, float x1, float x2)
+static __device__ bool accept_point(float3 pnt, float a, float x1, float x2, float zmin, float zmax)
 {
 
   // point accepted if within the hex region
   float x = fabsf(pnt.x);
   float y = fabsf(pnt.y);
   float line = -a*(x-x2)/(x2-x1); 
+  float tol = 1e-7;
 
-  if( x > x1 & y > line){
+  if( (pnt.z==zmax|pnt.z==zmin) & x > x1 & y > (line+fabsf(tol*line))){
     return false;
   }
   else{
@@ -133,8 +134,8 @@ RT_PROGRAM void intersect(int object_dex)
   t1 = t1 + closest_xy_t;
 
   // check these points for corner misses
-  report =          accept_point( (xformed_origin + t0*ray.direction) , maxs.x, x1, x2);
-  report = report & accept_point( (xformed_origin + t1*ray.direction) , maxs.x, x1, x2);
+  report =          accept_point( (xformed_origin + t0*ray.direction) , maxs.x, x1, x2, mins.z, maxs.z);
+  report = report & accept_point( (xformed_origin + t1*ray.direction) , maxs.x, x1, x2, mins.z, maxs.z);
   if (!report){
     rtPrintf("CORNER MISS \no=numpy.array([% 10.8E,% 10.8E,% 10.8E])\ndir=numpy.array([% 10.8E,% 10.8E,% 10.8E])\n",xformed_origin.x,xformed_origin.y,xformed_origin.z,ray.direction.x,ray.direction.y,ray.direction.z);
   }
