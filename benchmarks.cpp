@@ -132,7 +132,7 @@ int main(int argc, char* argv[]){
 			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(9.e6);
+			N = int(8.e6);
 			dev = 0;
 		}
 		else{
@@ -244,7 +244,7 @@ int main(int argc, char* argv[]){
 			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(9.e6);
+			N = int(8.e6);
 			dev = 0;
 		}
 		else{
@@ -410,7 +410,7 @@ int main(int argc, char* argv[]){
 			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(9.e6);
+			N = int(8.e6);
 			dev = 0;
 		}
 		else{
@@ -519,7 +519,7 @@ int main(int argc, char* argv[]){
 			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(9.e6);
+			N = int(8.e6);
 			dev = 0;
 		}
 		else{
@@ -615,7 +615,7 @@ int main(int argc, char* argv[]){
 			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(9.e6);
+			N = int(8.e6);
 			dev = 0;
 		}
 		else{
@@ -715,7 +715,7 @@ int main(int argc, char* argv[]){
 			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(9.e6);
+			N = int(8.e6);
 			dev = 0;
 		}
 		else{
@@ -783,7 +783,7 @@ int main(int argc, char* argv[]){
 			dev = 0;
 		}
 		else if(card3name.compare(argv[2])==0){
-			N = int(9.e6);
+			N = int(8.e6);
 			dev = 0;
 		}
 		else{
