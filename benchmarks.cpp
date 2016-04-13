@@ -1016,6 +1016,7 @@ int main(int argc, char* argv[]){
 	// INIT CUDA and HISTORY STUFF and LOAD/UNIONIZE CROS SECTIONS //
 	/////////////////////////////////////////////////////////////////
 
+	N = int(6.5e6);
 	whistory hist ( N , geom );
 	hist.set_print_level(2);
 	hist.set_dump_level(1);
