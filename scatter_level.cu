@@ -144,9 +144,15 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		dist_data	dist_lower	=	dist_scatter[this_dex].lower[0];
 		dist_data	dist_upper	=	dist_scatter[this_dex].upper[0];
 		unsigned	this_law	=	0;
-		float		f			=	(this_E - dist_lower.erg) / (dist_upper.erg - dist_lower.erg);
-		if( get_rand(&rn)>f ){
-			this_dist = dist_lower;
+		float 		f 			=	1.0;
+		if (dist_upper.erg - dist_lower.erg > 0.0){
+			f		=	(this_E - dist_lower.erg) / (dist_upper.erg - dist_lower.erg);
+			if( get_rand(&rn)>f ){
+				this_dist = dist_lower;
+			}
+			else{
+				this_dist = dist_upper;
+			}
 		}
 		else{
 			this_dist = dist_upper;
@@ -154,7 +160,7 @@ __global__ void scatter_level_kernel(unsigned N, unsigned starting_index, cross_
 		
 		// sample the distribution
 		if(this_tope==2 & this_rxn==50 & this_dist.len==3 & this_E>0.26){printf("len 3 in O16, E %6.4E\n",this_E);}
-		if((this_E < dist_lower.erg | this_E > dist_upper.erg) & (this_E<energy_grid[energy_grid_len-1] & this_E>energy_grid[0])){printf("NOT BETWEEN DISTS! lower %6.4E this %6.4E upper %6.4E\n",dist_lower.erg,this_E,dist_upper.erg);}
+		//if((this_E < dist_lower.erg | this_E > dist_upper.erg) & (this_E<energy_grid[energy_grid_len-1] & this_E>energy_grid[0])){printf("NOT BETWEEN DISTS! lower %6.4E this %6.4E upper %6.4E\n",dist_lower.erg,this_E,dist_upper.erg);}
 		this_law = this_dist.law;
 
 		if ( this_law == 0 ){
