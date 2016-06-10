@@ -91,20 +91,21 @@ All neutrons need these things done, so these routines all live in the same rout
 	// declare
 	float		norm[3];
 	float		plane_vec[3];
-	float		samp_dist		= 0.0;
-	float		diff			= 0.0;
-	unsigned	this_tope		= 999999999;
-	unsigned	array_dex		= 0;
-	unsigned	adj_dex			= 0;
-	float		dotp			= 0.0;
+	float		samp_dist	= 0.0;
+	float		diff		= 0.0;
+	unsigned	this_tope	= 999999999;
+	unsigned	array_dex	= 0;
+	unsigned	adj_dex		= 0;
+	float		dotp		= 0.0;
 	float		macro_t_total	= 0.0;
-	const float	epsilon			= 5.0e-6;
-	const float	push_value		= 2.0;
+	const float	epsilon		= 5.0e-6;
+	const float	push_value	= 2.0;
 	float surf_minimum, this_Q;
 	//float xhat_new, yhat_new, zhat_new;
 	unsigned	cell_local[10];
 	unsigned	mat_local[10];
 	float		dist_local[10];
+	float		macro_maj	= 0.0;
 
 	// load from arrays
 	unsigned	this_mat		=  matnum[tid];
@@ -213,6 +214,15 @@ All neutrons need these things done, so these routines all live in the same rout
 			e1	= 0.0;
 		}
 
+		for(int i = 0; i < n_materials; i++)
+		{
+			macro_t_total = sum_cross_section(n_isotopes, e0, this_E,
+				&s_number_density_matrix[i*n_isotopes],	&xs[adj_dex*n_columns]);
+			if(macro_t_total > macro_maj){macro_maj = macro_t_total;}
+			if(tid==1){printf("mat %i macro_t %10.8E\n",i,macro_t_total);}
+		}
+		if(tid==1){printf("macro_maj %10.8E\n",macro_maj);}
+
 		// outside data, pass one array
 		// compute the total macroscopic cross section for this material
 		macro_t_total = sum_cross_section(n_isotopes, e0, this_E,
@@ -230,6 +240,16 @@ All neutrons need these things done, so these routines all live in the same rout
 		// energy edges
 		e0 = energy_grid[dex];
 		e1 = energy_grid[dex+1];
+
+		for(int i = 0; i < n_materials; i++)
+		{
+			macro_t_total = sum_cross_section(n_isotopes, e0, e1, this_E,  
+				&s_number_density_matrix[i*n_isotopes], &xs[dex*n_columns],
+				&xs[(dex+1)*n_columns]);
+			if(macro_t_total > macro_maj){macro_maj = macro_t_total;}
+			if(tid==1){printf("mat %i macro_t %10.8E\n",i,macro_t_total);}
+		}
+		if(tid==1){printf("macro_maj %10.8E\n",macro_maj);}
 
 		// inside the data, pass two arrays
 		// compute the total macroscopic cross section for this material
