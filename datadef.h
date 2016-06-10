@@ -51,6 +51,17 @@ struct spatial_data{
 	float		norm[3];	/**< normal vector of intersection */
 	unsigned	enforce_BC;	/**< boundary condition enforcement flag */
 	unsigned	weight;		/**< particle statistical weight */
+	unsigned	cell[10];
+	float		dist[10];
+	float		dist_test[10];
+	unsigned	mat[10];
+	float		xprint[10];
+	float		yprint[10];
+	float		zprint[10];
+	float		xtest[10];
+	float		ytest[10];
+	float		ztest[10];
+	int		sense[10];
 };
 
 /**
@@ -70,6 +81,8 @@ struct intersection_point {
 	float		norm[3];    /**< most recent normal */
 	int			sense;   	/**< most recent cell sense */
 	int 		tally_index;/**< tally index of most recent cell */
+	int		buff_index;
+	unsigned	launch_dex;
 };
 
 /**

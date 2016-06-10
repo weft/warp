@@ -102,16 +102,20 @@ All neutrons need these things done, so these routines all live in the same rout
 	const float	push_value		= 2.0;
 	float surf_minimum, this_Q;
 	//float xhat_new, yhat_new, zhat_new;
+	unsigned	cell_local[10];
+	unsigned	mat_local[10];
+	float		dist_local[10];
 
 	// load from arrays
 	unsigned	this_mat		=  matnum[tid];
-	int 		tally_index 	=  talnum[tid];
-	unsigned	dex				=   index[tid];  
-	unsigned	rn				= rn_bank[tid];
+	unsigned	this_cell		=  cellnum[tid];
+	int 		tally_index 		=  talnum[tid];
+	unsigned	dex			=   index[tid];  
+	unsigned	rn			= rn_bank[tid];
 	float		this_E			=       E[tid];
-	float		x				=   space[tid].x;
-	float		y				=   space[tid].y;
-	float		z				=   space[tid].z;
+	float		x			=   space[tid].x;
+	float		y			=   space[tid].y;
+	float		z			=   space[tid].z;
 	float		xhat			=   space[tid].xhat;
 	float		yhat			=   space[tid].yhat;
 	float		zhat			=   space[tid].zhat;
@@ -126,6 +130,60 @@ All neutrons need these things done, so these routines all live in the same rout
 	//  -- find interacting isotope
 	//
 	//
+
+	for(int i = 0; i < 10; i++)
+	{
+		cell_local[i] = space[tid].cell[i];
+		mat_local[i] = space[tid].mat[i];
+		dist_local[i] = space[tid].dist[i];
+	}
+
+	for(int i = 1; i < 10; i++)
+	{
+		if(dist_local[i] > 0){dist_local[i] += dist_local[i-1];}
+	}
+
+	for(int i = 0; i < 9; i++)
+	{
+		if(cell_local[i] == cell_local[i+1] && cell_local[i] != -1)
+		{
+			for(int j = i+1; j > 0; j--)
+			{
+				cell_local[j] = cell_local[j-1];
+				mat_local[j] = mat_local[j-1];
+			}
+		}
+	}
+
+	cell_local[0] = this_cell;
+	mat_local[0] = this_mat;
+
+	if(tid == 1)
+	{
+		printf("***** macro_micro info\n");
+		printf("xyz     %10.8E %10.8E %10.8E\n",x,y,z);
+		printf("xyz hat %10.8E %10.8E %10.8E\n",xhat,yhat,zhat);
+		printf("surf dist %10.8E\n",surf_dist);
+		printf("cell %u\n", cellnum[tid]);
+		printf("***** hits_mesh info\n");
+		for(int i = 0; i < 5; i++)
+		{
+			printf("index %i\n",i);
+			printf("distance (remap) %10.8E\n", space[tid].dist[i]);
+			printf("distance %10.8E\n", space[tid].dist_test[i]);
+			printf("cell %u\n", space[tid].cell[i]);
+			printf("mat %u\n", space[tid].mat[i]);
+			printf("xyz (remap) %10.8E %10.8E %10.8E\n",space[tid].xprint[i],space[tid].yprint[i],space[tid].zprint[i]); 
+			printf("xyz %10.8E %10.8E %10.8E\n",space[tid].xtest[i],space[tid].ytest[i],space[tid].ztest[i]); 
+		}
+		printf("***** local array info\n");
+		for(int i = 0; i < 5; i++)
+		{
+			printf("distance %10.8E\n", dist_local[i]);
+			printf("cell %u\n", cell_local[i]);
+			printf("mat %u\n", mat_local[i]);
+		}
+	}
 
 	// compute some things
 	unsigned	n_columns 		= n_isotopes + total_reaction_channels;
@@ -144,31 +202,27 @@ All neutrons need these things done, so these routines all live in the same rout
 		if(dex==4294967294){
 			// out of bounds below data
 			adj_dex = 0;
-			e0		= energy_grid[adj_dex];
-			e1		= 0.0;
+			e0	= energy_grid[adj_dex];
+			e1	= 0.0;
 
 		}
 		else{
 			// out of bounds above data
 			adj_dex = energy_grid_len-1;
-			e0		= energy_grid[adj_dex];
-			e1		= 0.0;
+			e0	= energy_grid[adj_dex];
+			e1	= 0.0;
 		}
 
 		// outside data, pass one array
 		// compute the total macroscopic cross section for this material
-		macro_t_total = sum_cross_section(	n_isotopes,
-											e0, this_E,
-											&s_number_density_matrix[this_mat*n_isotopes],  
-											&xs[ adj_dex   *n_columns]					);
+		macro_t_total = sum_cross_section(n_isotopes, e0, this_E,
+				&s_number_density_matrix[this_mat*n_isotopes],	&xs[adj_dex*n_columns]);
 
 		if(!isfinite(macro_t_total) | macro_t_total<=0.0){printf("1 macro_t_total is wrong:  % 6.4E e0 % 6.4E e1 % 6.4E \n",macro_t_total,e0,e1);}
 	
 		// determine the isotope in the material for this cell
-		this_tope = sample_cross_section(	n_isotopes, macro_t_total, rn1,
-											e0, this_E,
-											&s_number_density_matrix[this_mat*n_isotopes],  
-											&xs[ adj_dex   *n_columns]					);
+		this_tope = sample_cross_section(n_isotopes, macro_t_total, rn1, e0, this_E,
+			    &s_number_density_matrix[this_mat*n_isotopes], &xs[adj_dex*n_columns]);
 
 	}
 	else{
@@ -179,20 +233,16 @@ All neutrons need these things done, so these routines all live in the same rout
 
 		// inside the data, pass two arrays
 		// compute the total macroscopic cross section for this material
-		macro_t_total = sum_cross_section(	n_isotopes,
-											e0, e1, this_E,  
-											&s_number_density_matrix[this_mat*n_isotopes],
-											&xs[ dex   *n_columns],  
-											&xs[(dex+1)*n_columns]				);
+		macro_t_total = sum_cross_section(n_isotopes, e0, e1, this_E,  
+				&s_number_density_matrix[this_mat*n_isotopes], &xs[dex*n_columns],
+				&xs[(dex+1)*n_columns]);
 
 		if(!isfinite(macro_t_total) | macro_t_total<=0.0){printf("2 macro_t_total is wrong:  % 6.4E e0 % 6.4E e1 % 6.4E \n",macro_t_total,e0,e1);}
 	
 		// determine the isotope in the material for this cell
-		this_tope = sample_cross_section(	n_isotopes, macro_t_total, rn1,
-											e0, e1, this_E,
-											&s_number_density_matrix[this_mat*n_isotopes],  
-											&xs[ dex   *n_columns],  
-											&xs[(dex+1)*n_columns]				);
+		this_tope = sample_cross_section(n_isotopes, macro_t_total, rn1, e0, e1, this_E,
+			    &s_number_density_matrix[this_mat*n_isotopes], &xs[dex*n_columns],  
+			    &xs[(dex+1)*n_columns]);
 
 	}
 

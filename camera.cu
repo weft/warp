@@ -38,6 +38,9 @@ RT_PROGRAM void camera()
 	optix::Ray ray;
 	intersection_point  payload;
 
+	payload.launch_dex = launch_index;
+
+
 	// null rxn, miss will set it if there is a miss
 	// rxn_buffer[launch_index_in] = 0.0;
 
@@ -58,6 +61,8 @@ RT_PROGRAM void camera()
 		payload.norm[1]   	= 0.0; 
 		payload.norm[2]   	= 0.0;    
 		payload.sense     	= 0.0;   
+		payload.buff_index	= 0;
+
 		// init ray
 		ray_direction  	= make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
 		ray_origin     	= make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
@@ -91,11 +96,29 @@ RT_PROGRAM void camera()
 	payload.norm[1]		= 0.0; 
 	payload.norm[2]		= 0.0;    
 	payload.sense		= 0.0;   
-	ray_direction		= make_float3(0,0,-1);
+	
+//	ray_direction		= make_float3(0,0,-1);
 	ray_origin			= make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
+	ray_direction  	= make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
 	ray					= optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 	const float	push_value		= 2.0;
 	float dotp=0.0;
+
+	for(int i = 0; i < 10; i++)
+	{
+		positions_buffer[launch_index].cell[i] = -1;
+		positions_buffer[launch_index].dist[i] = -1.0;
+		positions_buffer[launch_index].dist_test[i] = -1.0;
+		positions_buffer[launch_index].mat[i] = -1;
+		positions_buffer[launch_index].xprint[i] = -1.0;
+		positions_buffer[launch_index].yprint[i] = -1.0;
+		positions_buffer[launch_index].zprint[i] = -1.0;
+		positions_buffer[launch_index].xtest[i] = -1.0;
+		positions_buffer[launch_index].ytest[i] = -1.0;
+		positions_buffer[launch_index].ztest[i] = -1.0;
+		positions_buffer[launch_index].sense[i] = 0;
+	}
+	payload.buff_index	= 0;
 	
 	// then find entering cell, use downward z to make problems with high x-y density faster
 	rtTrace(top_object, ray, payload);
@@ -110,6 +133,7 @@ RT_PROGRAM void camera()
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);
 		sense = sense + payload.sense;
+		positions_buffer[launch_index].sense[payload.buff_index] = sense;
 	}
 
 	// write cell/material numbers to buffer
