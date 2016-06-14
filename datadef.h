@@ -55,13 +55,14 @@ struct spatial_data{
 	float		dist[10];
 	float		dist_test[10];
 	unsigned	mat[10];
-	float		xprint[10];
-	float		yprint[10];
-	float		zprint[10];
-	float		xtest[10];
-	float		ytest[10];
-	float		ztest[10];
+//	float		xprint[10];
+//	float		yprint[10];
+//	float		zprint[10];
+//	float		xtest[10];
+//	float		ytest[10];
+//	float		ztest[10];
 	int		sense[10];
+	int		cont[10];
 };
 
 /**
@@ -75,14 +76,15 @@ struct intersection_point {
 	float		y; 			/**< y-coordinate */
 	float		z; 			/**< z-coordinate */
 	float		surf_dist;  /**< distance to nearest surface */
-	int			cell; 		/**< cell number */
-	int			mat;  		/**< material number */
-	int			fiss; 		/**< fissile flag */
+	int		cell; 		/**< cell number */
+	int		mat;  		/**< material number */
+	int		fiss; 		/**< fissile flag */
 	float		norm[3];    /**< most recent normal */
-	int			sense;   	/**< most recent cell sense */
+	int		sense;   	/**< most recent cell sense */
 	int 		tally_index;/**< tally index of most recent cell */
 	int		buff_index;
 	unsigned	launch_dex;
+	int 		cont;
 };
 
 /**

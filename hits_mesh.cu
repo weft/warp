@@ -13,6 +13,7 @@ rtDeclareVariable(unsigned,  cellmat,     attribute cell_mat, );
 rtDeclareVariable(unsigned,  cellfissile, attribute cell_fis, );
 rtDeclareVariable(unsigned,  sense,       attribute cell_sense, );
 rtDeclareVariable(float3,    normal,      attribute normal, );
+rtDeclareVariable(unsigned,  outer_cell,  , );
 rtDeclareVariable(uint, launch_index, rtLaunchIndex, );
 rtBuffer<spatial_data,1> positions_buffer;
 
@@ -34,8 +35,10 @@ RT_PROGRAM void closest_hit()
 	payload.sense = sense;
 	if (sense == 0){rtPrintf("sense of closest_hit is 0!\n");}
 
+	if(cellnum == outer_cell){ payload.cont = 0; }
+
 	//update mat, cell, fiss
-	payload.mat			= cellmat;
+	payload.mat		= cellmat;
 	payload.cell		= cellnum;
 	payload.tally_index	= celltal;
 	payload.fiss		= cellfissile;
@@ -44,13 +47,13 @@ RT_PROGRAM void closest_hit()
 	positions_buffer[payload.launch_dex].dist[payload.buff_index] = int_dist;
 	positions_buffer[launch_index].dist_test[payload.buff_index] = int_dist;
 	positions_buffer[payload.launch_dex].mat[payload.buff_index] = cellmat;
-	positions_buffer[payload.launch_dex].xprint[payload.buff_index] = payload.x;
-	positions_buffer[payload.launch_dex].yprint[payload.buff_index] = payload.y;
-	positions_buffer[payload.launch_dex].zprint[payload.buff_index] = payload.z;
-	positions_buffer[launch_index].xtest[payload.buff_index] = payload.x;
-	positions_buffer[launch_index].ytest[payload.buff_index] = payload.y;
-	positions_buffer[launch_index].ztest[payload.buff_index] = payload.z;
+//	positions_buffer[payload.launch_dex].xprint[payload.buff_index] = payload.x;
+//	positions_buffer[payload.launch_dex].yprint[payload.buff_index] = payload.y;
+//	positions_buffer[payload.launch_dex].zprint[payload.buff_index] = payload.z;
+//	positions_buffer[launch_index].xtest[payload.buff_index] = payload.x;
+//	positions_buffer[launch_index].ytest[payload.buff_index] = payload.y;
+//	positions_buffer[launch_index].ztest[payload.buff_index] = payload.z;
+	positions_buffer[payload.launch_dex].cont[payload.buff_index] = payload.cont;
 
 	payload.buff_index++;
-
 }

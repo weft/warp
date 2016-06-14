@@ -174,8 +174,9 @@ All neutrons need these things done, so these routines all live in the same rout
 			printf("distance %10.8E\n", space[tid].dist_test[i]);
 			printf("cell %u\n", space[tid].cell[i]);
 			printf("mat %u\n", space[tid].mat[i]);
-			printf("xyz (remap) %10.8E %10.8E %10.8E\n",space[tid].xprint[i],space[tid].yprint[i],space[tid].zprint[i]); 
-			printf("xyz %10.8E %10.8E %10.8E\n",space[tid].xtest[i],space[tid].ytest[i],space[tid].ztest[i]); 
+//			printf("xyz (remap) %10.8E %10.8E %10.8E\n",space[tid].xprint[i],space[tid].yprint[i],space[tid].zprint[i]); 
+//			printf("xyz %10.8E %10.8E %10.8E\n",space[tid].xtest[i],space[tid].ytest[i],space[tid].ztest[i]); 
+			printf("cont %i\n", space[tid].cont[i]);
 		}
 		printf("***** local array info\n");
 		for(int i = 0; i < 5; i++)

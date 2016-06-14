@@ -39,7 +39,8 @@ RT_PROGRAM void camera()
 	intersection_point  payload;
 
 	payload.launch_dex = launch_index;
-
+	payload.cont	   = 1;
+	payload.buff_index = 0;
 
 	// null rxn, miss will set it if there is a miss
 	// rxn_buffer[launch_index_in] = 0.0;
@@ -53,15 +54,16 @@ RT_PROGRAM void camera()
 		payload.mat   		= 999999;
 		payload.cell  		= 999999;
 		payload.fiss  		= 0;
-		payload.x 			= 0.0;
-		payload.y 			= 0.0;
-		payload.z 			= 0.0; 
+		payload.x 		= 0.0;
+		payload.y 		= 0.0;
+		payload.z 		= 0.0; 
 		payload.surf_dist 	= 50000;  
 		payload.norm[0]   	= 0.0; 
 		payload.norm[1]   	= 0.0; 
 		payload.norm[2]   	= 0.0;    
 		payload.sense     	= 0.0;   
 		payload.buff_index	= 0;
+//		if(launch_index==1){rtPrintf("outer cell: %u\n",outer_cell);}
 
 		// init ray
 		ray_direction  	= make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
@@ -83,14 +85,14 @@ RT_PROGRAM void camera()
 	}
 
 	// re-init sense, payload, ray
-	sense				= 0;
+	sense			= 0;
 	payload.sense		= 0;
-	payload.mat			= 999999;
+	payload.mat		= 999999;
 	payload.cell		= 999999;
 	payload.fiss		= 0;
-	payload.x			= 0.0;
-	payload.y			= 0.0;
-	payload.z			= 0.0; 
+	payload.x		= 0.0;
+	payload.y		= 0.0;
+	payload.z		= 0.0; 
 	payload.surf_dist	= 50000;  
 	payload.norm[0]		= 0.0; 
 	payload.norm[1]		= 0.0; 
@@ -100,7 +102,7 @@ RT_PROGRAM void camera()
 //	ray_direction		= make_float3(0,0,-1);
 	ray_origin			= make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
 	ray_direction  	= make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
-	ray					= optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
+	ray		= optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 	const float	push_value		= 2.0;
 	float dotp=0.0;
 
@@ -110,26 +112,30 @@ RT_PROGRAM void camera()
 		positions_buffer[launch_index].dist[i] = -1.0;
 		positions_buffer[launch_index].dist_test[i] = -1.0;
 		positions_buffer[launch_index].mat[i] = -1;
-		positions_buffer[launch_index].xprint[i] = -1.0;
-		positions_buffer[launch_index].yprint[i] = -1.0;
-		positions_buffer[launch_index].zprint[i] = -1.0;
-		positions_buffer[launch_index].xtest[i] = -1.0;
-		positions_buffer[launch_index].ytest[i] = -1.0;
-		positions_buffer[launch_index].ztest[i] = -1.0;
+//		positions_buffer[launch_index].xprint[i] = -1.0;
+//		positions_buffer[launch_index].yprint[i] = -1.0;
+//		positions_buffer[launch_index].zprint[i] = -1.0;
+//		positions_buffer[launch_index].xtest[i] = -1.0;
+//		positions_buffer[launch_index].ytest[i] = -1.0;
+//		positions_buffer[launch_index].ztest[i] = -1.0;
 		positions_buffer[launch_index].sense[i] = 0;
+		positions_buffer[launch_index].cont[i] = -1;
 	}
 	payload.buff_index	= 0;
+	payload.cont		= 1;
 	
 	// then find entering cell, use downward z to make problems with high x-y density faster
 	rtTrace(top_object, ray, payload);
 	sense = payload.sense;
-	while( (sense>=0)){// & (outer_cell!=payload.cell)){
+//	while(sense>=0){// & (outer_cell!=payload.cell)){
+	while((sense>=0) || (payload.cont)){// & (outer_cell!=payload.cell)){
+//	while(payload.cont){
 		dotp = 	payload.norm[0]*ray_direction.x +
 				payload.norm[1]*ray_direction.y +
 				payload.norm[2]*ray_direction.z;
 		ray_origin = make_float3(	payload.x + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[0],
-									payload.y + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[1],
-									payload.z + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[2]	);
+						payload.y + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[1],
+						payload.z + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[2]	);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);
 		sense = sense + payload.sense;

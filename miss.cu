@@ -32,6 +32,6 @@ RT_PROGRAM void miss()
 	payload.cell 				=  3000;
 	payload.mat  				=  3000;
 	payload.fiss 				=  0;
-
+	payload.cont			= 0;
 
 }
