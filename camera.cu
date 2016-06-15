@@ -32,7 +32,7 @@ RT_PROGRAM void camera()
 	}
 
 	// declare important stuff
-	int                 sense = 0;
+//	int                 sense = 0;
 	float               epsilon=5.0e-6; 	
 	float3 ray_direction, ray_origin;
 	optix::Ray ray;
@@ -50,7 +50,7 @@ RT_PROGRAM void camera()
 	// find nearest surface if and BC if type 2 
 	if(trace_type==2){
 		// init payload flags
-		payload.sense 		= 0;
+//		payload.sense 		= 0;
 		payload.mat   		= 999999;
 		payload.cell  		= 999999;
 		payload.fiss  		= 0;
@@ -61,7 +61,7 @@ RT_PROGRAM void camera()
 		payload.norm[0]   	= 0.0; 
 		payload.norm[1]   	= 0.0; 
 		payload.norm[2]   	= 0.0;    
-		payload.sense     	= 0.0;   
+//		payload.sense     	= 0.0;   
 		payload.buff_index	= 0;
 //		if(launch_index==1){rtPrintf("outer cell: %u\n",outer_cell);}
 
@@ -85,8 +85,8 @@ RT_PROGRAM void camera()
 	}
 
 	// re-init sense, payload, ray
-	sense			= 0;
-	payload.sense		= 0;
+//	sense			= 0;
+//	payload.sense		= 0;
 	payload.mat		= 999999;
 	payload.cell		= 999999;
 	payload.fiss		= 0;
@@ -97,7 +97,7 @@ RT_PROGRAM void camera()
 	payload.norm[0]		= 0.0; 
 	payload.norm[1]		= 0.0; 
 	payload.norm[2]		= 0.0;    
-	payload.sense		= 0.0;   
+//	payload.sense		= 0.0;   
 	
 //	ray_direction		= make_float3(0,0,-1);
 	ray_origin			= make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
@@ -118,35 +118,37 @@ RT_PROGRAM void camera()
 //		positions_buffer[launch_index].xtest[i] = -1.0;
 //		positions_buffer[launch_index].ytest[i] = -1.0;
 //		positions_buffer[launch_index].ztest[i] = -1.0;
-		positions_buffer[launch_index].sense[i] = 0;
+//		positions_buffer[launch_index].sense[i] = 0;
 		positions_buffer[launch_index].cont[i] = -1;
+		positions_buffer[launch_index].fiss[i] = -1;
 	}
 	payload.buff_index	= 0;
 	payload.cont		= 1;
 	
 	// then find entering cell, use downward z to make problems with high x-y density faster
 	rtTrace(top_object, ray, payload);
-	sense = payload.sense;
+//	sense = payload.sense;
 //	while(sense>=0){// & (outer_cell!=payload.cell)){
-	while((sense>=0) || (payload.cont)){// & (outer_cell!=payload.cell)){
-//	while(payload.cont){
+//	while((sense>=0) || (payload.cont)){// & (outer_cell!=payload.cell)){
+	while(payload.cont){
 		dotp = 	payload.norm[0]*ray_direction.x +
 				payload.norm[1]*ray_direction.y +
 				payload.norm[2]*ray_direction.z;
-		ray_origin = make_float3(	payload.x + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[0],
-						payload.y + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[1],
-						payload.z + copysignf(1.0,dotp)*push_value*epsilon*payload.norm[2]	);
+		ray_origin = make_float3(payload.x+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[0],
+					 payload.y+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[1],
+					payload.z+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[2]);
 		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		rtTrace(top_object, ray, payload);
-		sense = sense + payload.sense;
-		positions_buffer[launch_index].sense[payload.buff_index] = sense;
+//		sense = sense + payload.sense;
+//		positions_buffer[launch_index].sense[payload.buff_index] = sense;
 	}
 
 	// write cell/material numbers to buffer
 	cellnum_buffer[launch_index]	 				= payload.cell;
 	talnum_buffer[ launch_index]	 				= payload.tally_index;
 	if(trace_type == 3){  //write fissile flag if fissile query
-		matnum_buffer[launch_index] 				= payload.fiss;
+//		matnum_buffer[launch_index] 				= payload.fiss;
+		matnum_buffer[launch_index] 			= positions_buffer[launch_index].fiss[0];
 		rxn_buffer[launch_index_in] 				= 0;
 	}
 	else{ //otherwise write material to buffer 
