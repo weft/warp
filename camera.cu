@@ -150,6 +150,14 @@ RT_PROGRAM void camera()
 //		matnum_buffer[launch_index] 				= payload.fiss;
 		matnum_buffer[launch_index] 			= positions_buffer[launch_index].fiss[0];
 		rxn_buffer[launch_index_in] 				= 0;
+		cellnum_buffer[launch_index] = positions_buffer[launch_index].cell[0];
+
+		if(launch_index == 1)
+		{
+			rtPrintf("cell %u\n",cellnum_buffer[launch_index]);
+			rtPrintf("mat %u\n",matnum_buffer[launch_index]);
+		}
+
 	}
 	else{ //otherwise write material to buffer 
 		matnum_buffer[launch_index] 				= payload.mat;
