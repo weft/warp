@@ -144,13 +144,13 @@ RT_PROGRAM void camera()
 	}
 
 	// write cell/material numbers to buffer
-	cellnum_buffer[launch_index]	 				= payload.cell;
-	talnum_buffer[ launch_index]	 				= payload.tally_index;
+	cellnum_buffer[launch_index] = positions_buffer[launch_index].mat[0];
+	talnum_buffer[ launch_index] = payload.tally_index;
 	if(trace_type == 3){  //write fissile flag if fissile query
 //		matnum_buffer[launch_index] 				= payload.fiss;
-		matnum_buffer[launch_index] 			= positions_buffer[launch_index].fiss[0];
-		rxn_buffer[launch_index_in] 				= 0;
-		cellnum_buffer[launch_index] = positions_buffer[launch_index].cell[0];
+		matnum_buffer[launch_index] = positions_buffer[launch_index].fiss[0];
+		rxn_buffer[launch_index_in] = 0;
+//		cellnum_buffer[launch_index] = positions_buffer[launch_index].cell[0];
 
 		if(launch_index == 1)
 		{
@@ -160,7 +160,7 @@ RT_PROGRAM void camera()
 
 	}
 	else{ //otherwise write material to buffer 
-		matnum_buffer[launch_index] 				= payload.mat;
+		matnum_buffer[launch_index] = positions_buffer[launch_index].mat[0];
 	}
 
 }
