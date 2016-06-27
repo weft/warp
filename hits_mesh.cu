@@ -32,8 +32,8 @@ RT_PROGRAM void closest_hit()
 	payload.norm[2] = normal.z;
 
 	// update sense
-//	payload.sense = sense;
-//	if (sense == 0){rtPrintf("sense of closest_hit is 0!\n");}
+	payload.sense = sense;
+	if (sense == 0){rtPrintf("sense of closest_hit is 0!\n");}
 
 	if(cellnum == outer_cell){ payload.cont = 0; }
 
@@ -45,7 +45,6 @@ RT_PROGRAM void closest_hit()
 
 	positions_buffer[payload.launch_dex].cell[payload.buff_index] = cellnum;
 	positions_buffer[payload.launch_dex].dist[payload.buff_index] = int_dist;
-	positions_buffer[launch_index].dist_test[payload.buff_index] = int_dist;
 	positions_buffer[payload.launch_dex].mat[payload.buff_index] = cellmat;
 //	positions_buffer[payload.launch_dex].xprint[payload.buff_index] = payload.x;
 //	positions_buffer[payload.launch_dex].yprint[payload.buff_index] = payload.y;
@@ -54,7 +53,7 @@ RT_PROGRAM void closest_hit()
 //	positions_buffer[launch_index].ytest[payload.buff_index] = payload.y;
 //	positions_buffer[launch_index].ztest[payload.buff_index] = payload.z;
 	positions_buffer[payload.launch_dex].cont[payload.buff_index] = payload.cont;
-	positions_buffer[payload.launch_dex].fiss[payload.buff_index] = payload.fiss;
+	positions_buffer[payload.launch_dex].fiss[payload.buff_index] = cellfissile;
 
-	payload.buff_index++;
+//	payload.buff_index++;
 }

@@ -45,30 +45,30 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	// have thread 0 of block copy all pointers and static info into shared memory
 	if (threadIdx.x == 0){
-		n_isotopes					= d_xsdata[0].n_isotopes;								
-		energy_grid_len				= d_xsdata[0].energy_grid_len;				
+		n_isotopes			= d_xsdata[0].n_isotopes;			
+		energy_grid_len			= d_xsdata[0].energy_grid_len;				
 		total_reaction_channels		= d_xsdata[0].total_reaction_channels;
-		rxn_numbers 				= d_xsdata[0].rxn_numbers;						
-		rxn_numbers_total			= d_xsdata[0].rxn_numbers_total;					
-		energy_grid 				= d_xsdata[0].energy_grid;						
-		rxn_Q 						= d_xsdata[0].Q;												
-		xs 							= d_xsdata[0].xs;												
-		//awr 						= d_xsdata[0].awr;										
-		//temp 						= d_xsdata[0].temp;										
-		//dist_scatter 				= d_xsdata[0].dist_scatter;						
-		//dist_energy 				= d_xsdata[0].dist_energy; 
-		space						= d_particles[0].space;
-		rxn							= d_particles[0].rxn;
-		E							= d_particles[0].E;
-		Q							= d_particles[0].Q;	
-		rn_bank						= d_particles[0].rn_bank;
-		cellnum						= d_particles[0].cellnum;
-		matnum						= d_particles[0].matnum;
-		isonum						= d_particles[0].isonum;
-		talnum 						= d_particles[0].talnum;
-		//yield						= d_particles[0].yield;
-		weight						= d_particles[0].weight;
-		index						= d_particles[0].index;
+		rxn_numbers 			= d_xsdata[0].rxn_numbers;			
+		rxn_numbers_total		= d_xsdata[0].rxn_numbers_total;	
+		energy_grid 			= d_xsdata[0].energy_grid;			
+		rxn_Q 				= d_xsdata[0].Q;			
+		xs 				= d_xsdata[0].xs;					
+		//awr 				= d_xsdata[0].awr;					
+		//temp 				= d_xsdata[0].temp;				
+		//dist_scatter 			= d_xsdata[0].dist_scatter;				
+		//dist_energy 			= d_xsdata[0].dist_energy; 
+		space				= d_particles[0].space;
+		rxn				= d_particles[0].rxn;
+		E				= d_particles[0].E;
+		Q				= d_particles[0].Q;	
+		rn_bank				= d_particles[0].rn_bank;
+		cellnum				= d_particles[0].cellnum;
+		matnum				= d_particles[0].matnum;
+		isonum				= d_particles[0].isonum;
+		talnum 				= d_particles[0].talnum;
+		//yield				= d_particles[0].yield;
+		weight				= d_particles[0].weight;
+		index				= d_particles[0].index;
 		// copy material matrix, hopefully small enough to fit!
 		memcpy(s_number_density_matrix,d_number_density_matrix,n_isotopes*n_materials*sizeof(float));
 	}
@@ -137,6 +137,13 @@ All neutrons need these things done, so these routines all live in the same rout
 		cell_local[i] = space[tid].cell[i];
 		mat_local[i] = space[tid].mat[i];
 		dist_local[i] = space[tid].dist[i];
+		if(space[tid].sense[i] == -1)
+		{
+			cell_local[0] = space[tid].cell[i];
+			this_cell = space[tid].cell[i];
+			mat_local[0] = space[tid].cell[i];
+			this_mat = space[tid].mat[i];
+		}
 	}
 
 	for(int i = 1; i < 10; i++)
@@ -156,8 +163,8 @@ All neutrons need these things done, so these routines all live in the same rout
 		}
 	}
 
-	cell_local[0] = this_cell;
-	mat_local[0] = this_mat;
+//	cell_local[0] = this_cell;
+//	mat_local[0] = this_mat;
 
 	if(tid == 1)
 	{
@@ -165,25 +172,33 @@ All neutrons need these things done, so these routines all live in the same rout
 		printf("xyz     %10.8E %10.8E %10.8E\n",x,y,z);
 		printf("xyz hat %10.8E %10.8E %10.8E\n",xhat,yhat,zhat);
 		printf("surf dist %10.8E\n",surf_dist);
-		printf("cell %u\n", cellnum[tid]);
+		printf("cell %u\n", this_cell);
 		printf("***** hits_mesh info\n");
-		for(int i = 0; i < 5; i++)
+		for(int i = 0; i < 10; i++)
 		{
-			printf("index %i\n",i);
-			printf("distance (remap) %10.8E\n", space[tid].dist[i]);
-			printf("distance %10.8E\n", space[tid].dist_test[i]);
-			printf("cell %u\n", space[tid].cell[i]);
-			printf("mat %u\n", space[tid].mat[i]);
-//			printf("xyz (remap) %10.8E %10.8E %10.8E\n",space[tid].xprint[i],space[tid].yprint[i],space[tid].zprint[i]); 
-//			printf("xyz %10.8E %10.8E %10.8E\n",space[tid].xtest[i],space[tid].ytest[i],space[tid].ztest[i]); 
-			printf("cont %i\n", space[tid].cont[i]);
+			if(space[tid].cell[i] != -1)
+			{
+				printf("index %i\n",i);
+				printf("distance %10.8E\n", space[tid].dist[i]);
+//				printf("distance %10.8E\n", space[tid].dist_test[i]);
+				printf("cell %u\n", space[tid].cell[i]);
+				printf("mat %u\n", space[tid].mat[i]);
+//				printf("xyz (remap) %10.8E %10.8E %10.8E\n",space[tid].xprint[i],space[tid].yprint[i],space[tid].zprint[i]); 
+//				printf("xyz %10.8E %10.8E %10.8E\n",space[tid].xtest[i],space[tid].ytest[i],space[tid].ztest[i]); 
+				printf("cont %i\n", space[tid].cont[i]);
+				printf("sense %i\n", space[tid].sense[i]);
+				printf("fiss %i\n", space[tid].fiss[i]);
+			}
 		}
 		printf("***** local array info\n");
-		for(int i = 0; i < 5; i++)
+		for(int i = 0; i < 10; i++)
 		{
-			printf("distance %10.8E\n", dist_local[i]);
-			printf("cell %u\n", cell_local[i]);
-			printf("mat %u\n", mat_local[i]);
+			if(cell_local[i] != -1)
+			{
+				printf("distance %10.8E\n", dist_local[i]);
+				printf("cell %u\n", cell_local[i]);
+				printf("mat %u\n", mat_local[i]);
+			}
 		}
 	}
 

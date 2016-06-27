@@ -61,7 +61,7 @@ struct spatial_data{
 //	float		xtest[10];
 //	float		ytest[10];
 //	float		ztest[10];
-//	int		sense[10];
+	int		sense[10];
 	int		cont[10];
 	unsigned	fiss[10];
 };
@@ -81,7 +81,7 @@ struct intersection_point {
 	int		mat;  		/**< material number */
 	int		fiss; 		/**< fissile flag */
 	float		norm[3];    /**< most recent normal */
-//	int		sense;   	/**< most recent cell sense */
+	int		sense;   	/**< most recent cell sense */
 	int 		tally_index;/**< tally index of most recent cell */
 	int		buff_index;
 	unsigned	launch_dex;

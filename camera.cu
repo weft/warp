@@ -32,7 +32,7 @@ RT_PROGRAM void camera()
 	}
 
 	// declare important stuff
-//	int                 sense = 0;
+	int                 sense = 0;
 	float               epsilon=5.0e-6; 	
 	float3 ray_direction, ray_origin;
 	optix::Ray ray;
@@ -50,7 +50,7 @@ RT_PROGRAM void camera()
 	// find nearest surface if and BC if type 2 
 	if(trace_type==2){
 		// init payload flags
-//		payload.sense 		= 0;
+		payload.sense 		= 0;
 		payload.mat   		= 999999;
 		payload.cell  		= 999999;
 		payload.fiss  		= 0;
@@ -85,8 +85,8 @@ RT_PROGRAM void camera()
 	}
 
 	// re-init sense, payload, ray
-//	sense			= 0;
-//	payload.sense		= 0;
+	sense			= 0;
+	payload.sense		= 0;
 	payload.mat		= 999999;
 	payload.cell		= 999999;
 	payload.fiss		= 0;
@@ -118,7 +118,7 @@ RT_PROGRAM void camera()
 //		positions_buffer[launch_index].xtest[i] = -1.0;
 //		positions_buffer[launch_index].ytest[i] = -1.0;
 //		positions_buffer[launch_index].ztest[i] = -1.0;
-//		positions_buffer[launch_index].sense[i] = 0;
+		positions_buffer[launch_index].sense[i] = -5;
 		positions_buffer[launch_index].cont[i] = -1;
 		positions_buffer[launch_index].fiss[i] = -1;
 	}
@@ -127,41 +127,50 @@ RT_PROGRAM void camera()
 	
 	// then find entering cell, use downward z to make problems with high x-y density faster
 	rtTrace(top_object, ray, payload);
-//	sense = payload.sense;
-//	while(sense>=0){// & (outer_cell!=payload.cell)){
-//	while((sense>=0) || (payload.cont)){// & (outer_cell!=payload.cell)){
-	while(payload.cont){
-		dotp = 	payload.norm[0]*ray_direction.x +
+	sense = payload.sense;
+	if(trace_type == 3)
+	{
+		while(sense>=0){// & (outer_cell!=payload.cell)){
+//		while((sense>=0) || (payload.cont)){// & (outer_cell!=payload.cell)){
+//		while(payload.cont){
+			dotp = 	payload.norm[0]*ray_direction.x +
 				payload.norm[1]*ray_direction.y +
 				payload.norm[2]*ray_direction.z;
-		ray_origin = make_float3(payload.x+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[0],
-					 payload.y+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[1],
+			ray_origin = make_float3(
+					payload.x+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[0],
+					payload.y+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[1],
 					payload.z+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[2]);
-		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
-		rtTrace(top_object, ray, payload);
-//		sense = sense + payload.sense;
-//		positions_buffer[launch_index].sense[payload.buff_index] = sense;
-	}
-
-	// write cell/material numbers to buffer
-	cellnum_buffer[launch_index] = positions_buffer[launch_index].mat[0];
-	talnum_buffer[ launch_index] = payload.tally_index;
-	if(trace_type == 3){  //write fissile flag if fissile query
-//		matnum_buffer[launch_index] 				= payload.fiss;
-		matnum_buffer[launch_index] = positions_buffer[launch_index].fiss[0];
-		rxn_buffer[launch_index_in] = 0;
-//		cellnum_buffer[launch_index] = positions_buffer[launch_index].cell[0];
-
-		if(launch_index == 1)
-		{
-			rtPrintf("cell %u\n",cellnum_buffer[launch_index]);
-			rtPrintf("mat %u\n",matnum_buffer[launch_index]);
+			ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
+			rtTrace(top_object, ray, payload);
+			sense = sense + payload.sense;
+			positions_buffer[launch_index].sense[payload.buff_index] = sense;
+			payload.buff_index++;
 		}
+		matnum_buffer[launch_index] = payload.fiss;
+		cellnum_buffer[launch_index] = payload.cell;
+		rxn_buffer[launch_index_in] = 0;
+	}
+	else{
+		while(payload.cont){
+			dotp = 	payload.norm[0]*ray_direction.x +
+				payload.norm[1]*ray_direction.y +
+				payload.norm[2]*ray_direction.z;
+			ray_origin = make_float3(
+					payload.x+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[0],
+					payload.y+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[1],
+					payload.z+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[2]);
+			ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
+			rtTrace(top_object, ray, payload);
+			sense = sense + payload.sense;
+			positions_buffer[launch_index].sense[payload.buff_index] = sense;
+			payload.buff_index++;
+		}
+//		cellnum_buffer[launch_index] = positions_buffer[launch_index].cell[0];
+//		matnum_buffer[launch_index] = positions_buffer[launch_index].mat[0];
+	}
 
-	}
-	else{ //otherwise write material to buffer 
-		matnum_buffer[launch_index] = positions_buffer[launch_index].mat[0];
-	}
+	talnum_buffer[ launch_index] = payload.tally_index;
+
 
 }
 
