@@ -62,13 +62,12 @@ RT_PROGRAM void camera()
 		payload.norm[1]   	= 0.0; 
 		payload.norm[2]   	= 0.0;    
 //		payload.sense     	= 0.0;   
-		payload.buff_index	= 0;
 //		if(launch_index==1){rtPrintf("outer cell: %u\n",outer_cell);}
 
 		// init ray
 		ray_direction  	= make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
 		ray_origin     	= make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
-		ray        		= optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
+		ray        = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 		// first trace to find closest hit, set norm/distance, set bc flag
 		rtTrace(top_object, ray, payload);
 		positions_buffer[launch_index].surf_dist = payload.surf_dist; 
@@ -99,59 +98,61 @@ RT_PROGRAM void camera()
 	payload.norm[2]		= 0.0;    
 //	payload.sense		= 0.0;   
 	
-//	ray_direction		= make_float3(0,0,-1);
-	ray_origin			= make_float3(positions_buffer[launch_index].x,    positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
-	ray_direction  	= make_float3(positions_buffer[launch_index].xhat, positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
+	ray_direction	= make_float3(0,0,-1);
+	ray_origin	= make_float3(positions_buffer[launch_index].x,    
+			positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
+	ray_direction  	= make_float3(positions_buffer[launch_index].xhat, 
+			positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
 	ray		= optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 	const float	push_value		= 2.0;
 	float dotp=0.0;
 
-	for(int i = 0; i < 10; i++)
-	{
-		positions_buffer[launch_index].cell[i] = -1;
-		positions_buffer[launch_index].dist[i] = -1.0;
-		positions_buffer[launch_index].dist_test[i] = -1.0;
-		positions_buffer[launch_index].mat[i] = -1;
-//		positions_buffer[launch_index].xprint[i] = -1.0;
-//		positions_buffer[launch_index].yprint[i] = -1.0;
-//		positions_buffer[launch_index].zprint[i] = -1.0;
-//		positions_buffer[launch_index].xtest[i] = -1.0;
-//		positions_buffer[launch_index].ytest[i] = -1.0;
-//		positions_buffer[launch_index].ztest[i] = -1.0;
-		positions_buffer[launch_index].sense[i] = -5;
-		positions_buffer[launch_index].cont[i] = -1;
-		positions_buffer[launch_index].fiss[i] = -1;
-	}
-	payload.buff_index	= 0;
-	payload.cont		= 1;
-	
 	// then find entering cell, use downward z to make problems with high x-y density faster
 	rtTrace(top_object, ray, payload);
 	sense = payload.sense;
+	while(sense>=0){// & (outer_cell!=payload.cell)){
+//	while((sense>=0) || (payload.cont)){// & (outer_cell!=payload.cell)){
+//	while(payload.cont){
+		dotp = 	payload.norm[0]*ray_direction.x +
+			payload.norm[1]*ray_direction.y +
+			payload.norm[2]*ray_direction.z;
+		ray_origin = make_float3(
+				payload.x+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[0],
+				payload.y+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[1],
+				payload.z+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[2]);
+		ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
+		rtTrace(top_object, ray, payload);
+		sense = sense + payload.sense;
+	}
+
+	matnum_buffer[launch_index] = payload.mat;
+	cellnum_buffer[launch_index] = payload.cell;
+	talnum_buffer[launch_index] = payload.tally_index;
+
 	if(trace_type == 3)
 	{
-		while(sense>=0){// & (outer_cell!=payload.cell)){
-//		while((sense>=0) || (payload.cont)){// & (outer_cell!=payload.cell)){
-//		while(payload.cont){
-			dotp = 	payload.norm[0]*ray_direction.x +
-				payload.norm[1]*ray_direction.y +
-				payload.norm[2]*ray_direction.z;
-			ray_origin = make_float3(
-					payload.x+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[0],
-					payload.y+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[1],
-					payload.z+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[2]);
-			ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
-			rtTrace(top_object, ray, payload);
-			sense = sense + payload.sense;
-			positions_buffer[launch_index].sense[payload.buff_index] = sense;
-			payload.buff_index++;
-		}
-		matnum_buffer[launch_index] = payload.fiss;
-		cellnum_buffer[launch_index] = payload.cell;
 		rxn_buffer[launch_index_in] = 0;
+		matnum_buffer[launch_index] = payload.fiss;
 	}
-	else{
-		while(payload.cont){
+
+	if(trace_type == 2)
+	{
+		for(int i = 0; i < 10; i++)
+		{
+			positions_buffer[launch_index].cell[i] = -1;
+			positions_buffer[launch_index].dist[i] = -1.0;
+			positions_buffer[launch_index].mat[i] = -1;
+		}
+		payload.buff_index	= 0;
+		payload.cont		= 1;
+		ray_direction  	= make_float3(positions_buffer[launch_index].xhat, 
+				positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
+		ray_origin     	= make_float3(positions_buffer[launch_index].x,    
+				positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
+		ray             = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX);
+		rtTrace(top_object, ray, payload);
+		while(payload.cont)
+		{
 			dotp = 	payload.norm[0]*ray_direction.x +
 				payload.norm[1]*ray_direction.y +
 				payload.norm[2]*ray_direction.z;
@@ -161,16 +162,8 @@ RT_PROGRAM void camera()
 					payload.z+copysignf(1.0,dotp)*push_value*epsilon*payload.norm[2]);
 			ray = optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 			rtTrace(top_object, ray, payload);
-			sense = sense + payload.sense;
-			positions_buffer[launch_index].sense[payload.buff_index] = sense;
-			payload.buff_index++;
 		}
-//		cellnum_buffer[launch_index] = positions_buffer[launch_index].cell[0];
-//		matnum_buffer[launch_index] = positions_buffer[launch_index].mat[0];
 	}
-
-	talnum_buffer[ launch_index] = payload.tally_index;
-
 
 }
 

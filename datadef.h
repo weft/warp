@@ -53,17 +53,7 @@ struct spatial_data{
 	unsigned	weight;		/**< particle statistical weight */
 	unsigned	cell[10];
 	float		dist[10];
-	float		dist_test[10];
 	unsigned	mat[10];
-//	float		xprint[10];
-//	float		yprint[10];
-//	float		zprint[10];
-//	float		xtest[10];
-//	float		ytest[10];
-//	float		ztest[10];
-	int		sense[10];
-	int		cont[10];
-	unsigned	fiss[10];
 };
 
 /**

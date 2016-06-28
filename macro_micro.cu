@@ -137,13 +137,6 @@ All neutrons need these things done, so these routines all live in the same rout
 		cell_local[i] = space[tid].cell[i];
 		mat_local[i] = space[tid].mat[i];
 		dist_local[i] = space[tid].dist[i];
-		if(space[tid].sense[i] == -1)
-		{
-			cell_local[0] = space[tid].cell[i];
-			this_cell = space[tid].cell[i];
-			mat_local[0] = space[tid].cell[i];
-			this_mat = space[tid].mat[i];
-		}
 	}
 
 	for(int i = 1; i < 10; i++)
@@ -163,8 +156,8 @@ All neutrons need these things done, so these routines all live in the same rout
 		}
 	}
 
-//	cell_local[0] = this_cell;
-//	mat_local[0] = this_mat;
+	cell_local[0] = this_cell;
+	mat_local[0] = this_mat;
 
 	if(tid == 1)
 	{
@@ -173,6 +166,7 @@ All neutrons need these things done, so these routines all live in the same rout
 		printf("xyz hat %10.8E %10.8E %10.8E\n",xhat,yhat,zhat);
 		printf("surf dist %10.8E\n",surf_dist);
 		printf("cell %u\n", this_cell);
+		printf("mat %u\n", this_mat);
 		printf("***** hits_mesh info\n");
 		for(int i = 0; i < 10; i++)
 		{
@@ -180,14 +174,8 @@ All neutrons need these things done, so these routines all live in the same rout
 			{
 				printf("index %i\n",i);
 				printf("distance %10.8E\n", space[tid].dist[i]);
-//				printf("distance %10.8E\n", space[tid].dist_test[i]);
 				printf("cell %u\n", space[tid].cell[i]);
 				printf("mat %u\n", space[tid].mat[i]);
-//				printf("xyz (remap) %10.8E %10.8E %10.8E\n",space[tid].xprint[i],space[tid].yprint[i],space[tid].zprint[i]); 
-//				printf("xyz %10.8E %10.8E %10.8E\n",space[tid].xtest[i],space[tid].ytest[i],space[tid].ztest[i]); 
-				printf("cont %i\n", space[tid].cont[i]);
-				printf("sense %i\n", space[tid].sense[i]);
-				printf("fiss %i\n", space[tid].fiss[i]);
 			}
 		}
 		printf("***** local array info\n");
