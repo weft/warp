@@ -75,12 +75,12 @@ RT_PROGRAM void camera()
 		positions_buffer[launch_index].norm[1]   = payload.norm[1];
 		positions_buffer[launch_index].norm[2]   = payload.norm[2];
 		// write bc flag if first hit is outer cell
-		if(payload.cell == outer_cell){
+//		if(payload.cell == outer_cell){
 			positions_buffer[launch_index].enforce_BC = boundary_condition;
-		}
-		else{
-			positions_buffer[launch_index].enforce_BC = 0;
-		}
+//		}
+//		else{
+//			positions_buffer[launch_index].enforce_BC = 0;
+//		}
 	}
 
 	// re-init sense, payload, ray

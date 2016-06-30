@@ -106,6 +106,9 @@ All neutrons need these things done, so these routines all live in the same rout
 	unsigned	mat_local[10];
 	float		dist_local[10];
 	float		macro_maj	= 0.0;
+	float		x_new = 0.0;
+	float		y_new = 0.0;
+	float		z_new = 0.0;
 
 	// load from arrays
 	unsigned	this_mat		=  matnum[tid];
@@ -192,7 +195,8 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	// compute some things
 	unsigned	n_columns 		= n_isotopes + total_reaction_channels;
-	float 		e0, e1, rn1;
+	float 		e0, e1, rn1, rnd, rnd2;
+	int found = 0;
 
 	// check
 	if(this_mat>=n_materials){
@@ -201,6 +205,8 @@ All neutrons need these things done, so these routines all live in the same rout
 	}
 
 	rn1 = get_rand(&rn);
+	rnd = get_rand(&rn);
+	rnd2 = get_rand(&rn);
 
 	if (dex>=4294967294){
 
@@ -226,6 +232,32 @@ All neutrons need these things done, so these routines all live in the same rout
 			if(tid==1){printf("mat %i macro_t %10.8E\n",i,macro_t_total);}
 		}
 		if(tid==1){printf("macro_maj %10.8E\n",macro_maj);}
+
+		// compute the interaction length
+		samp_dist = -logf(rnd)/macro_maj;
+		x_new = x + (samp_dist * xhat);
+		y_new = y + (samp_dist * yhat);
+		z_new = z + (samp_dist * zhat);
+		found = 0; 
+		if(tid == 1){printf("sampled dist %10.8E\n",samp_dist);}
+
+		for(int i = 0; i < 10; i++)
+		{
+			if(cell_local[i] != 1 && samp_dist < dist_local[i])
+			{
+				this_cell = cell_local[i];
+				this_mat = mat_local[i];
+				found = 1;
+				break;
+			}
+		}
+
+		if(tid == 1)
+		{
+			printf("found %i\n",found);
+			printf("new cell %u\n", this_cell);
+			printf("new mat %u\n", this_mat);
+		}
 
 		// outside data, pass one array
 		// compute the total macroscopic cross section for this material
@@ -255,6 +287,32 @@ All neutrons need these things done, so these routines all live in the same rout
 		}
 		if(tid==1){printf("macro_maj %10.8E\n",macro_maj);}
 
+		// compute the interaction length
+		samp_dist = -logf(rnd)/macro_maj;
+		x_new = x + (samp_dist * xhat);
+		y_new = y + (samp_dist * yhat);
+		z_new = z + (samp_dist * zhat);
+		found = 0; 
+		if(tid == 1){printf("sampled dist %10.8E\n",samp_dist);}
+
+		for(int i = 0; i < 10; i++)
+		{
+			if(cell_local[i] != 1 && samp_dist < dist_local[i])
+			{
+				this_cell = cell_local[i];
+				this_mat = mat_local[i];
+				found = 1;
+				break;
+			}
+		}
+
+		if(tid == 1)
+		{
+			printf("found %i\n",found);
+			printf("new cell %u\n", this_cell);
+			printf("new mat %u\n", this_mat);
+		}
+
 		// inside the data, pass two arrays
 		// compute the total macroscopic cross section for this material
 		macro_t_total = sum_cross_section(n_isotopes, e0, e1, this_E,  
@@ -273,7 +331,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	if (this_tope==n_isotopes) {printf("this_tope==n_isotopes, tid %d E %6.4E macro_t_total %6.4E rn %12.10E dex %u\n",tid,this_E,macro_t_total,rn1,dex);}
 
 	// compute the interaction length
-	samp_dist = -logf(get_rand(&rn))/macro_t_total;
+//	samp_dist = -logf(get_rand(&rn))/macro_t_total;
 
 	// do surf/samp compare
 	diff = surf_dist - samp_dist;
@@ -285,66 +343,47 @@ All neutrons need these things done, so these routines all live in the same rout
 			norm[1]*yhat + 
 			norm[2]*zhat;
 	surf_minimum = 1.2 * epsilon / fabsf(dotp);
+
+	if(tid == 1){printf("xs ratio %10.8E\n",macro_t_total/macro_maj);}
 	
 	// surface logic
-	if( diff < surf_minimum ){  // need to make some decisions so epsilon is handled correctly
+	if(!found){
+//	if( diff < surf_minimum ){  // need to make some decisions so epsilon is handled correctly
 		// if not outer cell, neutron placement is too close to surface.  risk of next interaction not seeing the surface due to epsilon.
 		// preserve if in this cell or next, but make sure neutron is at least an epsilon away from the surface.
-		if (diff < 0.0){ // next cell, enforce BC or push through
-			if (enforce_BC == 1){  // black BC
-				//printf("Killing at black BC...\n");
-				x += (surf_dist + 3.0*push_value*surf_minimum) * xhat;
-				y += (surf_dist + 3.0*push_value*surf_minimum) * yhat;
-				z += (surf_dist + 3.0*push_value*surf_minimum) * zhat;
-				this_rxn  = 999;  // leaking is 999
-				this_tope = 999999997;  
-			}
-			else if(enforce_BC == 2){  // specular reflection BC
-				// calculate plane vector and normalize to one
-				plane_vec[0] = xhat - dotp*norm[0];
-				plane_vec[1] = yhat - dotp*norm[1];
-				plane_vec[2] = zhat - dotp*norm[2];
-				plane_vec[0] = plane_vec[0] / sqrtf(plane_vec[0]*plane_vec[0]+plane_vec[1]*plane_vec[1]+plane_vec[2]*plane_vec[2]);
-				plane_vec[1] = plane_vec[1] / sqrtf(plane_vec[0]*plane_vec[0]+plane_vec[1]*plane_vec[1]+plane_vec[2]*plane_vec[2]);
-				plane_vec[2] = plane_vec[2] / sqrtf(plane_vec[0]*plane_vec[0]+plane_vec[1]*plane_vec[1]+plane_vec[2]*plane_vec[2]);
-				// first move intersection point back in the incoming direction in case close to a wall
-				x += surf_dist*xhat - push_value*epsilon*plane_vec[0];
-				y += surf_dist*yhat - push_value*epsilon*plane_vec[1];
-				z += surf_dist*zhat - push_value*epsilon*plane_vec[2];
-				// move epsilon off of surface
-				x += - copysignf(1.0,dotp)*push_value*epsilon*norm[0]; 
-				y += - copysignf(1.0,dotp)*push_value*epsilon*norm[1];
-				z += - copysignf(1.0,dotp)*push_value*epsilon*norm[2];
-				// calculate reflection
-				xhat += -(2.0 * dotp * norm[0]);
-				yhat += -(2.0 * dotp * norm[1]);   
-				zhat += -(2.0 * dotp * norm[2]);   
-				// flags
-				this_rxn  = 801;  // reflection is 801 
-				this_tope = 999999996;  
-			}
-			else{   // next cell, move to intersection point, then move *out* epsilon along surface normal
-				//printf("Moving to next cell...\n");
-				x += surf_dist*xhat + copysignf(1.0,dotp)*push_value*epsilon*norm[0];
-				y += surf_dist*yhat + copysignf(1.0,dotp)*push_value*epsilon*norm[1];
-				z += surf_dist*zhat + copysignf(1.0,dotp)*push_value*epsilon*norm[2];
-				this_rxn  = 800;  // resampling is 800
-				this_tope = 999999998;  
-				}
-			}
-		else{   // this cell, move to intersection point, then move *in* epsilon along surface normal 
-			//printf("In this cell...\n");
-			x += surf_dist*xhat - copysignf(1.0,dotp)*push_value*epsilon*norm[0];
-			y += surf_dist*yhat - copysignf(1.0,dotp)*push_value*epsilon*norm[1];
-			z += surf_dist*zhat - copysignf(1.0,dotp)*push_value*epsilon*norm[2];
-			this_rxn = 0;
+		if (enforce_BC == 1){  // black BC
+			//printf("Killing at black BC...\n");
+			this_rxn  = 999;  // leaking is 999
+			this_tope = 999999997;  
+		}
+		else if(enforce_BC == 2){  // specular reflection BC
+			// calculate plane vector and normalize to one
+			plane_vec[0] = xhat - dotp*norm[0];
+			plane_vec[1] = yhat - dotp*norm[1];
+			plane_vec[2] = zhat - dotp*norm[2];
+			plane_vec[0] = plane_vec[0] / sqrtf(plane_vec[0]*plane_vec[0]+plane_vec[1]*plane_vec[1]+plane_vec[2]*plane_vec[2]);
+			plane_vec[1] = plane_vec[1] / sqrtf(plane_vec[0]*plane_vec[0]+plane_vec[1]*plane_vec[1]+plane_vec[2]*plane_vec[2]);
+			plane_vec[2] = plane_vec[2] / sqrtf(plane_vec[0]*plane_vec[0]+plane_vec[1]*plane_vec[1]+plane_vec[2]*plane_vec[2]);
+			// first move intersection point back in the incoming direction in case close to a wall
+			x += surf_dist*xhat - push_value*epsilon*plane_vec[0];
+			y += surf_dist*yhat - push_value*epsilon*plane_vec[1];
+			z += surf_dist*zhat - push_value*epsilon*plane_vec[2];
+			// move epsilon off of surface
+			x += - copysignf(1.0,dotp)*push_value*epsilon*norm[0]; 
+			y += - copysignf(1.0,dotp)*push_value*epsilon*norm[1];
+			z += - copysignf(1.0,dotp)*push_value*epsilon*norm[2];
+			// calculate reflection
+			xhat += -(2.0 * dotp * norm[0]);
+			yhat += -(2.0 * dotp * norm[1]);   
+			zhat += -(2.0 * dotp * norm[2]);   
+			// flags
+			this_rxn  = 801;  // reflection is 801 
+			this_tope = 999999996;  
 		}
 	}
 	else{  // near side of minimum, can simply move the neutron
-			x += samp_dist * xhat;
-			y += samp_dist * yhat;
-			z += samp_dist * zhat;
-			this_rxn = 0;
+		if(rnd2 > macro_t_total/macro_maj){this_rxn = 800;}
+		else{this_rxn = 0;}
 	}
 
 	// skip rest if leaked or resampled
@@ -424,16 +463,13 @@ All neutrons need these things done, so these routines all live in the same rout
 			}
 
 			// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
-			micro_t = sum_cross_section(	1,
-											e0, this_E,
-											&xs[ adj_dex   *n_columns + this_tope]	);
+			micro_t = sum_cross_section(1,e0, this_E,&xs[ adj_dex *n_columns + this_tope]);
 
 			if(!isfinite(micro_t) | micro_t<=0.0){printf("1 micro_t is wrong:  % 6.4E e0 % 6.4E e1 % 6.4E \n!",micro_t,e0,e1);}
 
 			// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
-			this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
-															e0, this_E,
-															&xs[ adj_dex   *n_columns + col_start]			);
+			this_col = col_start + sample_cross_section((col_end-col_start), micro_t, 
+					get_rand(&rn),e0, this_E,&xs[ adj_dex   *n_columns + col_start]);
 
 			// compute array index
 			array_dex	=	adj_dex*n_columns + this_col;
@@ -453,18 +489,15 @@ All neutrons need these things done, so these routines all live in the same rout
 			e1 = energy_grid[dex+1];
 		
 			// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
-			micro_t = sum_cross_section(	1,
-											e0, e1, this_E,
-											&xs[ dex   *n_columns + this_tope],  
-											&xs[(dex+1)*n_columns + this_tope] );
+			micro_t = sum_cross_section(1,e0, e1, this_E,&xs[ dex   *n_columns + this_tope],  
+								&xs[(dex+1)*n_columns + this_tope] );
 
 			if(!isfinite(micro_t) | micro_t<=0.0){printf("2 micro_t is wrong:  % 6.4E e0 % 6.4E e1 % 6.4E \n",micro_t,e0,e1);}
 			
 			// determine the reaction/Q for this isotope, use non-multiplier function overload.  Returns index from col_start!
-			this_col = col_start + sample_cross_section(	(col_end-col_start), micro_t, get_rand(&rn),
-															e0, e1, this_E,
-															&xs[ dex   *n_columns + col_start],  
-															&xs[(dex+1)*n_columns + col_start]			);
+			this_col = col_start + sample_cross_section((col_end-col_start), micro_t, 
+				get_rand(&rn),e0, e1, this_E,&xs[ dex   *n_columns + col_start],  
+				&xs[(dex+1)*n_columns + col_start]);
 
 			// compute array index
 			array_dex	=	dex*n_columns + this_col;
@@ -503,6 +536,8 @@ All neutrons need these things done, so these routines all live in the same rout
 	//
 	//
 
+	if(tid == 1){printf("rxn %d\n",this_rxn);}
+
 	if(this_rxn==0){printf("rxn for tid_in %d / tid %d is still ZERO at end of macro_micro!\n", tid_in, tid);}
 	if(this_rxn==4){printf("rxn for tid_in %d / tid %d is 4 at end of macro_micro!\n", tid_in, tid);}
 	//if(this_rxn==999){printf("(macro_t_total,surf_dist,samp_dist,surf_minimum,dotp) % 6.4E % 6.4E % 6.4E % 6.4E % 6.4E\n",macro_t_total,surf_dist,samp_dist,surf_minimum,dotp);}
@@ -512,12 +547,14 @@ All neutrons need these things done, so these routines all live in the same rout
 	rn_bank[tid]		=	rn;
 	index[  tid]		=	array_dex;			// write MT array index to dex instead of energy vector index
 	isonum[ tid]		=	this_tope;
-	space[  tid].x		=	x;
-	space[  tid].y		=	y;
-	space[  tid].z		=	z;
+	space[  tid].x		=	x_new;
+	space[  tid].y		=	y_new;
+	space[  tid].z		=	z_new;
 	space[  tid].xhat	=	xhat;
 	space[  tid].yhat	=	yhat;
 	space[  tid].zhat	=	zhat;
+	cellnum[tid] = this_cell;
+	matnum[tid] = this_mat;
 
 	//if( enforce_BC==2 ){
 	//	printf("(norm) % 6.4E % 6.4E % 6.4E (xyz-hat) % 6.4E % 6.4E % 6.4E (xyz-hat_new) % 6.4E % 6.4E % 6.4E\n",norm[0],norm[1],norm[2],xhat,yhat,zhat,xhat_new,yhat_new,zhat_new);
