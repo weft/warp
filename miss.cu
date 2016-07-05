@@ -26,7 +26,7 @@ RT_PROGRAM void miss()
 		launch_index = launch_index_in;  // misses in fissile query and geometry plotting are expected for out-of-bounds regions in non-rectangular geometries
 	}
 	
-//	payload.sense 				= -9;
+	payload.sense 				= -9;
 	rxn_buffer[launch_index_in]	=  997;     //miss code, same as leak basically
 	payload.surf_dist 		= -1.0;
 	payload.cell 			=  3000;
