@@ -20,11 +20,15 @@ rtDeclareVariable(unsigned,  	boundary_condition, , 				);
 RT_PROGRAM void camera()
 {
 	//skip done particles
+//	rtPrintf("top of camera\n");
 
 	//remap if 2
 	unsigned launch_index;
 	if(trace_type==2){
 		launch_index=remap_buffer[launch_index_in];
+
+//		rtPrintf("launch index %u rxn %u\n",launch_index,rxn_buffer[launch_index_in]);
+
 		if(rxn_buffer[launch_index_in]>=900){return;}
 	}
 	else{
@@ -101,8 +105,8 @@ RT_PROGRAM void camera()
 	ray_direction	= make_float3(0,0,-1);
 	ray_origin	= make_float3(positions_buffer[launch_index].x,    
 			positions_buffer[launch_index].y,    positions_buffer[launch_index].z);
-	ray_direction  	= make_float3(positions_buffer[launch_index].xhat, 
-			positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
+//	ray_direction  	= make_float3(positions_buffer[launch_index].xhat, 
+//			positions_buffer[launch_index].yhat, positions_buffer[launch_index].zhat);
 	ray		= optix::make_Ray( ray_origin, ray_direction, 0, epsilon, RT_DEFAULT_MAX );
 	const float	push_value		= 2.0;
 	float dotp=0.0;

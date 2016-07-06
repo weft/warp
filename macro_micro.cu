@@ -135,6 +135,8 @@ All neutrons need these things done, so these routines all live in the same rout
 	//
 	//
 
+	int tid_test = 500;
+
 	for(int i = 0; i < 10; i++)
 	{
 		cell_local[i] = space[tid].cell[i];
@@ -162,7 +164,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	cell_local[0] = this_cell;
 	mat_local[0] = this_mat;
 
-	if(tid == 1)
+	if(tid == tid_test)
 	{
 		printf("***** macro_micro info\n");
 		printf("xyz     %10.8E %10.8E %10.8E\n",x,y,z);
@@ -195,7 +197,7 @@ All neutrons need these things done, so these routines all live in the same rout
 
 	// compute some things
 	unsigned	n_columns 		= n_isotopes + total_reaction_channels;
-	float 		e0, e1, rn1, rnd, rnd2;
+	float 		e0, e1, rnd, rnd2, rnd3;
 	int found = 0;
 
 	// check
@@ -204,7 +206,6 @@ All neutrons need these things done, so these routines all live in the same rout
 		return;
 	}
 
-	rn1 = get_rand(&rn);
 	rnd = get_rand(&rn);
 	rnd2 = get_rand(&rn);
 
@@ -214,14 +215,12 @@ All neutrons need these things done, so these routines all live in the same rout
 			// out of bounds below data
 			adj_dex = 0;
 			e0	= energy_grid[adj_dex];
-			e1	= 0.0;
 
 		}
 		else{
 			// out of bounds above data
 			adj_dex = energy_grid_len-1;
 			e0	= energy_grid[adj_dex];
-			e1	= 0.0;
 		}
 
 		for(int i = 0; i < n_materials; i++)
@@ -229,9 +228,9 @@ All neutrons need these things done, so these routines all live in the same rout
 			macro_t_total = sum_cross_section(n_isotopes, e0, this_E,
 				&s_number_density_matrix[i*n_isotopes],	&xs[adj_dex*n_columns]);
 			if(macro_t_total > macro_maj){macro_maj = macro_t_total;}
-			if(tid==1){printf("mat %i macro_t %10.8E\n",i,macro_t_total);}
+			if(tid==tid_test){printf("mat %i macro_t %10.8E\n",i,macro_t_total);}
 		}
-		if(tid==1){printf("macro_maj %10.8E\n",macro_maj);}
+		if(tid==tid_test){printf("macro_maj %10.8E\n",macro_maj);}
 
 		// compute the interaction length
 		samp_dist = -logf(rnd)/macro_maj;
@@ -239,24 +238,20 @@ All neutrons need these things done, so these routines all live in the same rout
 		y_new = y + (samp_dist * yhat);
 		z_new = z + (samp_dist * zhat);
 		found = 0; 
-		if(tid == 1){printf("sampled dist %10.8E\n",samp_dist);}
+		if(tid == tid_test){printf("sampled dist %10.8E\n",samp_dist);}
+
+//		while((!found) && (cell_local !=  
 
 		for(int i = 0; i < 10; i++)
 		{
-			if(cell_local[i] != 1 && samp_dist < dist_local[i])
+			if(samp_dist < dist_local[i] && cell_local[i] != -1)
 			{
 				this_cell = cell_local[i];
 				this_mat = mat_local[i];
 				found = 1;
+				if(tid==tid_test){printf("FOUND - should break\n");}
 				break;
 			}
-		}
-
-		if(tid == 1)
-		{
-			printf("found %i\n",found);
-			printf("new cell %u\n", this_cell);
-			printf("new mat %u\n", this_mat);
 		}
 
 		// outside data, pass one array
@@ -267,7 +262,7 @@ All neutrons need these things done, so these routines all live in the same rout
 		if(!isfinite(macro_t_total) | macro_t_total<=0.0){printf("1 macro_t_total is wrong:  % 6.4E e0 % 6.4E e1 % 6.4E \n",macro_t_total,e0,e1);}
 	
 		// determine the isotope in the material for this cell
-		this_tope = sample_cross_section(n_isotopes, macro_t_total, rn1, e0, this_E,
+		this_tope = sample_cross_section(n_isotopes, macro_t_total, rnd2, e0, this_E,
 			    &s_number_density_matrix[this_mat*n_isotopes], &xs[adj_dex*n_columns]);
 
 	}
@@ -283,9 +278,9 @@ All neutrons need these things done, so these routines all live in the same rout
 				&s_number_density_matrix[i*n_isotopes], &xs[dex*n_columns],
 				&xs[(dex+1)*n_columns]);
 			if(macro_t_total > macro_maj){macro_maj = macro_t_total;}
-			if(tid==1){printf("mat %i macro_t %10.8E\n",i,macro_t_total);}
+			if(tid==tid_test){printf("mat %i macro_t %10.8E\n",i,macro_t_total);}
 		}
-		if(tid==1){printf("macro_maj %10.8E\n",macro_maj);}
+		if(tid==tid_test){printf("macro_maj %10.8E\n",macro_maj);}
 
 		// compute the interaction length
 		samp_dist = -logf(rnd)/macro_maj;
@@ -293,24 +288,18 @@ All neutrons need these things done, so these routines all live in the same rout
 		y_new = y + (samp_dist * yhat);
 		z_new = z + (samp_dist * zhat);
 		found = 0; 
-		if(tid == 1){printf("sampled dist %10.8E\n",samp_dist);}
+		if(tid == tid_test){printf("sampled dist %10.8E\n",samp_dist);}
 
 		for(int i = 0; i < 10; i++)
 		{
-			if(cell_local[i] != 1 && samp_dist < dist_local[i])
+			if(samp_dist < dist_local[i] && cell_local[i] != -1)
 			{
 				this_cell = cell_local[i];
 				this_mat = mat_local[i];
 				found = 1;
+				if(tid==tid_test){printf("FOUND - should break\n");}
 				break;
 			}
-		}
-
-		if(tid == 1)
-		{
-			printf("found %i\n",found);
-			printf("new cell %u\n", this_cell);
-			printf("new mat %u\n", this_mat);
 		}
 
 		// inside the data, pass two arrays
@@ -322,32 +311,37 @@ All neutrons need these things done, so these routines all live in the same rout
 		if(!isfinite(macro_t_total) | macro_t_total<=0.0){printf("2 macro_t_total is wrong:  % 6.4E e0 % 6.4E e1 % 6.4E \n",macro_t_total,e0,e1);}
 	
 		// determine the isotope in the material for this cell
-		this_tope = sample_cross_section(n_isotopes, macro_t_total, rn1, e0, e1, this_E,
+		this_tope = sample_cross_section(n_isotopes, macro_t_total, rnd2, e0, e1, this_E,
 			    &s_number_density_matrix[this_mat*n_isotopes], &xs[dex*n_columns],  
 			    &xs[(dex+1)*n_columns]);
 
 	}
 
-	if (this_tope==n_isotopes) {printf("this_tope==n_isotopes, tid %d E %6.4E macro_t_total %6.4E rn %12.10E dex %u\n",tid,this_E,macro_t_total,rn1,dex);}
+	if(tid == tid_test)
+	{
+		printf("found %i\n",found);
+		printf("new cell %u\n", this_cell);
+		printf("new mat %u\n", this_mat);
+		printf("isotope %u\n", this_tope);
+	}
 
-	// compute the interaction length
-//	samp_dist = -logf(get_rand(&rn))/macro_t_total;
-
-	// do surf/samp compare
-	diff = surf_dist - samp_dist;
+	if (this_tope==n_isotopes) {printf("this_tope==n_isotopes, tid %d E %6.4E macro_t_total %6.4E rn %12.10E dex %u\n",tid,this_E,macro_t_total,rnd2,dex);}
 
 	// calculate epsilon projection onto neutron trajectory
 	// dotp positive = neutron is inside the cell (normal points out, trajectory must be coming from inside)
 	// dotp negative = neutron is outside the cell
-	dotp = 	norm[0]*xhat + 
-			norm[1]*yhat + 
-			norm[2]*zhat;
+	dotp = 	norm[0]*xhat + norm[1]*yhat + norm[2]*zhat;
 	surf_minimum = 1.2 * epsilon / fabsf(dotp);
 
-	if(tid == 1){printf("xs ratio %10.8E\n",macro_t_total/macro_maj);}
+	if(tid == tid_test){printf("xs ratio %10.8E\n",macro_t_total/macro_maj);}
+	rnd3 = get_rand(&rn);
 	
 	// surface logic
-	if(!found){
+	if(found){ 
+		if(rnd3 > macro_t_total/macro_maj){this_rxn = 800; this_tope = 999999998;}
+		else{this_rxn = 0;}
+	}
+	else{
 //	if( diff < surf_minimum ){  // need to make some decisions so epsilon is handled correctly
 		// if not outer cell, neutron placement is too close to surface.  risk of next interaction not seeing the surface due to epsilon.
 		// preserve if in this cell or next, but make sure neutron is at least an epsilon away from the surface.
@@ -380,10 +374,6 @@ All neutrons need these things done, so these routines all live in the same rout
 			this_rxn  = 801;  // reflection is 801 
 			this_tope = 999999996;  
 		}
-	}
-	else{  // near side of minimum, can simply move the neutron
-		if(rnd2 > macro_t_total/macro_maj){this_rxn = 800;}
-		else{this_rxn = 0;}
 	}
 
 	// skip rest if leaked or resampled
@@ -453,13 +443,11 @@ All neutrons need these things done, so these routines all live in the same rout
 				// out of bounds below data
 				adj_dex = 0;
 				e0		= energy_grid[adj_dex];
-				e1		= 0.0;
 			}
 			else{
 				// out of bounds above data
 				adj_dex = energy_grid_len-1;
 				e0		= energy_grid[adj_dex];
-				e1		= 0.0;
 			}
 
 			// compute the interpolated total microscopic cross section for this isotope.  Use non-multiplier function overload.  Remember that total xs is stored in the first n_isotopes of columns, then come the individual reaction cross sections...
@@ -519,7 +507,7 @@ All neutrons need these things done, so these routines all live in the same rout
 
 		// errors?
 		if(this_rxn == 999999999){ 
-			printf("micro - REACTION NOT SAMPLED CORRECTLY! tope=%u E=%10.8E dex=%u rxn=%u\n",this_tope, this_E, dex, this_rxn); //most likely becasue rn1=1.0
+			printf("micro - REACTION NOT SAMPLED CORRECTLY! tope=%u E=%10.8E dex=%u rxn=%u\n",this_tope, this_E, dex, this_rxn); //most likely becasue rnd=1.0
 		}
 		if(this_rxn == 3 | this_rxn==4 | this_rxn ==5 | this_rxn ==10 | this_rxn ==27){
 			printf("MT=%u!!!, changing to 1102...\n",this_rxn);
@@ -536,7 +524,7 @@ All neutrons need these things done, so these routines all live in the same rout
 	//
 	//
 
-	if(tid == 1){printf("rxn %d\n",this_rxn);}
+	if(tid == tid_test){printf("rxn %d\n",this_rxn);}
 
 	if(this_rxn==0){printf("rxn for tid_in %d / tid %d is still ZERO at end of macro_micro!\n", tid_in, tid);}
 	if(this_rxn==4){printf("rxn for tid_in %d / tid %d is 4 at end of macro_micro!\n", tid_in, tid);}
