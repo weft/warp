@@ -100,8 +100,9 @@ find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 set(libs ${libs} ${PYTHON_LIBRARIES})
 
-find_package(PNG REQUIRED)
+find_package(png++ REQUIRED)
 set(libs ${libs} ${PNG_LIBRARY})
+include_directories(${png++_INCLUDE_DIRS})
 
 #mac stuff
 if(APPLE)
