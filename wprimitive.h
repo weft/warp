@@ -92,7 +92,7 @@ class primitive
 	float       max[3];		/**< coordinate maxima array */
 	float       location[3];	/**< coordinate location array */
 	static int  num_primitives;	/**< number of primitives */
-	int	    	type;      		/**< primitive type: 0 = box, 1 = cylinder, 2 = hexagon */
+	int	    	type;      		/**< primitive type: 0 = box, 1 = cylinder, 2 = hexagon, 3 = sphere */
 	int 	    primitive_id;	/**< primitive ID number */
 	int         n_transforms;	/**< number of  transforms */
 	int         material;		/**< material number */

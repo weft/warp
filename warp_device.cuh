@@ -1,3 +1,8 @@
+/**
+* \brief              generates the next random number based on a seed integer
+* \param[in,out] in   random number in integer form, this routine reads the seed, advances it, and returns the float form
+* \returns            the float form (0-1) of the next random number
+*/
 inline __device__ float get_rand(unsigned* in)
 {
 /*
@@ -19,7 +24,15 @@ since 32-bit math is being used, 30 bits are used here
 	in[0]=nextint;
 	return randout;   						// return normalized float
 }
-
+/**
+* \brief               interpolates a value linearly between two values
+* \param[in] this_E    the current energy to be interpolated at
+* \param[in] e0        energy of data point before current energy
+* \param[in] e1        energy of data point after current energy
+* \param[in] var0      value of data point before current energy
+* \param[in] var1      value of data point after current energy
+* \returns             the interpolated value for this_E
+*/
 inline __device__ float interpolate_linear_energy(float this_E, float e0, float e1, float var0, float var1){
 /*
 linearly interpolates between energy points
