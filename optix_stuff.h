@@ -160,7 +160,7 @@ public:
 	unsigned get_outer_cell();
 	/**
 	 * \brief returns the outermost cell type
-	 * \returns outer_cell_type - geometrical primitive tpye of the outermost cell
+	 * \returns outer_cell_type - geometrical primitive type of the outermost cell
 	 */  
 	unsigned get_outer_cell_type();
 };
