@@ -175,22 +175,74 @@ public:
 	 */ 
 	void print_materials_table();
 	/**
-	 * checks whether or not the geometry contains a fissile material.
-	 *
-	 * \returns fissile_flag
-	 */
-	void set_datapath(std::string);
-	/**
 	 * sets the data path
 	 *
 	 * \returns void
 	 */	
+	void set_datapath(std::string);
+	 /**
+	 * checks whether or not the geometry contains a fissile material.
+	 *
+	 * \returns fissile_flag
+	 */
 	unsigned check_fissile();
+	/**
+	 * adds a default transform to a primitive
+	 *
+	 * @param[in] index - the index of the primitive to add the transform to
+	 * \returns the index of the transform for the specified primitive
+	 */
 	unsigned add_transform(unsigned);
+	/**
+	 * adds a transform to a primitive
+	 *
+	 * @param[in] index - the index of the primitive to add the transform to
+	 * @param[in] cellnum - cell number associated with the transform 
+	 * @param[in]  dx - displacement in x
+	 * @param[in]  dy - displacement in y
+	 * @param[in]  dz - displacement in z
+	 * @param[in]  theta - polar rotation in the xz plane 
+	 * @param[in]  phi - azimuthal rotation in the xy plane
+	 * \returns the index of the transform for the specified primitive
+	 */
 	unsigned add_transform(unsigned, unsigned, float, float, float, float, float);
+	/**
+	 * adds a transform to a primitive
+	 *
+	 * @param[in] index - the index of the primitive to add the transform to
+	 * @param[in] cellnum - cell number associated with the transform 
+	 * @param[in] cellmat - material number associated with the transform
+	 * @param[in]  dx - displacement in x
+	 * @param[in]  dy - displacement in y
+	 * @param[in]  dz - displacement in z
+	 * @param[in]  theta - polar rotation in the yz plane 
+	 * @param[in]  phi - azimuthal rotation in the xy plane
+	 * \returns the index of the transform for the specified primitive
+	 */
 	unsigned add_transform(unsigned, unsigned, unsigned, float, float, float, float, float);
+	/**
+	 * make a bunch of transforms in a hex arrangement
+	 *
+	 * @param[in] index - the index of the primitive to add the transform to
+	 * @param[in] n - the number of elements to make in the array (does not have to be complete)
+	 * @param[in] x - x position (not used)
+	 * @param[in] y - y position (not used)
+	 * @param[in] phi - azimuthal xy plane rotation position (not used) 
+	 * @param[in] starting_index - the first index of the new transforms added, spans range starting_index to starting_index + n
+	 */
 	void make_hex_array(unsigned, int, float, float, float, unsigned);
+	/**
+	 * delete a transform
+	 *
+	 * @param[in] index - primitive index 
+	 * @param[in] element - transform index
+	 */
 	void delete_primitive(unsigned);
+	/**
+	 * delete a primitive
+	 *
+	 * @param[in] index - primitive index 
+	 */
 	void delete_transform(unsigned,unsigned);
 };
 
