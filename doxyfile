@@ -281,7 +281,7 @@ OPTIMIZE_OUTPUT_VHDL   = NO
 # Note that for custom extensions you also need to set FILE_PATTERNS otherwise
 # the files are not read by doxygen.
 
-EXTENSION_MAPPING      = cu=c++ cuh=c++
+EXTENSION_MAPPING      = cu=C cuh=C
 
 # If the MARKDOWN_SUPPORT tag is enabled then doxygen pre-processes all comments
 # according to the Markdown format, which allows for more readable
@@ -805,7 +805,7 @@ INPUT_ENCODING         = UTF-8
 # *.m, *.markdown, *.md, *.mm, *.dox, *.py, *.pyw, *.f90, *.f95, *.f03, *.f08,
 # *.f, *.for, *.tcl, *.vhd, *.vhdl, *.ucf and *.qsf.
 
-FILE_PATTERNS          = *.h *.cuh unionize.py ace.pyx
+FILE_PATTERNS          = optix_stuff.cpp optix_stuff.h wprimitive.cpp wprimitive.h wgeometry.cpp wgeometry.h whistory.cpp whistory.h unionize.py ace.pyx
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.

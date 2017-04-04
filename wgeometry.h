@@ -9,30 +9,30 @@
 
 class wgeometry {
 public:
-	unsigned	n_box; /**<  number of boxes */
-	unsigned	n_cyl; /**<  number of cylinders */
-	unsigned	n_hex; /**<  number of hexagons */
-	unsigned	n_sph; /**<  number of spheres */
-	unsigned	n_primitives; /**<  number of primitives */
-	unsigned	n_transforms; /**<  number of transforms */
-	unsigned	outer_cell; /**<  outermost cell (usually used for tallying) */
-	unsigned	n_materials; /**<  number of materials */
-	unsigned	n_isotopes; /**<  number of isotopes */
-	unsigned	n_tallies; /**<  number of tallies */
-	unsigned	fissile_flag; /**<  indicates whether or not a material is fissile */
-	unsigned	boundary_condition; /**<  flag for the cell's boundary condition */
-	unsigned*	material_num_list; /**<  list of material numbers */
-	unsigned*	cell_num_list; /**<  list of cell numbers */
-	std::string	datapath; /**< path to xsdir and data */
-	std::vector<primitive>   	primitives; /**< primitives vector */
-	std::vector<unsigned>   	tally_cells; /**< primitives vector */
-	std::vector<material_def>	materials;  /**< materials vector */
-	std::vector<std::string>	isotopes;   /**< isotopes vector */
-	std::string 			    isotope_list; /**< isotope list */
-	unsigned *	isotope_list_array; /**< isotope list array */
-	unsigned *	material_list_array; /**< material list array */
-	float * 	concentrations_matrix; /**< concentrations matrix */
-	float * 	awr_list; /**< atomic weight ratio (AWR) list */
+	unsigned	n_box;							/**<  number of boxes */
+	unsigned	n_cyl;							/**<  number of cylinders */
+	unsigned	n_hex;							/**<  number of hexagons */
+	unsigned	n_sph;							/**<  number of spheres */
+	unsigned	n_primitives; 					/**<  number of primitives */
+	unsigned	n_transforms; 					/**<  number of transforms */
+	unsigned	outer_cell; 					/**<  outermost cell (usually used for tallying) */
+	unsigned	n_materials;					/**<  number of materials */
+	unsigned	n_isotopes; 					/**<  number of isotopes */
+	unsigned	n_tallies;  					/**<  number of tallies */
+	unsigned	fissile_flag; 					/**<  indicates whether or not a material is fissile */
+	unsigned	boundary_condition; 			/**<  flag for the cell's boundary condition */
+	unsigned*	material_num_list; 				/**<  list of material numbers */
+	unsigned*	cell_num_list; 					/**<  list of cell numbers */
+	std::string	datapath; 						/**< path to xsdir and data */
+	std::vector<primitive>   	primitives;		/**< primitives vector */
+	std::vector<unsigned>   	tally_cells; 	/**< primitives vector */
+	std::vector<material_def>	materials;		/**< materials vector */
+	std::vector<std::string>	isotopes; 		/**< isotopes vector */
+	std::string 			    isotope_list;	/**< isotope list */
+	unsigned *	isotope_list_array; 			/**< isotope list array */
+	unsigned *	material_list_array; 			/**< material list array */
+	float * 	concentrations_matrix; 			/**< concentrations matrix */
+	float * 	awr_list; 						/**< atomic weight ratio (AWR) list */
 	/**
 	 *  wgeometry constructor
 	 */ 
@@ -96,6 +96,7 @@ public:
 	 * outer cell is set
 	 *
 	 * @param[in] ocell - the outermost cell
+	 * @param[in] BC    - the boundary condiction for the outermost cell (1=vacuum 2=mirror)
 	 */ 
 	void set_outer_cell(unsigned, unsigned);
 	/**
@@ -120,12 +121,12 @@ public:
 	 * adds a material and its properties to the geometry, allocates space
 	 * for all of the material information.
 	 *
-	 * @param[in] matnum - material number
+	 * @param[in] matnum     - material number
 	 * @param[in] is_fissile - fissile flag
-	 * @param[in] num_topes - number of isotopes in material
-	 * @param[in] density - density of material
-	 * @param[in] isotopes - list of isotopes
-	 * @param[in] fractions - fractions of the constituent isotopes
+	 * @param[in] num_topes  - number of isotopes in material
+	 * @param[in] density    - density of material
+	 * @param[in] isotopes   - list of isotopes
+	 * @param[in] fractions  - fractions of the constituent isotopes
 	 */ 
 	void add_material(unsigned , unsigned, unsigned , float, std::vector<std::string> , std::vector<float> );
 	/**
@@ -161,13 +162,10 @@ public:
 	 * creates material and isotope arrays, creates concentration matrix. copies
 	 * memory for all of those arrays.
 	 *
-	 * @param[in] n_mat_in - number of input materials
-	 * @param[in] n_tope_in - number of input isotopes 
-	 * @param[in] material_list_in - list of input materials
-	 * @param[in] isotope_list_in - list of input isotopes
-	 * @param[in] conc_mat_in - input concentration matrix
+	 * @param[in] n_mat_in          - number of input materials
+	 * @param[in] n_tope_in         - number of input isotopes 
+	 * @param[in] conc_mat_in       - pointer to pointer to set as location of the now-generated concentration matrix
 	 */
-	//void get_material_table(unsigned*,unsigned*,unsigned**,unsigned**,float**);
 	void get_material_table(unsigned*,unsigned*,float**);
 	/**
 	 * prints out all materials, including each material's constituent isotopes 
@@ -177,7 +175,7 @@ public:
 	/**
 	 * sets the data path
 	 *
-	 * \returns void
+	 * @param[in] path_in       - input DATAPATH to the xs data
 	 */	
 	void set_datapath(std::string);
 	 /**
@@ -196,54 +194,54 @@ public:
 	/**
 	 * adds a transform to a primitive
 	 *
-	 * @param[in] index - the index of the primitive to add the transform to
-	 * @param[in] cellnum - cell number associated with the transform 
-	 * @param[in]  dx - displacement in x
-	 * @param[in]  dy - displacement in y
-	 * @param[in]  dz - displacement in z
-	 * @param[in]  theta - polar rotation in the xz plane 
-	 * @param[in]  phi - azimuthal rotation in the xy plane
+	 * @param[in] index     - the index of the primitive to add the transform to
+	 * @param[in] cellnum   - cell number associated with the transform 
+	 * @param[in]  dx       - displacement in x
+	 * @param[in]  dy       - displacement in y
+	 * @param[in]  dz       - displacement in z
+	 * @param[in]  theta    - polar rotation in the xz plane 
+	 * @param[in]  phi      - azimuthal rotation in the xy plane
 	 * \returns the index of the transform for the specified primitive
 	 */
 	unsigned add_transform(unsigned, unsigned, float, float, float, float, float);
 	/**
 	 * adds a transform to a primitive
 	 *
-	 * @param[in] index - the index of the primitive to add the transform to
-	 * @param[in] cellnum - cell number associated with the transform 
-	 * @param[in] cellmat - material number associated with the transform
-	 * @param[in]  dx - displacement in x
-	 * @param[in]  dy - displacement in y
-	 * @param[in]  dz - displacement in z
-	 * @param[in]  theta - polar rotation in the yz plane 
-	 * @param[in]  phi - azimuthal rotation in the xy plane
+	 * @param[in] index     - the index of the primitive to add the transform to
+	 * @param[in] cellnum   - cell number associated with the transform 
+	 * @param[in] cellmat   - material number associated with the transform
+	 * @param[in]  dx       - displacement in x
+	 * @param[in]  dy       - displacement in y
+	 * @param[in]  dz       - displacement in z
+	 * @param[in]  theta    - polar rotation in the yz plane 
+	 * @param[in]  phi      - azimuthal rotation in the xy plane
 	 * \returns the index of the transform for the specified primitive
 	 */
 	unsigned add_transform(unsigned, unsigned, unsigned, float, float, float, float, float);
 	/**
 	 * make a bunch of transforms in a hex arrangement
 	 *
-	 * @param[in] index - the index of the primitive to add the transform to
-	 * @param[in] n - the number of elements to make in the array (does not have to be complete)
-	 * @param[in] x - x position (not used)
-	 * @param[in] y - y position (not used)
-	 * @param[in] phi - azimuthal xy plane rotation position (not used) 
+	 * @param[in] index          - the index of the primitive to add the transform to
+	 * @param[in] n              - the number of elements on an edge
+	 * @param[in] x              - x position (not used)
+	 * @param[in] y              - y position (not used)
+	 * @param[in] phi            - azimuthal xy plane rotation position (not used) 
 	 * @param[in] starting_index - the first index of the new transforms added, spans range starting_index to starting_index + n
 	 */
 	void make_hex_array(unsigned, int, float, float, float, unsigned);
 	/**
 	 * delete a transform
 	 *
-	 * @param[in] index - primitive index 
+	 * @param[in] index   - primitive index 
 	 * @param[in] element - transform index
 	 */
-	void delete_primitive(unsigned);
+	void delete_transform(unsigned,unsigned);
 	/**
 	 * delete a primitive
 	 *
 	 * @param[in] index - primitive index 
 	 */
-	void delete_transform(unsigned,unsigned);
+	void delete_primitive(unsigned);
 };
 
 #endif

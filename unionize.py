@@ -76,6 +76,7 @@ class cross_section_data:
 	# library list, then all of the libraries are read in. the material's number
 	# of isotopes is set to how many libraries were retrieved.
 	# @param[in] self - material to get cross sections for
+	# @param[in] datapath_in - the input datapath for the xs data
 	def _read_tables(self, datapath_in):
 
 		self.datapath = datapath_in
