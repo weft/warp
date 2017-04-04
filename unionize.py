@@ -17,12 +17,12 @@ import re
 class cross_section_data:
 
 	##
-	# \brief initialization function
+	# \brief cross section data class to hold it all together with the functions necessary for WARP
 	# \details initializes number of isotopes to zero; isotope list as an empty
 	# array; temperature extension as '.03c'; tables, libraries, AWR list, and Q
 	# as empty arrays; main energy as zero; reaction numbers and total reaction
 	# numbers as empty arrays; number of reactions to zero. sets the MT energy grid	       # and array as empty. 
-	# @param[in] self - material to do cross section stuff about
+	# @param[in] self - this cross_section_data object
 	def __init__(self):
 		## number of isotopes
 		self.num_isotopes     = 0
@@ -59,14 +59,14 @@ class cross_section_data:
 
 	##
 	# \brief initializes material from isotope list string
-	# @param[in] self - material to initialize
+	# @param[in] self - this cross_section_data object
 	# @param[in] this_string - comma-separated isotope list
 	def _init_from_string(self,this_string):
 		self.isotope_list = this_string.split(',')
 
 	##
 	# \brief appends the input isotope the the input material's list of isotopes
-	# @param[in] self - material to which to add isotope
+	# @param[in] self - this cross_section_data object
 	# @param[in] isotope - isotope to be appended
 	def _add_isotope(self,  isotope):
 		self.isotope_list.append(isotope)
@@ -75,7 +75,7 @@ class cross_section_data:
 	# \details for each isotope in the material, the acefile is appended to the 
 	# library list, then all of the libraries are read in. the material's number
 	# of isotopes is set to how many libraries were retrieved.
-	# @param[in] self - material to get cross sections for
+	# @param[in] self - this cross_section_data object
 	# @param[in] datapath_in - the input datapath for the xs data
 	def _read_tables(self, datapath_in):
 
@@ -131,7 +131,12 @@ class cross_section_data:
 			self.tables.append(lib[librarypath].find_table(tope))
 			self.num_isotopes=self.num_isotopes+1
 
-	
+	##
+	# \brief finds path the isotope files
+	# \details finds the relative path from DATAPATH to a file that contains 
+	# the specified isotope cross sections.  It reads the xsdir file to do this.
+	# @param[in] self - this cross_section_data object
+	# @param[in] tope - isotope to seach for 
 	def _resolve_library(self,tope):
 		exp = re.compile(tope+" +[0-9. a-z]+ ([a-zA-Z0-9/_.+-]+)")
 		a = exp.search(self.xsdirstring)
@@ -146,7 +151,7 @@ class cross_section_data:
 	##
 	# \brief unionization function
 	# \details unionizes MT energy grid.
-	# @param[in] self - default for methods
+	# @param[in] self - this cross_section_data object
 	def _unionize(self):
 
 		print "  --------- unionizing grid --------- "
@@ -186,7 +191,7 @@ class cross_section_data:
 	# \details appends ones to the front, appends the isotope's AWR to the table,
 	# appends the isotope's total reaction numbers to the table. appends all 
 	# reaction numbers to the reaction list.
-	# @param[in] self - isotope for reactions to be inserted
+	# @param[in] self - this cross_section_data object
 	def _insert_reactions(self):
 		
 		for table in self.tables:
@@ -220,7 +225,7 @@ class cross_section_data:
 	# \brief array allocation function
 	# \details allocates a 2D array of size number of all reactions x number of
 	# energy points
-	# @param[in] self - material to allocate arrays about
+	# @param[in] self - this cross_section_data object
 	def _allocate_arrays(self):
 
 		n_columns  = self.num_isotopes + self.num_reactions  # totals + ( all other reactions (elastic scatter included) )
@@ -232,7 +237,7 @@ class cross_section_data:
 	# \brief interpolation function
 	# \details linearly interpolates the cross sections for each isotope in a 
 	# material
-	# @param[in] self - material for which to interpolate cross sections
+	# @param[in] self - this cross_section_data object
 	def _interpolate(self):
 
 		tope_index  = 0
@@ -274,7 +279,7 @@ class cross_section_data:
 
 	##
 	# \brief gets pointer to MT numbers
-	# @param[in] self - material
+	# @param[in] self - this cross_section_data object
 	# \returns MT_num_array - array of MT numbers
 	def _get_MT_numbers_pointer(self):
 		MT_num_array = numpy.ascontiguousarray(numpy.array(self.reaction_numbers,order='C'),dtype=numpy.uint32)
@@ -293,7 +298,7 @@ class cross_section_data:
 
 	##
 	# \brief gets pointer to AWR values
-	# @param[in] - material
+	# @param[in] self - this cross_section_data object
 	# \returns AWR_array - array of AWR values
 	def _get_awr_pointer(self):
 		awr_array = numpy.ascontiguousarray(numpy.array(self.awr,order='C'),dtype=numpy.float32)
@@ -301,7 +306,7 @@ class cross_section_data:
 
 	##
 	# \brief gets pointer to temperature values
-	# @param[in] - material
+	# @param[in] self - this cross_section_data object
 	# \returns temp_array - array of temperature values
 	def _get_temp_pointer(self):
 		temp_array = numpy.ascontiguousarray(numpy.array(self.temp,order='C'),dtype=numpy.float32)
@@ -309,7 +314,7 @@ class cross_section_data:
 
 	##
 	# \brief gets pointer to Q-values
-	# @param[in] - material
+	# @param[in] self - this cross_section_data object
 	# \returns Q_array - array of Q-values
 	def _get_Q_pointer(self):
 		Q_array = numpy.ascontiguousarray(numpy.array(self.Q,order='C'),dtype=numpy.float32)
@@ -317,7 +322,7 @@ class cross_section_data:
 
 	##
 	# \brief gets pointer to MT numbers
-	# @param[in] - material
+	# @param[in] self - this cross_section_data object
 	# \returns MT_array - array of MT numbers
 	def _get_MT_array_pointer(self):
 		self.MT_array = numpy.ascontiguousarray(self.MT_array,dtype=numpy.float32)
@@ -325,7 +330,7 @@ class cross_section_data:
 
 	##
 	# \brief gets pointer to main energy grid
-	# @param[in] - material
+	# @param[in] self - this cross_section_data object
 	# \returns E_grid - array of energy grid points
 	def _get_main_Egrid_pointer(self):
 		E_grid = numpy.ascontiguousarray(self.MT_E_grid,dtype=numpy.float32)
@@ -334,7 +339,7 @@ class cross_section_data:
 	##
 	# \brief creates array of size number of isotopes + main energy grid + number 
 	# of reactions
-	# @param[in] - material
+	# @param[in] self - this cross_section_data object
 	# \returns lengths - lengths array
 	def _get_length_numbers_pointer(self):
 		lengths = numpy.ascontiguousarray( numpy.array([self.num_isotopes, self.num_main_E, self.num_reactions], order='C') ,dtype=numpy.uint32)
@@ -343,7 +348,7 @@ class cross_section_data:
 
 	##
 	# \brief gets pointer to total MT numbers
-	# @param[in] - isotope
+	# @param[in] self - this cross_section_data object
 	# \returns numbers - array of total MT numbers
 	def _get_MT_numbers_total_pointer(self):
 		numbers = numpy.array(self.reaction_numbers_total,order='C')
@@ -363,7 +368,7 @@ class cross_section_data:
 	# \brief gets table of scattering data
 	# \details if scattering data exists, table returned in form of [nextDex,
 	# length, mu, cdf]
-	# @param[in] self - isotope
+	# @param[in] self - this cross_section_data object
 	# @param[in] row - point in energy grid
 	# @param[in] col - MT number
 	def _get_scatter_data(self,row,col):
@@ -819,7 +824,7 @@ class cross_section_data:
 	##
 	# \brief gets table of energy data
 	# \details table returned in form of [nextDex, length, mu, cdf]
-	# @param[in] self - isotope
+	# @param[in] self - this cross_section_data object
 	# @param[in] row - point in energy grid
 	# @param[in] col - MT number
 	def _get_energy_data(self,row,col):
