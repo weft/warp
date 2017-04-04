@@ -177,7 +177,14 @@ and necessary for your system.}
 \item{Configure again after setting the above directories, and then generate code.}
 \item{In the terminal, enter the command \texttt{make}. This will build the WARP executables and test 
 suite.}
-\tem{The warp library (_warp.so) must be in the default library search path, and the ace library (ace.so) must be in the Python search path.  These can be set via ``export PYTHONPATH+=:/path/to/warp/BUILD/'' and ``export LD_LIBRARY_PATH+=/path/to/warp/BUILD'' (use ``DYLD_LIBRARY_PATH'' if on OSX) if using a bash shell.  It is recommended that these commands are added to your bash initialization file (~/.bashrc in Linux and ~/.bash_profile in OSX)}
+\item{The warp library (\texttt{\_warp.so}) must be in the default library search path, and the ace library (ace.so) must be in the Python search path.  These can be set via
+\begin{verbatim}
+export PYTHONPATH+=:/path/to/warp/BUILD/
+\end{verbatim} and 
+\begin{verbatim}
+export LD\_LIBRARY\_PATH+=/path/to/warp/BUILD
+\end{verbatim} 
+if using a bash shell (use ``DYLD\_LIBRARY\_PATH'' if on OSX) .  It is recommended that these commands are added to your bash initialization file (~/.bashrc in Linux and ~/.bash\texttt{\_}profile in OSX)}
 \end{enumerate}
 
 \section{The Library Interface}
@@ -207,7 +214,8 @@ A quick summary of the main program structure is as follows.  After the instanti
 
 \begin{verbatim}
 wgeometry geom;
-geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
+geom.set_datapath("/usr/local/SERPENT/xsdata/
+                             endfb7/sss_endfb7u.xsdir");
 \end{verbatim}
 
 Next, material and geometry information are specified. The material specification works as follows. The 
