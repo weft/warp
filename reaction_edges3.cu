@@ -159,6 +159,15 @@ __global__ void reaction_edges_kernel( unsigned N, unsigned* edges, unsigned* rx
 
 }
 
+/**
+ * \brief a
+ * \details b
+ *
+ * @param[in]    NUM_THREADS    - the number of threads to run per thread block
+ * @param[in]    N              - the total number of threads to launch on the grid
+ * @param[in]    d_edges        - device pointer to the edges array (stores to indices of edges the reaction blocks)
+ * @param[in]    d_rxn          - device pointer of the reaction number array
+ */ 
 void reaction_edges( unsigned NUM_THREADS,  unsigned N, unsigned* d_edges, unsigned* d_rxn){
 
 	if(N<1){return;}

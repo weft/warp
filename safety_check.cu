@@ -90,6 +90,16 @@ __global__ void safety_check_kernel(unsigned N, cross_section_data* d_xsdata, pa
 
 }
 
+/**
+ * \brief a
+ * \details b
+ *
+ * @param[in]    NUM_THREADS    - the number of threads to run per thread block
+ * @param[in]    N              - the total number of threads to launch on the grid
+ * @param[in]    d_xsdata       - device pointer to cross section data pointer array
+ * @param[in]    d_particles    - device pointer to particle data pointer array
+ * @param[in]    d_remap        - device pointer to data remapping vector
+ */ 
 void safety_check(unsigned NUM_THREADS, unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
 	if(N<1){return;}

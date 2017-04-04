@@ -29,6 +29,20 @@ __global__ void copy_points_kernel( unsigned Nout, unsigned * Nvalid , unsigned 
 
 }
 
+/**
+ * \brief   copy points between two sets of space and energy data buffers, redirected with a mapping array
+ * \details copy points between two sets of space and energy data buffers, redirected with a mapping array
+ *
+ * @param[in]    NUM_THREADS     - the number of threads to run per thread block
+ * @param[in]    Nout            - the total number of threads to launch on the grid
+ * @param[in]    Nvalid          - the total number of device elements to copy from
+ * @param[in]    current_index   - starting index
+ * @param[in]    to_valid        - device pointer to data remapping vector
+ * @param[in]    positions_out   - device pointer to spatial data array destination
+ * @param[in]    positions_in    - device pointer to spatial data array source
+ * @param[in]    E_out           - device pointer to energy data array destination
+ * @param[in]    E_in            - device pointer to energy data array source
+ */ 
 void copy_points( unsigned NUM_THREADS,  unsigned Nout , unsigned * Nvalid,  unsigned current_index , unsigned * to_valid , spatial_data * positions_out , spatial_data * positions_in, float*E_out, float*E_in){
 
 	unsigned blks = ( Nout + NUM_THREADS - 1 ) / NUM_THREADS;

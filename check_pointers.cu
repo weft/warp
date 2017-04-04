@@ -49,6 +49,15 @@ __global__ void check_pointers_kernel(unsigned N, unsigned dex0, unsigned dex1, 
 
 }
 
+/**
+ * \brief a
+ * \details b
+ *
+ * @param[in]    NUM_THREADS    - the number of threads to run per thread block
+ * @param[in]    dex0           - starting index 
+ * @param[in]    dex1           - ending index
+ * @param[in]    d_xsdata       - device pointer to cross section data pointer array
+ */
 void check_pointers(unsigned NUM_THREADS, unsigned dex0, unsigned dex1, cross_section_data* d_xsdata){
 
 	int N = dex1-dex0+1;

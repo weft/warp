@@ -75,6 +75,19 @@ __global__ void find_E_grid_index_kernel(unsigned N, cross_section_data* d_xsdat
 
 }
 
+
+/**
+ * \brief a
+ * \details b
+ *
+ * @param[in]    NUM_THREADS    - the number of threads to run per thread block
+ * @param[in]    N              - the total number of threads to launch on the grid
+ * @param[in]    d_xsdata       - device pointer to cross section data pointer array 
+ * @param[in]    d_remap        - device pointer to data remapping vector
+ * @param[in]    d_E            - device pointer to energy data array
+ * @param[in]    d_index        - device pointer to index array (stores the unionized grid index of the current energy)
+ * @param[in]    d_rxn          - device pointer of the reaction number array
+ */ 
 void find_E_grid_index(unsigned NUM_THREADS, unsigned N, cross_section_data* d_xsdata, unsigned* d_remap, float* d_E , unsigned * d_index , unsigned* d_rxn){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;

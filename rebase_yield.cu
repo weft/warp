@@ -41,6 +41,15 @@ __global__ void rebase_yield_kernel(unsigned N, float keff, particle_data* d_par
 
 }
 
+/**
+ * \brief 
+ * \details 
+ *
+ * @param[in]    NUM_THREADS    - the number of threads to run per thread block
+ * @param[in]    N              - the total number of threads to launch on the grid
+ * @param[in]    keff           - k-effective of the current cycle
+ * @param[in]    d_particles    - device pointer to particle data pointer array
+ */ 
 void rebase_yield( unsigned NUM_THREADS, unsigned N, float keff, particle_data* d_particles ){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;

@@ -48,6 +48,17 @@ __global__ void sample_fissile_energy_kernel( unsigned N , float a , float b , u
 
 }
 
+/**
+ * \brief a
+ * \details b
+ *
+ * @param[in]    NUM_THREADS    - the number of threads to run per thread block
+ * @param[in]    N              - the total number of threads to launch on the grid
+ * @param[in]    a              - Watt spectrum, parameter a
+ * @param[in]    b              - Watt spectrum, parameter b
+ * @param[in]    rn_bank        - device pointer to random number array
+ * @param[in]    E              - device pointer to energy data array
+ */ 
 void sample_fissile_energy( unsigned NUM_THREADS,  unsigned N , float a , float b , unsigned* rn_bank , float* E){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;

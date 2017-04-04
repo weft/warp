@@ -1,5 +1,13 @@
 #include "warp.h"
 
+
+/**
+ * \brief a
+ * \details b
+ *
+ * @param[in]   argc    - argument count
+ * @param[in]   argv    - arguments 
+ */
 int main(int argc, char* argv[]){
 
 	//using namespace std;
@@ -11,7 +19,7 @@ int main(int argc, char* argv[]){
 	// names
 	unsigned tallycell = 999;
 	unsigned N = 0;
-	std::string tallyname, filename;
+	std::string tallyname, filename;	
 	std::string assemblyname = "assembly";
 	std::string homfuelname  = "homfuel";
 	std::string godivaname   = "godiva";

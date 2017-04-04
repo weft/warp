@@ -57,6 +57,17 @@ __global__ void set_positions_rand_kernel(unsigned N , unsigned outer_cell_type,
 
 }
 
+/**
+ * \brief sets starting cycle points uniformly random
+ * \details sets starting cycle points uniformly random in the specified volume
+ *
+ * @param[in]    NUM_THREADS     - the number of threads to run per thread block
+ * @param[in]    N               - the total number of threads to launch on the grid
+ * @param[in]    outer_cell_type - the outer cell type, sets the shape of the sampling
+ * @param[in]    d_space         - device pointer to spatial data array
+ * @param[in]    d_rn_bank       - device pointer to random number array
+ * @param[in]    outer_cell_dims - host pointer to array of outer cell extrema
+ */ 
 void set_positions_rand( unsigned NUM_THREADS, unsigned N, unsigned outer_cell_type, spatial_data * d_space , unsigned * d_rn_bank, float * outer_cell_dims){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;

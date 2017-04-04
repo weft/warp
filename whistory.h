@@ -224,14 +224,14 @@ class whistory {
     float reduce_weight();
     /**
      * \brief accumulates yields into host side values
-     * @param[in] iteration - the active iteration number (starts at 0)
-     * @param[in] keff - the running cumulative keff
+     * @param[in] converged  - tally accumulation flag
+     * @param[in] iteration  - the active iteration number (starts at 0)
+     * @param[in] keff       - the running cumulative keff
      * @param[in] keff_cycle - the keff of the last cycle, used to renormalize the source vector
      */
     void accumulate_keff(unsigned, unsigned, double*, float*);
     /**
      * \brief raccumulates the flux tally
-     * @param[in] 
      */
     void accumulate_tally();
 	/**
@@ -256,102 +256,95 @@ class whistory {
 	 * \details sorts reaction values, launches edge detection kernels, calculates
 	 * values for reaction blocks, calculates the total number of active histories,
 	 * and rezeros the edge vector.
-	 * @param[in] num_active - number of active histories
-	 * @param[in] escatter_N - number of elastic scatters
-	 * @param[in] escatter_start - elastic scattering start
-	 * @param[in] iscatter_N - number of inelastic scatters
-	 * @param[in] iscatter_start - inelastic scattering start
-	 * @param[in] cscatter_N - number of compound scatters
+	 * @param[in] num_active     - number of active histories
+	 * @param[in] lscatter_N     - number of elastic scatters
+	 * @param[in] lscatter_start - elastic scattering start
+	 * @param[in] mscatter_N     - number of inelastic scatters
+	 * @param[in] mscatter_start - inelastic scattering start
+	 * @param[in] cscatter_N     - number of compound scatters
 	 * @param[in] cscatter_start - compound scattering start
-	 * @param[in] fission_N - number of fissions
-	 * @param[in] fission_start - fission start
+	 * @param[in] fission_N      - number of fissions
+	 * @param[in] fission_start  - fission start
 	 */
 	void  remap_active(unsigned* , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* , unsigned* );
 	/**
 	 * \brief prints the locations of the source points to file
 	 * @param[in] array_in - source point array
-	 * @param[in] N - number of histories
+	 * @param[in] N        - number of histories
 	 * @param[in] filename - filename
 	 * @param[in] opentype - file extension
 	 */
 	void  write_to_file(spatial_data*  , unsigned , std::string , std::string);
 	/**
 	 * \brief prints the locations of the source points to file
-	 * @param[in] array_in - source point array
+	 * @param[in] array_in  - source point array
 	 * @param[in] array_in2 - second array
-	 * @param[in] N - number of histories
-	 * @param[in] filename - filename
-	 * @param[in] opentype - file extension
+	 * @param[in] N         - number of histories
+	 * @param[in] filename  - filename
+	 * @param[in] opentype  - file extension
 	 */
 	void  write_to_file(spatial_data*  , float*, unsigned , std::string , std::string);
 	/**
 	 * \brief prints the source points to a file
 	 * @param[in] array_in - source point array
-	 * @param[in] N - number of histories
+	 * @param[in] N        - number of histories
 	 * @param[in] filename - filename
 	 * @param[in] opentype - file extension
 	 */
 	void  write_to_file(unsigned*  , unsigned , std::string, std::string );
 	/**
 	 * \brief prints the locations of the source points to file
-	 * @param[in] array_in - source point array
+	 * @param[in] array_in  - source point array
 	 * @param[in] array_in2 - second array
-	 * @param[in] N - number of histories
-	 * @param[in] filename - filename
-	 * @param[in] opentype - file extension
+	 * @param[in] N         - number of histories
+	 * @param[in] filename  - filename
+	 * @param[in] opentype  - file extension
 	 */
 	void  write_to_file(unsigned*  , unsigned*, unsigned , std::string, std::string );
 	/**
 	 * \brief writes results to file
-	 * @param[in] runtime - runtime
-	 * @param[in] keff - keff
+	 * @param[in] runtime  - runtime
+	 * @param[in] keff     - keff
 	 * @param[in] opentype - file extension
 	 */
 	void  write_results(float,float,std::string);
 	/**
-	 * \brief calls python function, copys returned buffer to C and CUDA pointers
-	 * @param[in] 
-	 * @param[in] 
-	 * @param[in] 
+	 * \brief calls python function, copys returned buffer to C and CUDA pointers, float overload
+	 * @param[in] device_pointer - device pointer
+	 * @param[in] host_pointer   - host pointer
+	 * @param[in] function_name  - python function name
 	 */
 	void copy_python_buffer(float**,float**,std::string);
 	/**
-	 * \brief calls python function, copys returned buffer to C and CUDA pointers
-	 * @param[in] 
-	 * @param[in] 
-	 * @param[in] 
+	 * \brief calls python function, copys returned buffer to C and CUDA pointers, unsigned overload
+	 * @param[in] device_pointer - device pointer
+	 * @param[in] host_pointer   - host pointer
+	 * @param[in] function_name  - python function name
 	 */
 	void copy_python_buffer(unsigned**,unsigned**,std::string);
 	/**
-	 * \brief calls python function, copys returned buffer to C pointer (no cuda)
-	 * @param[in] 
-	 * @param[in] 
+	 * \brief calls python function, copys returned buffer to C pointer (no cuda), float overload
+	 * @param[in] host_pointer   - host pointer
+	 * @param[in] function_name  - python function name
 	 */
 	void copy_python_buffer(float**,std::string);
 	/**
-	 * \brief calls python function, copys returned buffer to C pointer (no cuda)
-	 * @param[in] 
-	 * @param[in] 
+	 * \brief calls python function, copys returned buffer to C pointer (no cuda), unsigned overload
+	 * 
+	 * @param[in] host_pointer   - host pointer
+	 * @param[in] function_name  - python function name
 	 */
 	void copy_python_buffer(unsigned**,std::string);
 	 /**
-	 * \brief initialized cross section data object in python
-	 * @param[in] 
-	 * @param[out]
+	 * \brief initialize cross section data object in python
 	 */
 	int init_python();
 	/**
-	 * \brief calls python function, copys returned buffer to C and CUDA pointers
-	 * @param[in] 
-	 * @param[in] 
-	 * @param[in] 
+	 * high level function that does the scatter distribution data copying
 	 */
 	void copy_scatter_data();
 	/**
-	 * \brief calls python function, copys returned buffer to C and CUDA pointers
-	 * @param[in] 
-	 * @param[in] 
-	 * @param[in] 
+	 * high level function that does the energy distribution data copying
 	 */
 	void copy_energy_data();
 public:
@@ -393,8 +386,7 @@ public:
 	*/
 	void write_xs_data(std::string);
 	/**
-	* \brief writes tally values to file
-	* @param[in] tallynum - tally number
+	* \brief writes all tally values to file
 	*/
 	void write_tally();
 	/**
@@ -454,34 +446,34 @@ public:
 	void set_dump_level(unsigned level);
 	/**
 	* \brief produces png images of the geometry, named filename-[xy,xz,yz].png
-	* @param[in] type, color is based 'cell' or 'material'
+	* @param[in] type - type of plot, ie color is based 'cell' or 'material'
 	*/
 	void plot_geom(std::string type);
 	/**
 	* \brief creates a color map
-	* @param[in] color - rgb colors, float[3]
-	* @param[in] x - value 
+	* @param[in] color   - rgb colors, float[3]
+	* @param[in] x       - value 
 	* @param[in] min,max - values used to normalize the color  
 	*/
 	void make_color(float* , unsigned , unsigned , unsigned );
 	/**
 	* \brief creates a hot2 color map
-	* @param[in] color - rgb colors, float[3]
-	* @param[in] x - value 
+	* @param[in] color   - rgb colors, float[3]
+	* @param[in] val     - value 
 	* @param[in] min,max - values used to normalize the color  
 	*/
 	void hot2(float* , long unsigned , long unsigned , long unsigned );
 	/**
 	* \brief creates a binary colormap, black iff 0
-	* @param[in] color - rgb colors, float[3]
-	* @param[in] x - value 
+	* @param[in] color   - rgb colors, float[3]
+	* @param[in] val     - value 
 	* @param[in] min,max - values used to normalize the color; unused, only present to keep arguments the same as other colormaps 
 	*/
 	void nonzero(float* , unsigned , unsigned , unsigned );
 	/**
 	* \brief bins and accumulates fission points to grid
 	* @param[in] d_space - device space points
-	* @param[in] N - dataset size 
+	* @param[in] N       - dataset size 
 	*/
 	void bin_fission_points( spatial_data * , unsigned );
 	/**
