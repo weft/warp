@@ -58,7 +58,7 @@ This user's guide is meant to introduce a user to the way in which WARP executes
 functionality can be used to solve neutron transport problems.  For more detailed information about the 
 algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous 
 energy Monte Carlo neutron transport in general 3D geometries on GPUs'' in Annals of Nuclear Engineering 
-(doi:10.1016/j.anucene.2014.10.039) and ``Relative Performance and Accuracy of Neutron Criticality Calculations Performed by WARP- A Framework for Continuous Energy Monte Carlo Neutron Transport in General 3D Geometries on GPUs'' in Annals of Nuclear Engineering (doi: XXX).
+(doi:10.1016/j.anucene.2014.10.039) and ``Relative Performance and Accuracy of Neutron Criticality Calculations Performed by WARP- A Framework for Continuous Energy Monte Carlo Neutron Transport in General 3D Geometries on GPUs'' in Annals of Nuclear Engineering (doi:10.1016/j.anucene.2017.01.027).
 
 \vfill
 
@@ -88,6 +88,7 @@ similar pieces of data concurrently instead of executing many, possibly dissimil
 \end{figure}
 
 \section{Dependencies of WARP}
+\label{sec:dependencies}
 
 WARP has the following dependencies:
 
@@ -157,16 +158,14 @@ also included with releases of the MCNP and Serpent from RSICC (rsicc url).
 
 \end{description}
 
-!!!! standalone now, so this section needs ot be modified!
-
-PyNE (``Python for Nuclear Engineering", \url{http://pyne.io/}) is an open-source toolkit for calculations related to nuclear
-engineering.  WARP has taken the ``ace'' module of PyNE and modified it to be a stand-alone Python module independent of of PyNE.  Legally, this is acceptable since WARP is released as open-source software under the same BSD license under which PyNE is released.
+PyNE (``Python for Nuclear Engineering", \url{http://pyne.io/}) is an open-source toolkit for calculations related to nuclear engineering.  WARP has taken the ``ace'' module of PyNE and modified it to be a stand-alone Python module independent of of PyNE.  Legally, this is acceptable since WARP is released as open-source software under the same BSD license under which PyNE is released.
 
 \section{Building WARP}
 
 WARP can be compiled with CMake. To build WARP, follow these steps:
 
 \begin{enumerate}
+\item{Download and install all the dependencies listed in Section \ref{sec:dependencies}}
 \item{Install git if it isn't already installed on your system (currently only *nix distributions and OSX are supported)}
 \item{Download WARP from GitHub.  On the command line: \texttt{git clone blah} }
 \item{Create an empty directory outside of the WARP source code folder and navigate into that directory.}
@@ -182,9 +181,9 @@ suite.}
 export PYTHONPATH+=:/path/to/warp/BUILD/
 \end{verbatim} and 
 \begin{verbatim}
-export LD\_LIBRARY\_PATH+=/path/to/warp/BUILD
+export LD_LIBRARY_PATH+=/path/to/warp/BUILD
 \end{verbatim} 
-if using a bash shell (use ``DYLD\_LIBRARY\_PATH'' if on OSX) .  It is recommended that these commands are added to your bash initialization file (~/.bashrc in Linux and ~/.bash\texttt{\_}profile in OSX)}
+if using a bash shell (use ``DYLD\_LIBRARY\_PATH'' if on OSX) .  It is recommended that these commands are added to your bash initialization file ($\sim$/.bashrc in Linux and $\sim$/.bash\texttt{\_}profile in OSX)}
 \end{enumerate}
 
 \section{The Library Interface}
