@@ -134,7 +134,7 @@ CUDPP (``CUDA Data Parallel Primitives") is a library of data-parallel algorithm
 parallel sort, can, and reduction.
 
 CUDPP can be downloaded at \url{http://cudpp.github.io/} with documentation available at 
-\url{http://cudpp.github.io/cudpp/2.2/}.  When downloading the external dependencies, make sure to use a modergpu version {\bf less than} 2.0.  On this release, the code structure changed, and cudpp does not find the files it needs.
+\url{http://cudpp.github.io/cudpp/2.2/}.  When downloading the external dependencies, make sure to use a modergpu version {\bf less than} 2.0.  On this release, the code structure changed, and cudpp does not find the files it needs.  Also, be sure to set \begin{verbatim}CUDPP_BUILD_SHARED_LIBS=ON\end{verbatim} in cmake/ccmake when building.
 
 \item[SWIG]\index{SWIG}$\ge$ 1.3.40 \\
 SWIG is an interface compiler that connects programs written in C/C\texttt{++} with scripting languages
