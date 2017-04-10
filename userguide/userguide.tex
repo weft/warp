@@ -102,6 +102,9 @@ One commonly used C\texttt{++} compiler is \texttt{gcc}, which can be downloaded
 \url{http://gcc.gnu.org/releases.html}. Installation instructions can be found at 
 \url{http://gcc.gnu.org/install/}.
 
+\item[Python]\index{Python} = 2.7 \\
+The cross section processing and loading routines in WARP have been written in Python, and the Python C interface is used to access the processed data from C++.  Therefore, it is required to link to the Python runtime library and have the development headers available.  Python 2.7 has been used exclusively in the devleopment of WARP; no other versions have been tested.  Using the Anaconda Python distribution (\url{https://www.continuum.io/}) included many of the downstream dependencies needed for a successful compilation and is recommended.
+
 \item[CMake]\index{CMake}$\ge$ 2.8.10 \\
 CMake is ``an extensible, open-source system that manages the build process in an operating system and in
 a compiler-independent manner."
@@ -131,13 +134,16 @@ CUDPP (``CUDA Data Parallel Primitives") is a library of data-parallel algorithm
 parallel sort, can, and reduction.
 
 CUDPP can be downloaded at \url{http://cudpp.github.io/} with documentation available at 
-\url{http://cudpp.github.io/cudpp/2.2/}.
+\url{http://cudpp.github.io/cudpp/2.2/}.  When downloading the external dependencies, make sure to use a modergpu version {\bf less than} 2.0.  On this release, the code structure changed, and cudpp does not find the files it needs.
 
 \item[SWIG]\index{SWIG}$\ge$ 1.3.40 \\
 SWIG is an interface compiler that connects programs written in C/C\texttt{++} with scripting languages
 like Python; it is used for the WARP Python interface.
 
 SWIG can be downloaded at \url{http://www.swig.org/download.html}.
+
+\item[png++]\index{png++} $\ge$ 0.2.0
+png++ is a c++ wrapper for libpng that make interfacing easier and is used in WARP to create geometry plots. Many package managers included it, but it can be downloaded from \url{http://www.nongnu.org/pngpp/} as well.
 
 \item[Google Test]\index{GoogleTest}$\ge$ 1.7.0 \\
 Google Test is a framework for writing C\texttt{++} tests on a variety of platforms. The WARP test suite
@@ -158,7 +164,7 @@ also included with releases of the MCNP and Serpent from RSICC (\url{http://rsic
 
 \end{description}
 
-\href{http://pyne.io/}{PyNE} (``Python for Nuclear Engineering") is an open-source toolkit for calculations related to nuclear engineering.  WARP has taken the ``ace'' module of PyNE and modified it to be a stand-alone Python module independent of of PyNE.  Legally, this is acceptable since WARP is released as open-source software under the same BSD license under which PyNE is released.  Thank you, PyNE Team!
+\href{http://pyne.io/}{PyNE} (``Python for Nuclear Engineering") is an open-source toolkit for calculations related to nuclear engineering.  WARP has taken the ``ace'' module of PyNE, which parses the format into nice python objects, and modified it to be a stand-alone Python module independent of of PyNE.  Legally, this is acceptable since WARP is released as open-source software under the same BSD license under which PyNE is released.  Thank you, PyNE Team!
 
 \section{Building WARP}
 
