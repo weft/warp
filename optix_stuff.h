@@ -66,16 +66,16 @@ class optix_stuff{
 	 */ 
 	void init_internal(wgeometry, unsigned, std::string);
 public:
-	CUdeviceptr 	positions_ptr; 			/**< CUDA positions pointer */ 
-	CUdeviceptr 	      rxn_ptr; 			/**< CUDA reactions pointer */
-	CUdeviceptr 	     done_ptr; 			/**< CUDA done flags pointer */
-	CUdeviceptr 	  cellnum_ptr; 			/**< CUDA cell numbers pointer */
-	CUdeviceptr 	   talnum_ptr; 			/**< CUDA tally numbers pointer */
-	CUdeviceptr 	   matnum_ptr; 			/**< CUDA material numbers pointer */
-	CUdeviceptr 	    remap_ptr; 			/**< CUDA remaps pointer */
+	void* 			positions_ptr; 			/**< CUDA positions pointer */ 
+	void* 			rxn_ptr; 				/**< CUDA reactions pointer */
+	void* 			done_ptr; 				/**< CUDA done flags pointer */
+	void* 			cellnum_ptr; 			/**< CUDA cell numbers pointer */
+	void* 			talnum_ptr; 			/**< CUDA tally numbers pointer */
+	void* 			matnum_ptr; 			/**< CUDA material numbers pointer */
+	void*	 		remap_ptr; 				/**< CUDA remaps pointer */
 	unsigned 		stack_size_multiplier; 	/**< stack size multiplier */
-	unsigned 		N;		       			/**< number of histories */
-	float 			outer_cell_dims[6];    	/**< outermost cell dimensions */
+	unsigned 		N;						/**< number of histories */
+	float 			outer_cell_dims[6];		/**< outermost cell dimensions */
 	/**
 	 * \brief constructor
 	 * \details sets stack size multiplier and number of histories.
