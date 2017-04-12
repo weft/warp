@@ -102,8 +102,11 @@ One commonly used C\texttt{++} compiler is \texttt{gcc}, which can be downloaded
 \url{http://gcc.gnu.org/releases.html}. Installation instructions can be found at 
 \url{http://gcc.gnu.org/install/}.
 
-\item[Python]\index{Python} = 2.7 \\
+\item[Python]\index{Python}= 2.7 \\
 The cross section processing and loading routines in WARP have been written in Python, and the Python C interface is used to access the processed data from C++.  Therefore, it is required to link to the Python runtime library and have the development headers available.  Python 2.7 has been used exclusively in the devleopment of WARP; no other versions have been tested.  Using the Anaconda Python distribution (\url{https://www.continuum.io/}) included many of the downstream dependencies needed for a successful compilation and is recommended.
+
+\item[NumPy]\index{NumPy}$\ge$ 1.7 \\
+The Python routines for cross section manipulation require NumPy routines, and it must be present in the Python installation used.  A recent version should be used, it is a guess that things may break if versions older than 1.7 are used.  NumPy is pre-installed in Anaconda Python.
 
 \item[CMake]\index{CMake}$\ge$ 2.8.10 \\
 CMake is ``an extensible, open-source system that manages the build process in an operating system and in
