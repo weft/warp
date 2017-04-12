@@ -190,10 +190,10 @@ and necessary for your system.}
 suite.}
 \item{The warp library (\texttt{\_warp.so}) must be in the default library search path, and the ace library (ace.so) must be in the Python search path.  These can be set via
 \begin{verbatim}
-export PYTHONPATH+=:/path/to/warp/BUILD/
+export PYTHONPATH+=:/path/to/ace.so
 \end{verbatim} and 
 \begin{verbatim}
-export LD_LIBRARY_PATH+=/path/to/warp/BUILD/
+export LD_LIBRARY_PATH+=/path/to/_warp.so
 \end{verbatim} 
 if using a bash shell (use ``DYLD\_LIBRARY\_PATH'' if on OSX) .  It is recommended that these commands are added to your bash initialization file ($\sim$/.bashrc in Linux and $\sim$/.bash\texttt{\_}profile in OSX)}
 \end{enumerate}
