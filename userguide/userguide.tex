@@ -10,12 +10,13 @@
 \usepackage{ifthen}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage[dvipsnames,svgnames,x11names,hyperref]{xcolor}
 \hypersetup{
     colorlinks,
-    citecolor=black,
-    filecolor=black,
-    linkcolor=blue,
-    urlcolor=black
+    citecolor=Red,
+    filecolor=Violet,
+    linkcolor=Blue,
+    urlcolor=Green
 }
 % ifthen wird vom Bild von N.Beebe gebraucht!
 
@@ -27,14 +28,14 @@
 \title{WARP User's Guide}
 \author{Ryan M. Bergmann \thanks{ryanmbergmann@gmail.com} \\
 Kelly L. Rowland \thanks{krowland@berkeley.edu}\\
-v 1.0,  April 2016}
+v0.1,  April 2017}
 
 \date{}
 \emergencystretch1em  %
 
 \pagestyle{myfootings}
-\markboth{WARP User's Guide}%
-                {WARP User's Guide}
+\markboth{WARP User's Guide v0.1}%
+                {WARP User's Guide v0.1}
 
 \makeindex 
 
@@ -58,10 +59,9 @@ This user's guide is meant to introduce a user to the way in which WARP executes
 functionality can be used to solve neutron transport problems.  For more detailed information about the 
 algorithms WARP uses, please refer to article ``Algorithmic choices in WARP - A framework for continuous 
 energy Monte Carlo neutron transport in general 3D geometries on GPUs'' in Annals of Nuclear Engineering 
-(doi:10.1016/j.anucene.2014.10.039) and ``Relative Performance and Accuracy of Neutron Criticality Calculations Performed by WARP- A Framework for Continuous Energy Monte Carlo Neutron Transport in General 3D Geometries on GPUs'' in Annals of Nuclear Engineering (doi: XXX).
+(\href{http://dx.doi.org/10.1016/j.anucene.2014.10.039}{doi:10.1016/j.anucene.2014.10.039}) and ``Relative Performance and Accuracy of Neutron Criticality Calculations Performed by WARP- A Framework for Continuous Energy Monte Carlo Neutron Transport in General 3D Geometries on GPUs'' in Annals of Nuclear Engineering (\href{http://dx.doi.org/10.1016/j.anucene.2017.01.027}{doi:10.1016/j.anucene.2017.01.027}).
 
 \vfill
-
 
 \newpage
 \tableofcontents
@@ -88,6 +88,7 @@ similar pieces of data concurrently instead of executing many, possibly dissimil
 \end{figure}
 
 \section{Dependencies of WARP}
+\label{sec:dependencies}
 
 WARP has the following dependencies:
 
@@ -98,28 +99,34 @@ Compilers are programs that convert source code written in a given programming l
 this case) into machine language that is used by a computer's processor.
 
 One commonly used C\texttt{++} compiler is \texttt{gcc}, which can be downloaded at 
-\url{https://gcc.gnu.org/releases.html}. Installation instructions can be found at 
-\url{https://gcc.gnu.org/install/}.
+\url{http://gcc.gnu.org/releases.html}. Installation instructions can be found at 
+\url{http://gcc.gnu.org/install/}.
+
+\item[Python]\index{Python}= 2.7 \\
+The cross section processing and loading routines in WARP have been written in Python, and the Python C interface is used to access the processed data from C++.  Therefore, it is required to link to the Python runtime library and have the development headers available.  Python 2.7 has been used exclusively in the devleopment of WARP; no other versions have been tested.  Using the Anaconda Python distribution (\url{https://www.continuum.io/}) included many of the downstream dependencies needed for a successful compilation and is recommended.
+
+\item[NumPy]\index{NumPy}$\ge$ 1.7 \\
+The Python routines for cross section manipulation require NumPy routines, and it must be present in the Python installation used.  A recent version should be used, it is a guess that things may break if versions older than 1.7 are used.  NumPy is pre-installed in Anaconda Python.
 
 \item[CMake]\index{CMake}$\ge$ 2.8.10 \\
 CMake is ``an extensible, open-source system that manages the build process in an operating system and in
 a compiler-independent manner."
 
-CMake is free and can be downloaded here: \url{https://cmake.org/download/}.
+CMake is free and can be downloaded here: \url{http://cmake.org/download/}.
 
 Instructions for installing CMake on various operating systems can be found at 
-\url{https://cmake.org/install/}.
+\url{http://cmake.org/install/}.
   
-\item[NVIDIA CUDA]\index{NVIDIA CUDA}$\ge$ 5.0 \\
+\item[NVIDIA CUDA]\index{NVIDIA CUDA}$\ge$ 7.5 \\
 CUDA (``Compute Unified Device Architecture") is a parallel computing platform and programming model 
 invented by NVIDIA to utilize the power of the GPU. \textbf{Your computer must include a CUDA-enabled 
 GPU in order to install and use CUDA.}
 
-The latest version of CUDA can be downloaded here: \url{https://developer.nvidia.com/cuda-downloads}.
+The latest version of CUDA can be downloaded here: \url{http://developer.nvidia.com/cuda-downloads}.
 
 Documentation for the CUDA Toolkit can be found at \url{http://docs.nvidia.com/cuda/index.html}.
 
-\item[NVIDIA OptiX]\index{NVIDIA OptiX}$\ge$ 3.0.1 \\
+\item[NVIDIA OptiX]\index{NVIDIA OptiX}$\ge$ 4.0.0 \\
 OptiX is a software development kit developed by NVIDIA for ray tracing performance on GPUs; it provides a
 framework for accessing the GPU's ray tracing capabilities.
 
@@ -130,13 +137,16 @@ CUDPP (``CUDA Data Parallel Primitives") is a library of data-parallel algorithm
 parallel sort, can, and reduction.
 
 CUDPP can be downloaded at \url{http://cudpp.github.io/} with documentation available at 
-\url{http://cudpp.github.io/cudpp/2.2/}.
+\url{http://cudpp.github.io/cudpp/2.2/}.  When downloading the external dependencies, make sure to use a modergpu version {\bf less than} 2.0.  On this release, the code structure changed, and cudpp does not find the files it needs.  Also, be sure to set \begin{verbatim}CUDPP_BUILD_SHARED_LIBS=ON\end{verbatim} in cmake/ccmake when building.
 
 \item[SWIG]\index{SWIG}$\ge$ 1.3.40 \\
 SWIG is an interface compiler that connects programs written in C/C\texttt{++} with scripting languages
 like Python; it is used for the WARP Python interface.
 
 SWIG can be downloaded at \url{http://www.swig.org/download.html}.
+
+\item[png++]\index{png++} $\ge$ 0.2.0
+png++ is a c++ wrapper for libpng that make interfacing easier and is used in WARP to create geometry plots. Many package managers included it, but it can be downloaded from \url{http://www.nongnu.org/pngpp/} as well.
 
 \item[Google Test]\index{GoogleTest}$\ge$ 1.7.0 \\
 Google Test is a framework for writing C\texttt{++} tests on a variety of platforms. The WARP test suite
@@ -146,38 +156,46 @@ Google Test can be downloaded here: \url{https://code.google.com/p/googletest/do
 
 Documentation can be found at \url{https://code.google.com/p/googletest/wiki/Documentation}.
 
-\item[ACE formatted nuclear cross section data]\index{ACE formatted nuclear cross section data}
+\item[ACE formatted cross section data]\index{ACE formatted nuclear cross section data}
 $\ge$ ENDF/B-VII.1 \\
 ACE (``a compact ENDF") formatted data is nuclear cross section data is tabulated such that it is read in 
 by many Monte Carlo codes; the data includes cross sections as well as angular and energy distributions 
 used in neutron scattering and fission.
 
 ACE formatted files can be downloaded at \url{http://www.nndc.bnl.gov/endf/b7.1/acefiles.html} and are 
-also included with releases of the MCNP and Serpent from RSICC (rsicc url).
+also included with releases of the MCNP and Serpent from RSICC (\url{http://rsicc.ornl.gov}).
 
 \end{description}
 
-!!!! standalone now, so this section needs ot be modified!
-
-PyNE (``Python for Nuclear Engineering", \url{http://pyne.io/}) is an open-source toolkit for calculations related to nuclear
-engineering.  WARP has taken the ``ace'' module of PyNE and modified it to be a stand-alone Python module independent of of PyNE.  Legally, this is acceptable since WARP is released as open-source software under the same BSD license under which PyNE is released.
+\href{http://pyne.io/}{PyNE} (``Python for Nuclear Engineering") is an open-source toolkit for calculations related to nuclear engineering.  WARP has taken the ``ace'' module of PyNE, which parses the format into nice python objects, and modified it to be a stand-alone Python module independent of of PyNE.  Legally, this is acceptable since WARP is released as open-source software under the same BSD license under which PyNE is released.  Thank you, PyNE Team!
 
 \section{Building WARP}
 
 WARP can be compiled with CMake. To build WARP, follow these steps:
 
 \begin{enumerate}
+\item{Download and install all the dependencies listed in Section \ref{sec:dependencies}}
 \item{Install git if it isn't already installed on your system (currently only *nix distributions and OSX are supported)}
-\item{Download WARP from GitHub.  On the command line: \texttt{git clone blah} }
-\item{Create an empty directory outside of the WARP source code folder and navigate into that directory.}
+\item{Download WARP from GitHub.  On the command line: 
+\begin{verbatim}
+git clone git@github.com:weft/warp.git
+\end{verbatim}}
+\item{Create an empty directory outside of the WARP source code folder (such as \texttt{BUILD} ) and navigate into that directory.}
 \item{In the terminal, enter \texttt{ccmake /path/to/warp}, where the path is the absolute or relative 
-path to the WARP source code directory.}
+path to the WARP source code directory cloned from github.}
 \item{Configure the code and set \texttt{OptiX\_ROOT\_DIR} and \texttt{CUDPP\_ROOT\_DIR} as applicable
 and necessary for your system.}
-\item{Configure again after setting the above directories, and then generate code.}
+\item{Configure again after setting the above directories, and then have cmake generate the Makefiles.}
 \item{In the terminal, enter the command \texttt{make}. This will build the WARP executables and test 
 suite.}
-\tem{The warp library (_warp.so) must be in the default library search path, and the ace library (ace.so) must be in the Python search path.  These can be set via ``export PYTHONPATH+=:/path/to/warp/BUILD/'' and ``export LD_LIBRARY_PATH+=/path/to/warp/BUILD'' (use ``DYLD_LIBRARY_PATH'' if on OSX) if using a bash shell.  It is recommended that these commands are added to your bash initialization file (~/.bashrc in Linux and ~/.bash_profile in OSX)}
+\item{The warp library (\texttt{\_warp.so}) must be in the default library search path, and the ace library (ace.so) must be in the Python search path.  These can be set via
+\begin{verbatim}
+export PYTHONPATH+=:/path/to/ace.so
+\end{verbatim} and 
+\begin{verbatim}
+export LD_LIBRARY_PATH+=/path/to/_warp.so
+\end{verbatim} 
+if using a bash shell (use ``DYLD\_LIBRARY\_PATH'' if on OSX) .  It is recommended that these commands are added to your bash initialization file ($\sim$/.bashrc in Linux and $\sim$/.bash\texttt{\_}profile in OSX)}
 \end{enumerate}
 
 \section{The Library Interface}
@@ -185,8 +203,8 @@ suite.}
 WARP has two interfaces available for use -- one in C\texttt{++} directly and one in Python.  The Python 
 interface is a wrapper for the C\texttt{++} library, and basically mirrors the C\texttt{++} objects and gives access to their methods.  For
 a complete list and detailed descriptions of all the library classes, methods, and data structures, please
-refer to the ``WARP\_API\_Reference.pdf'' which has been automatically generated from the source code with
-Doxygen and is included as a compiled document with the source code.
+refer to \href{run:WARP_API_Reference.pdf}{WARP\_API\_Reference.pdf}, which has been automatically generated from the source code with
+\href{http://www.doxygen.org}{Doxygen} and is included as a compiled document with the source code.
 
 \subsection{C\texttt{++}}
 
@@ -207,7 +225,8 @@ A quick summary of the main program structure is as follows.  After the instanti
 
 \begin{verbatim}
 wgeometry geom;
-geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
+geom.set_datapath("/usr/local/SERPENT/xsdata/
+                             endfb7/sss_endfb7u.xsdir");
 \end{verbatim}
 
 Next, material and geometry information are specified. The material specification works as follows. The 
@@ -431,6 +450,19 @@ in the previous section.
 Isotopes must be specified as strings similar to those shown in the previous section (element number,
 isotope number, and specific temperature). This is the manner in which ACE files are named.
 
+\newpage
+\section*{Acknowledgements}
+\label{sec:ack}
+
+This research is based upon work partially supported by the U.S. Department of Energy National Nuclear Security Administration under Award Number DE-NA0000979 through the Nuclear Science and Security Consortium: http://nssc.berkeley.edu, as well as upon work supported under an Integrated University Program Graduate Fellowship.  This research also used the Savio computational cluster resource provided by the Berkeley Research Computing program at the University of California, Berkeley (supported by the UC Berkeley Chancellor, Vice Chancellor of Research, and Office of the CIO).
+
+\section*{Disclaimer}
+\label{sec:disclaim}
+
+This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or limited, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.
+
 \printindex
+
+
 
 \end{document}

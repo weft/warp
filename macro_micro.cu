@@ -553,6 +553,23 @@ All neutrons need these things done, so these routines all live in the same rout
 
 }
 
+
+/**
+ * \brief a
+ * \details b
+ *
+ * @param[in]    NUM_THREADS              - the number of threads to run per thread block
+ * @param[in]    N                        - the total number of threads to launch on the grid
+ * @param[in]    converged                - flag for tally scoring
+ * @param[in]    n_materials              - number of materials
+ * @param[in]    n_isotopes               - number of isotopes
+ * @param[in]    n_tallies                - number of tallies
+ * @param[in]    d_xsdata                 - device pointer to cross section data pointer array 
+ * @param[in]    d_particles              - device pointer to particle data pointer array 
+ * @param[in]    d_tally                  - device pointer to tally array
+ * @param[in]    d_remap                  - device pointer to data remapping vector
+ * @param[in]    d_number_density_matrix  - device pointer to material number density array
+ */ 
 void macro_micro(unsigned NUM_THREADS, unsigned N, unsigned converged, unsigned n_materials, unsigned n_isotopes, unsigned n_tallies, cross_section_data* d_xsdata, particle_data* d_particles, tally_data* d_tally, unsigned* d_remap, float* d_number_density_matrix ){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;

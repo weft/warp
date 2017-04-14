@@ -11,3 +11,8 @@
 *.png
 *.results
 *.stats
+*.pyc
+*.bak
+/dox
+/userguide/*/*.pdf
+/userguide/*.pdf

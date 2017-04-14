@@ -48,7 +48,7 @@ mark_as_advanced(
 include_directories(${OptiX_INCLUDE_DIR})
 
 set(CUDA_64_BIT_DEVICE_CODE ON)
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20; --use_fast_math; --compiler-options '-fPIC')
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_30; --use_fast_math; --compiler-options '-fPIC')
 
 set (CUDPP_ROOT_DIR CACHE PATH "Root directory for CUDPP")
 #http://suren.me/webbzr/normxcorr/trunk/annotate/27/dict_hw/cmake/FindCUDPP.cmake?remember=7

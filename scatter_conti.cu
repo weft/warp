@@ -442,6 +442,18 @@ __global__ void scatter_conti_kernel(unsigned N, unsigned starting_index, cross_
 
 }
 
+/**
+ * \brief a
+ * \details b
+ *
+ * @param[in]    stream          - CUDA stream to launch the kernel on
+ * @param[in]    NUM_THREADS     - the number of threads to run per thread block
+ * @param[in]    N               - the total number of threads to launch on the grid for continuum scattering
+ * @param[in]    starting_index  - starting index of the continuum scatter block in the remap vector
+ * @param[in]    d_xsdata        - device pointer to cross section data pointer array 
+ * @param[in]    d_particles     - device pointer to particle data pointer array 
+ * @param[in]    d_remap         - device pointer to data remapping vector
+ */ 
 void scatter_conti( cudaStream_t stream, unsigned NUM_THREADS, unsigned N, unsigned starting_index, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_remap){
 
 	if(N<1){return;}

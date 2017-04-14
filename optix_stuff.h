@@ -7,18 +7,18 @@
  */
 
 class optix_stuff{
-	optix::Context 	context; /**< OptiX context */
-	std::string accel_type; /**< acceleration type */ 
-	std::string traverse_type; /**< traverse type */
-	unsigned mincell; /**< minimum (usually innermost) cell */
-	unsigned maxcell; /**< maximum (usually outermost) cell */
-	unsigned outer_cell; /**< outermost cell */
-	unsigned boundary_condition; /**< boundary condition of outermost cell */
-	unsigned outer_cell_type; /**< outermost cell type */
-	unsigned n_materials; /**< number of materials */
-	unsigned compute_device; /**< compute device number */
-	unsigned optix_device; /**< optix device number, always zero since the optix device list should only have the specified cuda device in it*/
-	unsigned GEOM_FLAG; /**< geometry flag: 0 = primitive instancing, 1 = transform instancing, 2 = transform instancing with common primitives */
+	optix::Context 	context; 		/**< OptiX context */
+	std::string accel_type;  		/**< acceleration type */ 
+	std::string traverse_type; 		/**< traverse type */
+	unsigned mincell; 				/**< minimum (usually innermost) cell */
+	unsigned maxcell; 				/**< maximum (usually outermost) cell */
+	unsigned outer_cell; 			/**< outermost cell */
+	unsigned boundary_condition; 	/**< boundary condition of outermost cell */
+	unsigned outer_cell_type; 		/**< outermost cell type */
+	unsigned n_materials; 			/**< number of materials */
+	unsigned compute_device; 		/**< compute device number */
+	unsigned optix_device; 			/**< optix device number, always zero since the optix device list should only have the specified cuda device in it*/
+	unsigned GEOM_FLAG; 			/**< geometry flag: 0 = primitive instancing, 1 = transform instancing, 2 = transform instancing with common primitives */
 	/**
 	 * \brief makes a geometry with a transform
 	 * \details makes the top level group/acceleration as children of the top level object. for 
@@ -30,16 +30,16 @@ class optix_stuff{
 	 * @param[in] problem_geom - problem geometry
 	 */
 	void make_geom_xform(wgeometry);
-        /**
-         * \brief makes a geometry with a transform
-         * \details makes the top level group/acceleration as children of the top level object. for 
-         * each primitive in the geometry, creates the geometry type, sets the intersection and 
-         * bounding box programs, sets the hit programs to the geometry material, sets the program 
-         * variables for the instance, creates the instances, sets cell-specific variables, makes the 
-         * geometry group for the primitive, puts the geometry instance into its corresponding group, 
-         * makes any necessary transforms, and attaches to the root node.
-         * @param[in] problem_geom - problem geometry
-         */
+    /**
+     * \brief makes a geometry with a transform
+     * \details makes the top level group/acceleration as children of the top level object. for 
+     * each primitive in the geometry, creates the geometry type, sets the intersection and 
+     * bounding box programs, sets the hit programs to the geometry material, sets the program 
+     * variables for the instance, creates the instances, sets cell-specific variables, makes the 
+     * geometry group for the primitive, puts the geometry instance into its corresponding group, 
+     * makes any necessary transforms, and attaches to the root node.
+     * @param[in] problem_geom - problem geometry
+     */
 	void make_geom_xform_common(wgeometry);
 	/**	
 	 * \brief makes a primitive geometry (no transform)
@@ -66,20 +66,20 @@ class optix_stuff{
 	 */ 
 	void init_internal(wgeometry, unsigned, std::string);
 public:
-	CUdeviceptr 	positions_ptr; /**< CUDA positions pointer */ 
-	CUdeviceptr 	      rxn_ptr; /**< CUDA reactions pointer */
-	CUdeviceptr 	     done_ptr; /**< CUDA done flags pointer */
-	CUdeviceptr 	  cellnum_ptr; /**< CUDA cell numbers pointer */
-	CUdeviceptr 	   talnum_ptr; /**< CUDA tally numbers pointer */
-	CUdeviceptr 	   matnum_ptr; /**< CUDA material numbers pointer */
-	CUdeviceptr 	    remap_ptr; /**< CUDA remaps pointer */
-	unsigned 		stack_size_multiplier; /**< stack size multiplier */
-	unsigned 		N;		       /**< number of histories */
-	float 			outer_cell_dims[6];    /**< outermost cell dimensions */
+	void* 			positions_ptr; 			/**< CUDA positions pointer */ 
+	void* 			rxn_ptr; 				/**< CUDA reactions pointer */
+	void* 			done_ptr; 				/**< CUDA done flags pointer */
+	void* 			cellnum_ptr; 			/**< CUDA cell numbers pointer */
+	void* 			talnum_ptr; 			/**< CUDA tally numbers pointer */
+	void* 			matnum_ptr; 			/**< CUDA material numbers pointer */
+	void*	 		remap_ptr; 				/**< CUDA remaps pointer */
+	unsigned 		stack_size_multiplier; 	/**< stack size multiplier */
+	unsigned 		N;						/**< number of histories */
+	float 			outer_cell_dims[6];		/**< outermost cell dimensions */
 	/**
 	 * \brief constructor
 	 * \details sets stack size multiplier and number of histories.
-	 * @param[in] Nin - number of histories
+	 * @param[in] Nin  - number of histories
 	 * @param[in] mult - stack size multiplier
 	 */ 
 	optix_stuff(unsigned,unsigned);
@@ -96,9 +96,9 @@ public:
 	 * \brief initialization function
 	 * \details sets minimum and maximum cell numbers, gets material numbers, tries to 
 	 * initialize OptiX and throws an error if not.
-	 * @param[in] problem_geom - problem geometry
+	 * @param[in] problem_geom      - problem geometry
 	 * @param[in] compute_device_in - compute device to use (always 0)
-	 * @param[in] accel_type_in - acceleration type
+	 * @param[in] accel_type_in     - acceleration type
 	 */ 
 	void init(wgeometry, unsigned, std::string);
 	/**
@@ -118,7 +118,7 @@ public:
 	 * \details sets the trace type, then launches the trace on the compute device 
 	 * with n_active histories.
 	 * @param[in] trace_type - trace type for OptiX context, 2=transport (finds nearest surface, normal, writes cell number and material number), 3=fissile query(writes fissile flag into material number, writes cell number), 4=geometry plot(same as 2, but misses are squelched, no normals/intersection distances reported)
-	 * @param[in] n_active - number of active histories
+	 * @param[in] n_active   - number of active histories
 	 */ 
 	void trace(unsigned, unsigned);
 	/**
@@ -144,8 +144,8 @@ public:
 	//float trace_test();
 	///**
 	// * \brief creates a color map
-	// * @param[in] color - color map
-	// * @param[in] x - used to check for a miss or normalize the color 
+	// * @param[in] color   - color map
+	// * @param[in] x       - used to check for a miss or normalize the color 
 	// * @param[in] min,max - values used to normalize the color  
 	// */
 	void make_color(float*,unsigned,unsigned,unsigned);
@@ -160,7 +160,7 @@ public:
 	unsigned get_outer_cell();
 	/**
 	 * \brief returns the outermost cell type
-	 * \returns outer_cell_type - geometrical primitive tpye of the outermost cell
+	 * \returns outer_cell_type - geometrical primitive type of the outermost cell
 	 */  
 	unsigned get_outer_cell_type();
 };

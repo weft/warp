@@ -1,6 +1,10 @@
 #ifndef WARP_H
 #define WARP_H
 
+/**
+ * \brief collection header for warp
+ */
+
 #include <vector> 
 #include <iostream>
 #include <sstream>

@@ -59,7 +59,7 @@ int main(int argc, char* argv[]){
 	// set datapath
 	//geom.set_datapath("/usr/local/LANL/MCNP6_DATA/xsdir_mcnp6.1");
 	//geom.set_datapath("/usr/local/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
-	geom.set_datapath("/global/scratch/rmb/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
+	geom.set_datapath("/scratch/bergmann_r/SERPENT/xsdata/endfb7/sss_endfb7u.xsdir");
 
 	if(assemblyname.compare(argv[1])==0){
 		//assembly mats

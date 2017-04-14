@@ -413,6 +413,18 @@ __global__ void pop_fission_kernel(unsigned N, cross_section_data* d_xsdata, par
 
 }
 
+/**
+ * \brief a
+ * \details b
+ *
+ * @param[in]    NUM_THREADS        - the number of threads to run per thread block
+ * @param[in]    N                  - the total number of threads to launch on the grid
+ * @param[in]    d_xsdata           - device pointer to cross section data pointer array
+ * @param[in]    d_particles        - device pointer to particle data pointer array
+ * @param[in]    d_scanned          - device pointer to array of the cumulative sum (scan) of the yield array, used to find final index where new particles will be written
+ * @param[in]    fission_particles  - device pointer to intermadiate spatial data array where popped values will be written
+ * @param[in]    fission_energy     - device pointer to intermadiate energy data array where popped values will be written
+ */ 
 void pop_fission( unsigned NUM_THREADS, unsigned N, cross_section_data* d_xsdata, particle_data* d_particles, unsigned* d_scanned, spatial_data* fission_particles, float* fission_energy ){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;

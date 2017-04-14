@@ -37,6 +37,17 @@ __global__ void sample_fixed_source_kernel(unsigned N, unsigned* active, unsigne
 
 }
 
+/**
+ * \brief a
+ * \details b
+ *
+ * @param[in]    NUM_THREADS     - the number of threads to run per thread block
+ * @param[in]    N               - the total number of threads to launch on the grid
+ * @param[in]    active          - device pointer to remapping vector
+ * @param[in]    rn_bank         - device pointer to random number array
+ * @param[in]    E               - device pointer to energy data array
+ * @param[in]    space           - device pointer to spatial data array
+ */ 
 void sample_fixed_source( unsigned NUM_THREADS, unsigned N, unsigned* active, unsigned* rn_bank, float * E, source_point* space){
 
 	unsigned blks = ( N + NUM_THREADS - 1 ) / NUM_THREADS;

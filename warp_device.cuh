@@ -1,3 +1,8 @@
+/**
+* \brief              generates the next random number based on a seed integer
+* \param[in,out] in   random number in integer form, this routine reads the seed, advances it, and returns the float form
+* \returns            the float form (0-1) of the next random number
+*/
 inline __device__ float get_rand(unsigned* in)
 {
 /*
@@ -19,7 +24,15 @@ since 32-bit math is being used, 30 bits are used here
 	in[0]=nextint;
 	return randout;   						// return normalized float
 }
-
+/**
+* \brief               interpolates a value linearly between two values
+* \param[in] this_E    the current energy to be interpolated at
+* \param[in] e0        energy of data point before current energy
+* \param[in] e1        energy of data point after current energy
+* \param[in] var0      value of data point before current energy
+* \param[in] var1      value of data point after current energy
+* \returns             the interpolated value for this_E
+*/
 inline __device__ float interpolate_linear_energy(float this_E, float e0, float e1, float var0, float var1){
 /*
 linearly interpolates between energy points
@@ -30,7 +43,14 @@ linearly interpolates between energy points
 
 }
 
-
+/**
+* \brief           histogram interpolation for angular cross section data
+* \param[in] rn    random number (0-1)
+* \param[in] var   variable value of the edge
+* \param[in] cdf   cdf value of the edge
+* \param[in] pdf   pdf value of the edge
+* \returns         interpolated value 
+*/
 inline __device__ float interpolate_continuous_tablular_histogram( float rn , float var , float cdf , float pdf ){
 /*
 histogram interpolation for angular data
@@ -40,6 +60,17 @@ histogram interpolation for angular data
 
 }
 
+/**
+* \brief           lin-lin interpolation for angular cross section data
+* \param[in] rn    random number (0-1)
+* \param[in] var0   variable value of the edge below the current sampled rn
+* \param[in] var1   variable value of the edge above the current sampled rn
+* \param[in] cdf0   cdf value of the edge below the current sampled rn
+* \param[in] cdf1   cdf value of the edge above the current sampled rn
+* \param[in] pdf0   pdf value of the edge below the current sampled rn
+* \param[in] pdf1   pdf value of the edge above the current sampled rn
+* \returns         interpolated value 
+*/
 inline __device__ float interpolate_continuous_tablular_linlin( float rn , float var0 , float var1 , float cdf0 , float cdf1 , float pdf0 , float pdf1 ){
 /*
 linear-linear interpolation for angular data
@@ -57,7 +88,17 @@ linear-linear interpolation for angular data
 
 }
 
-
+/**
+* \brief           		Calculates the inner product of a cross section and another vector across different nuclides.  Interoplates between two energies.
+* \param[in] length		number of elements to sum
+* \param[in] energy0	energy of vector 0
+* \param[in] energy1	energy of vector 1
+* \param[in] this_E		current neutron energy
+* \param[in] multiplier	array of multiplier values
+* \param[in] array0		array of cross section values at energy0
+* \param[in] array1		array of cross section values at energy1
+* \returns         		sum of interpolated values
+*/
 inline __device__ float sum_cross_section( unsigned length , float energy0, float energy1, float this_E, float* multiplier, float* array0, float* array1){
 /*
 Calculates the sum of a cross section range.  This routine has a multiplier array and two arrays  / two energy_ins for inside the data.  Returns sum.
@@ -73,6 +114,15 @@ Calculates the sum of a cross section range.  This routine has a multiplier arra
 
 }
 
+/**
+* \brief           		Calculates the inner product of a cross section and another vector across different nuclides.  No interpolation so only a single vector is needed.
+* \param[in] length		number of elements to sum
+* \param[in] energy0	energy of vector 
+* \param[in] this_E		current neutron energy
+* \param[in] multiplier	array of multiplier values
+* \param[in] array0		array of cross section values at energy0
+* \returns         		sum of interpolated values
+*/
 inline __device__ float sum_cross_section( unsigned length , float energy0, float this_E, float* multiplier, float* array0){
 /*
 Calculates the sum of a cross section range.  This routine has a multiplier array and one array / one energy_in for outside the data.  Returns sum.
@@ -94,6 +144,16 @@ Calculates the sum of a cross section range.  This routine has a multiplier arra
 
 }
 
+/**
+* \brief           		Calculates the sum of a cross section and another vector across different nuclides.  Interoplates between two energies.
+* \param[in] length		number of elements to sum
+* \param[in] energy0	energy of vector 0
+* \param[in] energy1	energy of vector 1
+* \param[in] this_E		current neutron energy
+* \param[in] array0		array of cross section values at energy0
+* \param[in] array1		array of cross section values at energy1
+* \returns         		sum of interpolated values
+*/
 inline __device__ float sum_cross_section( unsigned length , float energy0, float energy1, float this_E, float* array0, float* array1){
 /*
 Calculates the sum of a cross section range.  This routine has no multiplier array, and two arrays / two energy_ins for inside the data.  Returns sum.
@@ -109,6 +169,14 @@ Calculates the sum of a cross section range.  This routine has no multiplier arr
 
 }
 
+/**
+* \brief           		Calculates the sum of a cross section and another vector across different nuclides.  No interpolation so only a single vector is needed.
+* \param[in] length		number of elements to sum
+* \param[in] energy0	energy of vector 
+* \param[in] this_E		current neutron energy
+* \param[in] array0		array of cross section values at energy0
+* \returns         		sum of interpolated values
+*/
 inline __device__ float sum_cross_section( unsigned length , float energy0, float this_E, float* array0){
 /*
 Calculates the sum of a cross section range.  This routine has no multiplier array and one array / one energy_in for outside the data.  Returns sum.
@@ -130,6 +198,19 @@ Calculates the sum of a cross section range.  This routine has no multiplier arr
 
 }
 
+/**
+* \brief           		Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  Interoplates between two energies.
+* \param[in] length		numer of consecutive arrays to read
+* \param[in] normalize	normalization factor 
+* \param[in] rn			random number (0-1)
+* \param[in] energy0	energy of vector 0
+* \param[in] energy1	energy of vector 1
+* \param[in] this_E		current neutron energy
+* \param[in] multiplier	array of multiplier values
+* \param[in] array0		array of cross section values at energy0
+* \param[in] array1		array of cross section values at energy1
+* \returns         		energy index of sampled reaction
+*/
 inline __device__ unsigned sample_cross_section( unsigned length , float normalize, float rn, float energy0, float energy1, float this_E, float* multiplier, float* array0, float* array1){
 /*
 Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  This routine HAS a multiplier array.  Returns array index.
@@ -154,6 +235,17 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 }
 
+/**
+* \brief           		Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  No interpolation so only a single vector is needed.
+* \param[in] length		numer of consecutive arrays to read
+* \param[in] normalize	normalization factor 
+* \param[in] rn			random number (0-1)
+* \param[in] energy0	energy of vector 0
+* \param[in] this_E		current neutron energy
+* \param[in] multiplier	array of multiplier values
+* \param[in] array0		array of cross section values at energy0
+* \returns         		energy index of sampled reaction
+*/
 inline __device__ unsigned sample_cross_section( unsigned length , float normalize, float rn, float energy0, float this_E, float* multiplier, float* array0){
 /*
 Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  This routine HAS a multiplier array and one energy_in / array for ouside of data.  Returns array index.
@@ -184,8 +276,18 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 }
 
-
-
+/**
+* \brief           		Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  Interoplates between two energies.
+* \param[in] length		numer of consecutive arrays to read
+* \param[in] normalize	normalization factor 
+* \param[in] rn			random number (0-1)
+* \param[in] energy0	energy of vector 0
+* \param[in] energy1	energy of vector 1
+* \param[in] this_E		current neutron energy
+* \param[in] array0		array of cross section values at energy0
+* \param[in] array1		array of cross section values at energy1
+* \returns         		energy index of sampled reaction
+*/
 inline __device__ unsigned sample_cross_section( unsigned length , float normalize, float rn, float energy0, float energy1, float this_E, float* array0, float* array1){
 /*
 Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  Returns array index.
@@ -210,7 +312,16 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 }
 
-
+/**
+* \brief           		Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  No interpolation so only a single vector is needed.
+* \param[in] length		numer of consecutive arrays to read
+* \param[in] normalize	normalization factor 
+* \param[in] rn			random number (0-1)
+* \param[in] energy0	energy of vector 0
+* \param[in] this_E		current neutron energy
+* \param[in] array0		array of cross section values at energy0
+* \returns         		energy index of sampled reaction
+*/
 inline __device__ unsigned sample_cross_section( unsigned length , float normalize, float rn, float energy0, float this_E, float* array0){
 /*
 Samples the isotope/reaction once a normalization factor is known (material/isotope total macroscopic cross section).  One energy_in / array for outside data.  Returns array index.
@@ -240,6 +351,16 @@ Samples the isotope/reaction once a normalization factor is known (material/isot
 
 }
 
+/**
+* \brief           		Samples a law 3 probability distribution with historgram or lin-lin interpolation.
+* \param[in] length 	total length of data (to prevent overrun)
+* \param[in] intt   	interpolation law from data
+* \param[in] rn    		random number (0-1)
+* \param[in] var   		variable value of the edge below the current sampled rn
+* \param[in] cdf   		cdf value of the edge below the current sampled rn
+* \param[in] pdf   		pdf value of the edge below the current sampled rn
+* \returns         		sampled value (not array index).
+*/
 inline __device__ float sample_continuous_tablular( unsigned length , unsigned intt , float rn , float* var , float* cdf, float* pdf ){
 /*
 Samples a law 3 probability distribution with historgram or lin-lin interpolation.  Returns sampled value (not array index).
@@ -282,6 +403,17 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 
 }
 
+/**
+* \brief           		Samples a law 3 probability distribution with historgram or lin-lin interpolation.
+* \param[out] index_out	index of sampled value 
+* \param[in] length 	total length of data (to prevent overrun)
+* \param[in] intt   	interpolation law from data
+* \param[in] rn    		random number (0-1)
+* \param[in] var   		variable value of the edge below the current sampled rn
+* \param[in] cdf   		cdf value of the edge below the current sampled rn
+* \param[in] pdf   		pdf value of the edge below the current sampled rn
+* \returns         		sampled value and writes array index to passed in pointer
+*/
 inline __device__ float sample_continuous_tablular( unsigned* index_out, unsigned length , unsigned intt , float rn , float* var , float* cdf, float* pdf ){
 /*
 Samples a law 3 probability distribution with historgram or lin-lin interpolation.  Returns sampled value and writes array index to passed in pointer.
@@ -327,6 +459,17 @@ Samples a law 3 probability distribution with historgram or lin-lin interpolatio
 
 }
 
+/**
+* \brief           		Samples a law 61 probability distribution with historgram or lin-lin interpolation.
+* \param[out] index_out	index of sampled value 	
+* \param[in] length 	total length of data (to prevent overrun)
+* \param[in] intt   	interpolation law from data
+* \param[in] rn    		random number (0-1)
+* \param[in] var   		variable value of the edge below the current sampled rn
+* \param[in] cdf   		cdf value of the edge below the current sampled rn
+* \param[in] pdf   		pdf value of the edge below the current sampled rn
+* \returns         		sampled value and writes array index to passed in pointer
+*/
 inline __device__ float sample_continuous_tablular61( unsigned* index_out, unsigned length , unsigned intt , float rn , float* var , float* cdf, float* pdf ){
 /*
 Samples a law 61 probability distribution with historgram or lin-lin interpolation.  Returns sampled value and writes array index to passed in pointer, passes a different index depending on intt type for law 61.
@@ -383,6 +526,13 @@ Samples a law 61 probability distribution with historgram or lin-lin interpolati
 
 }
 
+/**
+* \brief           	Binary search function
+* \param[in] array 	array to search in
+* \param[in] value 	value to search for
+* \param[in] len 	total length of array to search
+* \returns         	array index immediately below the specified value
+*/
 __forceinline__ __device__ unsigned binary_search( float * array , float value, unsigned len ){
 
 	// load data
@@ -427,6 +577,15 @@ __forceinline__ __device__ unsigned binary_search( float * array , float value, 
 
 }
 
+/**
+* \brief           	Binary search function
+* \param[in]  rn	random number seed to use for rejection sampling
+* \param[out] muout	sampled value of mu, cosine of angle in scattering
+* \param[out] vt	sampled value of v target
+* \param[in]  temp	specified temperature
+* \param[in]  E0	energy of neutron
+* \param[in]  awr	atomic weight ratio of target
+*/
 inline __device__ void sample_therm(unsigned* rn, float* muout, float* vt, const float temp, const float E0, const float awr){
 
 	// adapted from OpenMC's sample_target_velocity subroutine in src/physics.F90
@@ -467,6 +626,19 @@ inline __device__ void sample_therm(unsigned* rn, float* muout, float* vt, const
 
 }
 
+
+/**
+* \brief	  Scales sampled values to outgoing energy bins in order to ensure kinematic aren't voilated.  Needed for stochastic mixing.
+* \param[in]  f				interpolation factor, ie mixing probability
+* \param[in]  this_E		current energy
+* \param[in]  this_erg_min	outoging energy grid, minimum
+* \param[in]  this_erg_max	outoging energy grid, maximum
+* \param[in]  lower_erg_min	lower energy grid, minimum
+* \param[in]  lower_erg_max	lower energy grid, maximum
+* \param[in]  upper_erg_min	upper energy grid, minimum
+* \param[in]  upper_erg_max	upper energy grid, maximum
+* \returns					array index immediately below the specified value
+*/
 inline __device__ float scale_to_bins(float f, float this_E, float this_erg_min, float this_erg_max, float lower_erg_min, float lower_erg_max, float upper_erg_min, float upper_erg_max){
 
 	// do scaled interpolation
