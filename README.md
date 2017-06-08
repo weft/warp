@@ -8,14 +8,14 @@ If the name "WARP" were an acronym, it would stand for "weaving all the random p
 
 Please refer to the usage guide for examples of how to use WARP, and to the doxygen documentation for detail descriptions of the API.
 
-## Related Publications:
+### Related Publications:
 
 [Performance and accuracy of criticality calculations performed using WARP – A framework for continuous energy Monte Carlo neutron transport in general 3D geometries on GPU](https://doi.org/10.1016/j.anucene.2017.01.027)
 
 [Algorithmic choices in WARP – A framework for continuous energy Monte Carlo neutron transport in general 3D geometries on GPUs](https://doi.org/10.1016/j.anucene.2014.10.039)
 
 
-## Miscellaneous
+### Miscellaneous
 
 Logo provided by designer extrodinaire Daniel Castro, http://www.danieldanieldaniel.com/
 
